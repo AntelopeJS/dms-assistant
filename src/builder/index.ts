@@ -5,7 +5,7 @@ import {
   setModuleConfig,
 } from "./config";
 
-export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
+export type { BuilderApiConfig, DmsBuilderConfig, ThemeConfig } from "./config";
 
 /**
  * Install the implementation and, when the builder is enabled, mount the API:

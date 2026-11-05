@@ -20,6 +20,7 @@ import {
   type AgentRunner,
   type ConversationSettingsResolver,
   createAgentRunner,
+  type TurnGrounding,
 } from "../agent/runner.js";
 import {
   createSwitchingRunner,
@@ -43,13 +44,10 @@ import {
   WS_LOG_PREFIX,
   WS_PATH,
 } from "../constants/ws.js";
+import { createAssistantRunner } from "../agent/assistant-runner.js";
 import { createProjectMcpEndpoint } from "../mcp/project-endpoint.js";
-import { createAiMcpServer } from "../mcp/sdk-binding.js";
-import type {
-  AiMcpServer,
-  AiMcpServerDeps,
-  AiMcpServerStaticDeps,
-} from "../mcp/types.js";
+import { createAnalystMcpServer } from "../mcp/sdk-binding.js";
+import type { AiMcpServerDeps, AiMcpServerStaticDeps } from "../mcp/types.js";
 import { PROVIDER_MODULES } from "../providers/registry.js";
 import type {
   ProviderHostRuntime,
@@ -57,10 +55,11 @@ import type {
 } from "../providers/types.js";
 import type { SkillSource } from "../skills/types.js";
 import { createChangeSetStore } from "../state/change-sets.js";
+import type { AssistantMode } from "../state/assistant-mode.js";
 import type { ConversationStore } from "../state/conversations.js";
 import type { HostState } from "../state/host-state.js";
 import type { SettingsStore } from "../state/settings-store.js";
-import type { AppSettings } from "../state/settings-types.js";
+import type { AppSettings, TurnSettings } from "../state/settings-types.js";
 import type { ProviderName } from "../state/types.js";
 import {
   broadcastConversationList,
@@ -101,6 +100,7 @@ import {
   dispatchMessage,
 } from "./routing.js";
 import type { RoutingConfig, SidecarServices } from "./services.js";
+import { createMcpServerCache } from "./mcp-server-cache.js";
 import { createTurnRegistry } from "./turn-registry.js";
 
 export interface AttachWsServerOptions {
@@ -127,6 +127,8 @@ export interface AttachWsServerOptions {
   checkpoints?: Checkpoints;
   /** Filled with the live services, for the HTTP routes that read them. */
   bridge?: SidecarBridge;
+  /** Core's development flag: Builder runs only when it is set. */
+  isDevelopment: boolean;
 }
 
 const NOOP_IDLE_CONTROLLER: IdleShutdownController = {
@@ -149,12 +151,21 @@ interface AttachWsServerResult {
 function buildBaseOptions(
   options: AttachWsServerOptions,
   settings: AppSettings,
+  profile: AssistantMode,
 ): AgentProviderOptions {
   return {
     settings,
     moduleRoots: options.moduleRoots ?? [],
     skillDirs: options.skillDirs ?? [],
+    profile,
   };
+}
+
+/** How one assistant's runners treat a turn, whichever provider runs it. */
+interface RunnerProfile {
+  mode: AssistantMode;
+  resolveSettings: ConversationSettingsResolver;
+  ground?: TurnGrounding;
 }
 
 /**
@@ -164,20 +175,42 @@ function buildBaseOptions(
 function buildRunnerFactories(
   options: AttachWsServerOptions,
   runtime: ProviderRuntime,
-  resolveSettings: ConversationSettingsResolver,
+  profile: RunnerProfile,
 ): Record<ProviderName, ProviderRunnerFactory> {
   const factoryFor =
     (name: ProviderName): ProviderRunnerFactory =>
     (settings: AppSettings) =>
       createAgentRunner(
         PROVIDER_MODULES[name].create(
-          buildBaseOptions(options, settings),
+          buildBaseOptions(options, settings, profile.mode),
           runtime,
         ),
-        { settings, resolveSettings },
+        {
+          settings,
+          resolveSettings: profile.resolveSettings,
+          ground: profile.ground,
+        },
       );
   return { claude: factoryFor("claude"), codex: factoryFor("codex") };
 }
+
+function analystSettings(
+  _conversationId: string,
+  settings: AppSettings,
+): TurnSettings {
+  return { ...settings, mode: "normal" };
+}
+
+function keepMessage(message: string): string {
+  return message;
+}
+
+/** Analyst's profile: its own session setup on either provider, no host context. */
+const ANALYST_PROFILE: RunnerProfile = {
+  mode: "analyst",
+  resolveSettings: analystSettings,
+  ground: keepMessage,
+};
 
 function buildRunner(
   options: AttachWsServerOptions,
@@ -185,15 +218,24 @@ function buildRunner(
   createMcpDeps: (conversationId: string) => AiMcpServerDeps,
   holder: ServicesHolder,
 ): AgentRunner {
-  return createSwitchingRunner(
-    buildRunnerFactories(
-      options,
-      { ...options.providerRuntime, createMcpDeps },
-      (conversationId, global) =>
+  const runtime = { ...options.providerRuntime, createMcpDeps };
+  const builder = createSwitchingRunner(
+    buildRunnerFactories(options, runtime, {
+      mode: "builder",
+      resolveSettings: (conversationId, global) =>
         services(holder).conversationModes.settingsFor(conversationId, global),
-    ),
+    }),
     settings,
   );
+  const analyst = createSwitchingRunner(
+    buildRunnerFactories(options, runtime, ANALYST_PROFILE),
+    settings,
+  );
+  return createAssistantRunner({
+    runners: { builder, analyst },
+    modeOf: (conversationId) =>
+      services(holder).conversationModes.state(conversationId).assistant,
+  });
 }
 
 function bindConnection(socket: WebSocket, config: RoutingConfig): void {
@@ -237,6 +279,7 @@ function buildMcpDepsFactory(
       listAttachedImages(services(holder), conversationId),
     gateBuilderOp: (toolName, args) =>
       buildBuilderGate(services(holder), conversationId)(toolName, args),
+    currentGrant: () => services(holder).turnActors.get(conversationId)?.grant,
   });
 }
 
@@ -251,20 +294,6 @@ function askUser(
     { questions: req.questions },
   );
   return current.questionBus.requestQuestion({ ...req, callId });
-}
-
-/** Memoized so a conversation reuses one server instance across its turns. */
-function buildMcpServerFactory(
-  createMcpDeps: (conversationId: string) => AiMcpServerDeps,
-): (conversationId: string) => AiMcpServer {
-  const byConversation = new Map<string, AiMcpServer>();
-  return (conversationId) => {
-    const existing = byConversation.get(conversationId);
-    if (existing !== undefined) return existing;
-    const server = createAiMcpServer(createMcpDeps(conversationId));
-    byConversation.set(conversationId, server);
-    return server;
-  };
 }
 
 function buildWss(config: RoutingConfig): WebSocketServer {
@@ -387,11 +416,23 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     hostCommandsOf,
   );
   const idleController = options.idleController ?? NOOP_IDLE_CONTROLLER;
+  const builderServers = createMcpServerCache(createMcpDeps);
+  const analystServers = createMcpServerCache(
+    createMcpDeps,
+    createAnalystMcpServer,
+  );
   return {
     hostProjectRoot: options.hostProjectRoot,
     conversationStore: options.conversationStore,
     settingsStore,
-    createMcpServer: buildMcpServerFactory(createMcpDeps),
+    createMcpServer: (conversationId) => builderServers.get(conversationId),
+    createAnalystMcpServer: (conversationId) =>
+      analystServers.get(conversationId),
+    forgetMcpServers: (conversationId) => {
+      builderServers.forget(conversationId);
+      analystServers.forget(conversationId);
+    },
+    isDevelopment: options.isDevelopment,
     questionBus: buildQuestionBus(holder),
     editTracker: parts.editTracker,
     logsClient: options.mcpDeps.logsClient,
@@ -413,6 +454,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     conversationModes: createConversationModes({
       conversationStore: options.conversationStore,
       settingsStore,
+      defaultAssistant: options.isDevelopment ? "builder" : "analyst",
       onChanged: (conversationId) => onModeChanged(holder, conversationId),
     }),
     checkpoints: options.checkpoints ?? createDisabledCheckpoints(),
@@ -420,6 +462,9 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     callLedger: createCallLedger(),
     turns: createTurnRegistry(),
     askers: new Map(),
+    turnActors: new Map(),
+    socketActors: new WeakMap(),
+    liveActors: new Set(),
   };
 }
 

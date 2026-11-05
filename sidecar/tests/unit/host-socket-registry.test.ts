@@ -85,7 +85,7 @@ describe("createHostSocketRegistry", () => {
     const second = buildFakeHost();
     registry.set(first.socket);
     registry.set(second.socket);
-    registry.broadcast(buildEvent());
+    registry.broadcast(buildEvent);
     expect(first.send).toHaveBeenCalledOnce();
     expect(second.send).toHaveBeenCalledOnce();
   });
@@ -99,7 +99,7 @@ describe("createHostSocketRegistry", () => {
     registry.set(gone.socket);
     registry.set(other.socket);
     registry.clear(gone.socket);
-    registry.broadcast(buildEvent(), (socket) => socket === served.socket);
+    registry.broadcast(buildEvent, (socket) => socket === served.socket);
     expect(served.send).not.toHaveBeenCalled();
     expect(gone.send).not.toHaveBeenCalled();
     expect(other.send).toHaveBeenCalledOnce();

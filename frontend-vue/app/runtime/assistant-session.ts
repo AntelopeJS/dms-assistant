@@ -1,6 +1,7 @@
 import type { InjectionKey, Ref, ShallowRef } from "vue";
 import type { ChatApi } from "../chat/composables/useChangeSetActions";
 import type { CurrentPage } from "../chat/types/conversation";
+import type { AssistantMode } from "../chat/types/protocol";
 import type { ChatTransport } from "./chat-transport";
 import type { LauncherState } from "./launcher-state";
 import type { PanelIntents } from "./panel-intents";
@@ -29,6 +30,11 @@ export type ConversationStartMode = "plan" | "normal";
  */
 export interface AssistantSession {
 	status: Readonly<Ref<SidecarStatus>>;
+	/**
+	 * The assistant modes the signed-in user may run: Builder and Analyst for
+	 * an owner in development, Analyst alone otherwise.
+	 */
+	modes: readonly AssistantMode[];
 	chat: ChatTransport;
 	panel: ChatPanelState;
 	/** Opens a page of the dashboard, as its own links do. */
@@ -68,7 +74,7 @@ export interface AssistantSession {
 /**
  * The tab's assistant session, provided from the start: `null` until the
  * sidecar answered its first probe, and for good when the assistant does not
- * run in this tab (production, a guest, the sidecar disabled).
+ * run in this tab (a guest, a user the backend refuses, the sidecar disabled).
  */
 export type AssistantSessionRef = Readonly<ShallowRef<AssistantSession | null>>;
 

@@ -43,6 +43,15 @@ function loadModule(registrations, sidecars, publications = []) {
     },
     "./constants/mcp": require("../dist/constants/mcp.js"),
     "./logging/log-buffer": { startLogCapture() {} },
+    "./runtime-mode": {
+      loadRuntimeMode: async () => undefined,
+      isDevelopment: () => true,
+    },
+    "./assistant/grants": { revokeAllGrants() {} },
+    "./assistant/permission": {
+      registerAssistantPermission() {},
+      unregisterAssistantPermission() {},
+    },
     "./frontend-module": require("../dist/frontend-module.js"),
     "node:path": path,
     zod: require("zod"),
@@ -82,6 +91,7 @@ void test("registers Vue with its /ai backend prefix and preserves sidecar input
       moduleRoots: ["fixture-module"],
       skillDirs: ["fixture-skills"],
       builderEnabled: true,
+      isDevelopment: true,
     },
   ]);
 });
@@ -98,6 +108,7 @@ void test("omits the origins the project did not configure", async () => {
       moduleRoots: ["fixture-module"],
       skillDirs: ["fixture-skills"],
       builderEnabled: true,
+      isDevelopment: true,
     },
   ]);
 });
@@ -114,6 +125,7 @@ void test("ignores config entries that are not usable origins", async () => {
       moduleRoots: ["fixture-module"],
       skillDirs: ["fixture-skills"],
       builderEnabled: true,
+      isDevelopment: true,
     },
   ]);
 });

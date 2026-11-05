@@ -1,3 +1,4 @@
+import { type Actor, maySeeConversation } from "./access.js";
 import type { ConversationModes } from "../agent/conversation-modes.js";
 import type { PendingRequest } from "../agent/permission-bus.js";
 import type { PendingQuestion } from "../agent/question-bus.js";
@@ -22,6 +23,7 @@ import type {
   StoredMessage,
 } from "../state/types.js";
 import type { ChatSocketRegistry } from "./chat-socket-registry.js";
+import type { SocketSender } from "./host-socket-registry.js";
 import type { SidecarServices } from "./services.js";
 
 /** What a conversation's snapshot reads. */
@@ -108,36 +110,48 @@ function enrichSummary(
     pendingApprovals: services.permissionBus.countPending(id),
     pendingQuestions: services.questionBus.countPending(id),
     generationMode: services.conversationModes.describe(id).generationMode,
+    assistant: services.conversationModes.describe(id).assistant,
   };
 }
 
+/** The conversations an actor may see, as the history drawer lists them. */
 export function listConversations(
   services: SidecarServices,
+  actor: Actor | null,
 ): ConversationSummaryType[] {
+  const scope = { actor, isDevelopment: services.isDevelopment };
   return services.conversationStore
     .list()
-    .map((summary) => enrichSummary(services, summary));
+    .filter((summary) => maySeeConversation(scope, summary))
+    .map(({ owner: _owner, ...summary }) => enrichSummary(services, summary));
 }
 
 export function buildConversationListEvent(
   services: SidecarServices,
+  actor: Actor | null,
 ): ConversationListEventType {
   return {
     type: EVENT_TYPES.CONVERSATION_LIST,
-    conversations: listConversations(services),
+    conversations: listConversations(services, actor),
   };
 }
 
 /**
  * Keeps every open drawer's "Active" group live, and the launcher of every tab
- * whose panel is closed: those only said hello as a host. A socket that is both
- * gets the list once.
+ * whose panel is closed: those only said hello as a host. Each socket gets its
+ * own user's list, once even when it is both.
  */
 export function broadcastConversationList(services: SidecarServices): void {
-  const event = buildConversationListEvent(services);
-  services.chatSocketRegistry.broadcast(event);
+  const eventFor = (socket: SocketSender): ConversationListEventType =>
+    buildConversationListEvent(
+      services,
+      services.socketActors.get(socket) ?? null,
+    );
+  services.chatSocketRegistry.forEachChat((socket) =>
+    socket.send(JSON.stringify(eventFor(socket))),
+  );
   services.hostSocketRegistry.broadcast(
-    event,
+    eventFor,
     services.chatSocketRegistry.isChat,
   );
 }

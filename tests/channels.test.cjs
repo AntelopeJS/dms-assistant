@@ -262,6 +262,7 @@ function loadRoutes(file, load) {
     Get: (/** @type {string} */ location) => record("GET", location),
     Post: (/** @type {string} */ location) => record("POST", location),
     Put: (/** @type {string} */ location) => record("PUT", location),
+    Delete: (/** @type {string} */ location) => record("DELETE", location),
     Context: decorator,
     Parameter: decorator,
     RawBody: decorator,

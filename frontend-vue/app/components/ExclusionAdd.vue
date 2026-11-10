@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n();
 const { $authFetch } = useAuthFetch();
-const toast = useToast();
+const { presentError } = useApiErrorPresenter();
 
 const candidates = useAiData<ExclusionCandidates>(
 	AI_ROUTES.exclusionCandidates,
@@ -44,7 +44,7 @@ const columnItems = computed(() =>
 watch(pagePath, () => {
 	tableId.value = tables.value.length === 1 ? tables.value[0]?.id : undefined;
 });
-watch(tableId, () => {
+watch([pagePath, tableId], () => {
 	field.value = undefined;
 });
 
@@ -57,8 +57,8 @@ async function add(): Promise<void> {
 			body: { route: table.value.route, field: field.value },
 		});
 		props.onSuccessCallback?.();
-	} catch {
-		toast.add({ title: t("dms_ai.views.exclusions.failed"), color: "error" });
+	} catch (error) {
+		presentError(error, { fallbackKey: "dms_ai.views.exclusions.failed" });
 	} finally {
 		isSaving.value = false;
 	}

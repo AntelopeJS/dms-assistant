@@ -20,7 +20,14 @@ const {
  */
 
 const I18N_KEY = /\$dms_ai\.[A-Za-z0-9_.-]+/g;
-const MODULE_PAGES = ["overview", "changes", "activity", "skills", "settings"];
+const MODULE_PAGES = [
+  "overview",
+  "changes",
+  "activity",
+  "skills",
+  "exclusions",
+  "settings",
+];
 
 /**
  * @param {{ [key: string]: LocaleNode }} locale - A page locale.
@@ -164,7 +171,7 @@ function collectKeys(value, keys) {
 
 const OrderSchema = z.number();
 
-void test("registers the five AI pages, in order, with translated menu entries", () => {
+void test("registers the six AI pages, in order, with translated menu entries", () => {
   const { modules, pages } = loadPages();
   assert.equal(modules.length, 1);
   assert.equal(modules[0].id, "ai");
@@ -237,6 +244,7 @@ const COMPONENTS_DIR = path.resolve(
 const PAGE_CUSTOM_COMPONENTS = [
   "DmsAiActivityDetail",
   "DmsAiChangesView",
+  "DmsAiExclusionAdd",
   "DmsAiSkillCard",
   "DmsAiSkillDetail",
 ];

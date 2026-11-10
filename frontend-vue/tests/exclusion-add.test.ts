@@ -26,6 +26,18 @@ const CANDIDATES = {
 				{ id: "done", title: "Done", route: "/api/done", columns: [] },
 			],
 		},
+		{
+			path: "/invoices",
+			title: "Invoices",
+			tables: [
+				{
+					id: "content",
+					title: "All",
+					route: "/api/invoices",
+					columns: [{ field: "total", header: "Total" }],
+				},
+			],
+		},
 	],
 };
 
@@ -34,7 +46,7 @@ vi.mock("../app/views/composables/useAiData", () => ({
 }));
 
 const authFetch = vi.fn();
-const toastAdd = vi.fn();
+const presentError = vi.fn();
 
 const SelectMenu = defineComponent({
 	props: { modelValue: { type: String, default: undefined }, items: Array },
@@ -71,10 +83,10 @@ function mountDialog(onSuccessCallback = vi.fn()) {
 
 beforeEach(() => {
 	authFetch.mockReset();
-	toastAdd.mockReset();
+	presentError.mockReset();
 	vi.stubGlobal("useI18n", () => ({ t: (key: string) => key }));
 	vi.stubGlobal("useAuthFetch", () => ({ $authFetch: authFetch }));
-	vi.stubGlobal("useToast", () => ({ add: toastAdd }));
+	vi.stubGlobal("useApiErrorPresenter", () => ({ presentError }));
 });
 
 describe("the add-exclusion dialog", () => {
@@ -111,6 +123,19 @@ describe("the add-exclusion dialog", () => {
 		]);
 	});
 
+	it("clears the column when another page has a table with the same id", async () => {
+		const { page, table, column, button } = mountDialog();
+		page.vm.$emit("update:modelValue", "/customers");
+		await flushPromises();
+		column.vm.$emit("update:modelValue", "email");
+		await flushPromises();
+		page.vm.$emit("update:modelValue", "/invoices");
+		await flushPromises();
+		expect(table.props("modelValue")).toBe("content");
+		expect(column.props("modelValue")).toBeUndefined();
+		expect(button.props("disabled")).toBe(true);
+	});
+
 	it("says so and stays open when the save fails", async () => {
 		authFetch.mockRejectedValue(new Error("nope"));
 		const { page, column, button, onSuccessCallback } = mountDialog();
@@ -120,7 +145,7 @@ describe("the add-exclusion dialog", () => {
 		await flushPromises();
 		button.vm.$emit("click");
 		await flushPromises();
-		expect(toastAdd).toHaveBeenCalledOnce();
+		expect(presentError).toHaveBeenCalledOnce();
 		expect(onSuccessCallback).not.toHaveBeenCalled();
 	});
 });

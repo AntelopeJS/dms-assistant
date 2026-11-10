@@ -28,6 +28,10 @@
 			"settings": {
 				"title": "Settings",
 				"description": "Defaults for new conversations. Changes save as you go"
+			},
+			"exclusions": {
+				"title": "Exclusions",
+				"description": "Data the assistant can never read in Analyst"
 			}
 		},
 		"blocks": {
@@ -205,6 +209,16 @@
 				"usage_chart_series": {
 					"name": "Tokens chart series",
 					"description": "The column chart drawn inside the tokens card"
+				}
+			},
+			"exclusions": {
+				"entries": {
+					"name": "Exclusion list",
+					"description": "The fields Analyst never reads"
+				},
+				"add": {
+					"name": "Add an exclusion",
+					"description": "Pick a page, a table and a column to exclude"
 				}
 			}
 		},
@@ -664,6 +678,37 @@
 					"title": "{count} request is waiting for you | {count} requests are waiting for you",
 					"description": "Open the assistant to answer: the button in the header, or ⌘⇧K."
 				}
+			}
+		},
+		"exclusions": {
+			"search": "Search exclusions",
+			"count": "exclusions",
+			"add": "Add exclusion",
+			"add_title": "Add an exclusion",
+			"add_description": "Analyst will never read this column, on any table that reads the same data.",
+			"remove": "Remove",
+			"removed": "Exclusion removed",
+			"columns": {
+				"route": "Data route",
+				"field": "Field",
+				"covers": "Covers",
+				"status": "Status"
+			},
+			"status": {
+				"active": "Active",
+				"not_found": "Not found"
+			},
+			"remove_confirm": {
+				"title": "Remove this exclusion?",
+				"description": "Analyst will be able to read this field again."
+			},
+			"empty": {
+				"title": "Nothing is excluded",
+				"description": "Add a column to keep it away from Analyst."
+			},
+			"error": {
+				"title": "Exclusions unavailable",
+				"description": "The exclusion list could not be read."
 			}
 		}
 	}

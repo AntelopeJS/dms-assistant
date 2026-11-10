@@ -11,6 +11,7 @@ export const PAGE_IDS = {
   CHANGES: "changes",
   ACTIVITY: "activity",
   SKILLS: "skills",
+  EXCLUSIONS: "exclusions",
   SETTINGS: "settings",
 } as const;
 
@@ -19,7 +20,8 @@ export const PAGE_ORDER = {
   CHANGES: 1,
   ACTIVITY: 2,
   SKILLS: 3,
-  SETTINGS: 4,
+  EXCLUSIONS: 4,
+  SETTINGS: 5,
 } as const;
 
 /** The period selector of the Overview, which its cards follow. */
@@ -67,6 +69,8 @@ export const PAGE_ROUTES = {
   SKILLS_CATALOG: `${ROUTE_PREFIX}/skills/catalog`,
   SKILL_CONFLICTS: `${ROUTE_PREFIX}/skills/conflicts`,
   SETTINGS: `${ROUTE_PREFIX}/settings`,
+  EXCLUSIONS: `${ROUTE_PREFIX}/exclusions`,
+  EXCLUSION_REMOVE: `${ROUTE_PREFIX}/exclusions/{{row._id}}`,
 } as const;
 
 /** Dashboard links between the pages. */

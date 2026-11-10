@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { GrantIdentity } from "../assistant/grants";
 import { ROW_ID_FIELD, SITE_LAYOUT_PATH } from "../constants/analyst";
 import { getAsUser } from "./as-user";
+import { readExcludedFields, withExclusions } from "./exclusions";
 import {
   type AnalystPage,
   type AnalystTable,
@@ -44,13 +45,51 @@ async function findPage(
   return page;
 }
 
+async function pageTables(
+  identity: GrantIdentity,
+  page: AnalystPage,
+): Promise<AnalystTable[]> {
+  return servedTables(
+    await readAsUser(identity, page.layoutUrl, PageLayoutSchema),
+  );
+}
+
+/**
+ * A page and its tables as Analyst may know them, excluded columns redacted.
+ *
+ * @throws AnalystRefusal when the exclusion list cannot be read
+ */
 export async function describePage(
   identity: GrantIdentity,
   path: string,
 ): Promise<{ page: AnalystPage; tables: AnalystTable[] }> {
+  const excluded = await readExcludedFields();
   const page = await findPage(identity, path);
-  const layout = await readAsUser(identity, page.layoutUrl, PageLayoutSchema);
-  return { page, tables: servedTables(layout) };
+  const tables = await pageTables(identity, page);
+  return {
+    page,
+    tables: tables.map((table) => withExclusions(table, excluded)),
+  };
+}
+
+/**
+ * Every page the user may open with its tables, unredacted: what the owner
+ * picks exclusions from. A page whose layout refuses them lists no tables.
+ */
+export async function listPageTables(
+  identity: GrantIdentity,
+): Promise<{ page: AnalystPage; tables: AnalystTable[] }[]> {
+  const pages = await listPages(identity);
+  return Promise.all(
+    pages.map(async (page) => {
+      try {
+        return { page, tables: await pageTables(identity, page) };
+      } catch (err) {
+        if (err instanceof AnalystRefusal) return { page, tables: [] };
+        throw err;
+      }
+    }),
+  );
 }
 
 const RowSchema = z.record(z.string(), z.json());
@@ -81,7 +120,7 @@ function project(row: Row, fields: Set<string>): Row {
  * One page of a table view's rows through its own list route, or a source
  * table's route, as the user: only filters on the columns it serves, a sort
  * only on a sortable one, and only the fields of its listed columns in each
- * row. A source route that answers every row at once is sliced here.
+ * row, never an excluded one. A source route that answers every row at once is sliced here.
  */
 export async function readRows(
   identity: GrantIdentity,
@@ -99,6 +138,7 @@ export async function readRows(
     ListAnswerSchema,
   );
   const fields = new Set([ROW_ID_FIELD, ...table.columns.map((c) => c.field)]);
+  for (const field of table.excludedFields ?? []) fields.delete(field);
   const { slice } = request;
   const results =
     slice === undefined

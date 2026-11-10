@@ -139,6 +139,14 @@
 				"used_value": "{count}× · 30 days",
 				"last_used_label": "Last used",
 				"open_last_conversation": "Open last conversation"
+			},
+			"exclusions": {
+				"page": "Page",
+				"table": "Table",
+				"column": "Column",
+				"add": "Exclude column",
+				"failed": "The exclusion was not saved",
+				"none": "No page you can see has a table to exclude from."
 			}
 		}
 	}

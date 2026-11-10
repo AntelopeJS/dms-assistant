@@ -179,3 +179,17 @@ export interface Fact {
 	value: string;
 	tone?: Tone;
 }
+
+/** The pages, tables and columns the owner can pick an exclusion from. */
+export interface ExclusionCandidates {
+	pages: {
+		path: string;
+		title: string;
+		tables: {
+			id: string;
+			title: string;
+			route: string;
+			columns: { field: string; header: string }[];
+		}[];
+	}[];
+}

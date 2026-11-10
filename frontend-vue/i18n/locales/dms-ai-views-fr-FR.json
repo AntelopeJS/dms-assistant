@@ -139,6 +139,14 @@
 				"used_value": "{count}× · 30 jours",
 				"last_used_label": "Dernière utilisation",
 				"open_last_conversation": "Ouvrir la dernière conversation"
+			},
+			"exclusions": {
+				"page": "Page",
+				"table": "Table",
+				"column": "Colonne",
+				"add": "Exclure la colonne",
+				"failed": "L'exclusion n'a pas été enregistrée",
+				"none": "Aucune page visible ne contient de table."
 			}
 		}
 	}

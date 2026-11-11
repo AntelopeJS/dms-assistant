@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "module": "esnext",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {

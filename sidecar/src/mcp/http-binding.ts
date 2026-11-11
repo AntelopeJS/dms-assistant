@@ -27,8 +27,20 @@ interface ConversationBinding {
  * One server instance per conversation, addressed by a bearer token, because
  * the protocol carries no conversation identity down to the tool handlers.
  */
+/** The tools one conversation's endpoint serves. */
+export type ToolDefinitionsBuilder = (
+  deps: AiMcpServerDeps,
+) => AnyMcpToolDefinition[];
+
 export interface McpHttpRegistry {
-  register(deps: AiMcpServerDeps): Promise<string>;
+  /**
+   * Serves the conversation's tools, Builder's full list unless `definitions`
+   * names another, and resolves with the bearer token that reaches them.
+   */
+  register(
+    deps: AiMcpServerDeps,
+    definitions?: ToolDefinitionsBuilder,
+  ): Promise<string>;
   release(conversationId: string): Promise<void>;
   handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void>;
   dispose(): Promise<void>;
@@ -126,9 +138,9 @@ export function createMcpHttpRegistry(): McpHttpRegistry {
   }
 
   return {
-    async register(deps) {
+    async register(deps, definitions = buildToolDefinitions) {
       await this.release(deps.conversationId);
-      const server = buildMcpServer(buildToolDefinitions(deps));
+      const server = buildMcpServer(definitions(deps));
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         enableJsonResponse: true,

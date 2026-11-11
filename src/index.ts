@@ -10,6 +10,12 @@ import { publishProjectMcp } from "./lifecycle/project-mcp";
 import { collectSkillSources } from "./lifecycle/skill-sources";
 import { isSidecarDisabled, spawnSidecar } from "./lifecycle/spawn-sidecar";
 import { startLogCapture } from "./logging/log-buffer";
+import { revokeAllGrants } from "./assistant/grants";
+import {
+  registerAssistantPermission,
+  unregisterAssistantPermission,
+} from "./assistant/permission";
+import { isDevelopment, loadRuntimeMode } from "./runtime-mode";
 import "./pages";
 import "./routes";
 import { frontendModule } from "./frontend-module";
@@ -26,6 +32,8 @@ export function construct(config: unknown): void {
  */
 export async function start() {
   startLogCapture();
+  await loadRuntimeMode();
+  registerAssistantPermission();
   await AddFrontendModule(frontendModule());
   const hostProjectRoot = process.cwd();
   const [moduleRoots, skillDirs, builderEnabled] = await Promise.all([
@@ -40,10 +48,11 @@ export async function start() {
     moduleRoots,
     skillDirs,
     builderEnabled,
+    isDevelopment: isDevelopment(),
   }).catch((err: unknown) => {
     Logging.Error(`${SIDECAR_LOG_PREFIX} spawn failed:`, err);
   });
-  if (isSidecarDisabled()) return;
+  if (isSidecarDisabled() || !isDevelopment()) return;
   await publishProjectMcp({
     hostProjectRoot,
     backendUrl: sidecarConfig.backendUrl ?? DEFAULT_BACKEND_URL,
@@ -54,10 +63,13 @@ export async function start() {
 }
 
 /**
- * Ends every browser stream and sidecar socket this instance bridged. A hot
+ * Ends every browser stream and sidecar socket this instance bridged, with the
+ * data grants they carried, and withdraws the assistant permission. A hot
  * reload replaces the module with a fresh copy, so anything left open here would
  * outlive it; the browser reconnects to the new instance on its own.
  */
 export function destroy(): void {
   closeAllBridges();
+  revokeAllGrants();
+  unregisterAssistantPermission();
 }

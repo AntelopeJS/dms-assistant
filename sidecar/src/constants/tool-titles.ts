@@ -47,6 +47,11 @@ export const MCP_TOOL_TITLES = {
   builder_map_resources: "Map resources",
   builder_analyse_database: "Analyse database",
   builder_mapping: "Builder mapping",
+  analyst_list_pages: "List data pages",
+  analyst_describe_page: "Describe a data page",
+  analyst_read_rows: "Read rows",
+  analyst_load: "Load a dataset",
+  analyst_compute: "Compute over datasets",
 } as const satisfies Readonly<Record<string, string>>;
 
 /** The snake_case name of an MCP tool dms-ai serves. */

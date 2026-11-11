@@ -9,9 +9,12 @@ export interface HostSocketRegistry {
   set: (socket: SocketSender) => void;
   clear: (socket: SocketSender) => void;
   send: (event: AnyServerEventType, preferred?: SocketSender) => void;
-  /** Every host, each once, except the sockets `isServed` already answers for. */
+  /**
+   * Sends every host, each once, the event built for it, except the sockets
+   * `isServed` already answers for.
+   */
   broadcast: (
-    event: AnyServerEventType,
+    eventFor: (socket: SocketSender) => AnyServerEventType,
     isServed?: (socket: SocketSender) => boolean,
   ) => void;
   has: () => boolean;
@@ -64,11 +67,11 @@ function buildSend(state: RegistryState) {
 
 function buildBroadcast(state: RegistryState) {
   return (
-    event: AnyServerEventType,
+    eventFor: (socket: SocketSender) => AnyServerEventType,
     isServed: (socket: SocketSender) => boolean = () => false,
   ): void => {
     for (const socket of state.sockets) {
-      if (!isServed(socket)) trySend(socket, event);
+      if (!isServed(socket)) trySend(socket, eventFor(socket));
     }
   };
 }

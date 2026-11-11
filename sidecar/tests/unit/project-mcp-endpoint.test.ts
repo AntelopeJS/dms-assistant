@@ -56,6 +56,7 @@ function buildEndpoint(
       builderClient,
       builderEnabled: true,
       databaseClient: { get: async () => [], post: async () => ({}) },
+      analystClient: { get: async () => ({}) },
       navigationCompleter: createNavigationCompleter(),
     },
     sendToHost: () => {},

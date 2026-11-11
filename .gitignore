@@ -10,3 +10,4 @@ sidecar/.state/
 .idea/
 # Written by the module when the playground runs
 playground/.mcp.json
+antelope-lock/

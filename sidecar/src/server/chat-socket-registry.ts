@@ -18,6 +18,8 @@ export interface ChatSocketRegistry {
   broadcast: (event: AnyServerEventType) => void;
   /** Whether `broadcast` reaches the socket. */
   isChat: (socket: SocketSender) => boolean;
+  /** Runs `act` for every chat socket; a socket that throws is skipped. */
+  forEachChat: (act: (socket: SocketSender) => void) => void;
   has: (conversationId: string) => boolean;
   /** The socket that most recently opened the conversation, else one following it. */
   socketOf: (conversationId: string) => SocketSender | undefined;
@@ -115,6 +117,16 @@ export function createChatSocketRegistry(): ChatSocketRegistry {
       for (const socket of state.chats) trySend(socket, event);
     },
     isChat: (socket) => state.chats.has(socket),
+    forEachChat: (act) => {
+      for (const socket of state.chats) {
+        try {
+          act(socket);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn(`${WS_LOG_PREFIX} sendToChat failed: ${message}`);
+        }
+      }
+    },
     has: (conversationId) => state.byConversation.has(conversationId),
     socketOf: (conversationId) =>
       [...(state.byConversation.get(conversationId) ?? [])].at(-1) ??

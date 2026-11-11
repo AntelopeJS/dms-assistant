@@ -44,7 +44,7 @@ export interface SettingsApplier {
 /** Filled by the WebSocket stack with the live services the routes read. */
 export interface SidecarBridge {
   services?: SidecarServices;
-  /** The tools served to agent sessions outside the chat. */
+  /** The tools served to agent sessions outside the chat; unset in production. */
   projectMcp?: ProjectMcpEndpoint;
 }
 

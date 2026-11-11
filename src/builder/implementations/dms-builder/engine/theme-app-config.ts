@@ -166,9 +166,9 @@ function writeStrings(
 ): string[] {
   const hasValuesToWrite = keys.some((key) => values[key] !== undefined);
   const chain: ObjectLiteralExpression[] = [config];
+  let target = config;
   for (const key of keyPath) {
-    const parent = chain[chain.length - 1] as ObjectLiteralExpression;
-    const next = objectToEdit(parent, key, hasValuesToWrite);
+    const next = objectToEdit(target, key, hasValuesToWrite);
     if (next === null) {
       return hasValuesToWrite ? [keyPath.slice(0, chain.length).join(".")] : [];
     }
@@ -176,8 +176,8 @@ function writeStrings(
       return [];
     }
     chain.push(next);
+    target = next;
   }
-  const target = chain[chain.length - 1] as ObjectLiteralExpression;
   const unwritableKeys = unwritableChangedKeys(target, values, keys);
   if (unwritableKeys.length > 0) {
     return unwritableKeys.map((key) => [...keyPath, key].join("."));
@@ -193,11 +193,9 @@ function writeStrings(
       hasRemovedKey = true;
     }
   }
-  for (let depth = keyPath.length - 1; hasRemovedKey && depth >= 0; depth--) {
-    removeIfEmpty(
-      chain[depth] as ObjectLiteralExpression,
-      keyPath[depth] ?? "",
-    );
+  const parents = hasRemovedKey ? chain.slice(0, keyPath.length) : [];
+  for (const [depth, parent] of [...parents.entries()].reverse()) {
+    removeIfEmpty(parent, keyPath[depth] ?? "");
   }
   return [];
 }

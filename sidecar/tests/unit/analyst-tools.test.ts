@@ -29,7 +29,7 @@ async function readRows(
   args: Parameters<typeof callTool>[2],
 ) {
   return withClient(createAnalystMcpServer(deps), async (client) => {
-    const answer = await callTool(client, "AnalystReadRows", {
+    const answer = await callTool(client, "analyst_read_rows", {
       page: "/sales",
       table: "orders",
       ...args,
@@ -42,19 +42,19 @@ async function readRows(
 }
 
 describe("Analyst's MCP server", () => {
-  it("offers its data tools and AskUser, even with the Builder present", async () => {
+  it("offers its data tools and ask_user, even with the Builder present", async () => {
     const names = await withClient(
       createAnalystMcpServer(buildDeps(rowsClient(0, []))),
       async (client) => (await client.listTools()).tools.map((t) => t.name),
     );
     expect(names.sort()).toEqual(
       [
-        "AnalystCompute",
-        "AnalystDescribePage",
-        "AnalystListPages",
-        "AnalystLoad",
-        "AnalystReadRows",
-        "AskUser",
+        "analyst_compute",
+        "analyst_describe_page",
+        "analyst_list_pages",
+        "analyst_load",
+        "analyst_read_rows",
+        "ask_user",
       ].sort(),
     );
   });
@@ -124,7 +124,7 @@ describe("Analyst's MCP server", () => {
     const answer = await withClient(
       createAnalystMcpServer(buildDeps(rowsClient(1, calls))),
       (client) =>
-        callTool(client, "AnalystReadRows", {
+        callTool(client, "analyst_read_rows", {
           page: "/sales",
           table: "orders",
           archived: "all",
@@ -143,7 +143,7 @@ describe("Analyst's MCP server", () => {
     const answer = await withClient(
       createAnalystMcpServer(buildDeps({ get: async () => refusal })),
       (client) =>
-        callTool(client, "AnalystReadRows", {
+        callTool(client, "analyst_read_rows", {
           page: "/sales",
           table: "orders",
           filters: [{ field: "x", mode: "is", value: "1" }],
@@ -207,8 +207,8 @@ describe("an Analyst session", () => {
     "WebFetch",
     "WebSearch",
     "Task",
-    "mcp__dms-ai__BuilderAddBlock",
-    "mcp__dms-ai__DatabaseProfile",
+    "mcp__dms-ai__builder_add_block",
+    "mcp__dms-ai__database_profile",
   ])("refuses %s", async (toolName) => {
     const decisions: string[] = [];
     const options = await buildAnalystSessionOptions(
@@ -230,7 +230,7 @@ describe("an Analyst session", () => {
       new AbortController(),
     );
     const result = await options.canUseTool?.(
-      "mcp__dms-ai__AnalystReadRows",
+      "mcp__dms-ai__analyst_read_rows",
       {},
       toolCall("call-2"),
     );

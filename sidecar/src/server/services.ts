@@ -32,7 +32,7 @@ export interface SidecarServices {
   permissionBus: PermissionBus;
   questionBus: QuestionBus;
   createMcpServer: (conversationId: string) => AiMcpServer;
-  /** Analyst's own server: its data tools and AskUser, nothing else. */
+  /** Analyst's own server: its data tools and ask_user, nothing else. */
   createAnalystMcpServer: (conversationId: string) => AiMcpServer;
   /** Drops the conversation's MCP servers, and what their tools held. */
   forgetMcpServers: (conversationId: string) => void;

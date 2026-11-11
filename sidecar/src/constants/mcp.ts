@@ -91,7 +91,7 @@ export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set(
   ].map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
 );
 
-/** The only tools an Analyst session may call: its data tools and AskUser. */
+/** The only tools an Analyst session may call: its data tools and ask_user. */
 export const ANALYST_ALLOWED_TOOL_NAMES: ReadonlySet<string> = new Set(
   [...ANALYST_TOOL_NAMES, ASK_USER_TOOL_NAME].map(
     (name) => `${MCP_TOOL_NAME_PREFIX}${name}`,

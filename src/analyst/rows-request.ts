@@ -40,7 +40,7 @@ function badRequest(reason: string, detail: string): AnalystRefusal {
 function notSupported(what: string): AnalystRefusal {
   return badRequest(
     "not_supported",
-    `This table's route cannot ${what} its rows: load them with AnalystLoad and ${what} them in AnalystCompute.`,
+    `This table's route cannot ${what} its rows: load them with analyst_load and ${what} them in analyst_compute.`,
   );
 }
 
@@ -56,13 +56,13 @@ function forwardFilters(
     if (column === undefined) {
       throw badRequest(
         "unknown_filter",
-        `The table has no column "${field}": filter on a field AnalystDescribePage lists.`,
+        `The table has no column "${field}": filter on a field analyst_describe_page lists.`,
       );
     }
     if (column.filterModes.length === 0) {
       throw badRequest(
         "not_filterable",
-        `The column "${field}" cannot be filtered: load the rows with AnalystLoad and filter them in AnalystCompute.`,
+        `The column "${field}" cannot be filtered: load the rows with analyst_load and filter them in analyst_compute.`,
       );
     }
     const mode = FILTER_MODE_PATTERN.exec(value)?.[1] ?? DEFAULT_FILTER_MODE;

@@ -10,10 +10,10 @@ import { type JsonValue, JsonValueSchema } from "../../protocol/json.js";
 
 export const PAGE = z
   .string()
-  .describe("A page path from AnalystListPages, e.g. `/sales/orders`.");
+  .describe("A page path from analyst_list_pages, e.g. `/sales/orders`.");
 export const TABLE = z
   .string()
-  .describe("A table id from AnalystDescribePage.");
+  .describe("A table id from analyst_describe_page.");
 const FILTER = z.object({
   field: z.string(),
   mode: z.string().describe("One of the filter modes the column accepts."),
@@ -26,7 +26,7 @@ const ARCHIVED = z
     "On a table with `hasArchive`: `active` (the default) or `archived` rows, never both.",
   );
 
-/** How a table's rows are picked, as AnalystReadRows and AnalystLoad take it. */
+/** How a table's rows are picked, as analyst_read_rows and analyst_load take it. */
 export const ROWS_SELECTION = {
   page: PAGE,
   table: TABLE,
@@ -113,7 +113,7 @@ export async function pageRows(
   return { ok: true, rows, total };
 }
 
-/** AnalystReadRows: a few rows, up to its cap, from `offset`. */
+/** analyst_read_rows: a few rows, up to its cap, from `offset`. */
 export async function readRows(
   client: AnalystClient,
   grant: string,

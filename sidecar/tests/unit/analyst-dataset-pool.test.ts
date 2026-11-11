@@ -61,7 +61,7 @@ describe("the sidecar's dataset budget", () => {
         content: [{ type: "text" as const, text: JSON.stringify(value) }],
       })),
     );
-    const compute = tools.find((tool) => tool.name === "AnalystCompute");
+    const compute = tools.find((tool) => tool.name === "analyst_compute");
     const answer = await compute?.handler({ code: "return orders.length;" });
     expect(answer?.content[0]?.text).toContain("loaded again: orders");
   });
@@ -78,7 +78,7 @@ describe("the sidecar's dataset budget", () => {
         content: [{ type: "text" as const, text: JSON.stringify(value) }],
       })),
     );
-    const compute = tools.find((tool) => tool.name === "AnalystCompute");
+    const compute = tools.find((tool) => tool.name === "analyst_compute");
     const answer = await compute?.handler({
       code: "return (datasets.orders ?? []).length;",
     });

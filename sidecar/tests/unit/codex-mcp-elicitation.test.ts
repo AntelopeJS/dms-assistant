@@ -117,7 +117,7 @@ const OTHER_CALL = {
 const ANALYST_CALL = {
   id: "call_rows",
   server: DMS_AI_SERVER,
-  tool: "AnalystReadRows",
+  tool: "analyst_read_rows",
   arguments: { tableId: "orders" },
 };
 
@@ -299,13 +299,17 @@ describe("an Analyst session's call consent", () => {
       const { handler, decisions } = setup(settings, [ANALYST_CALL], "analyst");
       expect(
         await handler.handle(
-          toolConsent(DMS_AI_SERVER, "AnalystReadRows", ANALYST_CALL.arguments),
+          toolConsent(
+            DMS_AI_SERVER,
+            "analyst_read_rows",
+            ANALYST_CALL.arguments,
+          ),
         ),
       ).toEqual(ACCEPTED);
       expect(decisions).toEqual([
         {
           callId: "call_rows",
-          toolName: "mcp__dms-ai__AnalystReadRows",
+          toolName: "mcp__dms-ai__analyst_read_rows",
           allowedBy: "read_auto",
         },
       ]);
@@ -319,11 +323,15 @@ describe("an Analyst session's call consent", () => {
       "analyst",
     );
     expect(
-      await handler.handle(toolConsent(DMS_AI_SERVER, "GetCurrentPage", {})),
+      await handler.handle(toolConsent(DMS_AI_SERVER, "get_current_page", {})),
     ).toEqual(DECLINED);
     expect(
       await handler.handle(
-        toolConsent(DMS_AI_SERVER, "BuilderCreatePage", CREATE_CALL.arguments),
+        toolConsent(
+          DMS_AI_SERVER,
+          "builder_create_page",
+          CREATE_CALL.arguments,
+        ),
       ),
     ).toEqual(DECLINED);
     expect(decisions.map((decision) => decision.allowedBy)).toEqual([

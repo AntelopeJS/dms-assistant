@@ -246,16 +246,16 @@ describe("an Analyst conversation on Codex", () => {
   );
 
   it(
-    "serves only the Analyst tools and AskUser on its MCP endpoint",
+    "serves only the Analyst tools and ask_user on its MCP endpoint",
     async () => {
       await openSession("analyst");
       expect(await listMcpTools()).toEqual([
-        "AnalystCompute",
-        "AnalystDescribePage",
-        "AnalystListPages",
-        "AnalystLoad",
-        "AnalystReadRows",
-        "AskUser",
+        "analyst_compute",
+        "analyst_describe_page",
+        "analyst_list_pages",
+        "analyst_load",
+        "analyst_read_rows",
+        "ask_user",
       ]);
     },
     TEST_TIMEOUT_MS,

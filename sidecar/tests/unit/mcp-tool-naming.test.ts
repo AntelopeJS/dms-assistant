@@ -4,8 +4,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { describe, expect, it } from "vitest";
 import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
 import { buildMcpServer } from "../../src/mcp/http-binding.js";
-import { createAiMcpServer } from "../../src/mcp/sdk-binding.js";
-import { buildToolDefinitions } from "../../src/mcp/tool-definitions.js";
+import {
+  createAiMcpServer,
+  createAnalystMcpServer,
+} from "../../src/mcp/sdk-binding.js";
+import {
+  buildAnalystToolDefinitions,
+  buildToolDefinitions,
+} from "../../src/mcp/tool-definitions.js";
 import type { AiMcpServerDeps } from "../../src/mcp/types.js";
 import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 
@@ -28,6 +34,7 @@ function buildDeps(): AiMcpServerDeps {
     logsClient: { getLogs: async () => [] },
     builderClient: { call: async () => null },
     databaseClient: { get: async () => [], post: async () => ({}) },
+    analystClient: { get: async () => ({}) },
     builderEnabled: true,
     sendToHost: () => {},
     navigationCompleter: createNavigationCompleter(),
@@ -74,40 +81,61 @@ function isMcpServer(
   );
 }
 
-function sdkServer(): McpServer {
-  const { instance } = createAiMcpServer(buildDeps());
+function sdkServer(
+  create: typeof createAiMcpServer = createAiMcpServer,
+): McpServer {
+  const { instance } = create(buildDeps());
   if (!isMcpServer(instance)) {
     throw new Error("the SDK server is not an McpServer");
   }
   return instance;
 }
 
-const BINDINGS: [string, () => McpServer][] = [
-  ["the Claude SDK binding", sdkServer],
-  ["the HTTP binding", () => buildMcpServer(buildToolDefinitions(buildDeps()))],
+type Definitions = typeof buildToolDefinitions;
+
+const BINDINGS: [string, Definitions, () => McpServer][] = [
+  ["the Claude SDK binding", buildToolDefinitions, () => sdkServer()],
+  [
+    "the HTTP binding",
+    buildToolDefinitions,
+    () => buildMcpServer(buildToolDefinitions(buildDeps())),
+  ],
+  [
+    "the Analyst Claude SDK binding",
+    buildAnalystToolDefinitions,
+    () => sdkServer(createAnalystMcpServer),
+  ],
+  [
+    "the Analyst HTTP binding",
+    buildAnalystToolDefinitions,
+    () => buildMcpServer(buildAnalystToolDefinitions(buildDeps())),
+  ],
 ];
 
-describe.each(BINDINGS)("tools served by %s", (_binding, build) => {
-  it("lists every declared tool", async () => {
-    const declared = buildToolDefinitions(buildDeps()).map((t) => t.name);
-    const listed = await listTools(build());
-    expect(listed.map((tool) => tool.name).sort()).toEqual(declared.sort());
-  });
+describe.each(BINDINGS)(
+  "tools served by %s",
+  (_binding, definitions, build) => {
+    it("lists every declared tool", async () => {
+      const declared = definitions(buildDeps()).map((t) => t.name);
+      const listed = await listTools(build());
+      expect(listed.map((tool) => tool.name).sort()).toEqual(declared.sort());
+    });
 
-  it("names every tool in snake_case", async () => {
-    const offenders = (await listTools(build()))
-      .map((tool) => tool.name)
-      .filter((name) => !SNAKE_CASE.test(name));
-    expect(offenders).toEqual([]);
-  });
+    it("names every tool in snake_case", async () => {
+      const offenders = (await listTools(build()))
+        .map((tool) => tool.name)
+        .filter((name) => !SNAKE_CASE.test(name));
+      expect(offenders).toEqual([]);
+    });
 
-  it("gives every tool a readable title other than its name", async () => {
-    const offenders = (await listTools(build())).filter(
-      (tool) =>
-        tool.title === undefined ||
-        tool.title.trim() === "" ||
-        tool.title === tool.name,
-    );
-    expect(offenders).toEqual([]);
-  });
-});
+    it("gives every tool a readable title other than its name", async () => {
+      const offenders = (await listTools(build())).filter(
+        (tool) =>
+          tool.title === undefined ||
+          tool.title.trim() === "" ||
+          tool.title === tool.name,
+      );
+      expect(offenders).toEqual([]);
+    });
+  },
+);

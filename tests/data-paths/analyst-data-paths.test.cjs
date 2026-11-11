@@ -281,7 +281,7 @@ describe("[data paths] the built sidecar's Analyst computes over the rows it loa
     const { grant } = await openGrant("ownerA");
     const { page, tables } = await salesTables(grant);
     const run = await builtAnalystTools(grant);
-    const loaded = await run("AnalystLoad", {
+    const loaded = await run("analyst_load", {
       name: "sales",
       page,
       table: tables[0]?.id ?? "",
@@ -290,7 +290,7 @@ describe("[data paths] the built sidecar's Analyst computes over the rows it loa
     const summary = LoadSummary.parse(loaded.body);
     assert.equal(summary.rowCount, SALES_A.length);
     assert.equal(summary.isPartial, false);
-    const computed = await run("AnalystCompute", {
+    const computed = await run("analyst_compute", {
       code: `const byLabel = {};
         for (const sale of sales) byLabel[sale.label] = sale.amount;
         return { byLabel, total: sales.reduce((sum, sale) => sum + sale.amount, 0) };`,
@@ -306,14 +306,14 @@ describe("[data paths] the built sidecar's Analyst computes over the rows it loa
     const { grant } = await openGrant("pageOnlyA");
     const { page } = await salesTables(grant);
     const run = await builtAnalystTools(grant);
-    const loaded = await run("AnalystLoad", {
+    const loaded = await run("analyst_load", {
       name: "sales",
       page,
       table: "content",
     });
     assert.equal(loaded.isError, true);
     assert.doesNotMatch(loaded.text, /A-north|A-south/);
-    const seen = await run("AnalystCompute", {
+    const seen = await run("analyst_compute", {
       code: "return Object.keys(datasets)",
     });
     assert.deepEqual(Computed.parse(seen.body).result, []);

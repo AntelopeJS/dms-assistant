@@ -30,7 +30,7 @@ export function createAiMcpServer(deps: AiMcpServerDeps): AiMcpServer {
   });
 }
 
-/** Analyst's in-process server: its data tools and AskUser, nothing else. */
+/** Analyst's in-process server: its data tools and ask_user, nothing else. */
 export function createAnalystMcpServer(deps: AiMcpServerDeps): AiMcpServer {
   return createSdkMcpServer({
     name: MCP_SERVER_NAME,

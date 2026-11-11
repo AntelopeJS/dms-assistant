@@ -41,7 +41,7 @@ const FailureSchema = z.object({
 });
 
 async function load(client: Client, name = "orders") {
-  return callTool(client, "AnalystLoad", {
+  return callTool(client, "analyst_load", {
     name,
     page: "/sales",
     table: "orders",
@@ -49,7 +49,7 @@ async function load(client: Client, name = "orders") {
 }
 
 async function compute(client: Client, code: string) {
-  return callTool(client, "AnalystCompute", { code });
+  return callTool(client, "analyst_compute", { code });
 }
 
 async function computed(client: Client, code: string) {
@@ -79,7 +79,7 @@ function withOrders<T>(
   );
 }
 
-describe("AnalystLoad", () => {
+describe("analyst_load", () => {
   it("answers a summary with three sample rows, never the rows themselves", async () => {
     await withOrders(250, async (client) => {
       const answer = await load(client);
@@ -117,7 +117,7 @@ describe("AnalystLoad", () => {
       expect(first.isPartial).toBe(true);
       const second = await load(client, "more");
       expect(FailureSchema.parse(second.body).error.code).toBe("dataset_cap");
-      const replaced = await callTool(client, "AnalystLoad", {
+      const replaced = await callTool(client, "analyst_load", {
         name: "orders",
         page: "/sales",
         table: "orders",
@@ -130,7 +130,7 @@ describe("AnalystLoad", () => {
 
   it("asks every page it reads for the archived rows it was told to load", async () => {
     await withOrders(250, async (client, calls) => {
-      await callTool(client, "AnalystLoad", {
+      await callTool(client, "analyst_load", {
         name: "orders",
         page: "/sales",
         table: "orders",
@@ -190,7 +190,7 @@ describe("AnalystLoad", () => {
   );
 });
 
-describe("AnalystCompute", () => {
+describe("analyst_compute", () => {
   it("groups and sums a loaded dataset larger than one read", async () => {
     await withOrders(1_500, async (client) => {
       await load(client);

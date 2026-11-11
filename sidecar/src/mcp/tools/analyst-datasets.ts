@@ -41,7 +41,7 @@ const DATASET_NAME = z
     message: "This name is a JavaScript word or global: pick another.",
   })
   .describe(
-    "The dataset's name, the global it is under in AnalystCompute scripts: a lowercase letter, then letters, digits or `_`.",
+    "The dataset's name, the global it is under in analyst_compute scripts: a lowercase letter, then letters, digits or `_`.",
   );
 
 const RowsSchema = z.array(AnalystRowSchema);
@@ -113,7 +113,7 @@ async function compute(
   );
 }
 
-/** AnalystLoad and AnalystCompute over one conversation's datasets. */
+/** analyst_load and analyst_compute over one conversation's datasets. */
 export function buildAnalystDatasetTools(
   client: AnalystClient,
   datasets: AnalystDatasets,

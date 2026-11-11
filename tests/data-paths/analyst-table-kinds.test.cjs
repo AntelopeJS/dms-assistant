@@ -291,7 +291,7 @@ describe("[data paths] Analyst reads a source table through its own route", func
     const grant = await grantOf("ownerA");
     const sorted = await rowsOf(grant, FEED_PAGE_ID, { sortKey: "kind" });
     assertRefused(sorted, HTTP_BAD_REQUEST, "not_supported");
-    assert.match(sorted.refusal?.detail ?? "", /AnalystLoad.*AnalystCompute/);
+    assert.match(sorted.refusal?.detail ?? "", /analyst_load.*analyst_compute/);
     const searched = await rowsOf(grant, FEED_PAGE_ID, { search: "in" });
     assertRefused(searched, HTTP_BAD_REQUEST, "not_supported");
     const archived = await rowsOf(grant, FEED_PAGE_ID, {

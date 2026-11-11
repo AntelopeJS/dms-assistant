@@ -59,12 +59,12 @@ const EXPECTED_TOOLS = [
   "functions/list_mcp_resources",
   "functions/read_mcp_resource",
   "functions/request_user_input",
-  "mcp__dms_ai/AnalystCompute",
-  "mcp__dms_ai/AnalystDescribePage",
-  "mcp__dms_ai/AnalystListPages",
-  "mcp__dms_ai/AnalystLoad",
-  "mcp__dms_ai/AnalystReadRows",
-  "mcp__dms_ai/AskUser",
+  "mcp__dms_ai/analyst_compute",
+  "mcp__dms_ai/analyst_describe_page",
+  "mcp__dms_ai/analyst_list_pages",
+  "mcp__dms_ai/analyst_load",
+  "mcp__dms_ai/analyst_read_rows",
+  "mcp__dms_ai/ask_user",
 ];
 
 interface CapturedTool {
@@ -229,7 +229,7 @@ const USAGE = {
   total_tokens: 2,
 };
 
-/** A model that calls AnalystListPages, then answers once it has the result. */
+/** A model that calls analyst_list_pages, then answers once it has the result. */
 const callListPagesThenAnswer: CaptureAnswer = (index) => {
   const item =
     index === 0
@@ -238,7 +238,7 @@ const callListPagesThenAnswer: CaptureAnswer = (index) => {
           id: "fc_1",
           call_id: "call_list_pages",
           namespace: "mcp__dms_ai",
-          name: "AnalystListPages",
+          name: "analyst_list_pages",
           arguments: "{}",
         }
       : {
@@ -434,11 +434,11 @@ describe.skipIf(!ENABLED)("Analyst on the real Codex binary", () => {
       });
       await finished;
       const call = items.find((item) => item.type === "mcpToolCall");
-      expect(call).toMatchObject({ tool: "AnalystListPages", error: null });
+      expect(call).toMatchObject({ tool: "analyst_list_pages", error: null });
       expect(decisions).toEqual([
         {
           callId: "call_list_pages",
-          toolName: "mcp__dms-ai__AnalystListPages",
+          toolName: "mcp__dms-ai__analyst_list_pages",
           allowedBy: "read_auto",
         },
       ]);

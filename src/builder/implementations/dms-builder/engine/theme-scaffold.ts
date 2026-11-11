@@ -204,12 +204,25 @@ function isLayerRegistered(
     );
 }
 
+/** Whether `start` can return before a statement added at the end of its body runs. */
+function returnsBeforeItsEnd(start: FunctionDeclaration): boolean {
+  return start
+    .getDescendantsOfKind(SyntaxKind.ReturnStatement)
+    .some(
+      (statement) =>
+        statement.getFirstAncestor((node) =>
+          Node.isFunctionLikeDeclaration(node),
+        ) === start,
+    );
+}
+
 /**
  * Register the layer from the project's `start()`, which runs once the DMS is
  * connected, as the builder registers its own frontend. Returns false when
- * the entry has no exported `start()` with a body, or when `node:path` cannot
- * be bound (imported without a default or namespace name, or `path` already
- * names something else).
+ * the entry has no exported `start()` with a body, when that `start()` can
+ * return before its end, or when `node:path` cannot be bound (imported
+ * without a default or namespace name, or `path` already names something
+ * else).
  */
 function registerLayer(
   barrel: SourceFile,
@@ -228,6 +241,9 @@ function registerLayer(
   }
   if (isLayerRegistered(start, layerRelativePath)) {
     return true;
+  }
+  if (returnsBeforeItsEnd(start)) {
+    return false;
   }
   ensureRegisterFunctionImport(barrel);
   start.addStatements((writer) => {
@@ -324,7 +340,7 @@ export function scaffoldThemeLayer(): OpResult<ThemeLayer> {
   if (!registerLayer(barrel, root, layerDirectory, layerName)) {
     transaction.rollback();
     return unsupported(
-      `${path.relative(root, barrel.getFilePath())} has no exported start() function the builder can register the layer from`,
+      `${path.relative(root, barrel.getFilePath())} has no exported start() function the builder can register the layer at the end of: add one, or move its return statements so it runs to its end`,
     );
   }
   const errors = transaction.typecheckErrors();

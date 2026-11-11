@@ -442,5 +442,15 @@ export async function setTheme(
   if (typeof fontFiles === "string") {
     return unsupported<never>(fontFiles);
   }
-  return writeTheme(sources, draft, { stagedLogos, fonts, fontFiles });
+  const settled = readThemeSources(sources.layer);
+  if (isFailure(settled)) {
+    return settled;
+  }
+  const changedDuringDownload = staleVersionError(settled, {
+    expectedVersion: sources.version,
+  });
+  if (changedDuringDownload) {
+    return changedDuringDownload;
+  }
+  return writeTheme(settled, draft, { stagedLogos, fonts, fontFiles });
 }

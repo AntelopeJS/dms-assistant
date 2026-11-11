@@ -71,6 +71,12 @@ const LOGO_FORMATS: Record<string, LogoFormat> = {
   "image/vnd.microsoft.icon": { extension: "ico", matches: isIcon },
 };
 
+function logoFormatOf(contentType: string): LogoFormat | undefined {
+  return Object.hasOwn(LOGO_FORMATS, contentType)
+    ? LOGO_FORMATS[contentType]
+    : undefined;
+}
+
 const LOGO_EXTENSIONS = [
   ...new Set(Object.values(LOGO_FORMATS).map((format) => format.extension)),
 ];
@@ -105,7 +111,7 @@ export interface StagedLogos {
 }
 
 function uploadProblem(upload: LogoUpload, bytes: Buffer): string | undefined {
-  const format = LOGO_FORMATS[upload.contentType];
+  const format = logoFormatOf(upload.contentType);
   if (!format) {
     return `${upload.contentType} is not an accepted logo format (SVG, PNG, JPEG, WebP or ICO)`;
   }
@@ -152,7 +158,7 @@ function stageLogo(
   upload: LogoUpload,
   received: Buffer,
 ): StagedLogo | string {
-  const extension = LOGO_FORMATS[upload.contentType]?.extension ?? "";
+  const extension = logoFormatOf(upload.contentType)?.extension ?? "";
   const content = bytesToWrite(received, extension);
   if (typeof content === "string") {
     return content;

@@ -71,6 +71,9 @@ const {
   AnalyseDatabase,
   GetAnalysis,
   GetMapping,
+  GetTheme,
+  SetTheme,
+  CreateThemeLayer,
 } = Builder.Operations;
 
 /**
@@ -116,6 +119,9 @@ const OPS = {
   AnalyseDatabase,
   GetAnalysis,
   GetMapping,
+  GetTheme,
+  SetTheme,
+  CreateThemeLayer,
 } satisfies { [N in OpName]: (typeof Builder.Operations)[N] };
 
 type OpTable = {

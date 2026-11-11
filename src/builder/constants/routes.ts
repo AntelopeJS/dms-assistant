@@ -59,7 +59,7 @@ export const QUERY_PREVIEW_PARAMETER = "query";
  * Declared in `frontend-vue/package.json` and in the `package.json` of a layer
  * the builder creates; a test keeps them equal.
  */
-export const FRONTEND_LOADER_RANGE = ">=0.6.3 <0.8.0";
+export const FRONTEND_LOADER_RANGE = ">=0.10.0 <0.11.0";
 
 /**
  * The key the module's frontend options sit under. Mirrored in

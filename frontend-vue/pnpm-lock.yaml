@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@antelopejs/interface-dms-builder': file:.tgz-deps/antelopejs-interface-dms-builder-83931d3.tgz
+
 importers:
 
   .:

@@ -86,15 +86,15 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 
 <!-- antelopejs-docs-compat:start -->
 
-| Package                                  | Supported         | Tested with |
-| ---------------------------------------- | ----------------- | ----------- |
-| `@antelopejs/agent-skills`               | `^0.1.0`          | `0.1.0`     |
-| `@antelopejs/interface-api`              | `>=0.3.0 <1.0.0`  | `0.3.0`     |
-| `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`  | `0.4.0`     |
-| `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`  | `0.3.1`     |
-| `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`  | `0.0.3`     |
-| `@antelopejs/interface-dms`              | `>=0.12.0 <1.0.0` | `0.13.0`    |
-| `@antelopejs/interface-dms-builder`      | `>=0.4.0 <0.5.0`  | `0.4.0`     |
+| Package                                  | Supported                                                     | Tested with                                                   |
+| ---------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- |
+| `@antelopejs/agent-skills`               | `^0.1.0`                                                      | `0.1.0`                                                       |
+| `@antelopejs/interface-api`              | `>=0.3.0 <1.0.0`                                              | `0.3.0`                                                       |
+| `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`                                              | `0.4.0`                                                       |
+| `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`                                              | `0.3.1`                                                       |
+| `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`                                              | `0.0.3`                                                       |
+| `@antelopejs/interface-dms`              | `>=0.12.0 <1.0.0`                                             | `0.13.0`                                                      |
+| `@antelopejs/interface-dms-builder`      | `file:.tgz-deps/antelopejs-interface-dms-builder-83931d3.tgz` | `file:.tgz-deps/antelopejs-interface-dms-builder-83931d3.tgz` |
 
 <!-- antelopejs-docs-compat:end -->
 

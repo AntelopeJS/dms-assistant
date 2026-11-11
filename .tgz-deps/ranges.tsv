@@ -1,0 +1,5 @@
+@antelopejs/interface-dms-builder	.agents/skills/verify-dms-builder/playground/package.json	dependencies	link:../../../../packages/interface-dms-builder
+@antelopejs/interface-dms-builder	package.json	dependencies	>=0.4.0 <0.5.0
+@antelopejs/interface-dms-builder	sidecar/package.json	devDependencies	>=0.4.0 <1.0.0
+@antelopejs/interface-dms-builder	package.json	pnpm.overrides	
+@antelopejs/interface-dms-builder	sidecar/package.json	pnpm.overrides	

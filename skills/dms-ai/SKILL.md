@@ -8,7 +8,7 @@ tags: [ai, assistant, sidecar, claude-code, codex, skills]
 
 # dms-ai
 
-An owner-only development assistant. The backend starts a sidecar (child process, `127.0.0.1` only) that runs the agent in the project folder; the browser reaches it only through the DMS frontend server. User docs: https://dms.antelopejs.com/docs/modules/ai (source: `docs/` of this package).
+An owner-only development assistant. The backend starts a sidecar (child process, `127.0.0.1` only) that runs the agent in the project folder; the browser reaches it only through the DMS frontend server. User docs: https://dms.antelopejs.com/docs/modules/assistant (source: `docs/` of this package).
 
 ## Setup
 

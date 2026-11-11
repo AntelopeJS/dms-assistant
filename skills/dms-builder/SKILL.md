@@ -8,7 +8,7 @@ tags: [builder, pages, editor, ast, typecheck, interface]
 
 # dms-builder
 
-The builder has no store of its own: pages are `PageController` classes, blocks their static fields or `.child()` calls, tables a `Table` + `DataController` + model. Every write is staged in memory, typechecked across the project, and written only if it compiles. User docs: https://dms.antelopejs.com/docs/modules/builder (source: `docs/` of this package); interface reference: `node_modules/@antelopejs/interface-dms-builder/docs`.
+The builder has no store of its own: pages are `PageController` classes, blocks their static fields or `.child()` calls, tables a `Table` + `DataController` + model. Every write is staged in memory, typechecked across the project, and written only if it compiles. User docs: https://dms.antelopejs.com/docs/modules/assistant/builder/introduction (source: `docs/8.builder/` of this package); interface reference: `node_modules/@antelopejs/interface-dms-builder/docs`.
 
 ## Surfaces
 

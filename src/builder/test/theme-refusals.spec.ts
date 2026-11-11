@@ -96,6 +96,15 @@ describe("theme refusals", function () {
     expect(fs.existsSync(layerPath(""))).to.equal(false);
   });
 
+  it("refuses a layer the module config names whose entry is missing, as GetTheme does", async () => {
+    createThemeFixture();
+    fs.rmSync(layerPath("dms.frontend.ts"));
+    const result = await CreateThemeLayer();
+    expect(!result.ok && result.error.code).to.equal("unsupported");
+    const theme = await GetTheme();
+    expect(!theme.ok && theme.error.code).to.equal("not_found");
+  });
+
   describe("registering the layer", () => {
     let app: Fixture;
 

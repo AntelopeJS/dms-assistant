@@ -16,7 +16,7 @@ import { FRONTEND_LOADER_RANGE } from "../../../constants/routes";
 import { FileBatch, withRollbackErrors } from "./file-batch";
 import { commit, unsupported } from "./ops";
 import { resolveProjectRoot } from "./project";
-import { scaffoldEntrySource } from "./theme-entry";
+import { ENTRY_FILE, scaffoldEntrySource } from "./theme-entry";
 import {
   emptyLayersDetail,
   proposedLayerPath,
@@ -368,11 +368,10 @@ export async function createThemeLayer(): Promise<OpResult<ThemeLayer>> {
   if (!existing) {
     return scaffoldThemeLayer();
   }
-  if (
-    !fs.statSync(existing.sourcePath, { throwIfNoEntry: false })?.isDirectory()
-  ) {
+  const entry = path.join(existing.sourcePath, ENTRY_FILE);
+  if (!fs.statSync(entry, { throwIfNoEntry: false })?.isFile()) {
     return unsupported(
-      `the module config's theme.layerPath names ${existing.sourcePath}, which is not a directory: create the layer there, or remove theme.layerPath for the builder to create ${SCAFFOLD_LAYER_DIRECTORY}/`,
+      `the layer at ${existing.sourcePath} has no ${ENTRY_FILE}: create the layer there, or remove the module config's theme.layerPath for the builder to create ${SCAFFOLD_LAYER_DIRECTORY}/`,
     );
   }
   return { ok: true, data: existing, changes: [] };

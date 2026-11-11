@@ -7,5 +7,5 @@
     "outDir": "../node_modules/.cache/docs-config",
     "tsBuildInfoFile": "../node_modules/.cache/docs-config/.tsbuildinfo"
   },
-  "include": ["./captures.ts"]
+  "include": ["./captures.ts", "./8.builder/captures.ts"]
 }

@@ -60,9 +60,10 @@ Restart the backend, then the frontend. Sign in as an owner and press `Ctrl` `Sh
 | `@antelopejs/agent-skills`               | `^0.1.0`          | `0.1.0`     |
 | `@antelopejs/interface-api`              | `>=0.3.0 <1.0.0`  | `0.3.0`     |
 | `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`  | `0.4.0`     |
-| `@antelopejs/interface-database-catalog` | `>=0.0.1 <1.0.0`  | `0.0.2`     |
+| `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`  | `0.3.1`     |
+| `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`  | `0.0.3`     |
 | `@antelopejs/interface-dms`              | `>=0.12.0 <1.0.0` | `0.13.0`    |
-| `@antelopejs/interface-dms-builder`      | `>=0.4.0 <1.0.0`  | `0.4.0`     |
+| `@antelopejs/interface-dms-builder`      | `>=0.4.0 <0.5.0`  | `0.4.0`     |
 
 <!-- antelopejs-docs-compat:end -->
 

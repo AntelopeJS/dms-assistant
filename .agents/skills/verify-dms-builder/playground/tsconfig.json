@@ -24,32 +24,32 @@
     "useDefineForClassFields": true,
     "paths": {
       "@antelopejs/interface-dms/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-dms/dist/*"
+        "../../../../node_modules/@antelopejs/interface-dms/dist/*"
       ],
       "@antelopejs/interface-data-api/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-data-api/dist/*"
+        "../../../../node_modules/@antelopejs/interface-data-api/dist/*"
       ],
       "@antelopejs/interface-core/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-core/dist/*"
+        "../../../../node_modules/@antelopejs/interface-core/dist/*"
       ],
       "@antelopejs/interface-api/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-api/dist/*"
+        "../../../../node_modules/@antelopejs/interface-api/dist/*"
       ],
       "@antelopejs/interface-database/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-database/dist/*"
+        "../../../../node_modules/@antelopejs/interface-database/dist/*"
       ],
       "@antelopejs/interface-database-decorators/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-database-decorators/dist/*"
+        "../../../../node_modules/@antelopejs/interface-database-decorators/dist/*"
       ],
       "@antelopejs/interface-api-util/*": [
-        "../../../../packages/dms-builder/node_modules/@antelopejs/interface-api-util/dist/*"
+        "../../../../node_modules/@antelopejs/interface-api-util/dist/*"
       ],
       "*": [
-        "../../../../packages/dms-builder/node_modules/*"
+        "../../../../node_modules/*"
       ]
     },
     "typeRoots": [
-      "../../../../packages/dms-builder/node_modules/@types"
+      "../../../../node_modules/@types"
     ]
   },
   "include": [

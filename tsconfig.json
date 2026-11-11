@@ -2,7 +2,7 @@
   "compilerOptions": {
     // tsgolint resolves node: builtins to an error type acting as `any`
     // without this, which makes every type-aware rule blind to them.
-    "types": ["node"],
+    "types": ["node", "mocha"],
     "moduleResolution": "bundler",
     "target": "esnext",
     "module": "commonjs",
@@ -23,7 +23,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "paths": {
-      "@antelopejs/dms-ai/*": ["./src/*"]
+      "@antelopejs/dms-assistant/*": ["./src/*"]
     },
     "rootDir": "src"
   },

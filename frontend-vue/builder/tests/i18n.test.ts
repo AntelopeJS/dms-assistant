@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ACTION_LABEL } from '../app/runtime/constants'
-import english from '../i18n/locales/builder-en-GB.json'
-import french from '../i18n/locales/builder-fr-FR.json'
+import english from '../../i18n/locales/builder-en-GB.json'
+import french from '../../i18n/locales/builder-fr-FR.json'
 
 /**
  * The DMS header draws the builder's entry point from a `$` key, which it

@@ -43,14 +43,14 @@ async function buildEntry(source: string, extra: Plugin[] = []): Promise<void> {
 }
 
 beforeEach(() => {
-	root = realpathSync(mkdtempSync(join(tmpdir(), "dms-ai-boundary-")));
-	manifest("backend", "@antelopejs/dms-ai");
+	root = realpathSync(mkdtempSync(join(tmpdir(), "dms-assistant-boundary-")));
+	manifest("backend", "@antelopejs/dms-assistant");
 	write("backend/src/routes/status.ts", "export const status = 1;\n");
 	write("backend/dist/index.js", "export const built = 1;\n");
 	write("backend/srcfoo/index.ts", "export const sibling = 1;\n");
 	manifest("other", "another-package");
 	write("other/src/index.ts", "export const other = 1;\n");
-	manifest("frontend", "@antelopejs/dms-ai-frontend-vue");
+	manifest("frontend", "@antelopejs/dms-assistant-frontend-vue");
 });
 
 afterEach(() => {

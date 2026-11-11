@@ -12,12 +12,12 @@ const components = import.meta.glob<VueModule>('./app/components/**/*.vue')
  * Where the option the backend publishes lands in the module's public options.
  * The loader nests a module's manifest options under its `configKey`, so these
  * two names mirror `FRONTEND_MODULE_CONFIG_KEY` and
- * `FRONTEND_MODULE_ENABLED_OPTION` in `src/constants/routes.ts`.
+ * `FRONTEND_MODULE_ENABLED_OPTION` in `src/builder/constants/routes.ts`.
  *
  * The builder rewrites the app's TypeScript sources, so it only exists while
- * the backend runs in development. The backend registers this module only
- * then — but a frontend is built once and served later, so these sources can
- * outlive the manifest that shipped them and the module re-checks rather than
+ * the backend runs in development. The backend says so in the module's
+ * registration, and a frontend is built once and served later, so these
+ * sources can outlive the manifest that shipped them: the module re-checks rather than
  * trusting the Vite build mode, which says nothing about how the backend runs.
  * Anything other than an explicit `true` means off: no components, no overlay,
  * no header action.
@@ -30,6 +30,11 @@ function isEnabled(options: Record<string, unknown> | undefined): boolean {
   return scoped?.[ENABLED_OPTION] === true
 }
 
+/**
+ * The builder's part of the module's frontend. Its components keep their own
+ * `DmsBuilder` names, outside the module's `componentPrefix`, because the
+ * builder resolves them by those names.
+ */
 const frontendModule: DmsFrontendModule = {
   setup(sdk) {
     if (!isEnabled(sdk.options.public)) {
@@ -42,7 +47,9 @@ const frontendModule: DmsFrontendModule = {
           .split('/')
           .at(-1)!
           .replace(/\.vue$/, '')}`
-        sdk.registerComponent(name, defineAsyncComponent(loader))
+        sdk.registerComponent(name, defineAsyncComponent(loader), {
+          prefix: false,
+        })
       })
     sdk.registerPlugin(builderPlugin)
   },

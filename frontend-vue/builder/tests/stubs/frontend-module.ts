@@ -5,8 +5,8 @@
  * imports from the host is declared.
  */
 import { computed, reactive, ref, type ComputedRef, type Ref } from 'vue'
-import englishMessages from '../../i18n/locales/builder-en-GB.json'
-import frenchMessages from '../../i18n/locales/builder-fr-FR.json'
+import englishMessages from '../../../i18n/locales/builder-en-GB.json'
+import frenchMessages from '../../../i18n/locales/builder-fr-FR.json'
 
 export interface DmsModuleOptions {
   public: Record<string, unknown>
@@ -14,7 +14,11 @@ export interface DmsModuleOptions {
 
 export interface DmsFrontendSdk {
   options: DmsModuleOptions
-  registerComponent(name: string, component: unknown): void
+  registerComponent(
+    name: string,
+    component: unknown,
+    options?: { prefix?: boolean },
+  ): void
   registerPlugin(setup: () => void): void
 }
 

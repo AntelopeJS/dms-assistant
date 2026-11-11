@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { defineConfig, transformWithOxc, type Plugin } from 'vite'
-import { backendBoundary } from '../build/backend-boundary.ts'
+import { defineConfig, transformWithEsbuild, type Plugin } from 'vite'
+import { backendBoundary } from '../../build/backend-boundary.ts'
 
 /**
  * A second vitest project, for the tests that mount the builder's components.
@@ -40,8 +40,8 @@ function singleFileComponents(): Plugin {
 				// out of markup; there is no markup here.
 				templateOptions: { compilerOptions: { hoistStatic: false } },
 			})
-			const js = await transformWithOxc(compiled.content, `${file}.ts`, {
-				lang: 'ts',
+			const js = await transformWithEsbuild(compiled.content, `${file}.ts`, {
+				loader: 'ts',
 			})
 			return { code: js.code, map: js.map }
 		},
@@ -49,6 +49,7 @@ function singleFileComponents(): Plugin {
 }
 
 export default defineConfig({
+	root: fileURLToPath(new URL('..', import.meta.url)),
 	plugins: [backendBoundary(), singleFileComponents()],
 	resolve: {
 		alias: {
@@ -57,13 +58,13 @@ export default defineConfig({
 			),
 			// The DMS core layer's own sources, which a module imports by this alias.
 			'#dms-core': fileURLToPath(
-				new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-core', import.meta.url),
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-core', import.meta.url),
 			),
 			'#dms-ui': fileURLToPath(
-				new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui', import.meta.url),
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui', import.meta.url),
 			),
 			'#dms-onboarding': fileURLToPath(
-				new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-onboarding', import.meta.url),
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-onboarding', import.meta.url),
 			),
 		},
 	},

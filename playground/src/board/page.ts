@@ -63,26 +63,33 @@ export class PageShopBoard extends PageController("board", {
       { label: "Tab 2", slot: "tab2", badge: { label: "aaa" } },
       { label: "Tab 3", slot: "tab3" },
     ],
-  }).child("placeholder", Placeholder(), { slot: "tab2" }).child("form", Form({
-    fields: [
-      {
-        id: "test",
-        label: "aaa",
-        type: new DefaultDataTypes.NumberType(),
-        required: false,
-        defaultValue: 66465,
-      },
-    ],
-    title: "form",
-    description: "la desc",
-    submitLabel: "finir",
-    /**
-     * Posts a new entry: the DMS no longer guesses a create from POST.
-     */
-    kind: "create",
-    submitUrl: "/test",
-    submitUrlMethod: "POST",
-  }), { slot: "tab3" }).child("placeholder2", Placeholder(), { slot: "tab1" });
+  })
+    .child("placeholder", Placeholder(), { slot: "tab2" })
+    .child(
+      "form",
+      Form({
+        fields: [
+          {
+            id: "test",
+            label: "aaa",
+            type: new DefaultDataTypes.NumberType(),
+            required: false,
+            defaultValue: 66465,
+          },
+        ],
+        title: "form",
+        description: "la desc",
+        submitLabel: "finir",
+        /**
+         * Posts a new entry: the DMS no longer guesses a create from POST.
+         */
+        kind: "create",
+        submitUrl: "/test",
+        submitUrlMethod: "POST",
+      }),
+      { slot: "tab3" },
+    )
+    .child("placeholder2", Placeholder(), { slot: "tab1" });
   static revenueChart = ChartCard({
     title: "Revenue",
     description: "Sum of paid orders, by month",
@@ -142,7 +149,10 @@ export class PageShopBoard extends PageController("board", {
     @AuthUserWithPermission(PageShopBoard) _user: User,
     @Model(OrderModel) model: OrderModel,
   ): Promise<ChartCardData> {
-    return chartCardData(await model.chartCard(), { measure: "count", label: "order" });
+    return chartCardData(await model.chartCard(), {
+      measure: "count",
+      label: "order",
+    });
   }
 
   @Get("/stats/chart-card2")
@@ -150,6 +160,9 @@ export class PageShopBoard extends PageController("board", {
     @AuthUserWithPermission(PageShopBoard) _user: User,
     @Model(OrderModel) model: OrderModel,
   ): Promise<ChartCardData> {
-    return chartCardData(await model.chartCard2(), { measure: "count", label: "order" });
+    return chartCardData(await model.chartCard2(), {
+      measure: "count",
+      label: "order",
+    });
   }
 }

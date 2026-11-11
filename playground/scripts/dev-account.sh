@@ -7,7 +7,7 @@
 # Run inside the devbox container, next to the playground's MongoDB, with the
 # backend up:
 #   docker exec -u dev devbox bash -lc \
-#     '/home/dev/antelopejs/dms-builder/packages/dms-builder/playground/scripts/dev-account.sh'
+#     '/home/dev/antelopejs/dms-assistant/playground/scripts/dev-account.sh'
 #
 # The account goes through the DMS's own invitation: an invite row for the
 # workspace, as owner, then the signup that accepts it — the password is hashed
@@ -17,7 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 FILE=.dev-login.json
 API="${DMS_API_URL:-http://localhost:5010}"
-DB="${PLAYGROUND_DB:-dms_builder_playground}"
+DB="${PLAYGROUND_DB:-dms-assistant-playground}"
 TENANT="${PLAYGROUND_TENANT:-default}"
 
 signs_in() {

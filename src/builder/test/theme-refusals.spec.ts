@@ -1,11 +1,17 @@
+import fs from "node:fs";
 import { expect } from "chai";
-import { SetTheme } from "../implementations/dms-builder";
+import {
+  CreateThemeLayer,
+  GetTheme,
+  SetTheme,
+} from "../implementations/dms-builder";
 import { scaffoldThemeLayer } from "../implementations/dms-builder/engine/theme-scaffold";
-import { destroyFixture, type Fixture } from "./harness";
+import { destroyFixture, expectOk, type Fixture } from "./harness";
 import {
   configDraft,
   createThemeFixture,
   draft,
+  layerPath,
   OP_TIMEOUT,
   PNG_LOGO,
   readLayerFile,
@@ -65,6 +71,29 @@ describe("theme refusals", function () {
     const result = await SetTheme(configDraft({ colors: { primary: "rose" } }));
     expect(!result.ok && result.error.code).to.equal("unsupported");
     expect(readLayerFile(APP_CONFIG)).to.equal(appConfig);
+  });
+
+  it("lets one of two saves from the same version through and answers the other stale", async () => {
+    createThemeFixture();
+    const { version } = expectOk(await GetTheme(), "GetTheme");
+    const results = await Promise.all(
+      (["rose", "teal"] as const).map((primary) =>
+        SetTheme(configDraft({ colors: { primary } }), {
+          expectedVersion: version,
+        }),
+      ),
+    );
+    expect(results.map((result) => result.ok)).to.deep.equal([true, false]);
+    expect(!results[1]?.ok && results[1]?.error.code).to.equal("stale");
+    expect(readLayerFile(APP_CONFIG)).to.contain('primary: "rose"');
+  });
+
+  it("refuses to create a layer the module config names but the disk lacks, and creates nothing", async () => {
+    createThemeFixture();
+    fs.rmSync(layerPath(""), { recursive: true });
+    const result = await CreateThemeLayer();
+    expect(!result.ok && result.error.code).to.equal("unsupported");
+    expect(fs.existsSync(layerPath(""))).to.equal(false);
   });
 
   describe("registering the layer", () => {

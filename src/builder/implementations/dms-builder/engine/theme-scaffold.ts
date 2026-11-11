@@ -20,6 +20,7 @@ import {
   emptyLayersDetail,
   proposedLayerPath,
   resolveThemeLayer,
+  SCAFFOLD_LAYER_DIRECTORY,
   resolveThemeRoot,
   themeFiles,
 } from "./theme-layer";
@@ -361,7 +362,15 @@ export function scaffoldThemeLayer(): OpResult<ThemeLayer> {
 /** A project that already has a layer keeps it, and nothing is written. */
 export async function createThemeLayer(): Promise<OpResult<ThemeLayer>> {
   const existing = await resolveThemeLayer();
-  return existing
-    ? { ok: true, data: existing, changes: [] }
-    : scaffoldThemeLayer();
+  if (!existing) {
+    return scaffoldThemeLayer();
+  }
+  if (
+    !fs.statSync(existing.sourcePath, { throwIfNoEntry: false })?.isDirectory()
+  ) {
+    return unsupported(
+      `the module config's theme.layerPath names ${existing.sourcePath}, which is not a directory: create the layer there, or remove theme.layerPath for the builder to create ${SCAFFOLD_LAYER_DIRECTORY}/`,
+    );
+  }
+  return { ok: true, data: existing, changes: [] };
 }

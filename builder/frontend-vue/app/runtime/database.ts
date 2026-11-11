@@ -1,0 +1,626 @@
+/**
+ * The builder's decision code for a database mapping: the proposal the analysis
+ * answered, turned into a draft the integrator edits, and the draft turned into
+ * the `MapResources` call Apply sends. The draft holds choices only, never a
+ * profile or a sampled row, so it is safe to keep in the browser.
+ */
+import type {
+	AnalysisState,
+	ColumnDisplay,
+	MapResourcesInput,
+	MappedField,
+	MappedRelation,
+	MappedResource,
+	MappingProposal,
+	OpenItem,
+	ProposedField,
+	ProposedResource,
+	TabsChoice,
+} from './database-types'
+import { sentDisplay, sentTabs } from './database-display'
+import { answerFieldType } from './field-type-answer'
+import { t } from './i18n'
+
+const DRAFT_PREFIX = 'dms-builder:database:'
+const MAPPED_PREFIX = 'dms-builder:database-mapped:'
+/** How long a mapping draft nobody came back to is kept. */
+export const KEEP_MAPPING_DRAFT_MS = 7 * 24 * 60 * 60 * 1000
+
+export interface FieldDraft {
+	column: string
+	include: boolean
+	declared: string
+	label: string
+	listable: boolean
+	filterable: boolean
+	sortable: boolean
+	searchable: boolean
+	/** How the column is drawn; null for a plain column. */
+	display: ColumnDisplay | null
+	relation: string | null
+}
+
+export interface ResourceDraft {
+	relation: string
+	include: boolean
+	tableView: boolean
+	writable: boolean
+	label: string | null
+	title: string
+	/** The badge column the TableView is tabbed by; null for no tabs. */
+	tabs: TabsChoice | null
+	fields: FieldDraft[]
+}
+
+export interface MappingDraft {
+	connection: string
+	module: string
+	resources: ResourceDraft[]
+	/** Open items answered, by id. */
+	answers: Record<string, unknown>
+	/** Relations decided against here, with why. */
+	excluded: Record<string, string>
+}
+
+function fieldDraft(field: ProposedField): FieldDraft {
+	return {
+		column: field.column,
+		include: true,
+		declared: field.declared.value,
+		label: field.label.value,
+		listable: field.listable.value,
+		filterable: field.filterable.value,
+		sortable: field.sortable.value,
+		searchable: field.searchable.value,
+		display: field.display?.value ?? null,
+		relation: field.relation?.value ?? null,
+	}
+}
+
+function resourceDraft(resource: ProposedResource, include: boolean): ResourceDraft {
+	return {
+		relation: resource.relation,
+		include,
+		tableView: resource.tableView.value,
+		writable: resource.writable.value,
+		label: resource.label.value,
+		title: resource.title.value,
+		tabs: resource.tabs?.value ?? null,
+		fields: resource.fields.map(fieldDraft),
+	}
+}
+
+/** The proposal as it stands, every proposed relation in and every question unanswered. */
+export function draftFromProposal(proposal: MappingProposal): MappingDraft {
+	const asked = proposal.open
+		.filter((item) => item.kind === 'purpose' && item.resource)
+		.map((item) => resourceDraft(item.resource!, false))
+	return {
+		connection: proposal.connection,
+		module: proposal.module,
+		resources: [
+			...proposal.resources.map((resource) => resourceDraft(resource, true)),
+			...asked,
+		],
+		answers: {},
+		excluded: {},
+	}
+}
+
+export function resourceIn(
+	draft: MappingDraft,
+	relation: string | undefined,
+): ResourceDraft | undefined {
+	return draft.resources.find((resource) => resource.relation === relation)
+}
+
+const PURPOSE_ANSWERS: Record<string, (resource: ResourceDraft, draft: MappingDraft) => void> = {
+	tableView: (resource, draft) => {
+		resource.include = true
+		resource.tableView = true
+		delete draft.excluded[resource.relation]
+	},
+	statsOnly: (resource, draft) => {
+		resource.include = true
+		resource.tableView = false
+		delete draft.excluded[resource.relation]
+	},
+	excluded: (resource, draft) => {
+		resource.include = false
+		draft.excluded[resource.relation] = 'decided against in the builder'
+	},
+}
+
+/** Answers an open item in the draft: the relation, label or reference it asks about follows. */
+export function answerItem(draft: MappingDraft, item: OpenItem, value: unknown): void {
+	draft.answers[item.id] = value
+	const resource = resourceIn(draft, item.relation)
+	if (!resource) {
+		return
+	}
+	if (item.kind === 'purpose') {
+		PURPOSE_ANSWERS[String(value)]?.(resource, draft)
+	} else if (item.kind === 'label') {
+		resource.label = typeof value === 'string' ? value : null
+	} else if (item.kind === 'field-type') {
+		answerFieldType(resource, item, value)
+	} else if (item.kind === 'reference') {
+		const field = resource.fields.find((candidate) => candidate.column === item.column)
+		if (field) {
+			field.relation = typeof value === 'string' ? value : null
+		}
+	}
+}
+
+/** Checks a relation in or out of the mapping; out, it is recorded as decided against. */
+export function includeResource(draft: MappingDraft, relation: string, include: boolean): void {
+	const resource = resourceIn(draft, relation)
+	if (!resource) {
+		return
+	}
+	resource.include = include
+	if (include) {
+		delete draft.excluded[relation]
+	} else {
+		draft.excluded[relation] = 'decided against in the builder'
+	}
+}
+
+/**
+ * A relation column survives only onto a TableView: one this mapping keeps as
+ * such, or one the module maps already.
+ */
+function relationKept(
+	draft: MappingDraft,
+	relation: string | null,
+	mappedTableViews: ReadonlySet<string>,
+): string | undefined {
+	if (!relation) {
+		return undefined
+	}
+	const target = resourceIn(draft, relation)
+	if (target) {
+		return target.include && target.tableView ? relation : undefined
+	}
+	return mappedTableViews.has(relation) ? relation : undefined
+}
+
+function mappedField(
+	draft: MappingDraft,
+	field: FieldDraft,
+	mappedTableViews: ReadonlySet<string>,
+): MappedField {
+	const mapped: MappedField = {
+		column: field.column,
+		label: field.label,
+		listable: field.listable,
+		filterable: field.filterable,
+		sortable: field.sortable,
+		searchable: field.searchable,
+	}
+	const relation = relationKept(draft, field.relation, mappedTableViews)
+	if (relation) {
+		mapped.relation = relation
+	} else {
+		mapped.declared = field.declared
+		mapped.display = sentDisplay(field)
+	}
+	return mapped
+}
+
+function mappedResource(
+	draft: MappingDraft,
+	resource: ResourceDraft,
+	mappedTableViews: ReadonlySet<string>,
+): MappedResource {
+	const mapped: MappedResource = {
+		relation: resource.relation,
+		tableView: resource.tableView,
+		writable: resource.tableView && resource.writable,
+		fields: resource.fields
+			.filter((field) => field.include)
+			.map((field) => mappedField(draft, field, mappedTableViews)),
+	}
+	if (resource.title.trim()) {
+		mapped.title = resource.title.trim()
+	}
+	if (resource.label) {
+		mapped.label = resource.label
+	}
+	mapped.tabs = resource.tableView ? sentTabs(resource) : null
+	return mapped
+}
+
+/**
+ * The one `MapResources` call Apply sends: the relations kept, and the ones
+ * decided against — the analysis's exclusions the integrator let stand, and
+ * their own — so the next analysis does not propose them again. A question left
+ * unanswered is not recorded, and comes back next time.
+ */
+export function settledInput(
+	proposal: MappingProposal,
+	draft: MappingDraft,
+	mappedTableViews: ReadonlySet<string> = new Set(),
+): MapResourcesInput {
+	const excluded = new Map<string, string>(
+		proposal.excluded.map((entry) => [entry.relation, entry.reason]),
+	)
+	for (const [relation, reason] of Object.entries(draft.excluded)) {
+		excluded.set(relation, reason)
+	}
+	return {
+		module: draft.module,
+		connection: draft.connection,
+		resources: draft.resources
+			.filter((resource) => resource.include)
+			.map((resource) => mappedResource(draft, resource, mappedTableViews)),
+		excluded: [...excluded].map(([relation, reason]) => ({ relation, reason })),
+	}
+}
+
+/** How far the analysis is, as the screen says it while it runs. */
+export function progressText(progress: AnalysisState['progress']): string {
+	return progress.timeouts
+		? t('database.proposal.progress_timeouts', { ...progress })
+		: t('database.proposal.progress', { ...progress })
+}
+
+/** What a relation becomes, as the summary of Apply words it. */
+export function purposeText(resource: { include?: boolean; tableView: boolean; writable: boolean }): string {
+	if (resource.include === false) {
+		return t('database.proposal.purpose.left_out')
+	}
+	if (!resource.tableView) {
+		return t('database.proposal.purpose.stats')
+	}
+	return resource.writable
+		? t('database.proposal.purpose.page_editable')
+		: t('database.proposal.purpose.page_read_only')
+}
+
+/** What an open item holds in the draft for now, as Apply would write it. */
+export function currentAnswer(
+	draft: MappingDraft,
+	item: OpenItem,
+	mappedTableViews: ReadonlySet<string> = new Set(),
+): string {
+	const resource = resourceIn(draft, item.relation)
+	if (item.kind === 'schemas') {
+		return t('database.proposal.answer.not_analysed')
+	}
+	if (!resource?.include) {
+		return t('database.proposal.purpose.left_out')
+	}
+	if (item.kind === 'purpose') {
+		return purposeText(resource)
+	}
+	if (item.kind === 'label') {
+		return resource.label
+			? t('database.proposal.answer.label', { column: resource.label })
+			: t('database.proposal.answer.no_label')
+	}
+	const field = resource.fields.find((candidate) => candidate.column === item.column)
+	if (!field?.include) {
+		return t('database.proposal.answer.column_left_out')
+	}
+	if (item.kind === 'field-type') {
+		return t('database.proposal.answer.declared', { type: field.declared })
+	}
+	const relation = relationKept(draft, field.relation, mappedTableViews)
+	return relation
+		? t('database.proposal.answer.reference', { relation })
+		: t('database.proposal.answer.plain')
+}
+
+/** The relation columns of the draft and the module that point at a relation, as `relation.column`. */
+export function pointingAt(
+	draft: MappingDraft | null,
+	mapped: MappedRelation[],
+	relation: string,
+): string[] {
+	const fromDraft = (draft?.resources ?? [])
+		.filter((resource) => resource.include)
+		.flatMap((resource) =>
+			resource.fields
+				.filter((field) => field.include && field.relation === relation)
+				.map((field) => `${resource.relation}.${field.column}`),
+		)
+	const drafted = new Set((draft?.resources ?? []).map((resource) => resource.relation))
+	const fromMapped = mapped
+		.filter((entry) => !drafted.has(entry.resource.relation))
+		.flatMap((entry) =>
+			entry.resource.fields
+				.filter(
+					(field) => field.relation?.value === relation && entry.included.includes(field.column),
+				)
+				.map((field) => `${entry.resource.relation}.${field.column}`),
+		)
+	return [...fromDraft, ...fromMapped]
+}
+
+/**
+ * The open items the draft has not answered yet: a purpose item's own questions count once the
+ * answer maps its relation.
+ */
+export function unanswered(proposal: MappingProposal, draft: MappingDraft): OpenItem[] {
+	const asked = proposal.open.flatMap((item) =>
+		item.kind === 'purpose' && resourceIn(draft, item.relation)?.include ? [item, ...(item.open ?? [])] : [item],
+	)
+	return asked.filter((item) => !(item.id in draft.answers))
+}
+
+interface StoredMapping {
+	draft: MappingDraft
+	at: number
+}
+
+function storage(): Storage | undefined {
+	try {
+		return globalThis.localStorage ?? undefined
+	} catch {
+		return undefined
+	}
+}
+
+function draftKey(connection: string, module: string): string {
+	return `${DRAFT_PREFIX}${connection}:${module}`
+}
+
+export function storeMappingDraft(draft: MappingDraft, now = Date.now()): void {
+	try {
+		const value: StoredMapping = { draft, at: now }
+		storage()?.setItem(draftKey(draft.connection, draft.module), JSON.stringify(value))
+	} catch {
+		// Storage refused: the draft lives in the workspace until it closes.
+	}
+}
+
+export function forgetMappingDraft(connection: string, module: string): void {
+	try {
+		storage()?.removeItem(draftKey(connection, module))
+	} catch {
+		// Nothing kept, nothing to forget.
+	}
+}
+
+/** The draft kept for a connection and module, unless there is none or it is too old. */
+export function storedMappingDraft(
+	connection: string,
+	module: string,
+	now = Date.now(),
+): MappingDraft | undefined {
+	let raw: string | null | undefined
+	try {
+		raw = storage()?.getItem(draftKey(connection, module))
+	} catch {
+		return undefined
+	}
+	if (!raw) {
+		return undefined
+	}
+	try {
+		const value = JSON.parse(raw) as StoredMapping
+		if (!Array.isArray(value.draft?.resources) || now - value.at > KEEP_MAPPING_DRAFT_MS) {
+			forgetMappingDraft(connection, module)
+			return undefined
+		}
+		return value.draft
+	} catch {
+		forgetMappingDraft(connection, module)
+		return undefined
+	}
+}
+
+function mergedField(fresh: FieldDraft, kept: FieldDraft | undefined, accepts: string[]): FieldDraft {
+	if (!kept) {
+		return fresh
+	}
+	return {
+		...kept,
+		column: fresh.column,
+		declared: accepts.includes(kept.declared) ? kept.declared : fresh.declared,
+	}
+}
+
+function proposedFieldsOf(proposal: MappingProposal, relation: string): ProposedField[] {
+	const resource =
+		proposal.resources.find((entry) => entry.relation === relation) ??
+		proposal.open.find((item) => item.resource?.relation === relation)?.resource
+	return resource?.fields ?? []
+}
+
+function mergedResource(
+	proposal: MappingProposal,
+	fresh: ResourceDraft,
+	kept: ResourceDraft | undefined,
+): ResourceDraft {
+	if (!kept) {
+		return fresh
+	}
+	const accepts = new Map(
+		proposedFieldsOf(proposal, fresh.relation).map((field) => [field.column, field.accepts]),
+	)
+	const columns = new Set(fresh.fields.map((field) => field.column))
+	return {
+		...fresh,
+		include: kept.include,
+		tableView: kept.tableView,
+		writable: kept.writable,
+		title: kept.title,
+		label: kept.label && columns.has(kept.label) ? kept.label : fresh.label,
+		fields: fresh.fields.map((field) =>
+			mergedField(
+				field,
+				kept.fields.find((candidate) => candidate.column === field.column),
+				accepts.get(field.column) ?? [],
+			),
+		),
+	}
+}
+
+/**
+ * A kept draft laid over a fresh proposal, field by field: the integrator's
+ * choices where the relation and column still exist and the type is still
+ * accepted, the proposal's for everything else, new columns included. Answers
+ * and exclusions are kept only for what the proposal still asks or lists, a
+ * purpose item's own questions included; a field-type answer still declares its
+ * column.
+ */
+export function mergedDraft(proposal: MappingProposal, kept: MappingDraft | undefined): MappingDraft {
+	const fresh = draftFromProposal(proposal)
+	if (!kept) {
+		return fresh
+	}
+	const relations = new Set(fresh.resources.map((resource) => resource.relation))
+	const items = proposal.open.flatMap((item) => [item, ...(item.open ?? [])])
+	const asked = new Set(items.map((item) => item.id))
+	const merged: MappingDraft = {
+		...fresh,
+		resources: fresh.resources.map((resource) =>
+			mergedResource(proposal, resource, resourceIn(kept, resource.relation)),
+		),
+		answers: Object.fromEntries(Object.entries(kept.answers).filter(([id]) => asked.has(id))),
+		excluded: Object.fromEntries(
+			Object.entries(kept.excluded).filter(([relation]) => relations.has(relation)),
+		),
+	}
+	for (const item of items.filter((entry) => entry.kind === 'field-type' && entry.id in merged.answers)) {
+		replayFieldType(merged, kept, item)
+	}
+	return merged
+}
+
+/** A kept field-type answer laid over the merged draft, with the integrator's choices for that field. */
+function replayFieldType(merged: MappingDraft, kept: MappingDraft, item: OpenItem): void {
+	const resource = resourceIn(merged, item.relation)
+	if (!resource) {
+		return
+	}
+	answerFieldType(resource, item, merged.answers[item.id])
+	const keptField = resourceIn(kept, item.relation)?.fields.find((field) => field.column === item.column)
+	const index = resource.fields.findIndex((field) => field.column === item.column)
+	if (keptField && index >= 0) {
+		resource.fields[index] = { ...keptField, declared: resource.fields[index].declared }
+	}
+}
+
+/** A relation the module maps, as a draft to change: its current choices, its declared columns in. */
+export function draftFromMapped(entry: MappedRelation): ResourceDraft {
+	const draft = resourceDraft(entry.resource, true)
+	for (const field of draft.fields) {
+		field.include = entry.included.includes(field.column)
+	}
+	return draft
+}
+
+/** The `MapResources` that maps relations the module maps already again, from their changed drafts. */
+export function remapInput(
+	connection: string,
+	module: string,
+	resources: ResourceDraft[],
+	mappedTableViews: ReadonlySet<string>,
+): MapResourcesInput {
+	const draft: MappingDraft = { connection, module, resources, answers: {}, excluded: {} }
+	return {
+		module,
+		connection,
+		resources: resources.map((resource) => mappedResource(draft, resource, mappedTableViews)),
+	}
+}
+
+/** A mapped relation's change not applied yet, with the relation as read when it was made. */
+export interface KeptDraft {
+	draft: ResourceDraft
+	read: string
+}
+
+interface StoredMapped {
+	drafts: Record<string, KeptDraft>
+	at: number
+}
+
+function mappedKey(connection: string, module: string): string {
+	return `${MAPPED_PREFIX}${connection}:${module}`
+}
+
+/** A change to keep: the draft, and the relation as read when it was made. */
+export function keptDraft(draft: ResourceDraft, read: ResourceDraft | undefined): KeptDraft {
+	return { draft: JSON.parse(JSON.stringify(draft)) as ResourceDraft, read: JSON.stringify(read) }
+}
+
+/**
+ * Keeps the changed drafts of mapped relations in the browser, so leaving the panel, the workspace
+ * or the builder before applying them loses nothing; none kept, nothing stored.
+ */
+export function storeMappedDrafts(
+	connection: string,
+	module: string,
+	drafts: Record<string, KeptDraft>,
+	now = Date.now(),
+): void {
+	try {
+		if (Object.keys(drafts).length === 0) {
+			storage()?.removeItem(mappedKey(connection, module))
+			return
+		}
+		const value: StoredMapped = { drafts, at: now }
+		storage()?.setItem(mappedKey(connection, module), JSON.stringify(value))
+	} catch {
+		return
+	}
+}
+
+/** The changed drafts of mapped relations kept for a connection and module, unless they are too old. */
+export function storedMappedDrafts(
+	connection: string,
+	module: string,
+	now = Date.now(),
+): Record<string, KeptDraft> {
+	try {
+		const raw = storage()?.getItem(mappedKey(connection, module))
+		const value = raw ? (JSON.parse(raw) as StoredMapped) : undefined
+		if (!value?.drafts || now - value.at > KEEP_MAPPING_DRAFT_MS) {
+			return {}
+		}
+		return value.drafts
+	} catch {
+		return {}
+	}
+}
+
+/**
+ * The drafts once the mapping is read again: what was read, with the kept changes of relations
+ * still read as they were when the change was made. A change made to a relation that changed since,
+ * remapped elsewhere or altered in the database, is dropped rather than written over it.
+ */
+export function keptMappedDrafts(
+	read: Record<string, ResourceDraft>,
+	kept: Record<string, KeptDraft>,
+): Record<string, ResourceDraft> {
+	return Object.fromEntries(
+		Object.entries(read).map(([relation, draft]) => {
+			const change = kept[relation]
+			const current = change && change.read === JSON.stringify(draft) ? change.draft : draft
+			return [relation, JSON.parse(JSON.stringify(current)) as ResourceDraft]
+		}),
+	)
+}
+
+/** The drafts of mapped relations changed since they were read, by relation. */
+export function unsavedRelations(
+	drafts: Record<string, ResourceDraft>,
+	read: Record<string, ResourceDraft>,
+): string[] {
+	return Object.keys(drafts).filter(
+		(relation) => JSON.stringify(drafts[relation]) !== JSON.stringify(read[relation]),
+	)
+}
+
+/** The relations the module maps as TableViews, which relation columns may point at. */
+export function mappedTableViewsOf(mapped: MappedRelation[]): Set<string> {
+	return new Set(
+		mapped
+			.filter((entry) => entry.resource.tableView.value)
+			.map((entry) => entry.resource.relation),
+	)
+}

@@ -1,0 +1,76 @@
+import {
+  defineDmsPlugin,
+  useDmsRoute,
+  useDmsState,
+} from '#dms/frontend-module'
+import {
+  ACTION_ICON,
+  ACTION_ID,
+  ACTION_LABEL,
+  ACTION_ORDER,
+  APP_OVERLAYS_STATE_KEY,
+  CONNECT_PROMPT_COMPONENT_NAME,
+  HEADER_ACTIONS_STATE_KEY,
+  OVERLAY_COMPONENT_NAME,
+} from '../runtime/constants'
+import { useBuilder } from '../runtime/session'
+
+// Our view of the shared header-action shape the DMS core renders. Declared
+// locally so this layer has no build-time dependency on the core layer; the
+// state key and these fields are the whole contract.
+interface HeaderAction {
+  id: string
+  icon: string
+  label: string
+  onSelect: () => void
+  order?: number
+  isActive?: () => boolean
+}
+
+function registerOverlay(name: string): void {
+  const overlays = useDmsState<string[]>(APP_OVERLAYS_STATE_KEY, () => [])
+  if (overlays.value.includes(name)) {
+    return
+  }
+  overlays.value = [...overlays.value, name]
+}
+
+function registerAction(onSelect: () => void, isActive: () => boolean): void {
+  const actions = useDmsState<HeaderAction[]>(HEADER_ACTIONS_STATE_KEY, () => [])
+  if (actions.value.some((action) => action.id === ACTION_ID)) {
+    return
+  }
+  actions.value = [
+    ...actions.value,
+    {
+      id: ACTION_ID,
+      icon: ACTION_ICON,
+      label: ACTION_LABEL,
+      order: ACTION_ORDER,
+      onSelect,
+      isActive,
+    },
+  ]
+}
+
+export default defineDmsPlugin(() => {
+  // Whether the builder is available at all is settled in `dms.frontend.ts`,
+  // from the option the backend publishes: the Vite build mode of the frontend
+  // says nothing about whether the backend runs in development.
+  const builder = useBuilder()
+  const route = useDmsRoute()
+  registerOverlay(OVERLAY_COMPONENT_NAME)
+  registerOverlay(CONNECT_PROMPT_COMPONENT_NAME)
+  registerAction(
+    () => {
+      if (builder.session.value.active) {
+        // The same button opens and closes it, so closing it is a way out like
+        // any other: it asks before dropping a draft nobody saved.
+        builder.leave()
+        return
+      }
+      void builder.open(route.path)
+    },
+    () => builder.session.value.active,
+  )
+})

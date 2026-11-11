@@ -1,0 +1,102 @@
+{
+  "name": "@antelopejs/dms-builder",
+  "version": "0.10.1",
+  "description": "Visual and programmatic editing of an AntelopeJS DMS project: every page edit is an AST rewrite of the project sources, typechecked before it is written.",
+  "keywords": [
+    "antelopejs",
+    "builder",
+    "codegen",
+    "dms",
+    "dms-module",
+    "page-editor"
+  ],
+  "homepage": "https://dms.antelopejs.com/docs/modules/builder",
+  "bugs": {
+    "url": "https://github.com/AntelopeJS/dms-builder/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AntelopeJS/dms-builder.git",
+    "directory": "packages/dms-builder"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "!dist/test",
+    "!dist/.tsbuildinfo",
+    "frontend-vue",
+    "skills"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "([ -n \"$DMS_PREBUILT\" ] || pnpm --filter @antelopejs/interface-dms-builder build) && rimraf dist && tsc",
+    "generate": "ajs module exports generate",
+    "typecheck": "pnpm --filter @antelopejs/interface-dms-builder build && tsc --noEmit",
+    "test": "([ -n \"$DMS_PREBUILT\" ] || pnpm run build) && pnpm run test:node && pnpm run test:frontend && pnpm run test:components && pnpm run test:unit",
+    "test:node": "node --test tests/*.test.cjs",
+    "test:frontend": "pnpm --dir frontend-vue test",
+    "test:components": "pnpm --dir frontend-vue test:components",
+    "check:package-contract": "node scripts/package-contract-check.cjs",
+    "check:frontend-source": "node scripts/frontend-source-check.cjs",
+    "release": "pnpm run typecheck && pnpm run check:package-contract && release-it",
+    "prepack": "pnpm run build",
+    "knip": "knip --dependencies",
+    "knip:all": "knip",
+    "test:unit": "mocha \"dist/test/**/*.spec.js\""
+  },
+  "dependencies": {
+    "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
+    "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
+    "@antelopejs/interface-database": ">=0.3.0 <1.0.0",
+    "@antelopejs/interface-dms": ">=0.12.0 <1.0.0",
+    "@antelopejs/interface-dms-builder": ">=0.4.0 <0.5.0",
+    "diff": "^9.0.0",
+    "ts-morph": "^23.0.0"
+  },
+  "devDependencies": {
+    "@antelopejs/core": "^1.21.0",
+    "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
+    "@antelopejs/interface-data-api": ">=0.6.1 <1.0.0",
+    "@antelopejs/interface-database-decorators": ">=0.2.0 <1.0.0",
+    "@antelopejs/tooling-configs": "^0.5.1",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.0.0",
+    "chai": "^6.2.1",
+    "knip": "^6.34.0",
+    "mocha": "^11.7.6",
+    "release-it": "^19.2.4",
+    "release-it-changelogen": "^0.1.0",
+    "rimraf": "^6.1.3",
+    "typescript": "^6.0.3"
+  },
+  "optionalDependencies": {
+    "@antelopejs/interface-database-catalog": ">=0.0.3 <1.0.0"
+  },
+  "packageManager": "pnpm@10.2.0",
+  "antelopeJs": {
+    "baseUrl": "dist",
+    "implements": [
+      "@antelopejs/interface-dms-builder"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "dmsFrontend": "dist/frontend-module.js"
+}

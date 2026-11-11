@@ -1,0 +1,295 @@
+/**
+ * The build screen's state, derived from what the server answers and never stored: whether the
+ * configuration declares the connection, whether the builder lists it and with what, and the
+ * connection's latest analysis. A closed tab or a reload of the project resumes where things stand.
+ */
+import type { useBuilderApi } from './api'
+import { analysisSummary } from './analysis-summary'
+import { questionText } from './database-server-text'
+import { t } from './i18n'
+import type { AnalysisState, DatabaseConnection, MappingProposal, OpenItem } from './database-types'
+
+/** How long the screen waits for the project to come back before it says how to restart by hand. */
+export const RELOAD_LIMIT_MS = 3 * 60 * 1000
+
+export type StepStatus = 'pending' | 'running' | 'done' | 'failed'
+
+export type StepKey = 'add' | 'reload' | 'connect' | 'read'
+
+export interface BuildStep {
+	key: StepKey
+	title: string
+	status: StepStatus
+	detail: string
+}
+
+/** What could not be read because the project was down: it counts as reloading. */
+export const UNREACHABLE = 'unreachable'
+
+type Unreachable = typeof UNREACHABLE
+
+/** The three answers the screen derives from, each one possibly lost to a reload. */
+export interface BuildAnswers {
+	/** Whether the configuration declares the connection (`GET /database/connection`). */
+	declared: boolean | Unreachable
+	/** The variable holding its URL, when the configuration declares it. */
+	variable?: string
+	/** The builder's entry for the connection (`GET /database/connections`), or null when not listed. */
+	listed: DatabaseConnection | null | Unreachable
+	/** The connection's latest analysis (`GET /database/analysis?connection=`), or null when none. */
+	analysis: AnalysisState | null | Unreachable
+}
+
+/** What the fork says of a proposal: "8 tables: 5 pages, 2 for statistics, 3 questions". */
+export interface ForkSummary {
+	tables: number
+	pages: number
+	stats: number
+	questions: number
+}
+
+export interface BuildView {
+	steps: BuildStep[]
+	/** The project is reloading: a request failed, or the connection is declared but not listed yet. */
+	reloading: boolean
+	/** The reload took longer than {@link RELOAD_LIMIT_MS}. */
+	gaveUp: boolean
+	/** The connection is listed with an error: step 3 failed with it. */
+	connectionError?: string
+	/** The analysis asks which schemas to read before anything else. */
+	schemas?: OpenItem
+	/** Connected and not analysed: the screen starts the analysis. */
+	needsAnalysis: boolean
+	/** The analysis read nothing mappable. */
+	empty: boolean
+	/** The latest analysis failed: step 4 offers to analyse again. */
+	analysisFailed: boolean
+	/** The analysis job the fork and *Review it myself* stand on. */
+	job?: string
+	fork?: ForkSummary
+	/** The finished analysis, for the hand-off to the assistant. */
+	proposal?: MappingProposal
+}
+
+interface FetchFailure {
+	data?: { code?: string }
+}
+
+function isNotFound(error: unknown): boolean {
+	return (error as FetchFailure | undefined)?.data?.code === 'not_found'
+}
+
+async function readDeclared(
+	api: ReturnType<typeof useBuilderApi>,
+	connection: string,
+): Promise<Pick<BuildAnswers, 'declared' | 'variable'>> {
+	try {
+		const info = await api.databaseConnection(connection)
+		return { declared: true, variable: info.wiring.variable }
+	} catch (error) {
+		return { declared: isNotFound(error) ? false : UNREACHABLE }
+	}
+}
+
+async function readListed(
+	api: ReturnType<typeof useBuilderApi>,
+	connection: string,
+): Promise<DatabaseConnection | null | Unreachable> {
+	try {
+		const entries = await api.databaseConnections()
+		return entries.find((entry) => entry.id === connection) ?? null
+	} catch {
+		return UNREACHABLE
+	}
+}
+
+async function readAnalysis(
+	api: ReturnType<typeof useBuilderApi>,
+	connection: string,
+): Promise<AnalysisState | null | Unreachable> {
+	try {
+		const latest = await api.latestAnalysis(connection)
+		return latest.ok ? latest.data : null
+	} catch (error) {
+		return isNotFound(error) ? null : UNREACHABLE
+	}
+}
+
+/** Reads the three answers the screen derives from. A request that failed counts as reloading. */
+export async function readBuild(api: ReturnType<typeof useBuilderApi>, connection: string): Promise<BuildAnswers> {
+	const [wiring, listed, analysis] = await Promise.all([
+		readDeclared(api, connection),
+		readListed(api, connection),
+		readAnalysis(api, connection),
+	])
+	return { ...wiring, listed, analysis }
+}
+
+/** The questions a purpose item carries count beside it, as the workspace asks them. */
+export function forkSummary(proposal: MappingProposal): ForkSummary {
+	const asked = proposal.open.filter((item) => item.kind !== 'schemas')
+	const purposes = asked.filter((item) => item.kind === 'purpose' && item.resource)
+	return {
+		tables: proposal.resources.length + purposes.length,
+		pages: proposal.resources.filter((resource) => resource.tableView.value).length,
+		stats: proposal.resources.filter((resource) => !resource.tableView.value).length,
+		questions: asked.length + purposes.reduce((count, item) => count + (item.open?.length ?? 0), 0),
+	}
+}
+
+/** "8 tables: 5 pages, 2 for statistics, 3 questions". */
+export function forkText(summary: ForkSummary): string {
+	return t('database.build.fork', {
+		tables: t('database.build.tables', {}, summary.tables),
+		pages: t('database.build.pages', {}, summary.pages),
+		stats: summary.stats,
+		questions: t('database.build.questions', {}, summary.questions),
+	})
+}
+
+function step(key: StepKey, title: string, status: StepStatus, detail = ''): BuildStep {
+	return { key, title, status, detail }
+}
+
+function addStep(answers: BuildAnswers): BuildStep {
+	const title = t('database.build.add.title')
+	if (answers.declared === false) {
+		return step('add', title, 'failed', t('database.build.add.undeclared'))
+	}
+	const detail = answers.variable
+		? t('database.build.add.done_variable', { variable: answers.variable })
+		: t('database.build.add.done')
+	return step('add', title, 'done', detail)
+}
+
+function reloadStep(answers: BuildAnswers, reloading: boolean, gaveUp: boolean): BuildStep {
+	const title = t('database.build.reload.title')
+	if (answers.declared === false) {
+		return step('reload', title, 'pending')
+	}
+	if (gaveUp) {
+		return step('reload', title, 'failed', t('database.build.reload.gave_up'))
+	}
+	if (reloading) {
+		return step('reload', title, 'running', t('database.build.reload.running'))
+	}
+	return step('reload', title, 'done')
+}
+
+function listedEntry(answers: BuildAnswers): DatabaseConnection | undefined {
+	return answers.listed && answers.listed !== UNREACHABLE ? answers.listed : undefined
+}
+
+function connectStep(entry: DatabaseConnection | undefined): BuildStep {
+	const title = t('database.build.connect.title')
+	if (!entry) {
+		return step('connect', title, 'pending')
+	}
+	if (entry.error) {
+		return step('connect', title, 'failed', entry.error)
+	}
+	return step('connect', title, 'done', `${entry.engine} ${entry.version} · ${entry.database} · ${entry.role}`)
+}
+
+function progressText(analysis: AnalysisState): string {
+	const { described, relations, profiled, toProfile, timeouts } = analysis.progress
+	const late = timeouts ? t('database.build.read.late', { timeouts }) : ''
+	return t('database.build.read.progress', { described, relations, profiled, toProfile, late })
+}
+
+function readStep(analysis: AnalysisState | undefined, connected: boolean, role: string): BuildStep {
+	const title = t('database.build.read.title')
+	if (!connected || !analysis) {
+		return step('read', title, connected ? 'running' : 'pending', connected ? t('database.build.read.starting') : '')
+	}
+	if (analysis.status === 'running') {
+		return step('read', title, 'running', progressText(analysis))
+	}
+	if (analysis.status === 'failed' || !analysis.proposal) {
+		return step('read', title, 'failed', t('database.build.read.failed', { error: analysis.error ?? t('database.build.read.no_proposal') }))
+	}
+	const schemas = analysis.proposal.open.find((item) => item.kind === 'schemas')
+	if (schemas) {
+		return step('read', title, 'running', questionText(schemas))
+	}
+	const { tables } = forkSummary(analysis.proposal)
+	if (tables === 0) {
+		return step('read', title, 'done', t('database.build.read.none', { role }))
+	}
+	return step('read', title, 'done', t('database.build.read.done', { tables: t('database.build.tables', {}, tables) }))
+}
+
+/**
+ * Each step's status from the three answers. `reloadingFor` is how long the project has been
+ * reloading, as the screen measured it.
+ */
+export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
+	const unreachable = [answers.declared, answers.listed, answers.analysis].includes(UNREACHABLE)
+	const entry = listedEntry(answers)
+	const reloading = unreachable || (answers.declared === true && !entry)
+	const gaveUp = reloading && reloadingFor >= RELOAD_LIMIT_MS
+	const connected = !reloading && !!entry && !entry.error
+	const analysis = connected && answers.analysis && answers.analysis !== UNREACHABLE ? answers.analysis : undefined
+	const proposal = analysis?.status === 'done' ? analysis.proposal : undefined
+	const schemas = proposal?.open.find((item) => item.kind === 'schemas')
+	const summary = proposal && !schemas ? forkSummary(proposal) : undefined
+	return {
+		steps: [
+			addStep(answers),
+			reloadStep(answers, reloading, gaveUp),
+			connectStep(reloading ? undefined : entry),
+			readStep(analysis, connected, proposal?.database.role ?? entry?.role ?? ''),
+		],
+		reloading,
+		gaveUp,
+		connectionError: !reloading ? entry?.error : undefined,
+		schemas,
+		needsAnalysis: connected && !analysis,
+		empty: summary?.tables === 0,
+		analysisFailed: !!analysis && analysis.status !== 'running' && !analysis.proposal,
+		job: analysis?.id,
+		fork: summary && summary.tables > 0 ? summary : undefined,
+		proposal: summary && summary.tables > 0 ? proposal : undefined,
+	}
+}
+
+/**
+ * dms-ai's public assistant actions, as its layer provides them under {@link ASSISTANT_ACTIONS_KEY}.
+ * The builder declares the shape it calls and depends on nothing of dms-ai.
+ */
+export interface AssistantActions {
+	readonly isAvailable: boolean
+	startConversation: (prompt: string, options?: { mode?: 'plan' | 'normal'; send?: boolean }) => void
+}
+
+/** The global key dms-ai provides its assistant actions under, the same symbol in every layer. */
+export const ASSISTANT_ACTIONS_KEY = Symbol.for('dms-ai:assistant-actions')
+
+/** The message *Let the assistant finish* sends, and *Copy prompt* copies: the skills, the connection and its tables module. */
+export function assistantMessage(connection: string, module: string, proposal?: MappingProposal): string {
+	const head = `Use dms-external-database on connection ${connection}, module ${module}. The connection is live and analysed: settle the open items, map the tables, and plan analytics pages from the data with dms-page-design.`
+	if (!proposal) return head
+	return `${head} The summary below is the analysis; plan from it and probe only what it leaves out, instead of reading the proposal again table by table.\n\n${analysisSummary(proposal)}`
+}
+
+/**
+ * The message *Review it myself* hands the assistant once the person has applied the mapping: the
+ * tables and their pages exist, so what is left is the analytics dashboard and the pages' details.
+ */
+export function assistantDashboardMessage(connection: string, module: string): string {
+	return `Use dms-external-database and dms-page-design on connection ${connection}, module ${module}. The person has reviewed and applied the mapping: the tables and their pages exist, keep the mapping as it is. Build the analytics dashboard first in the connection's menu category, then give every page a clear name, an icon and a description, and set the displays, views, footer summaries and KPI cards the data suits.`
+}
+
+/** The schemas the question pre-checks: `public`, or else the one with the most tables. */
+export function preferredSchemas(item: OpenItem): string[] {
+	const values = item.options.map((option) => String(option.value))
+	if (values.includes('public')) {
+		return ['public']
+	}
+	const counted = item.options.map((option) => ({
+		value: String(option.value),
+		count: Number(/\((\d+)\)$/.exec(option.title)?.[1] ?? 0),
+	}))
+	const largest = counted.sort((a, b) => b.count - a.count)[0]
+	return largest ? [largest.value] : []
+}

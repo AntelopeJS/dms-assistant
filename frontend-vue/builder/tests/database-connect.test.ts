@@ -68,6 +68,13 @@ describe('the wiring of a database', () => {
 		expect(assistant).toMatchObject({ id: 'dms-assistant' })
 	})
 
+	it('declares the connection on the id the project gives dms-assistant', () => {
+		const steps = connectSteps(form(), { modules: ['@antelopejs/dms-assistant'], self: '@antelopejs/dms-assistant' })
+		expect(steps.filter((step) => step.op === 'ConfigureModule').map((step) => step.id)).toEqual([
+			'@antelopejs/dms-assistant',
+		])
+	})
+
 	it('gives the builder and the assistant one connection, on dms-assistant', () => {
 		const steps = connectSteps(form(), { modules: ['dms-assistant'] })
 		expect(steps.filter((step) => step.op === 'ConfigureModule')).toEqual([

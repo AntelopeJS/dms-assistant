@@ -12,6 +12,14 @@ import {
  */
 const OWN_MODULE = GetResponsibleModule();
 
+/** The id `antelope.config.ts` gives this module when the core does not report one. */
+const DEFAULT_MODULE_ID = "dms-assistant";
+
+/** The id `antelope.config.ts` gives this module: its catalog connections are declared on that entry. */
+export function ownModuleId(): string {
+  return OWN_MODULE ?? DEFAULT_MODULE_ID;
+}
+
 /** The builder's own connections to an interface it declares. */
 export function ownConnections(interfaceId: string): InterfaceConnection[] {
   const lookup = () => GetInterfaceInstances(interfaceId);

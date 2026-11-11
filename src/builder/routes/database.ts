@@ -26,6 +26,7 @@ import {
   dmsDatabasePin,
 } from "../implementations/dms-builder/engine/database-pin";
 import { configuredModuleIds } from "../implementations/dms-builder/engine/modules";
+import { ownModuleId } from "../implementations/dms-builder/engine/own-connections";
 import {
   connectionDetails,
   connectionWiring,
@@ -67,6 +68,8 @@ interface ProjectBody {
 /** The modules the project's configuration lists, by id, and the pin connecting a database needs. */
 interface ProjectModules {
   modules: string[];
+  /** This module's id in `antelope.config.ts`, where a catalog connection is declared. */
+  self: string;
   databasePin?: DatabasePin;
 }
 
@@ -158,7 +161,11 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
   ): Promise<ProjectModules | HTTPResult> {
     try {
-      return { modules: configuredModuleIds(), databasePin: dmsDatabasePin() };
+      return {
+        modules: configuredModuleIds(),
+        self: ownModuleId(),
+        databasePin: dmsDatabasePin(),
+      };
     } catch (error) {
       if (isConnectionRefusal(error)) {
         return refused(error.message);

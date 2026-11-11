@@ -1,3 +1,4 @@
+import { ownModuleId } from "./own-connections";
 import path from "node:path";
 import type { RelationDescription } from "@antelopejs/interface-database-catalog";
 import type {
@@ -450,7 +451,7 @@ async function withDescriptions<T>(
   const catalog = catalogOf(input.connection);
   if (!catalog) {
     return invalidConfig<T>(
-      `dms-assistant has no catalog connection "${input.connection}"; declare one in its importOverrides`,
+      `${ownModuleId()} has no catalog connection "${input.connection}"; declare one in its importOverrides`,
     );
   }
   const relations = describedRelations(input);

@@ -342,7 +342,7 @@ export function connectSteps(form: ConnectForm, project: ProjectModules): Projec
 	const steps: ProjectConfigStep[] = [
 		{ op: 'AddModule', id: names.driverModule, entry: driverEntry(form.engine, names) },
 		tablesStep(id, names),
-		{ op: 'ConfigureModule', id: DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
+		{ op: 'ConfigureModule', id: project.self ?? DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
 	]
 	if (project.databasePin) {
 		const { module, provider } = project.databasePin

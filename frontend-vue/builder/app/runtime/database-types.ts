@@ -224,6 +224,8 @@ export interface DatabasePin {
 /** The modules the project's configuration lists, and the pin connecting a database needs, if any. */
 export interface ProjectModules {
 	modules: string[]
+	/** The id `antelope.config.ts` gives dms-assistant, which holds the catalog connections. */
+	self?: string
 	databasePin?: DatabasePin
 }
 

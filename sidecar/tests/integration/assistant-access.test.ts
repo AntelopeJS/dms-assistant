@@ -268,6 +268,45 @@ describe("the assistant in development", () => {
   );
 
   it(
+    "lists a host socket its own user's conversations, on hello and on broadcast (fails a host list built for no one or for another socket's user)",
+    async () => {
+      const { port } = await start(true);
+      const owner = await connect(port, {
+        userId: "owner",
+        modes: ["builder", "analyst"],
+      });
+      expect(await runTurn(owner, "c-own")).toBe("run_done");
+      sendWire(owner.client, {
+        type: "set_conversation_mode",
+        conversationId: "c-own",
+        assistant: "analyst",
+      });
+      await owner.collector.next(
+        (e) => e.type === "conversation_mode" && e.assistant === "analyst",
+      );
+      const host = await connect(port, {
+        userId: "owner",
+        modes: ["builder", "analyst"],
+      });
+      sendWire(host.client, { type: "hello", role: "host" });
+      const hello = await host.collector.next(
+        (e) => e.type === "conversation_list",
+      );
+      expect(hello.conversations?.map((c) => c.id)).toContain("c-own");
+      const ada = await connect(port, { userId: "ada", modes: ["analyst"] });
+      expect(await runTurn(ada, "c-ada")).toBe("run_done");
+      const lists = host.collector.events.filter(
+        (e) => e.type === "conversation_list",
+      );
+      const latest = lists.at(-1)?.conversations?.map((c) => c.id);
+      expect(lists.length).toBeGreaterThan(1);
+      expect(latest).toContain("c-own");
+      expect(latest).not.toContain("c-ada");
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "runs an Analyst turn in the SDK's default mode whatever approval mode the conversation holds",
     async () => {
       const { port } = await start(true);

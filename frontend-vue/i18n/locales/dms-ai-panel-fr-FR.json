@@ -296,7 +296,7 @@
 				"scope_desc": {
 					"safe": "Modifications Builder uniquement, jamais de code brut",
 					"vibe": "Peut modifier n'importe quel fichier du projet",
-					"safe_unavailable": "Nécessite le module Builder"
+					"safe_unavailable": "Nécessite le Builder"
 				},
 				"mode_menu": "Mode d'approbation · cette conversation",
 				"mode_desc": {

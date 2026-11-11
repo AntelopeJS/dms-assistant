@@ -535,7 +535,7 @@
 			"generation_mode": {
 				"label": "Portée",
 				"description": "Ce que l'assistant peut modifier dans le projet.",
-				"builder_missing": "Nécessite le module dms-builder, qui n'est pas chargé.",
+				"builder_missing": "Nécessite le builder, qui n'est pas lancé.",
 				"safe": {
 					"label": "Mode sûr · recommandé",
 					"description": "Modifie les pages, tables et requêtes uniquement via le Builder. Chaque modification est vérifiée avant d'être écrite ; les modifications de fichiers et les commandes sont bloquées."

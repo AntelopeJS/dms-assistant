@@ -296,7 +296,7 @@
 				"scope_desc": {
 					"safe": "Builder changes only, never raw code",
 					"vibe": "May edit any project file",
-					"safe_unavailable": "Needs the Builder module"
+					"safe_unavailable": "Needs the Builder"
 				},
 				"mode_menu": "Approval mode · this chat",
 				"mode_desc": {

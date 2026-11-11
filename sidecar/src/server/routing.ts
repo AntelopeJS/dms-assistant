@@ -141,7 +141,7 @@ function sendSnapshotIfKnown(
   msg: ClientHelloMsgType,
 ): void {
   if (msg.role === ROLE.HOST) {
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, ctx.actor));
     return;
   }
   send(socket, buildSettingsUpdateEvent(ctx));

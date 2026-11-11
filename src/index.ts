@@ -52,7 +52,7 @@ export async function start() {
   }).catch((err: unknown) => {
     Logging.Error(`${SIDECAR_LOG_PREFIX} spawn failed:`, err);
   });
-  if (isSidecarDisabled()) return;
+  if (isSidecarDisabled() || !isDevelopment()) return;
   await publishProjectMcp({
     hostProjectRoot,
     backendUrl: sidecarConfig.backendUrl ?? DEFAULT_BACKEND_URL,

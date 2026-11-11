@@ -489,7 +489,7 @@ export function attachWsServer(
   holder.current = config;
   if (options.bridge !== undefined) {
     options.bridge.services = config;
-    options.bridge.projectMcp = config.projectMcp;
+    if (options.isDevelopment) options.bridge.projectMcp = config.projectMcp;
   }
   if (options.settingsApplier) {
     options.settingsApplier.apply = (next) => applySettings(config, next);

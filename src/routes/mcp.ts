@@ -50,7 +50,7 @@ function isDirectLocalCall(ctx: RequestContext): boolean {
  * The project's MCP tools for an agent session outside the dashboard chat, as
  * relayed by the stdio bridge `.mcp.json` launches. Only a caller on this
  * machine holding the credential of this start gets through, and nothing is
- * served where the sidecar is turned off (production).
+ * served in production or where the sidecar is turned off.
  */
 export class AIMcpController extends Controller(ROUTE_PREFIX) {
   @Post(MCP_ROUTE_PATH)

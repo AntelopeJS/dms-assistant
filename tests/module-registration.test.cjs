@@ -9,8 +9,14 @@ const BACKEND_URL = "http://127.0.0.1:41234";
  * @param {unknown[]} registrations - Receives each frontend module registered.
  * @param {unknown[]} sidecars - Receives the options of each sidecar spawned.
  * @param {unknown[]} [publications] - Receives the options the MCP tools are published with.
+ * @param {boolean} [development] - Whether the DMS runs in development.
  */
-function loadModule(registrations, sidecars, publications = []) {
+function loadModule(
+  registrations,
+  sidecars,
+  publications = [],
+  development = true,
+) {
   const filename = require.resolve("../dist/index.js");
   /** @type {Record<string, unknown>} */
   const mocks = {
@@ -45,7 +51,7 @@ function loadModule(registrations, sidecars, publications = []) {
     "./logging/log-buffer": { startLogCapture() {} },
     "./runtime-mode": {
       loadRuntimeMode: async () => undefined,
-      isDevelopment: () => true,
+      isDevelopment: () => development,
     },
     "./assistant/grants": { revokeAllGrants() {} },
     "./assistant/permission": {
@@ -153,6 +159,18 @@ void test("publishes the MCP tools on the configured origin, or the default one"
   ]);
 });
 
+void test("production publishes no MCP tools for sessions outside the chat (fails a start that publishes Builder's tools whenever the sidecar runs)", async () => {
+  /** @type {unknown[]} */
+  const publications = [];
+  /** @type {unknown[]} */
+  const sidecars = [];
+  const loaded = loadModule([], sidecars, publications, false);
+  loaded.construct({ backendUrl: BACKEND_URL });
+  await loaded.start();
+  assert.equal(sidecars.length, 1);
+  assert.deepEqual(publications, []);
+});
+
 void test("mcpJson: false keeps .mcp.json out of the publication, and stays out of the sidecar's options", async () => {
   /** @type {unknown[]} */
   const publications = [];
@@ -174,6 +192,7 @@ void test("mcpJson: false keeps .mcp.json out of the publication, and stays out 
       moduleRoots: ["fixture-module"],
       skillDirs: ["fixture-skills"],
       builderEnabled: true,
+      isDevelopment: true,
     },
   ]);
 });

@@ -22,8 +22,7 @@ const STATEMENT_TIMEOUT_MS = 30000
 const DRIVER_EXPORT_PRIORITY = -1
 const MANAGED_PREFIX = 'builder-db'
 const MODULES_DIRECTORY = 'modules'
-const DMS_BUILDER = 'dms-builder'
-const DMS_AI = 'dms-ai'
+const DMS_ASSISTANT = 'dms-assistant'
 const SSL_PARAMETER = 'sslmode'
 const SSL_DEFAULT_MODE = 'require'
 /** The `sslmode` values the SSL switch stands for; a strict one, or any other, is kept as it is. */
@@ -334,8 +333,8 @@ export function detailsFields(details: ConnectionDetails): ConnectionFields {
 
 /**
  * The `ConfigureProject` batch that wires the database into the project: its driver, the module
- * for its tables, a catalog connection for the builder and, when the project has it, dms-ai, and
- * the DMS module's pin to the project's own database when it needs one.
+ * for its tables, a catalog connection for dms-assistant (the builder and the assistant read the
+ * same one), and the DMS module's pin to the project's own database when it needs one.
  */
 export function connectSteps(form: ConnectForm, project: ProjectModules): ProjectConfigStep[] {
 	const id = connectionId(form.name)
@@ -343,11 +342,8 @@ export function connectSteps(form: ConnectForm, project: ProjectModules): Projec
 	const steps: ProjectConfigStep[] = [
 		{ op: 'AddModule', id: names.driverModule, entry: driverEntry(form.engine, names) },
 		tablesStep(id, names),
-		{ op: 'ConfigureModule', id: DMS_BUILDER, entry: catalogConnection(id, names.driverModule) },
+		{ op: 'ConfigureModule', id: DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
 	]
-	if (project.modules.includes(DMS_AI)) {
-		steps.push({ op: 'ConfigureModule', id: DMS_AI, entry: catalogConnection(id, names.driverModule) })
-	}
 	if (project.databasePin) {
 		const { module, provider } = project.databasePin
 		steps.push({

@@ -1,6 +1,6 @@
 ---
 name: dms-builder
-description: Uses the @antelopejs/dms-builder module of the AntelopeJS DMS, which edits a project's pages, tables and data sources as typechecked AST rewrites of its TypeScript sources (the "Edit this page" editor, Ctrl+B, the /api/builder HTTP API and @antelopejs/interface-dms-builder). Use when installing or configuring dms-builder (projectRoot, api.enabled), calling its interface or HTTP API from code, or when the editor or its routes are missing. For page edits through the dms-ai agent tools, use dms-builder-safe.
+description: Uses the builder of @antelopejs/dms-assistant, the AntelopeJS DMS module which edits a project's pages, tables and data sources as typechecked AST rewrites of its TypeScript sources (the "Edit this page" editor, Ctrl+B, the /api/builder HTTP API and @antelopejs/interface-dms-builder). Use when configuring the builder (`builder.projectRoot`, `builder.api.enabled`), calling its interface or HTTP API from code, or when the editor or its routes are missing. For page edits through the dms-ai agent tools, use dms-builder-safe.
 icon: i-lucide-hammer
 category: builder
 tags: [builder, pages, editor, ast, typecheck, interface]

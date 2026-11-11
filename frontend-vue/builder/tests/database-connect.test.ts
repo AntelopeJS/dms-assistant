@@ -45,14 +45,14 @@ describe('the names the builder manages for a connection', () => {
 		expect(steps.map((step) => `${step.op}:${step.id}`)).toEqual([
 			'AddModule:builder-db-erp',
 			'CreateLocalModule:erp-tables',
-			'ConfigureModule:dms-builder',
+			'ConfigureModule:dms-assistant',
 		])
 	})
 })
 
 describe('the wiring of a database', () => {
-	it('adds the driver below every other database provider and touches no other module than the builder', () => {
-		const [driver, tables, builder] = connectSteps(form(), { modules: ['mongodb', 'dms-builder'] })
+	it('adds the driver below every other database provider and touches no other module than dms-assistant', () => {
+		const [driver, tables, assistant] = connectSteps(form(), { modules: ['mongodb', 'dms-assistant'] })
 		expect(driver).toMatchObject({
 			op: 'AddModule',
 			entry: {
@@ -65,16 +65,22 @@ describe('the wiring of a database', () => {
 			path: 'modules/builder-db-erp-tables',
 			entry: { importOverrides: [{ interface: '@antelopejs/interface-database', source: 'builder-db-erp' }] },
 		})
-		expect(builder).toMatchObject({ id: 'dms-builder' })
+		expect(assistant).toMatchObject({ id: 'dms-assistant' })
 	})
 
-	it('gives dms-ai a connection when the project has it', () => {
-		const steps = connectSteps(form(), { modules: ['dms-builder', 'dms-ai'] })
-		expect(steps.at(-1)).toMatchObject({
-			op: 'ConfigureModule',
-			id: 'dms-ai',
-			entry: { importOverrides: [{ source: 'builder-db-erp', id: 'erp' }] },
-		})
+	it('gives the builder and the assistant one connection, on dms-assistant', () => {
+		const steps = connectSteps(form(), { modules: ['dms-assistant'] })
+		expect(steps.filter((step) => step.op === 'ConfigureModule')).toEqual([
+			{
+				op: 'ConfigureModule',
+				id: 'dms-assistant',
+				entry: {
+					importOverrides: [
+						{ interface: '@antelopejs/interface-database-catalog', source: 'builder-db-erp', id: 'erp' },
+					],
+				},
+			},
+		])
 	})
 
 	it('pins the DMS module to the project\'s own database when the builder says it needs it', () => {

@@ -1,4 +1,4 @@
-name: Release DMS AI
+name: Release DMS Assistant
 
 on:
   workflow_dispatch:
@@ -42,8 +42,8 @@ jobs:
           node -e '
             const pkg = require("./package.json");
             const fail = (msg) => { console.error(msg); process.exit(1); };
-            if (pkg.name !== "@antelopejs/dms-ai") fail(`unexpected package name ${pkg.name}`);
-            if (pkg.repository?.url !== "git+https://github.com/AntelopeJS/dms-ai.git") fail("unexpected repository url");
+            if (pkg.name !== "@antelopejs/dms-assistant") fail(`unexpected package name ${pkg.name}`);
+            if (pkg.repository?.url !== "git+https://github.com/AntelopeJS/dms-assistant.git") fail("unexpected repository url");
             if (pkg.publishConfig?.access !== "public") fail("publishConfig.access must be public");
             if (pkg.publishConfig?.provenance !== true) fail("publishConfig.provenance must be true");
             if (pkg.publishConfig?.registry !== "https://registry.npmjs.org/") fail("publishConfig.registry must be npmjs");

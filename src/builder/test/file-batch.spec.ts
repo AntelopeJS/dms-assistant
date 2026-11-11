@@ -2,10 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect } from "chai";
-import {
-  FileBatch,
-  type ErrorWithRollbackErrors,
-} from "../implementations/dms-builder/engine/file-batch";
+import { FileBatch } from "../implementations/dms-builder/engine/file-batch";
+import { directoryTree } from "./helpers/directory-tree";
+import { fileText } from "./helpers/file-text";
 
 const BEFORE = "before\n";
 
@@ -17,9 +16,7 @@ function at(relative: string): string {
 
 /** Every file and directory under the test directory, relative to it. */
 function tree(): string[] {
-  return fs
-    .readdirSync(directory, { recursive: true, encoding: "utf8" })
-    .sort();
+  return directoryTree(directory);
 }
 
 /**
@@ -51,11 +48,14 @@ function withFailingRenames(
   }
 }
 
-function thrown(body: () => void): unknown {
+function thrown(body: () => void): Error {
   try {
     body();
   } catch (error) {
-    return error;
+    if (error instanceof Error) {
+      return error;
+    }
+    throw error;
   }
   throw new Error("expected a throw");
 }
@@ -84,7 +84,7 @@ describe("file batch", () => {
       "new/deep",
       "new/deep/a.txt",
     ]);
-    expect(fs.readFileSync(at("kept.txt"), "utf8")).to.equal("after\n");
+    expect(fileText(at("kept.txt"))).to.equal("after\n");
   });
 
   it("puts back what it wrote and removes the directories it made when a write fails", () => {
@@ -93,9 +93,9 @@ describe("file batch", () => {
     batch.stageWrite(at("kept.txt"), "after\n");
     batch.stageWrite(at("kept.txt/under/c.txt"), "c");
     const error = thrown(() => batch.flush());
-    expect((error as NodeJS.ErrnoException).code).to.equal("ENOTDIR");
+    expect(error).to.have.property("code", "ENOTDIR");
     expect(tree()).to.deep.equal(["kept.txt"]);
-    expect(fs.readFileSync(at("kept.txt"), "utf8")).to.equal(BEFORE);
+    expect(fileText(at("kept.txt"))).to.equal(BEFORE);
   });
 
   it("puts back every file it can, and throws the write's own error with what it could not", () => {
@@ -105,7 +105,7 @@ describe("file batch", () => {
     batch.stageWrite(at("new/a.txt"), "a");
     batch.stageWrite(at("kept.txt"), "after\n");
     batch.stageWrite(at("b.txt"), "b");
-    let error: unknown;
+    let error: Error | undefined;
     withFailingRenames(
       (target, attempt) => {
         if (target === at("b.txt")) {
@@ -120,9 +120,9 @@ describe("file batch", () => {
       },
     );
     expect(error).to.equal(writeFailure);
-    expect((error as ErrorWithRollbackErrors).rollbackErrors).to.deep.equal([
-      restoreFailure,
-    ]);
+    expect(error)
+      .to.have.property("rollbackErrors")
+      .that.deep.equals([restoreFailure]);
     expect(fs.existsSync(at("new"))).to.equal(false);
     expect(tree().filter((name) => name.endsWith(".tmp"))).to.deep.equal([]);
   });
@@ -135,6 +135,6 @@ describe("file batch", () => {
     expect(fs.existsSync(at("kept.txt"))).to.equal(false);
     expect(batch.rollback()).to.deep.equal([]);
     expect(tree()).to.deep.equal(["kept.txt"]);
-    expect(fs.readFileSync(at("kept.txt"), "utf8")).to.equal(BEFORE);
+    expect(fileText(at("kept.txt"))).to.equal(BEFORE);
   });
 });

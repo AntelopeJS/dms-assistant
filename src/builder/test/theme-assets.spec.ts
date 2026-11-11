@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import type { OpResult, ThemeDraft } from "@antelopejs/interface-dms-builder";
 import { expect } from "chai";
+import { z } from "zod";
 import { GetTheme, SetTheme } from "../implementations/dms-builder";
 import { destroyFixture, expectOk } from "./harness";
 import {
@@ -17,6 +18,13 @@ import {
 } from "./theme-harness";
 
 const OTHER_PNG = Buffer.concat([PNG_LOGO, Buffer.from([1])]);
+
+const UNCHECKED_BODY = z.custom<ThemeDraft | undefined>();
+
+/** The JSON of a request body, which the route declares a `ThemeDraft` without checking it. */
+function requestBody(body: unknown): ThemeDraft | undefined {
+  return UNCHECKED_BODY.parse(body);
+}
 
 function issues(result: OpResult<unknown>): Array<[string, string]> {
   return !result.ok && result.error.code === "invalid_config"
@@ -199,33 +207,32 @@ describe("theme draft shape", function () {
     destroyFixture();
   });
 
-  /** Save what a request may hold, typed or not. */
-  function save(body: unknown): ReturnType<typeof SetTheme> {
-    return SetTheme(body as ThemeDraft);
-  }
-
   it("answers a missing draft as invalid rather than failing", async () => {
-    expect(pointers(await save(undefined))).to.deep.equal([""]);
-    expect(pointers(await save({ colors: {}, logos: {} }))).to.deep.equal([
-      "/variables",
+    expect(pointers(await SetTheme(requestBody(undefined)))).to.deep.equal([
+      "",
     ]);
+    expect(
+      pointers(await SetTheme(requestBody({ colors: {}, logos: {} }))),
+    ).to.deep.equal(["/variables"]);
   });
 
   it("points at every value that is not a string", async () => {
-    const result = await save({
-      variables: { shared: {}, light: { "--ui-bg": 3 }, dark: [] },
-      colors: { primary: null },
-      logos: { default: "/branding/logo.svg", email: { light: false } },
-      uploads: [
-        {
-          slot: "default",
-          mode: "light",
-          contentType: "image/png",
-          base64Content: 42,
-        },
-        "logo.png",
-      ],
-    });
+    const result = await SetTheme(
+      requestBody({
+        variables: { shared: {}, light: { "--ui-bg": 3 }, dark: [] },
+        colors: { primary: null },
+        logos: { default: "/branding/logo.svg", email: { light: false } },
+        uploads: [
+          {
+            slot: "default",
+            mode: "light",
+            contentType: "image/png",
+            base64Content: 42,
+          },
+          "logo.png",
+        ],
+      }),
+    );
     expect(pointers(result)).to.deep.equal([
       "/variables/light/--ui-bg",
       "/variables/dark",

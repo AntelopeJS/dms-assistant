@@ -10,6 +10,7 @@ import {
 } from "../implementations/dms-builder/engine/theme-stylesheet";
 import { destroyFixture, expectOk, type Fixture } from "./harness";
 import {
+  brandingFiles,
   createThemeFixture,
   draft,
   ENTRY_SOURCE,
@@ -17,6 +18,7 @@ import {
   layerPath,
   OP_TIMEOUT,
   PNG_LOGO,
+  readLayerBytes,
   readLayerFile,
   SVG_LOGO,
   upload,
@@ -42,9 +44,7 @@ describe("theme stylesheet", () => {
     });
   });
 
-  it("keeps a value set for light alone out of dark mode", () => {
-    // Unlayered, a bare `:root` would also match the dark page and win over
-    // the DMS's layered dark default.
+  it("keeps a value set for light alone out of dark mode, where an unlayered bare `:root` would win over the DMS's layered dark default", () => {
     expect(
       emitStylesheet({ shared: {}, light: { "--ui-bg": "snow" }, dark: {} }),
     ).to.equal(":root:not(.dark) {\n  --ui-bg: snow;\n}\n");
@@ -174,12 +174,10 @@ describe("theme", function () {
     const dark = theme.logos.default?.dark ?? "";
     expect(light).to.match(/^\/branding\/default-light-[0-9a-f]{8}\.svg$/);
     expect(dark).to.match(/^\/branding\/default-dark-[0-9a-f]{8}\.png$/);
-    expect(
-      fs.readFileSync(path.join(app.root, LAYER, "public", light), "utf8"),
-    ).to.match(/^<svg[^>]*viewBox="0 0 8 8"><rect width="8" height="8">/);
-    expect(
-      fs.readFileSync(path.join(app.root, LAYER, "public", dark)),
-    ).to.deep.equal(PNG_LOGO);
+    expect(readLayerFile(path.join("public", light))).to.match(
+      /^<svg[^>]*viewBox="0 0 8 8"><rect width="8" height="8">/,
+    );
+    expect(readLayerBytes(path.join("public", dark))).to.deep.equal(PNG_LOGO);
   });
 
   it("takes scripts and outside references out of an SVG, and says so", async () => {
@@ -193,9 +191,8 @@ describe("theme", function () {
       result.ok && result.warnings?.map((warning) => warning.code),
     ).to.deep.equal(["svg_sanitized"]);
     const theme = expectOk(await GetTheme(), "GetTheme");
-    const written = fs.readFileSync(
-      path.join(app.root, LAYER, "public", theme.logos.favicon?.dark ?? ""),
-      "utf8",
+    const written = readLayerFile(
+      path.join("public", theme.logos.favicon?.dark ?? ""),
     );
     expect(written).not.to.match(/script|onclick|elsewhere/);
     expect(written).to.contain('<rect width="8" height="8">');
@@ -238,7 +235,7 @@ describe("theme", function () {
     expect(written).to.match(/^\/branding\/default-light-[0-9a-f]{8}\.png$/);
     expect(theme.logos.collapsed?.light).to.equal(written);
     expect(theme.logos.favicon?.light).to.equal(written);
-    expect(fs.readdirSync(layerPath("public/branding"))).to.have.length(1);
+    expect(brandingFiles()).to.have.length(1);
   });
 
   it("warns once about an SVG sent for several slots", async () => {

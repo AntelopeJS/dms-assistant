@@ -440,10 +440,7 @@ export class BuilderController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody(THEME_BODY_LIMIT_BYTES) body: ThemeBody | undefined,
   ) {
-    return engine.SetTheme(
-      body?.draft as ThemeDraft,
-      opts(body?.expectedVersion),
-    );
+    return engine.SetTheme(body?.draft, opts(body?.expectedVersion));
   }
 
   @Post(ROUTES.themeLayer)

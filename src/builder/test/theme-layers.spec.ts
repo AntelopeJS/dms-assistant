@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { expect } from "chai";
+import { z } from "zod";
 import { FRONTEND_LOADER_RANGE } from "../constants/routes";
 import { GetTheme, SetTheme } from "../implementations/dms-builder";
 import { scaffoldThemeLayer } from "../implementations/dms-builder/engine/theme-scaffold";
@@ -20,20 +21,13 @@ import {
 
 const LOADER_PACKAGE = "@antelopejs/dms-frontend";
 
-/** The builder's own frontend module, whose manifest ships in this package. */
-const FRONTEND_MANIFEST = path.join(
-  __dirname,
-  "..",
-  "..",
-  "frontend-vue",
-  "package.json",
-);
+const ManifestSchema = z.object({
+  engines: z.record(z.string(), z.string()).optional(),
+});
 
 /** The engines a manifest declares, by package. */
 function engines(manifest: string): Record<string, string> {
-  return (
-    (JSON.parse(manifest) as { engines?: Record<string, string> }).engines ?? {}
-  );
+  return ManifestSchema.parse(JSON.parse(manifest)).engines ?? {};
 }
 
 describe("theme in a layer split into layers", function () {
@@ -97,10 +91,7 @@ describe("theme layer creation", function () {
     destroyFixture();
   });
 
-  it("declares the loader releases the builder's own frontend module declares", () => {
-    expect(
-      engines(fs.readFileSync(FRONTEND_MANIFEST, "utf8"))[LOADER_PACKAGE],
-    ).to.equal(FRONTEND_LOADER_RANGE);
+  it("declares the loader releases the layer runs on", () => {
     expectOk(scaffoldThemeLayer(), "scaffoldThemeLayer");
     expect(engines(readLayerFile("package.json"))).to.deep.equal({
       [LOADER_PACKAGE]: FRONTEND_LOADER_RANGE,

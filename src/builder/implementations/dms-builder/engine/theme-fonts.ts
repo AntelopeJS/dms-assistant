@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { ThemeVariableSets } from "@antelopejs/interface-dms-builder";
+import { isString } from "./scalar-guards";
 import { LOGO_UPLOAD_DIRECTORY } from "./theme-assets";
 import {
   FONT_PACKAGES_URL,
@@ -79,8 +80,12 @@ function stylesOf(font: HostedFont): FontStyle[] {
   return font.italic ? [...FONT_STYLES] : ["normal"];
 }
 
+function isFontSubset(name: string): name is FontSubset {
+  return Object.hasOwn(FONT_SUBSETS, name);
+}
+
 function subsets(): FontSubset[] {
-  return Object.keys(FONT_SUBSETS) as FontSubset[];
+  return Object.keys(FONT_SUBSETS).filter(isFontSubset);
 }
 
 function fileStem(font: HostedFont): string {
@@ -180,6 +185,17 @@ export function isHostedFontFace(descriptors: FontFaceRule): boolean {
   return fileName !== undefined && OWNED_FONT_FILE.test(fileName);
 }
 
+/** Why a font file could not be had, worded for the author of the save. */
+interface FontFileFailure {
+  failure: string;
+}
+
+function failureOf(file: FontFile, problem: string): FontFileFailure {
+  return {
+    failure: `${file.font.family}: ${path.basename(file.sourceUrl)} ${problem}. Save again once the network is back, or pick another font`,
+  };
+}
+
 async function download(url: string): Promise<Buffer | string> {
   try {
     const response = await fetch(url, {
@@ -206,22 +222,29 @@ export async function downloadMissingFontFiles(
   const missing = fontFiles(fonts, publicDirectory).filter(
     (file) => !fs.existsSync(file.filePath),
   );
-  const results = await Promise.all(
-    missing.map(async (file) => {
-      const bytesOrReason = await download(file.sourceUrl);
-      const problem =
-        typeof bytesOrReason === "string"
-          ? `could not be downloaded from ${new URL(file.sourceUrl).host} (${bytesOrReason})`
-          : file.problemOf(bytesOrReason);
+  const outcomes = await Promise.all(
+    missing.map(async (file): Promise<DownloadedFontFile | FontFileFailure> => {
+      const downloaded = await download(file.sourceUrl);
+      if (isString(downloaded)) {
+        return failureOf(
+          file,
+          `could not be downloaded from ${new URL(file.sourceUrl).host} (${downloaded})`,
+        );
+      }
+      const problem = file.problemOf(downloaded);
       return problem
-        ? `${file.font.family}: ${path.basename(file.sourceUrl)} ${problem}. Save again once the network is back, or pick another font`
-        : { filePath: file.filePath, bytes: bytesOrReason as Buffer };
+        ? failureOf(file, problem)
+        : { filePath: file.filePath, bytes: downloaded };
     }),
   );
-  return (
-    results.find((result) => typeof result === "string") ??
-    (results as DownloadedFontFile[])
-  );
+  const downloadedFiles: DownloadedFontFile[] = [];
+  for (const outcome of outcomes) {
+    if ("failure" in outcome) {
+      return outcome.failure;
+    }
+    downloadedFiles.push(outcome);
+  }
+  return downloadedFiles;
 }
 
 /**

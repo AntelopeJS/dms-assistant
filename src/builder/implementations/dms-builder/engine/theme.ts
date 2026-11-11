@@ -17,6 +17,7 @@ import { FileBatch } from "./file-batch";
 import { unsupported } from "./ops";
 import { contentVersion } from "./page-structure";
 import { configuredIndentation, sampledIndentation } from "./project";
+import { isBoolean, isString } from "./scalar-guards";
 import {
   EMPTY_APP_CONFIG,
   readColors,
@@ -32,7 +33,7 @@ import {
   stageLogos,
   withUploads,
 } from "./theme-assets";
-import { draftShapeIssues } from "./theme-draft";
+import { malformedDraftIssues, parseThemeDraft } from "./theme-draft";
 import { importStylesheet, importsStylesheet } from "./theme-entry";
 import type { HostedFont } from "./theme-font-catalog";
 import {
@@ -153,8 +154,10 @@ function readThemeSources(layer: ThemeLayer): ThemeSources | OpResult<never> {
   };
 }
 
-function isFailure<T>(value: T | OpResult<never>): value is OpResult<never> {
-  return typeof value === "object" && value !== null && "ok" in value;
+function isFailure(
+  value: ThemeSources | ThemeVariableSets | OpResult<never>,
+): value is OpResult<never> {
+  return "ok" in value && isBoolean(value.ok);
 }
 
 /**
@@ -247,8 +250,7 @@ function syntaxErrors(sources: ThemeSources): TypecheckError[] {
       return {
         file: diagnostic.getSourceFile()?.getFilePath() ?? "",
         line: diagnostic.getLineNumber() ?? 0,
-        message:
-          typeof message === "string" ? message : message.getMessageText(),
+        message: isString(message) ? message : message.getMessageText(),
       };
     });
 }
@@ -407,12 +409,15 @@ function invalidConfigError(issues: ValidationIssue[]): OpResult<never> {
  * except email logos.
  */
 export async function setTheme(
-  draft: ThemeDraft,
+  draft: ThemeDraft | undefined,
   opts?: MutationOpts,
 ): Promise<OpResult<{ version: string }>> {
-  const shapeIssues = draftShapeIssues(draft);
-  if (shapeIssues.length > 0) {
-    return invalidConfigError(shapeIssues);
+  const parsedDraft = parseThemeDraft(draft);
+  const malformedIssues = parsedDraft.success
+    ? []
+    : malformedDraftIssues(parsedDraft.error);
+  if (draft === undefined || malformedIssues.length > 0) {
+    return invalidConfigError(malformedIssues);
   }
   const sources = await openThemeLayer();
   if (isFailure(sources)) {
@@ -439,7 +444,7 @@ export async function setTheme(
     fonts,
     sources.publicDirectory,
   );
-  if (typeof fontFiles === "string") {
+  if (isString(fontFiles)) {
     return unsupported<never>(fontFiles);
   }
   const settled = readThemeSources(sources.layer);

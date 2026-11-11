@@ -6,6 +6,7 @@ import type {
   ThemeLogos,
   ValidationIssue,
 } from "@antelopejs/interface-dms-builder";
+import { isString } from "./scalar-guards";
 import { LOGO_SLOTS, logoPaths, slotAccepts } from "./theme-app-config";
 import { THEME_MODES } from "./theme-stylesheet";
 import { sanitizeSvg } from "./theme-svg";
@@ -56,29 +57,33 @@ function isIcon(bytes: Buffer): boolean {
   return startsWith(bytes, ICO_SIGNATURE);
 }
 
-const LOGO_FORMATS: Record<string, LogoFormat> = {
-  "image/svg+xml": { extension: "svg", matches: isSvg },
-  "image/png": {
-    extension: "png",
-    matches: (bytes) => startsWith(bytes, PNG_SIGNATURE),
-  },
-  "image/jpeg": {
-    extension: "jpg",
-    matches: (bytes) => startsWith(bytes, JPEG_SIGNATURE),
-  },
-  "image/webp": { extension: "webp", matches: isWebp },
-  "image/x-icon": { extension: "ico", matches: isIcon },
-  "image/vnd.microsoft.icon": { extension: "ico", matches: isIcon },
-};
+const LOGO_FORMATS = new Map<string, LogoFormat>([
+  ["image/svg+xml", { extension: "svg", matches: isSvg }],
+  [
+    "image/png",
+    {
+      extension: "png",
+      matches: (bytes) => startsWith(bytes, PNG_SIGNATURE),
+    },
+  ],
+  [
+    "image/jpeg",
+    {
+      extension: "jpg",
+      matches: (bytes) => startsWith(bytes, JPEG_SIGNATURE),
+    },
+  ],
+  ["image/webp", { extension: "webp", matches: isWebp }],
+  ["image/x-icon", { extension: "ico", matches: isIcon }],
+  ["image/vnd.microsoft.icon", { extension: "ico", matches: isIcon }],
+]);
 
 function logoFormatOf(contentType: string): LogoFormat | undefined {
-  return Object.hasOwn(LOGO_FORMATS, contentType)
-    ? LOGO_FORMATS[contentType]
-    : undefined;
+  return LOGO_FORMATS.get(contentType);
 }
 
 const LOGO_EXTENSIONS = [
-  ...new Set(Object.values(LOGO_FORMATS).map((format) => format.extension)),
+  ...new Set([...LOGO_FORMATS.values()].map((format) => format.extension)),
 ];
 
 /**
@@ -160,7 +165,7 @@ function stageLogo(
 ): StagedLogo | string {
   const extension = logoFormatOf(upload.contentType)?.extension ?? "";
   const content = bytesToWrite(received, extension);
-  if (typeof content === "string") {
+  if (isString(content)) {
     return content;
   }
   const hash = createHash("sha256").update(content.bytes).digest("hex");
@@ -228,7 +233,7 @@ export function stageLogos(
       slotAndModeProblem(upload) ?? uploadProblem(upload, received);
     const stagedOrProblem =
       problem ?? stageLogo(publicDirectory, upload, received);
-    if (typeof stagedOrProblem === "string") {
+    if (isString(stagedOrProblem)) {
       issues.push({ pointer: `/uploads/${index}`, message: stagedOrProblem });
       return;
     }

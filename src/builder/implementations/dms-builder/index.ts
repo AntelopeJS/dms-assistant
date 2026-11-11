@@ -401,7 +401,7 @@ export async function GetTheme(): Promise<OpResult<ThemeStructure>> {
 }
 
 export async function SetTheme(
-  draft: ThemeDraft,
+  draft: ThemeDraft | undefined,
   opts?: MutationOpts,
 ): Promise<OpResult<{ version: string }>> {
   return setTheme(draft, opts);

@@ -46,11 +46,11 @@ const UNSAFE_VALUE =
 const MAX_VALUE_LENGTH = 512;
 const INDENT = "  ";
 const QUOTES = new Set(['"', "'"]);
-const CLOSER_BY_OPENER: Partial<Record<string, string>> = {
-  "(": ")",
-  "[": "]",
-};
-const CLOSERS = new Set(Object.values(CLOSER_BY_OPENER));
+const CLOSER_BY_OPENER = new Map([
+  ["(", ")"],
+  ["[", "]"],
+]);
+const CLOSERS = new Set(CLOSER_BY_OPENER.values());
 
 /** An `@font-face` rule's descriptors, in the order they are written. */
 export type FontFaceRule = Array<[descriptor: string, value: string]>;
@@ -74,7 +74,7 @@ function isBalanced(value: string): boolean {
   const expectedClosers: string[] = [];
   let openQuote: string | undefined;
   for (const character of value) {
-    const closer = CLOSER_BY_OPENER[character];
+    const closer = CLOSER_BY_OPENER.get(character);
     if (openQuote !== undefined) {
       openQuote = character === openQuote ? undefined : openQuote;
     } else if (QUOTES.has(character)) {

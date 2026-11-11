@@ -4,6 +4,7 @@ import createDOMPurify, {
   type RemovedElement,
 } from "dompurify";
 import type { JSDOM } from "jsdom";
+import { isCallable, isIndexable } from "./guards";
 
 export interface SanitizedSvg {
   svg: string;
@@ -136,7 +137,9 @@ function isAllowedReference(element: Element, value: string): boolean {
  * `data:` URL on `<image>` or `<feImage>` (so `<use>`, which logo exports use
  * to reuse shapes, can only point inside the file); and every resource CSS
  * fetches, in an attribute, a `style` or a `<style>` sheet (where Illustrator
- * writes its class rules). A last hook adds a missing `xmlns`.
+ * writes its class rules). A last hook adds a missing `xmlns`: a browser loads
+ * an SVG file as XML, which needs it, and an SVG copied out of an HTML page
+ * often lacks it.
  */
 function addHooks(sanitizer: SvgSanitizer): void {
   sanitizer.purify.addHook("uponSanitizeAttribute", (node, data) => {
@@ -169,8 +172,6 @@ function addHooks(sanitizer: SvgSanitizer): void {
       sanitizer.hasHookRemovedContent = true;
     }
   });
-  // A browser loads an SVG file as XML, which needs `xmlns`; an SVG copied out
-  // of an HTML page often lacks it.
   sanitizer.purify.addHook("afterSanitizeAttributes", (node) => {
     if (
       node.nodeName.toLowerCase() === "svg" &&
@@ -182,6 +183,22 @@ function addHooks(sanitizer: SvgSanitizer): void {
   });
 }
 
+interface JsdomModule {
+  JSDOM: typeof JSDOM;
+}
+
+function isJsdomModule(loaded: unknown): loaded is JsdomModule {
+  return isIndexable(loaded) && isCallable(loaded.JSDOM);
+}
+
+function loadJsdom(): JsdomModule {
+  const loaded: unknown = require("jsdom");
+  if (!isJsdomModule(loaded)) {
+    throw new Error("jsdom does not export JSDOM");
+  }
+  return loaded;
+}
+
 /**
  * Created on first use, jsdom included: loading jsdom takes a few hundred
  * milliseconds and about a hundred megabytes, which a process that never
@@ -191,7 +208,7 @@ function svgSanitizer(): SvgSanitizer {
   if (cachedSanitizer) {
     return cachedSanitizer;
   }
-  const { JSDOM: Dom } = require("jsdom") as { JSDOM: typeof JSDOM };
+  const { JSDOM: Dom } = loadJsdom();
   const { window } = new Dom("");
   const sanitizer: SvgSanitizer = {
     purify: createDOMPurify(window),

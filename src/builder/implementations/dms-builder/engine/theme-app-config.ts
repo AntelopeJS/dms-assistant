@@ -7,6 +7,7 @@ import type {
   ValidationIssue,
 } from "@antelopejs/interface-dms-builder";
 import type { ObjectLiteralExpression, SourceFile } from "ts-morph";
+import { isString } from "./scalar-guards";
 import {
   canWriteString,
   defaultExportObject,
@@ -134,6 +135,14 @@ export function readColors(sourceFile: SourceFile): ThemeColors {
   return palettes;
 }
 
+/** A draft's own value for `key`: a name inherited from `Object.prototype` is no value. */
+function valueFor(
+  values: Partial<Record<string, string>>,
+  key: string,
+): string | undefined {
+  return Object.hasOwn(values, key) ? values[key] : undefined;
+}
+
 /**
  * A key is unwritable when it is not a string literal or its object has a
  * spread. A draft value equal to what was read (the literal, or nothing for
@@ -147,7 +156,7 @@ function unwritableChangedKeys(
   return keys.filter(
     (key) =>
       !canWriteString(target, key) &&
-      values[key] !== stringLiteralValue(target, key),
+      valueFor(values, key) !== stringLiteralValue(target, key),
   );
 }
 
@@ -164,7 +173,9 @@ function writeStrings(
   values: Partial<Record<string, string>>,
   keys: readonly string[],
 ): string[] {
-  const hasValuesToWrite = keys.some((key) => values[key] !== undefined);
+  const hasValuesToWrite = keys.some(
+    (key) => valueFor(values, key) !== undefined,
+  );
   const chain: ObjectLiteralExpression[] = [config];
   let target = config;
   for (const key of keyPath) {
@@ -184,7 +195,7 @@ function writeStrings(
   }
   let hasRemovedKey = false;
   for (const key of keys.filter((name) => canWriteString(target, name))) {
-    const value = values[key];
+    const value = valueFor(values, key);
     const property = findProperty(target, key);
     if (value !== undefined) {
       setStringProperty(target, key, value);
@@ -279,7 +290,7 @@ export function validateColors(colors: ThemeColors): ValidationIssue[] {
     if (!COLOR_ROLES.some((known) => known === role)) {
       return [{ pointer, message: `${role} is not a color role` }];
     }
-    return typeof palette === "string" && PALETTE_NAME.test(palette)
+    return isString(palette) && PALETTE_NAME.test(palette)
       ? []
       : [{ pointer, message: `${role} is not a palette name such as violet` }];
   });

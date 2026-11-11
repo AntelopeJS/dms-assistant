@@ -3,6 +3,9 @@ import path from "node:path";
 import type { LogoUpload, ThemeDraft } from "@antelopejs/interface-dms-builder";
 import { setModuleConfig } from "../config";
 import { createFixture, type Fixture } from "./harness";
+import { fileBytes } from "./helpers/file-bytes";
+import { fileText } from "./helpers/file-text";
+import { projectDirectory } from "./helpers/project-files";
 
 /** The layer the theme suites write to, relative to the fixture's root. */
 export const LAYER = "frontend-vue";
@@ -67,13 +70,17 @@ export function writeLayerFile(relative: string, content: string): void {
 }
 
 export function readLayerFile(relative: string): string {
-  return fs.readFileSync(layerPath(relative), "utf8");
+  return fileText(layerPath(relative));
+}
+
+export function readLayerBytes(relative: string): Buffer {
+  return fileBytes(layerPath(relative));
 }
 
 /** The files of the layer's `public/branding`, or none when it is absent. */
 export function brandingFiles(relative = "public/branding"): string[] {
   return fs.existsSync(layerPath(relative))
-    ? fs.readdirSync(layerPath(relative)).sort()
+    ? projectDirectory(root, path.join(LAYER, relative)).sort()
     : [];
 }
 

@@ -11,6 +11,7 @@ import {
   type SourceFile,
   SyntaxKind,
 } from "ts-morph";
+import { z } from "zod";
 import { FRONTEND_LOADER_RANGE } from "../../../constants/routes";
 import { FileBatch, withRollbackErrors } from "./file-batch";
 import { commit, unsupported } from "./ops";
@@ -48,16 +49,18 @@ const LAYER_NAME_SUFFIX = "-frontend";
 const FALLBACK_PROJECT_NAME = "project";
 const INVALID_PACKAGE_NAME_CHARACTERS = /[^a-z0-9-]+/g;
 
-interface PackageManifest {
-  name?: string;
-  main?: string;
-}
+const PackageManifestSchema = z.object({
+  name: z.string().optional(),
+  main: z.string().optional(),
+});
+
+type PackageManifest = z.infer<typeof PackageManifestSchema>;
 
 function readManifest(directory: string): PackageManifest | undefined {
   try {
-    return JSON.parse(
-      fs.readFileSync(path.join(directory, "package.json"), "utf8"),
-    ) as PackageManifest;
+    return PackageManifestSchema.parse(
+      JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8")),
+    );
   } catch {
     return undefined;
   }

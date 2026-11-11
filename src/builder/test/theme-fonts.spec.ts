@@ -53,11 +53,11 @@ function serveFonts(
     new Response(url.endsWith("/LICENSE") ? LICENSE : new Uint8Array(WOFF2)),
 ): void {
   requestedUrls = [];
-  globalThis.fetch = (async (input: string | URL | Request) => {
+  globalThis.fetch = async (input: string | URL | Request) => {
     const url = input instanceof Request ? input.url : String(input);
     requestedUrls.push(url);
     return respond(url);
-  }) as typeof fetch;
+  };
 }
 
 describe("theme fonts", () => {

@@ -23,15 +23,18 @@ function withoutOutside(content: string): string {
 
 describe("theme SVG sanitizing", () => {
   it("takes out links to other documents on every element", () => {
-    withoutOutside(`<image href="https://${OUTSIDE}/a.png"/>`);
-    withoutOutside(`<image xlink:href="https://${OUTSIDE}/a.png"/>`);
-    withoutOutside(
-      `<filter id="f"><feImage href="https://${OUTSIDE}/a.png"/></filter>`,
-    );
-    withoutOutside(
-      `<a href="https://${OUTSIDE}/"><rect width="1" height="1"/></a>`,
-    );
-    withoutOutside(`<use href="https://${OUTSIDE}/a.svg#shape"/>`);
+    const written = [
+      withoutOutside(`<image href="https://${OUTSIDE}/a.png"/>`),
+      withoutOutside(`<image xlink:href="https://${OUTSIDE}/a.png"/>`),
+      withoutOutside(
+        `<filter id="f"><feImage href="https://${OUTSIDE}/a.png"/></filter>`,
+      ),
+      withoutOutside(
+        `<a href="https://${OUTSIDE}/"><rect width="1" height="1"/></a>`,
+      ),
+      withoutOutside(`<use href="https://${OUTSIDE}/a.svg#shape"/>`),
+    ];
+    expect(written.join("\n")).not.to.contain(OUTSIDE);
   });
 
   it("takes out the resources a style sheet fetches, and keeps its class rules", () => {

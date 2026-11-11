@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { FileChange } from "@antelopejs/interface-dms-builder";
+import { isString } from "./scalar-guards";
 import { diffText } from "./writable";
 
 type FileContent = string | Buffer;
@@ -12,7 +13,7 @@ interface FileSnapshot {
   before: Buffer | undefined;
 }
 
-export interface ErrorWithRollbackErrors {
+interface ErrorWithRollbackErrors {
   rollbackErrors?: unknown[];
 }
 
@@ -27,13 +28,15 @@ function readBytes(filePath: string): Buffer | undefined {
 }
 
 function toBytes(content: FileContent): Buffer {
-  return typeof content === "string" ? Buffer.from(content, "utf8") : content;
+  return isString(content) ? Buffer.from(content, "utf8") : content;
 }
 
 /**
  * Writes to a temporary file beside the target, then renames it over the
  * target: the dev server watching the layer never reads a half-written file,
- * and a failed write leaves the previous content in place.
+ * and a failed write leaves the previous content in place. The write's own
+ * failure is the one reported: a temporary file that cannot be removed is
+ * left behind silently.
  */
 function writeFileAtomically(filePath: string, bytes: Buffer): void {
   const suffix = randomBytes(TEMPORARY_NAME_BYTES).toString("hex");
@@ -47,9 +50,7 @@ function writeFileAtomically(filePath: string, bytes: Buffer): void {
   } catch (error) {
     try {
       fs.rmSync(temporaryPath, { force: true });
-    } catch {
-      // The write's own failure is the one worth reporting.
-    }
+    } catch {}
     throw error;
   }
 }
@@ -83,10 +84,10 @@ function restore(snapshot: FileSnapshot): void {
 }
 
 /** Only an `Error` gets `rollbackErrors`; any other value is returned as is. */
-export function withRollbackErrors(
-  error: unknown,
+export function withRollbackErrors<Failure>(
+  error: Failure,
   rollbackErrors: unknown[],
-): unknown {
+): Failure {
   if (rollbackErrors.length > 0 && error instanceof Error) {
     Object.assign(error, { rollbackErrors } satisfies ErrorWithRollbackErrors);
   }
@@ -102,10 +103,9 @@ function describeChange(
   if (content === null) {
     return { path: filePath, kind, diff: "" };
   }
-  const diff =
-    typeof content === "string"
-      ? diffText(before?.toString("utf8") ?? "", content)
-      : `binary file, ${content.length} bytes`;
+  const diff = isString(content)
+    ? diffText(before?.toString("utf8") ?? "", content)
+    : `binary file, ${content.length} bytes`;
   return { path: filePath, kind, diff };
 }
 
@@ -154,9 +154,10 @@ export class FileBatch {
   /**
    * Restore every file the last `flush` wrote and remove the directories it
    * created that are still empty: after a failed flush, or when the caller's
-   * next step fails. Best effort: a file that cannot be restored does not stop
-   * the others, and the errors are returned, not thrown, so they never hide
-   * the error that triggered the rollback.
+   * next step fails. A directory that is not empty, because something else
+   * was added to it since, stays. Best effort: a file that cannot be restored
+   * does not stop the others, and the errors are returned, not thrown, so they
+   * never hide the error that triggered the rollback.
    */
   public rollback(): unknown[] {
     const failures: unknown[] = [];
@@ -170,9 +171,7 @@ export class FileBatch {
     for (const directory of this.createdDirectories.reverse()) {
       try {
         fs.rmdirSync(directory);
-      } catch {
-        // Not empty: something else was added to it since.
-      }
+      } catch {}
     }
     this.snapshots = [];
     this.createdDirectories = [];

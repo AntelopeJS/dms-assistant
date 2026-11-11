@@ -22,6 +22,7 @@ const FIXTURE_ROOT = path.join(
   __dirname,
   "..",
   "..",
+  "..",
   `.test-app-${process.pid}`,
 );
 

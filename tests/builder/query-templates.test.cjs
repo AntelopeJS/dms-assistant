@@ -12,9 +12,9 @@ const {
  * comes back empty and every `AddQuery` is rejected.
  */
 /** @type {unknown} */
-const builder = require("../dist/implementations/dms-builder/index.js");
+const builder = require("../../dist/builder/implementations/dms-builder/index.js");
 /** @type {unknown} */
-const queryOps = require("../dist/implementations/dms-builder/engine/query-ops.js");
+const queryOps = require("../../dist/builder/implementations/dms-builder/engine/query-ops.js");
 assert.ok(exposesQueryTemplates(builder));
 assert.ok(exposesQueryOps(queryOps));
 const { compileQuery } = queryOps;

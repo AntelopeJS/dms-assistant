@@ -66,7 +66,7 @@ function loadController() {
     },
   );
   const exported = loadModule(
-    path.resolve(__dirname, "../dist/routes/builder.js"),
+    path.resolve(__dirname, "../../dist/builder/routes/builder.js"),
     {
       "@antelopejs/interface-api": {
         Controller: (/** @type {string} */ prefix) =>

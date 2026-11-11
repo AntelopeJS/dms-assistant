@@ -41,17 +41,18 @@ export const ROUTES = {
 
 /**
  * The parameter a GET of the query preview carries its query in, as JSON.
- * Mirrored in `frontend-vue/app/runtime/constants.ts`.
+ * Mirrored in `frontend-vue/builder/app/runtime/constants.ts`.
  */
 export const QUERY_PREVIEW_PARAMETER = "query";
 
-export const FRONTEND_MODULE_NAME = "@antelopejs/dms-builder-frontend-vue";
+/**
+ * The key the module's frontend options sit under. Mirrored in
+ * `frontend-vue/builder/dms.frontend.ts`.
+ */
 export const FRONTEND_MODULE_CONFIG_KEY = "dmsBuilder";
-export const FRONTEND_MODULE_DIR = "../frontend-vue";
-export const FRONTEND_MODULE_PRIORITY = 100;
 /**
  * Option the backend publishes in the frontend manifest so the Vue module can
  * tell an enabled builder from a stale build. Mirrored in
- * `frontend-vue/dms.frontend.ts`.
+ * `frontend-vue/builder/dms.frontend.ts`.
  */
 export const FRONTEND_MODULE_ENABLED_OPTION = "enabled";

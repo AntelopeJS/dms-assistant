@@ -7,7 +7,6 @@ import {
   Post,
 } from "@antelopejs/interface-api";
 import * as Builder from "@antelopejs/interface-dms-builder";
-import { isBuilderAvailable } from "../builder/presence";
 import {
   BUILDER_OP_PATH,
   BUILDER_STATUS_PATH,
@@ -188,12 +187,10 @@ export class AIBuilderController extends Controller(ROUTE_PREFIX) {
   }
 
   @Get(BUILDER_STATUS_PATH)
-  async status(
-    @Parameter(SIDECAR_AUTH_HEADER, "header") token?: string,
-  ): Promise<HTTPResult> {
+  status(@Parameter(SIDECAR_AUTH_HEADER, "header") token?: string): HTTPResult {
     if (!isSidecarRequest(token)) {
       return sidecarForbidden();
     }
-    return new HTTPResult(HTTP_OK, { available: await isBuilderAvailable() });
+    return new HTTPResult(HTTP_OK, { available: true });
   }
 }

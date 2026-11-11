@@ -16,7 +16,8 @@ function isMessageTree(value) {
 }
 
 const frontend = path.resolve(__dirname, "../frontend-vue");
-const app = path.join(frontend, "app");
+const builder = path.join(frontend, "builder");
+const app = path.join(builder, "app");
 
 const NAMESPACE_DECLARATION = /^export const I18N_NAMESPACE = '([\w-]+)'$/m;
 
@@ -129,7 +130,7 @@ function templateText(source) {
 }
 
 const namespace = NAMESPACE_DECLARATION.exec(
-  readText("app/runtime/i18n.ts"),
+  readText("builder/app/runtime/i18n.ts"),
 )?.[1];
 const english = readCatalog("i18n/locales/builder-en-GB.json");
 const french = readCatalog("i18n/locales/builder-fr-FR.json");
@@ -138,7 +139,7 @@ const fr = flatten(french);
 
 function catalogsUseTheNamespace() {
   if (namespace === undefined) {
-    return ["app/runtime/i18n.ts declares no I18N_NAMESPACE literal"];
+    return ["builder/app/runtime/i18n.ts declares no I18N_NAMESPACE literal"];
   }
   return [
     { file: "builder-en-GB.json", catalog: english },
@@ -259,7 +260,7 @@ function databaseComponents() {
 function translatedComponentsHaveNoLiteralText() {
   const failures = [];
   for (const component of [...TRANSLATED_COMPONENTS, ...databaseComponents()]) {
-    const source = readText(`app/${component}`);
+    const source = readText(`builder/app/${component}`);
     for (const match of source.matchAll(READ_ATTRIBUTES)) {
       if (/[A-Za-z]/.test(match[2])) {
         failures.push(`${component} writes ${match[1]}="${match[2]}"`);

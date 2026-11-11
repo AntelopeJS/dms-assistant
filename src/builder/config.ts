@@ -11,7 +11,7 @@ export interface BuilderApiConfig {
   enabled?: boolean;
 }
 
-/** Runtime configuration for the dms-builder engine. */
+/** Runtime configuration for the builder engine, under the module's `builder` key. */
 export interface DmsBuilderConfig {
   /** Absolute path to the app source root where page files live. */
   projectRoot?: string;

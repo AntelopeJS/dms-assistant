@@ -6,7 +6,7 @@ const { loadModule } = require("./helpers/load-module.cjs");
 
 /** @param {string} name */
 function distFile(name) {
-  return path.resolve(__dirname, "../dist", name);
+  return path.resolve(__dirname, "../../dist/builder", name);
 }
 
 /**
@@ -78,10 +78,9 @@ void test("re-decides when the module is reconfigured", async () => {
 });
 
 /**
- * The two surfaces together, over the real `config.js`: what a deployment sees
- * is that neither the controller nor the frontend module is ever loaded. The
- * routes entry is a getter, so the list records the import rather than the
- * mock's creation.
+ * The builder entry over the real `config.js`: what a deployment sees is that
+ * the controller is never loaded. The routes entry is a getter, so the list
+ * records the import rather than the mock's creation.
  *
  * @param {boolean} dev
  */
@@ -95,14 +94,10 @@ function bootModule(dev) {
       }),
     },
   };
-  const registrations = [];
   const loadedRoutes = [];
   const mocks = {
     ...runtimeMock,
     "@antelopejs/interface-core": { ImplementInterface: () => undefined },
-    "@antelopejs/interface-dms/page": {
-      AddFrontendModule: (registration) => registrations.push(registration),
-    },
     "@antelopejs/interface-dms-builder": {},
     "./implementations/dms-builder": {},
     "./config": loadModule(distFile("config.js"), runtimeMock, exposesConfig),
@@ -115,38 +110,23 @@ function bootModule(dev) {
     },
   });
   const index = loadModule(distFile("index.js"), mocks, exposesEntry);
-  return { index, registrations, loadedRoutes };
+  return { index, loadedRoutes };
 }
 
-void test("mounts nothing at all when the project does not run in development", async () => {
+void test("mounts no routes when the project does not run in development", async () => {
   const booted = bootModule(false);
   await booted.index.construct();
-  await booted.index.start();
   assert.deepEqual(booted.loadedRoutes, []);
-  assert.deepEqual(booted.registrations, []);
 });
 
-void test("mounts the routes and the frontend module in development", async () => {
+void test("mounts the routes in development", async () => {
   const booted = bootModule(true);
   await booted.index.construct();
-  await booted.index.start();
   assert.deepEqual(booted.loadedRoutes, ["./routes"]);
-  assert.deepEqual(booted.registrations, [
-    {
-      name: "@antelopejs/dms-builder-frontend-vue",
-      sourcePath: path.resolve(__dirname, "../frontend-vue"),
-      renderer: { name: "vue", version: "3" },
-      configKey: "dmsBuilder",
-      priority: 100,
-      options: { enabled: true },
-    },
-  ]);
 });
 
-void test("mounts both when an override enables the builder outside development", async () => {
+void test("mounts the routes when an override enables the builder outside development", async () => {
   const booted = bootModule(false);
   await booted.index.construct({ api: { enabled: true } });
-  await booted.index.start();
   assert.deepEqual(booted.loadedRoutes, ["./routes"]);
-  assert.equal(booted.registrations.length, 1);
 });

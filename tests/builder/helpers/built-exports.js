@@ -1,6 +1,6 @@
 /**
  * @param {unknown} value
- * @returns {value is Pick<typeof import("../../dist/config.js"), "isBuilderEnabled" | "setModuleConfig">}
+ * @returns {value is Pick<typeof import("../../../dist/builder/config.js"), "isBuilderEnabled" | "setModuleConfig">}
  */
 function exposesConfig(value) {
   return (
@@ -15,22 +15,20 @@ function exposesConfig(value) {
 
 /**
  * @param {unknown} value
- * @returns {value is Pick<typeof import("../../dist/index.js"), "construct" | "start">}
+ * @returns {value is Pick<typeof import("../../../dist/builder/index.js"), "construct">}
  */
 function exposesEntry(value) {
   return (
     typeof value === "object" &&
     value !== null &&
     "construct" in value &&
-    typeof value.construct === "function" &&
-    "start" in value &&
-    typeof value.start === "function"
+    typeof value.construct === "function"
   );
 }
 
 /**
  * @param {unknown} value
- * @returns {value is Pick<typeof import("../../src/implementations/dms-builder/index"), "ListQueryTemplates">}
+ * @returns {value is Pick<typeof import("../../../src/builder/implementations/dms-builder/index"), "ListQueryTemplates">}
  */
 function exposesQueryTemplates(value) {
   return (
@@ -43,7 +41,7 @@ function exposesQueryTemplates(value) {
 
 /**
  * @param {unknown} value
- * @returns {value is Pick<typeof import("../../src/implementations/dms-builder/engine/query-ops"), "compileQuery">}
+ * @returns {value is Pick<typeof import("../../../src/builder/implementations/dms-builder/engine/query-ops"), "compileQuery">}
  */
 function exposesQueryOps(value) {
   return (

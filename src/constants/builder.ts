@@ -1,5 +1,3 @@
-export const BUILDER_MODULE_ID = "dms-builder";
-export const BUILDER_PRESENCE_TIMEOUT_MS = 2_000;
 export const BUILDER_OP_PATH = "/builder/op";
 export const BUILDER_STATUS_PATH = "/builder/status";
 export const HTTP_OK = 200;

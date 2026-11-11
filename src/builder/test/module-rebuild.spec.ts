@@ -13,7 +13,7 @@ import { projectFile } from "./helpers/project-files";
 
 const OP_TIMEOUT = 120_000;
 const MODULE = "modules/builder-db-erp-tables";
-const PACKAGE_ROOT = path.join(__dirname, "..", "..");
+const PACKAGE_ROOT = path.join(__dirname, "..", "..", "..");
 
 const CONFIG = `import { defineConfig } from "@antelopejs/interface-core/config";
 

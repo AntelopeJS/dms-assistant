@@ -143,7 +143,7 @@ describe("a project that is its configuration alone", function () {
 
   it("asks for those packages at the ranges the builder itself depends on", () => {
     const own = packageManifest(
-      path.join(__dirname, "..", ".."),
+      path.join(__dirname, "..", "..", ".."),
       "package.json",
     );
     const ranges = { ...own.devDependencies, ...own.dependencies };

@@ -43,8 +43,15 @@ const CANDIDATES = {
 	],
 };
 
+const answer = {
+	data: ref<typeof CANDIDATES | undefined>(CANDIDATES),
+	pending: ref(false),
+	failure: ref<string | null>(null),
+	message: ref(""),
+};
+
 vi.mock("../app/views/composables/useAiData", () => ({
-	useAiData: () => ({ data: ref(CANDIDATES), pending: ref(false) }),
+	useAiData: () => answer,
 }));
 
 const authFetch = vi.fn();
@@ -102,6 +109,10 @@ function mountEditor(rowData?: { route: string }) {
 }
 
 beforeEach(() => {
+	answer.data.value = CANDIDATES;
+	answer.pending.value = false;
+	answer.failure.value = null;
+	answer.message.value = "";
 	authFetch.mockReset();
 	presentError.mockReset();
 	vi.stubGlobal("useI18n", () => ({ t: (key: string) => key }));
@@ -182,5 +193,37 @@ describe("the exclusion editor", () => {
 		await flushPromises();
 		expect(presentError).toHaveBeenCalledOnce();
 		expect(onSuccessCallback).not.toHaveBeenCalled();
+	});
+
+	it("saves nothing while the route's fields are still loading", async () => {
+		answer.data.value = undefined;
+		answer.pending.value = true;
+		const { button } = mountEditor({ route: "/api/customers" });
+		await flushPromises();
+		expect(button.props("disabled")).toBe(true);
+		button.vm.$emit("click");
+		await flushPromises();
+		expect(authFetch).not.toHaveBeenCalled();
+	});
+
+	it("says why and saves nothing when the route's fields cannot be read", async () => {
+		answer.data.value = undefined;
+		answer.failure.value = "error";
+		answer.message.value = "The sitelayout could not be read";
+		const { wrapper, button } = mountEditor({ route: "/api/customers" });
+		await flushPromises();
+		expect(wrapper.text()).toContain("The sitelayout could not be read");
+		expect(button.props("disabled")).toBe(true);
+		button.vm.$emit("click");
+		await flushPromises();
+		expect(authFetch).not.toHaveBeenCalled();
+	});
+
+	it("falls back to its own text when the failure has no message", async () => {
+		answer.data.value = undefined;
+		answer.failure.value = "unavailable";
+		const { wrapper } = mountEditor({ route: "/api/customers" });
+		await flushPromises();
+		expect(wrapper.text()).toContain("dms_ai.views.exclusions.load_failed");
 	});
 });

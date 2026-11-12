@@ -148,7 +148,8 @@
 				"not_found": "Introuvable",
 				"save": "Enregistrer",
 				"failed": "Les exclusions n'ont pas été enregistrées",
-				"none": "Aucune page visible ne contient de table."
+				"none": "Aucune page visible ne contient de table.",
+				"load_failed": "Les champs de cette route de données n'ont pas pu être lus : rien ne peut être enregistré."
 			}
 		}
 	}

@@ -148,7 +148,8 @@
 				"not_found": "Not found",
 				"save": "Save",
 				"failed": "The exclusions were not saved",
-				"none": "No page you can see has a table to exclude from."
+				"none": "No page you can see has a table to exclude from.",
+				"load_failed": "The fields of this data route could not be read, so nothing can be saved."
 			}
 		}
 	}

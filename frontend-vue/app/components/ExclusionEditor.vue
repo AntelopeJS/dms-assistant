@@ -36,6 +36,13 @@ const route = computed(() => editedRoute.value ?? table.value?.route);
 const checklist = computed(() =>
 	candidates.data.value?.routes.find((r) => r.route === route.value),
 );
+const loadFailure = computed(() => {
+	if (!candidates.failure.value) return undefined;
+	return candidates.message.value || t("dms_ai.views.exclusions.load_failed");
+});
+const isSavable = computed(
+	() => route.value !== undefined && checklist.value !== undefined,
+);
 const isExisting = computed(
 	() => checklist.value?.fields.some((f) => f.isExcluded) ?? false,
 );
@@ -68,7 +75,7 @@ function setExcluded(field: string, isExcluded: boolean | "indeterminate") {
 }
 
 async function save(): Promise<void> {
-	if (!route.value) return;
+	if (!isSavable.value || !route.value) return;
 	isSaving.value = true;
 	try {
 		await $authFetch(AI_ROUTES.exclusions, {
@@ -86,6 +93,7 @@ async function save(): Promise<void> {
 
 <template>
 	<div class="flex flex-col gap-4">
+		<p v-if="loadFailure" class="text-error text-sm">{{ loadFailure }}</p>
 		<template v-if="!editedRoute">
 			<p
 				v-if="candidates.data.value && pages.length === 0"
@@ -151,7 +159,7 @@ async function save(): Promise<void> {
 				color="primary"
 				icon="i-ph-eye-slash"
 				:label="t('dms_ai.views.exclusions.save')"
-				:disabled="!route"
+				:disabled="!isSavable"
 				:loading="isSaving"
 				@click="save"
 			/>

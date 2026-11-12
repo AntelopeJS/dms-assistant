@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { writeAuthRecord } from "../../src/providers/codex/chatgpt/store.js";
 import { createHttpServer } from "../../src/server/http.js";
 import { createConversationStore } from "../../src/state/conversations.js";
 import {
@@ -10,6 +11,7 @@ import {
   type SettingsStore,
 } from "../../src/state/settings-store.js";
 import { createStore } from "../../src/state/store.js";
+import { signedInRecord, signInForTests } from "../helpers/chatgpt-auth.js";
 
 const CLIENT_TOKEN = "onboarding-route-credential";
 
@@ -99,6 +101,34 @@ describe("the onboarding routes", () => {
     expect(first).not.toHaveProperty("codexLoginUrl");
     expect(first.bootId.length).toBeGreaterThan(0);
     expect(second.bootId).toBe(first.bootId);
+  });
+
+  it("offers one ChatGPT sign-in attempt across the popup's polling, and a new one after a sign-in", async () => {
+    const { tokens: _tokens, ...signedOut } = signedInRecord();
+    await writeAuthRecord(signedOut);
+    try {
+      const urls = [];
+      for (let read = 0; read < 3; read += 1) {
+        const state = z
+          .looseObject({ codexLoginUrl: z.string() })
+          .parse(await (await call(running, "/onboarding")).json());
+        urls.push(new URL(state.codexLoginUrl).searchParams.get("state"));
+      }
+      expect(urls[0]).toBeTruthy();
+      expect(new Set(urls).size).toBe(1);
+
+      await signInForTests();
+      await call(running, "/onboarding");
+      await writeAuthRecord(signedOut);
+      const after = z
+        .looseObject({ codexLoginUrl: z.string() })
+        .parse(await (await call(running, "/onboarding")).json());
+      expect(new URL(after.codexLoginUrl).searchParams.get("state")).not.toBe(
+        urls[0],
+      );
+    } finally {
+      await signInForTests();
+    }
   });
 
   it("sets the provider setting and answers the new state", async () => {

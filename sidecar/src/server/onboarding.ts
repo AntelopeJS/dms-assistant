@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
+import { CHATGPT_LOGIN_TTL_MS } from "../constants/chatgpt.js";
 import { HTTP_STATUS } from "../constants/http.js";
 import { readClaudeLogin } from "../providers/claude/login.js";
 import { submitClaudeToken } from "../providers/claude/token-check.js";
@@ -40,15 +41,35 @@ function codexLogin(): ProviderLogin {
   return { status: "signed-in", source: "chatgpt", email: account.email };
 }
 
+/** The sign-in attempt the popup offers, kept while it has at least half its lifetime left. */
+let offeredLogin: { url: string; mintedAt: number } | undefined;
+
+/**
+ * The popup reads the state every 2 s while it waits for ChatGPT: each read
+ * answers the same attempt, so the polling mints no new one.
+ */
+async function offeredLoginUrl(port: number): Promise<string> {
+  const now = Date.now();
+  if (
+    offeredLogin !== undefined &&
+    now - offeredLogin.mintedAt < CHATGPT_LOGIN_TTL_MS / 2
+  ) {
+    return offeredLogin.url;
+  }
+  offeredLogin = { url: await createLoginUrl(port), mintedAt: now };
+  return offeredLogin.url;
+}
+
 async function buildOnboardingState(deps: ApiDeps): Promise<OnboardingState> {
   const codex = codexLogin();
+  if (codex.status !== "signed-out") offeredLogin = undefined;
   return {
     bootId: BOOT_ID,
     provider: deps.settingsStore.get().provider,
     logins: { claude: readClaudeLogin(), codex },
     codexLoginUrl:
       codex.status === "signed-out"
-        ? await createLoginUrl(deps.port)
+        ? await offeredLoginUrl(deps.port)
         : undefined,
   };
 }

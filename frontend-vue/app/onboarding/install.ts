@@ -39,36 +39,67 @@ export interface OnboardingHost {
 const APP_WIDGETS_STATE_KEY = "dms-app-widgets";
 const WIDGET_ID = "dms-assistant:onboarding";
 
+/**
+ * The `useDmsState` key the dock adds 1 to on each click of the assistant's chip, starting at 0
+ * (dms #871).
+ */
+export const ONBOARDING_SELECTED_STATE_KEY =
+	"dms-assistant:onboarding-selected";
+
 interface AppWidget {
 	id: string;
 	icon: string;
 	label: string;
 	body: string;
 	order?: number;
+	/**
+	 * A `useDmsState` key the dock adds 1 to on each click of the chip, starting at 0. Needs
+	 * dms #871; an older dock ignores it.
+	 */
+	onSelectEvent?: string;
+	/**
+	 * A dot on the chip's corner while set; registering the widget again without it clears the dot.
+	 * Needs dms #871; an older dock ignores it.
+	 */
+	badge?: "dot";
 }
 
-const WIDGET: AppWidget = {
-	id: WIDGET_ID,
-	icon: LAUNCHER_ICON,
-	label: "$dms_ai.views.onboarding.widget.label",
-	body: ONBOARDING_WIDGET_COMPONENT_NAME,
-};
+function widgetFor(needsAttention: boolean): AppWidget {
+	const widget: AppWidget = {
+		id: WIDGET_ID,
+		icon: LAUNCHER_ICON,
+		label: "$dms_ai.views.onboarding.widget.label",
+		body: ONBOARDING_WIDGET_COMPONENT_NAME,
+		onSelectEvent: ONBOARDING_SELECTED_STATE_KEY,
+	};
+	return needsAttention ? { ...widget, badge: "dot" } : widget;
+}
 
 /**
  * Adds the popup to the overlays the DMS draws over every page, as the builder adds its own, and
- * the assistant's chip to the DMS widget dock, which unfolds its card on hover.
+ * the assistant's chip to the DMS widget dock, which unfolds its card on hover. A click on the chip
+ * opens the popup, and the chip carries a dot while the onboarding needs attention.
  */
-function registerOverlay(): () => void {
+function registerOverlay(controller: OnboardingController): () => void {
 	const overlays = useDmsState<string[]>(APP_OVERLAYS_STATE_KEY, () => []);
 	if (!overlays.value.includes(ONBOARDING_COMPONENT_NAME)) {
 		overlays.value = [...overlays.value, ONBOARDING_COMPONENT_NAME];
 	}
 	const widgets = useDmsState<AppWidget[]>(APP_WIDGETS_STATE_KEY, () => []);
-	widgets.value = [
-		...widgets.value.filter((widget) => widget.id !== WIDGET_ID),
-		WIDGET,
-	].sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+	const place = (needsAttention: boolean): void => {
+		widgets.value = [
+			...widgets.value.filter((widget) => widget.id !== WIDGET_ID),
+			widgetFor(needsAttention),
+		].sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+	};
+	const stopBadge = watch(controller.needsAttention, place, {
+		immediate: true,
+	});
+	const selected = useDmsState<number>(ONBOARDING_SELECTED_STATE_KEY, () => 0);
+	const stopSelect = watch(selected, () => controller.open());
 	return () => {
+		stopBadge();
+		stopSelect();
 		widgets.value = widgets.value.filter((widget) => widget.id !== WIDGET_ID);
 	};
 }
@@ -141,7 +172,9 @@ export function startOnboarding(host: OnboardingHost): () => void {
 			isActive ? controller.load().catch(() => undefined) : undefined,
 		)
 		.then(() => {
-			if (isActive) unregister = host.runWithContext(registerOverlay);
+			if (isActive) {
+				unregister = host.runWithContext(() => registerOverlay(controller));
+			}
 		})
 		.catch(() => undefined);
 	return () => {

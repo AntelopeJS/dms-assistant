@@ -3,6 +3,8 @@ const BLOCK_PATH_ATTRIBUTE = "data-dms-block";
 const LAYOUT_SEPARATOR = ".";
 /** Blocks drawn inside these are copies (a preview in the chat), not the page's. */
 const OUTSIDE_PAGE_SELECTOR = "[data-dms-block-preview], .chat-view";
+/** A modal dialog covers the page, so its outline would draw over the dialog. */
+const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
 
 export interface OutlineRect {
 	top: number;
@@ -20,12 +22,13 @@ function isUnder(element: Element, path: string): boolean {
 /**
  * The box around the block at `path` on the page: its own element and every
  * block drawn under it, since a container draws no attribute of its own.
- * `null` when the page shows none of them.
+ * `null` when the page shows none of them, or a modal dialog covers the page.
  */
 export function blockOutlineRect(
 	root: ParentNode,
 	path: string,
 ): OutlineRect | null {
+	if (root.querySelector(MODAL_SELECTOR) !== null) return null;
 	const boxes = [...root.querySelectorAll(`[${BLOCK_PATH_ATTRIBUTE}]`)]
 		.filter(
 			(element) =>

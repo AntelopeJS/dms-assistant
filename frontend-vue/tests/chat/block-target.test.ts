@@ -97,6 +97,14 @@ describe("the outline on the page", () => {
 		});
 	});
 
+	it("draws nothing while a modal dialog covers the page (fails when the outline paints over the dialog)", () => {
+		const dialog = document.createElement("div");
+		dialog.setAttribute("role", "dialog");
+		dialog.setAttribute("aria-modal", "true");
+		document.body.replaceChildren(block("chart", { top: 0, left: 0 }), dialog);
+		expect(blockOutlineRect(document, "chart")).toBeNull();
+	});
+
 	it("ignores a copy of the block drawn in the chat's preview (fails when the preview is outlined)", () => {
 		const preview = document.createElement("div");
 		preview.setAttribute("data-dms-block-preview", "");

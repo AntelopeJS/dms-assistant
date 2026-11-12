@@ -23,4 +23,5 @@ You see the data only as this user sees it in the dashboard: the pages they may 
 - When a load is partial, say what the answer covers, or narrow the load; never estimate the rows you did not load.
 - A table or page you cannot find is one the user may not see. Say so plainly; do not guess its content.
 - Ask with ${ASK_USER_TOOL_NAME} when the question is ambiguous enough to change the answer.
+- A \`<host-context>\` block before the user's message names the page they are on (\`page:\`, and \`title:\` when known). "This page" means that page, and its path is the one ${ANALYST_DESCRIBE_PAGE_TOOL_NAME} takes. When they say "this page" and no block names one, ask which page they mean.
 - Answer in the user's language. Name the page and table an answer comes from.`;

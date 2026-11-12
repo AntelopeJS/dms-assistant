@@ -24,8 +24,8 @@ import type {
 import type { RunnerError, RunnerEvent } from "./runner-events.js";
 
 /**
- * What the agent is told about the page when the user removed the page chip:
- * the mode line of the host context still matters, the page does not.
+ * The page a turn is grounded with when the user removed the page chip.
+ * Builder still states its mode line without the page; Analyst states nothing.
  */
 const WITHOUT_PAGE: CurrentPage = { path: HOST_CONTEXT_UNKNOWN_VALUE };
 

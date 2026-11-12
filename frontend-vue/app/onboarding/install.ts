@@ -1,0 +1,175 @@
+import { type ShallowRef, watch } from "vue";
+import { useDmsState } from "#dms/frontend-module";
+import {
+	API_PREFIX,
+	APP_OVERLAYS_STATE_KEY,
+} from "../../builder/app/runtime/constants";
+import type { DatabaseConnection } from "../../builder/app/runtime/database-types";
+import type { AssistantSession } from "../runtime/assistant-session";
+import { createOnboardingApi } from "./api";
+import { type ProjectContent, readConversations } from "./content";
+import { createOnboarding, type OnboardingController } from "./controller";
+import { LAUNCHER_ICON } from "../runtime/constants";
+import { listMockups } from "./mockups";
+import { preferenceStore } from "./preferences";
+import { ONBOARDING_QUERY_PARAM } from "./public";
+import {
+	installDeepLink,
+	ONBOARDING_COMPONENT_NAME,
+	ONBOARDING_WIDGET_COMPONENT_NAME,
+} from "./runtime";
+
+const DATABASE_CONNECTIONS_PATH = `${API_PREFIX}/database/connections`;
+
+/** What the onboarding takes from the dashboard once the assistant runs. */
+export interface OnboardingHost {
+	session: AssistantSession;
+	router: {
+		currentRoute: { value: { path: string; query: Record<string, string> } };
+		replace: (path: string) => Promise<void>;
+	};
+	provided: ShallowRef<OnboardingController | null>;
+	canConnectDatabase: boolean;
+	/** Resolves once the app is mounted: the overlay joins the page after hydration. */
+	appMounted: Promise<void>;
+	runWithContext: <T>(callback: () => T) => T;
+}
+
+/** The DMS's framed widgets, by the state key and the fields its dock reads. */
+const APP_WIDGETS_STATE_KEY = "dms-app-widgets";
+const WIDGET_ID = "dms-assistant:onboarding";
+
+interface AppWidget {
+	id: string;
+	icon: string;
+	label: string;
+	body: string;
+	order?: number;
+}
+
+const WIDGET: AppWidget = {
+	id: WIDGET_ID,
+	icon: LAUNCHER_ICON,
+	label: "$dms_ai.views.onboarding.widget.label",
+	body: ONBOARDING_WIDGET_COMPONENT_NAME,
+};
+
+/**
+ * Adds the popup to the overlays the DMS draws over every page, as the builder adds its own, and
+ * the assistant's chip to the DMS widget dock, which unfolds its card on hover.
+ */
+function registerOverlay(): () => void {
+	const overlays = useDmsState<string[]>(APP_OVERLAYS_STATE_KEY, () => []);
+	if (!overlays.value.includes(ONBOARDING_COMPONENT_NAME)) {
+		overlays.value = [...overlays.value, ONBOARDING_COMPONENT_NAME];
+	}
+	const widgets = useDmsState<AppWidget[]>(APP_WIDGETS_STATE_KEY, () => []);
+	widgets.value = [
+		...widgets.value.filter((widget) => widget.id !== WIDGET_ID),
+		WIDGET,
+	].sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+	return () => {
+		widgets.value = widgets.value.filter((widget) => widget.id !== WIDGET_ID);
+	};
+}
+
+async function readDatabases(
+	session: AssistantSession,
+): Promise<DatabaseConnection[]> {
+	const list = await session.api.get<unknown>(DATABASE_CONNECTIONS_PATH);
+	return Array.isArray(list)
+		? list.filter(
+				(entry): entry is DatabaseConnection =>
+					entry !== null &&
+					typeof entry === "object" &&
+					typeof Reflect.get(entry, "id") === "string",
+			)
+		: [];
+}
+
+async function readContent(
+	session: AssistantSession,
+	canConnectDatabase: boolean,
+): Promise<ProjectContent> {
+	const [conversations, mockups, databases] = await Promise.all([
+		readConversations({ chat: session.chat, holdStream: session.holdStream }),
+		listMockups((path) => session.api.get<unknown>(path)).catch(() => []),
+		canConnectDatabase
+			? readDatabases(session).catch(() => [])
+			: Promise.resolve([]),
+	]);
+	return { conversations, mockups, databases };
+}
+
+/**
+ * Starts the onboarding popup in a tab where the assistant runs: provides its controller, follows
+ * `?assistant=connect`, and once the app is mounted and past the DMS's setup wizard reads whether
+ * the popup opens, then registers the overlay and the widget. A backend without the onboarding
+ * routes leaves neither.
+ */
+export function startOnboarding(host: OnboardingHost): () => void {
+	const { session } = host;
+	const controller = createOnboarding({
+		api: createOnboardingApi({
+			get: (path) => session.api.get<unknown>(path),
+			post: (path, body) => session.api.post<unknown>(path, body),
+		}),
+		assistant: session,
+		readContent: () => readContent(session, host.canConnectDatabase),
+		preferences: preferenceStore(() => window.localStorage),
+		canConnectDatabase: host.canConnectDatabase,
+		openTab: (url) => void window.open(url, "_blank", "noopener"),
+	});
+	host.provided.value = controller;
+	let isActive = true;
+	let unregister = (): void => undefined;
+	let stopLink = (): void => undefined;
+	const wizard = afterSetupWizard(host.router);
+	void host.appMounted
+		.then(() => {
+			if (!isActive) return;
+			stopLink = installDeepLink({
+				href: () => window.location.href,
+				param: () =>
+					host.router.currentRoute.value.query[ONBOARDING_QUERY_PARAM],
+				replace: (path) => void host.router.replace(path),
+				open: controller.open,
+			});
+			return wizard.done;
+		})
+		.then(() => (isActive ? controller.load() : undefined))
+		.then(() => {
+			if (isActive) unregister = host.runWithContext(registerOverlay);
+		})
+		.catch(() => undefined);
+	return () => {
+		isActive = false;
+		host.provided.value = null;
+		wizard.stop();
+		unregister();
+		stopLink();
+		controller.stop();
+	};
+}
+
+/** The DMS's own setup wizard, where a project nobody has set up yet is sent. */
+const SETUP_WIZARD_PATH = "/onboarding";
+
+/** Resolves once the route is outside the DMS's setup wizard: the popup never covers it. */
+function afterSetupWizard(router: OnboardingHost["router"]): {
+	done: Promise<void>;
+	stop: () => void;
+} {
+	const inWizard = (): boolean =>
+		router.currentRoute.value.path.startsWith(SETUP_WIZARD_PATH);
+	if (!inWizard()) return { done: Promise.resolve(), stop: () => undefined };
+	let stop = (): void => undefined;
+	const done = new Promise<void>((resolve) => {
+		stop = watch(inWizard, (still) => {
+			if (still) return;
+			stop();
+			resolve();
+		});
+	});
+	return { done, stop: () => stop() };
+}

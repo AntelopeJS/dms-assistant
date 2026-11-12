@@ -1,6 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { nextTick, ref, type Ref } from "vue";
-import plugin from "../app/plugins/ai.client";
+import { assistantPlugin } from "../app/plugins/ai.client";
+
+const plugin = assistantPlugin({ builderEnabled: false });
 
 vi.mock("#dms/frontend-module", () => ({
 	defineDmsPlugin: (definition: unknown) => definition,

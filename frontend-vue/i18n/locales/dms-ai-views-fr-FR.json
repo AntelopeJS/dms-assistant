@@ -139,6 +139,166 @@
 				"used_value": "{count}× · 30 jours",
 				"last_used_label": "Dernière utilisation",
 				"open_last_conversation": "Ouvrir la dernière conversation"
+			},
+			"onboarding": {
+				"close": "Fermer",
+				"dont_show": "Ne plus afficher au démarrage",
+				"back": "Retour",
+				"proceed": "Continuer",
+				"continue": {
+					"title": "Bon retour",
+					"pick_up": "Reprendre",
+					"chat": "Conversation · {when}",
+					"resume": "Reprendre",
+					"mockups": "Maquettes",
+					"pages": "{count} page | {count} pages",
+					"from": "par {source}",
+					"comments": "{count} commentaire ouvert | {count} commentaires ouverts",
+					"built": "Construite",
+					"draft": "Brouillon",
+					"databases": "Bases de données",
+					"project": "Projet",
+					"external": "{name} · Externe",
+					"new_scratch": "Nouveau : de zéro",
+					"connect": "Connecter une base"
+				},
+				"progress": "Étape {step} sur 3",
+				"widget": {
+					"label": "Assistant",
+					"attention": "Assistant, configuration à terminer",
+					"ai": "IA",
+					"not_connected": "Non connecté",
+					"mockups": "Maquettes",
+					"open": "Ouvrir"
+				},
+				"welcome": {
+					"title": "Construisons votre back-office",
+					"lede_before": "Connectez un modèle d’IA une fois, puis décrivez ce dont vous avez besoin ou partez d’une base de données existante. Vous pouvez rouvrir cette fenêtre à tout moment avec le bouton",
+					"lede_after": ".",
+					"ai_title": "Connecter Claude ou Codex",
+					"ai_text": "Utilisez votre abonnement actuel. Environ une minute.",
+					"start_title": "Choisir un point de départ",
+					"start_text": "De zéro, ou depuis une base de données existante.",
+					"shape_title": "Le façonner",
+					"shape_text": "Itérez sur une maquette vivante, puis construisez-la pour de vrai.",
+					"skip": "Plus tard",
+					"get_started": "Commencer"
+				},
+				"login": {
+					"with_plan": "{name} · {plan}",
+					"detail": "{email} · {source}",
+					"source_env": "défini dans l’environnement",
+					"source_saved": "enregistré sur cette machine",
+					"source_claude_cli": "trouvé dans ~/.claude",
+					"source_chatgpt": "connecté avec ChatGPT"
+				},
+				"ready": {
+					"title": "Votre assistant est prêt",
+					"lede": "Nous avons trouvé une connexion à une IA sur cette machine. Utilisez-la, ou choisissez-en une autre.",
+					"works": "Fonctionne",
+					"other": "Utiliser Codex ou un autre compte",
+					"use": "Utiliser cette connexion"
+				},
+				"ai": {
+					"title": "Quelle IA utilisez-vous ?",
+					"lede": "L’assistant utilise votre propre abonnement. Nous ne facturons rien.",
+					"claude_text": "Abonnement Claude Pro ou Max",
+					"codex_text": "ChatGPT Plus, Pro ou Team",
+					"signed_in": "Connecté",
+					"expired": "Expiré",
+					"found_claude": "Connexion Claude trouvée sur cette machine ({email}). Nous l’utiliserons, aucun jeton nécessaire.",
+					"found_claude_plain": "Connexion Claude trouvée sur cette machine. Nous l’utiliserons, aucun jeton nécessaire.",
+					"found_codex": "Connexion ChatGPT trouvée sur cette machine ({email}). Nous l’utiliserons, aucune connexion nécessaire.",
+					"found_codex_plain": "Connexion ChatGPT trouvée sur cette machine. Nous l’utiliserons, aucune connexion nécessaire.",
+					"expired_claude": "Votre connexion Claude a expiré. Reconnectez-la pour continuer à l’utiliser.",
+					"expired_codex": "Votre connexion ChatGPT a expiré. Reconnectez-vous pour continuer à l’utiliser.",
+					"use": "Utiliser cette connexion"
+				},
+				"claude": {
+					"title": "Connecter Claude",
+					"lede": "Générez un jeton longue durée depuis votre terminal et collez-le ici. Nous le gardons sur cette machine uniquement.",
+					"run": "Lancez ceci dans un terminal",
+					"copy": "Copier",
+					"copied": "Copié",
+					"paste": "Collez le jeton affiché",
+					"checking": "Vérification auprès d’Anthropic…",
+					"connected": "Connecté · {who}",
+					"rejected": "Ce jeton a été refusé. Relancez la commande et collez le nouveau jeton.",
+					"unreachable": "Anthropic est injoignable. Vérifiez votre connexion et réessayez.",
+					"malformed": "Ce n’est pas un jeton Claude. Collez celui que la commande affiche, qui commence par sk-ant-."
+				},
+				"codex": {
+					"title": "Se connecter avec ChatGPT",
+					"lede": "Nous ouvrons ChatGPT dans un nouvel onglet. Approuvez la demande et revenez, cette fenêtre se met à jour toute seule.",
+					"start": "Continuer avec ChatGPT",
+					"remote": "Le DMS tourne sur une autre machine ?",
+					"waiting": "En attente d’approbation dans ChatGPT…",
+					"reopen": "Rouvrir ChatGPT",
+					"remote_lede": "Après l’approbation, votre navigateur arrive sur une page qui ne se charge pas. Copiez son adresse complète et collez-la ici.",
+					"remote_hint": "L’adresse commence par",
+					"connect": "Connecter",
+					"unavailable": "La connexion ChatGPT n’est pas encore disponible. Rouvrez cette fenêtre dans un instant."
+				},
+				"connected": {
+					"title_claude": "Claude est connecté",
+					"title_codex": "Codex est connecté",
+					"lede": "L’assistant est prêt. Dites-nous maintenant d’où vous partez.",
+					"next": "Choisir un point de départ"
+				},
+				"paths": {
+					"title": "D’où partez-vous ?",
+					"lede": "Choisissez-en un. Vous pourrez toujours faire l’autre plus tard.",
+					"scratch_title": "Partir de zéro",
+					"scratch_text": "Décrivez votre produit. Nous esquissons une maquette vivante que vous affinez avant que quoi que ce soit ne soit construit.",
+					"database_title": "Partir d’une base de données existante",
+					"database_text": "Connectez PostgreSQL, MongoDB ou RethinkDB. Nous lisons le schéma et proposons les écrans.",
+					"explore": "Je vais d’abord explorer"
+				},
+				"scratch": {
+					"title": "Que construisez-vous ?",
+					"lede": "Quelques phrases suffisent. L’assistant demande ce dont il a besoin, puis vous montre une maquette.",
+					"placeholder": "Un back-office pour ma location de vélos : vélos, clients, locations, et un tableau de bord du chiffre d’affaires par semaine…",
+					"suggestion_crm": "CRM pour une petite agence",
+					"suggestion_inventory": "Stocks et fournisseurs",
+					"suggestion_events": "Inscriptions à des événements",
+					"suggestion_support": "Tickets de support",
+					"start": "Lancer la maquette"
+				},
+				"database": {
+					"title": "Connectez votre base de données",
+					"lede": "Nous ne lisons que le schéma et un petit échantillon tant que vous n’autorisez pas plus.",
+					"url": "URL de connexion",
+					"stored": "Enregistrée dans le .env de votre projet, jamais envoyée ailleurs.",
+					"connect": "Connecter et analyser",
+					"unreadable": "Ce n’est pas une URL de connexion {engine}.",
+					"no_database": "L’URL ne nomme aucune base de données.",
+					"reachable_running": "Connexion au serveur…",
+					"reachable": "Serveur joignable",
+					"reachable_latency": "Serveur joignable · {ms} ms",
+					"unreachable": "Serveur injoignable : {error}",
+					"signed_in": "Connecté en tant que {user}",
+					"signed_in_pending": "Connexion",
+					"read": "Accès en lecture",
+					"schema_running": "Lecture du schéma…",
+					"schema_done": "Schéma lu",
+					"schema_failed": "Le schéma n’a pas pu être lu : {error}",
+					"empty": "Aucune table lisible par cet utilisateur.",
+					"gave_up": "Le projet n’a pas redémarré. Relancez-le, puis rouvrez cette fenêtre."
+				},
+				"analysis": {
+					"title": "Voici le contenu de",
+					"lede": "{engine} · {tables} · en lecture seule pour l’instant. Décochez ce dont vous n’avez pas besoin.",
+					"tables_count": "{count} table | {count} tables",
+					"tables": "Tables",
+					"screens": "Écrans proposés",
+					"kind_table": "table",
+					"kind_status": "table + statut",
+					"kind_tabs": "table + onglets",
+					"kind_stats": "statistiques",
+					"loading": "Lecture de l’analyse…",
+					"build": "Construire directement",
+					"mockup": "Générer une première maquette"
+				}
 			}
 		}
 	}

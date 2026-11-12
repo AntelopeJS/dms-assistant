@@ -1,0 +1,180 @@
+import { vi } from "vitest";
+import { defineComponent, h, shallowRef } from "vue";
+import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
+import type { OnboardingApi } from "../../app/onboarding/api";
+import { NO_CONTENT, type ProjectContent } from "../../app/onboarding/content";
+import type {
+	OnboardingState,
+	ProviderLogin,
+} from "../../app/onboarding/contract";
+import {
+	createOnboarding,
+	type OnboardingController,
+} from "../../app/onboarding/controller";
+import type {
+	OnboardingPreferences,
+	PreferenceStore,
+} from "../../app/onboarding/preferences";
+import { ONBOARDING_CONTROLLER_KEY } from "../../app/onboarding/runtime";
+import views from "../../i18n/locales/dms-ai-views-en-GB.json";
+import { createTestI18n } from "./i18n";
+import { PANEL_STUBS } from "./stubs";
+
+export const SIGNED_OUT: ProviderLogin = { status: "signed-out" };
+
+export const CLAUDE_LOGIN: ProviderLogin = {
+	status: "signed-in",
+	source: "saved",
+	email: "owner@example.com",
+	plan: "max",
+};
+
+export function onboardingState(
+	logins: Partial<OnboardingState["logins"]> = {},
+	overrides: Partial<OnboardingState> = {},
+): OnboardingState {
+	return {
+		bootId: "boot-1",
+		provider: "claude",
+		logins: { claude: SIGNED_OUT, codex: SIGNED_OUT, ...logins },
+		...overrides,
+	};
+}
+
+/** Preferences kept in memory, as `localStorage` keeps them across controllers. */
+export function memoryPreferences(
+	initial: OnboardingPreferences = { dontShow: false, seenBootId: null },
+): PreferenceStore & { saved: OnboardingPreferences } {
+	const store = {
+		saved: initial,
+		read: () => store.saved,
+		write: (next: OnboardingPreferences) => {
+			store.saved = next;
+		},
+	};
+	return store;
+}
+
+export interface OnboardingHarness {
+	controller: OnboardingController;
+	api: {
+		readState: ReturnType<typeof vi.fn<OnboardingApi["readState"]>>;
+		checkClaudeToken: ReturnType<
+			typeof vi.fn<OnboardingApi["checkClaudeToken"]>
+		>;
+		setProvider: ReturnType<typeof vi.fn<OnboardingApi["setProvider"]>>;
+		finishCodexSignIn: ReturnType<
+			typeof vi.fn<OnboardingApi["finishCodexSignIn"]>
+		>;
+	};
+	assistant: {
+		startConversation: ReturnType<typeof vi.fn>;
+		openConversation: ReturnType<typeof vi.fn>;
+		navigate: ReturnType<typeof vi.fn>;
+	};
+	openTab: ReturnType<typeof vi.fn>;
+	/** What a mounted view injects: the controller and the views' English strings. */
+	provide: Record<symbol, unknown>;
+}
+
+export interface HarnessOptions {
+	state?: OnboardingState;
+	content?: ProjectContent;
+	preferences?: PreferenceStore;
+	canConnectDatabase?: boolean;
+}
+
+/** A controller over a backend that answers `state` until a test says otherwise. */
+export function createOnboardingHarness(
+	options: HarnessOptions = {},
+): OnboardingHarness {
+	const state = options.state ?? onboardingState();
+	const api = {
+		readState: vi.fn<OnboardingApi["readState"]>(async () => state),
+		checkClaudeToken: vi.fn<OnboardingApi["checkClaudeToken"]>(async () => ({
+			ok: false,
+			reason: "rejected" as const,
+		})),
+		setProvider: vi.fn<OnboardingApi["setProvider"]>(async (provider) => ({
+			...state,
+			provider,
+		})),
+		finishCodexSignIn: vi.fn<OnboardingApi["finishCodexSignIn"]>(
+			async () => undefined,
+		),
+	};
+	const assistant = {
+		startConversation: vi.fn(),
+		openConversation: vi.fn(),
+		navigate: vi.fn(),
+	};
+	const openTab = vi.fn();
+	const controller = createOnboarding({
+		api,
+		assistant,
+		readContent: async () => options.content ?? NO_CONTENT,
+		preferences: options.preferences ?? memoryPreferences(),
+		canConnectDatabase: options.canConnectDatabase ?? true,
+		openTab,
+	});
+	return {
+		controller,
+		api,
+		assistant,
+		openTab,
+		provide: {
+			[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
+			[CHAT_I18N_KEY]: createTestI18n(views),
+		},
+	};
+}
+
+/** A modal that draws its content in place while open. */
+const UModal = defineComponent({
+	name: "UModal",
+	props: { open: { type: Boolean, default: false } },
+	setup(props, { slots }) {
+		return () =>
+			props.open
+				? h("div", { class: "u-modal", role: "dialog" }, slots.content?.())
+				: null;
+	},
+});
+
+const UCheckbox = defineComponent({
+	name: "UCheckbox",
+	props: {
+		modelValue: { type: Boolean, default: false },
+		label: { type: String, default: "" },
+	},
+	emits: ["update:modelValue"],
+	setup:
+		(props, { emit }) =>
+		() =>
+			h("label", [
+				h("input", {
+					type: "checkbox",
+					checked: props.modelValue,
+					onChange: (event: Event) =>
+						emit(
+							"update:modelValue",
+							(event.target as HTMLInputElement).checked,
+						),
+				}),
+				props.label,
+			]),
+});
+
+/** The Nuxt UI and DMS components the onboarding draws, as light stand-ins. */
+export const ONBOARDING_STUBS = {
+	...PANEL_STUBS,
+	UModal,
+	UCheckbox,
+	UFormField: defineComponent({
+		setup:
+			(_, { slots }) =>
+			() =>
+				h("div", slots.default?.()),
+	}),
+	DmsIconWell: true,
+};

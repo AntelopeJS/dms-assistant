@@ -45,6 +45,7 @@ import type { ConversationSummary, CurrentPage } from "../types/conversation";
 import type { ExpiredRequest } from "../types/permission";
 import type { QuestionReply } from "../types/question";
 import type { PendingAttachment } from "../utils/attachments";
+import { changingBlock } from "../utils/block-target";
 import { formatTokens } from "../utils/format";
 import { newUuid } from "../utils/ids";
 import { isRunStalled, runElapsedMs } from "../utils/run-status";
@@ -52,6 +53,7 @@ import { describeStatus } from "../utils/status-label";
 import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
 import ApprovalDock from "./ApprovalDock.vue";
+import BlockOutline from "./BlockOutline.vue";
 import ChatEmpty from "./ChatEmpty.vue";
 import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
@@ -158,6 +160,9 @@ const isStalled = computed(
 		isRunStalled(conversation.lastEventAtMs.value, nowMs.value),
 );
 const todos = computed(() => latestTodos(conversation.messages.value));
+const outlinedBlock = computed(() =>
+	changingBlock(conversation.messages.value, isRunning.value),
+);
 const agentName = computed(() =>
 	t(`dms_ai.common.agent.${settings.value.provider}`),
 );
@@ -567,6 +572,8 @@ onBeforeUnmount(() => {
 			@confirm="changeSetActions.confirmUndo"
 			@cancel="changeSetActions.cancelUndo"
 		/>
+
+		<BlockOutline :path="outlinedBlock" />
 	</main>
 </template>
 

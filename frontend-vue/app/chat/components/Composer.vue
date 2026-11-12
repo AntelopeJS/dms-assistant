@@ -23,6 +23,8 @@ import { shortcutLabel } from "../utils/platform";
 import { pageChipLabel } from "../utils/suggestions";
 import type { MockupBlock } from "../../runtime/assistant-prompt";
 
+defineOptions({ name: "ChatComposer" });
+
 interface Props {
 	isDisabled: boolean;
 	isRunning: boolean;

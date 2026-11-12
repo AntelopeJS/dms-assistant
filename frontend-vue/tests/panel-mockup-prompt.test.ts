@@ -123,6 +123,33 @@ describe("a prompt handed to the panel", () => {
 	});
 });
 
+describe("a block sent while a turn runs", () => {
+	it("goes with the queued follow-up (fails when queueing drops the block the chip promised)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		harness.session.intents.push({
+			kind: "prompt",
+			prompt: "Connect this chart",
+			block: BLOCK,
+		});
+		await flushPromises();
+		harness.hub.deliver({
+			conversationId: CONVERSATION_ID,
+			type: "run_progress",
+			activity: "thinking",
+			elapsedMs: 0,
+		});
+		await nextTick();
+		await panel.find("form.composer").trigger("submit");
+		await nextTick();
+		const [queued] = sentOfType(harness, "queue_enqueue");
+		expect(queued.item).toMatchObject({
+			content: "Connect this chart",
+			focusBlock: BLOCK,
+		});
+	});
+});
+
 describe("a block handed to one conversation", () => {
 	it("leaves the composer when another conversation opens (fails when the block follows into a build)", async () => {
 		const harness = createHarness();

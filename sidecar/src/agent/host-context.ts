@@ -13,14 +13,15 @@ import type { FocusBlockType } from "../protocol/messages.js";
 import type { CurrentPage } from "../state/host-state.js";
 import type { GenerationMode } from "../state/settings-types.js";
 
-/** `mockup "bikes", page "home", path "grid.revenue", type ChartCard`. */
+/** `mockup "bikes", page "home", path "grid.revenue", type "ChartCard"`: each value quoted, so none leaves the line. */
 function describeFocusBlock(block: FocusBlockType): string {
   const parts = [
     `mockup ${JSON.stringify(block.mockup)}`,
     `page ${JSON.stringify(block.page)}`,
     `path ${JSON.stringify(block.path)}`,
   ];
-  if (block.type !== undefined) parts.push(`type ${block.type}`);
+  if (block.type !== undefined)
+    parts.push(`type ${JSON.stringify(block.type)}`);
   return parts.join(", ");
 }
 

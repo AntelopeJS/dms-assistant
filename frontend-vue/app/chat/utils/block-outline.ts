@@ -3,8 +3,8 @@ const BLOCK_PATH_ATTRIBUTE = "data-dms-block";
 const LAYOUT_SEPARATOR = ".";
 /** Blocks drawn inside these are copies (a preview in the chat), not the page's. */
 const OUTSIDE_PAGE_SELECTOR = "[data-dms-block-preview], .chat-view";
-/** A modal dialog covers the page, so its outline would draw over the dialog. */
-const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
+/** An open dialog covers the page, so its outline would draw over the dialog. */
+const MODAL_SELECTOR = '[role="dialog"][data-state="open"]';
 
 export interface OutlineRect {
 	top: number;

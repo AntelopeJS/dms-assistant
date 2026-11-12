@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   Context,
   Controller,
@@ -24,6 +25,8 @@ import {
 } from "../db/analyst-exclusion";
 
 const EXCLUSIONS_PATH = "/exclusions";
+const ID_HASH = "sha256";
+const ID_ENCODING = "hex";
 const HTTP_BAD_REQUEST = 400;
 const I18N_KEY_MARK = "$";
 const COVERS_SEPARATOR = ", ";
@@ -42,6 +45,11 @@ interface RouteField {
   isExcluded: boolean;
   /** A table the owner can see shows it: else it is excluded and stale. */
   isShown: boolean;
+}
+
+/** A route's entry id: the same for one route on every replica. */
+function exclusionId(route: string): string {
+  return createHash(ID_HASH).update(route).digest(ID_ENCODING);
 }
 
 /** A name to show as it is: a translation key is no name, so the fallback is. */
@@ -177,17 +185,21 @@ export class AIExclusionsController extends Controller(ROUTE_PREFIX) {
     }
     const route = routePath(parsed.data.route);
     const fields = [...new Set(parsed.data.fields)];
+    const id = exclusionId(route);
     const store = analystExclusions();
-    const existing = (await store.getAll()).find((e) => e.route === route);
     if (fields.length === 0) {
-      if (existing !== undefined) await store.delete(existing._id);
+      await store.delete(id);
       return { route, fields };
     }
-    if (existing !== undefined) {
-      await store.update(existing._id, { fields });
-      return { _id: existing._id, route, fields };
+    if ((await store.update(id, { fields })) > 0) {
+      return { _id: id, route, fields };
     }
-    const [id] = await store.insert({ route, fields });
+    try {
+      await store.insert({ _id: id, route, fields });
+    } catch (err) {
+      if ((await store.get(id)) === undefined) throw err;
+      await store.update(id, { fields });
+    }
     return { _id: id, route, fields };
   }
 

@@ -236,10 +236,10 @@ describe("[data paths] an excluded field on a data route", function () {
     });
   }
 
-  it("is absent from AnalystLoad's columns and samples and from AnalystCompute", async () => {
+  it("is absent from analyst_load's columns and samples and from analyst_compute", async () => {
     const { page, table } = await described(grant, SALES_PAGE_ID);
     const run = await builtAnalystTools(grant);
-    const loaded = await run("AnalystLoad", {
+    const loaded = await run("analyst_load", {
       name: "sales",
       page,
       table: table.id,
@@ -250,7 +250,7 @@ describe("[data paths] an excluded field on a data route", function () {
     for (const sample of summary.samples) {
       assert.ok(!Object.hasOwn(sample, EXCLUDED_FIELD), loaded.text);
     }
-    const computed = await run("AnalystCompute", {
+    const computed = await run("analyst_compute", {
       code: `return sales.some((sale) => "${EXCLUDED_FIELD}" in sale);`,
     });
     assert.equal(computed.isError, false, computed.text);

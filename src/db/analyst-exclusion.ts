@@ -34,13 +34,17 @@ export interface StoredExclusion {
 
 /** What the module does with the exclusion list. */
 interface AnalystExclusionStore {
+  get(id: string): PromiseLike<StoredExclusion | undefined>;
   getAll(): PromiseLike<StoredExclusion[]>;
-  insert(entry: { route: string; fields: string[] }): Promise<string[]>;
+  insert(entry: StoredExclusion): Promise<string[]>;
   update(id: string, entry: { fields: string[] }): Promise<number>;
   delete(id: string): Promise<number>;
 }
 
-/** The project's one exclusion list: one entry per data route. */
+/**
+ * The project's one exclusion list: one entry per data route, its id derived
+ * from the route.
+ */
 export function analystExclusions(): AnalystExclusionStore {
   return GetModel(AnalystExclusionModel);
 }

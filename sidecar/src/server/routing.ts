@@ -10,6 +10,7 @@ import {
   type ServerEchoReplyMsgType,
   type SettingsPatchType,
 } from "../protocol/messages.js";
+import { isVisibleTo } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import type { AgentRunner } from "../agent/runner.js";
@@ -126,13 +127,18 @@ function sendConversationState(
   }
 }
 
+/** The `userId` the connection's actor frame named; null until there is one. */
+function viewerOf(ctx: ConnectionContext): string | null {
+  return ctx.actor?.userId ?? null;
+}
+
 function sendSnapshotIfKnown(
   socket: WebSocket,
   ctx: ConnectionContext,
   msg: ClientHelloMsgType,
 ): void {
   if (msg.role === ROLE.HOST) {
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     return;
   }
   send(socket, buildSettingsUpdateEvent(ctx));
@@ -175,13 +181,19 @@ const handleEcho = on(MESSAGE_TYPES.ECHO, (socket, msg) => {
   socket.send(JSON.stringify(reply));
 });
 
-const handleActor = on(MESSAGE_TYPES.ACTOR, (_socket, msg, ctx) => {
+const handleActor = on(MESSAGE_TYPES.ACTOR, (socket, msg, ctx) => {
   ctx.actor = { userId: msg.userId, name: msg.name };
+  ctx.viewers.set(socket, msg.userId);
 });
 
+/**
+ * Records who asked, and makes them the conversation's owner when it has none:
+ * the first request a conversation receives from a named actor.
+ */
 function noteAsker(ctx: ConnectionContext, conversationId: string): void {
   if (ctx.actor === null) return;
   ctx.askers.set(conversationId, ctx.actor.name);
+  ctx.conversationStore.claim(conversationId, ctx.actor.userId);
 }
 
 /**
@@ -332,7 +344,7 @@ const handleHostPageBlocks = on(
 const handleListConversations = on(
   MESSAGE_TYPES.LIST_CONVERSATIONS,
   (socket, _msg, ctx) => {
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
   },
 );
 
@@ -353,8 +365,17 @@ function forgetConversation(ctx: SidecarServices, conversationId: string) {
 const handleDeleteConversation = on(
   MESSAGE_TYPES.DELETE_CONVERSATION,
   (socket, msg, ctx) => {
+    const stored = ctx.conversationStore.get(msg.conversationId);
+    if (stored !== null && !isVisibleTo(stored, viewerOf(ctx))) {
+      send(socket, {
+        type: EVENT_TYPES.RUN_ERROR,
+        conversationId: msg.conversationId,
+        error: "This conversation belongs to someone else.",
+      });
+      return;
+    }
     forgetConversation(ctx, msg.conversationId);
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     broadcastConversationList(ctx);
   },
 );

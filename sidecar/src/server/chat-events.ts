@@ -22,6 +22,7 @@ import type {
   StoredMessage,
 } from "../state/types.js";
 import type { ChatSocketRegistry } from "./chat-socket-registry.js";
+import type { SocketSender } from "./host-socket-registry.js";
 import type { SidecarServices } from "./services.js";
 
 /** What a conversation's snapshot reads. */
@@ -111,33 +112,43 @@ function enrichSummary(
   };
 }
 
-export function listConversations(
+function listConversations(
   services: SidecarServices,
+  viewerId: string | null,
 ): ConversationSummaryType[] {
   return services.conversationStore
-    .list()
+    .list(viewerId)
     .map((summary) => enrichSummary(services, summary));
 }
 
+/** The conversations `viewerId` may see: its own, and those with no owner. */
 export function buildConversationListEvent(
   services: SidecarServices,
+  viewerId: string | null,
 ): ConversationListEventType {
   return {
     type: EVENT_TYPES.CONVERSATION_LIST,
-    conversations: listConversations(services),
+    conversations: listConversations(services, viewerId),
   };
 }
 
 /**
  * Keeps every open drawer's "Active" group live, and the launcher of every tab
  * whose panel is closed: those only said hello as a host. A socket that is both
- * gets the list once.
+ * gets the list once. Each socket gets the list of the actor it was told of.
  */
 export function broadcastConversationList(services: SidecarServices): void {
-  const event = buildConversationListEvent(services);
-  services.chatSocketRegistry.broadcast(event);
-  services.hostSocketRegistry.broadcast(
-    event,
+  const byViewer = new Map<string | null, ConversationListEventType>();
+  const listFor = (socket: SocketSender): ConversationListEventType => {
+    const viewerId = services.viewers.get(socket) ?? null;
+    const built =
+      byViewer.get(viewerId) ?? buildConversationListEvent(services, viewerId);
+    byViewer.set(viewerId, built);
+    return built;
+  };
+  services.chatSocketRegistry.broadcastEach(listFor);
+  services.hostSocketRegistry.broadcastEach(
+    listFor,
     services.chatSocketRegistry.isChat,
   );
 }

@@ -420,6 +420,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     callLedger: createCallLedger(),
     turns: createTurnRegistry(),
     askers: new Map(),
+    viewers: new WeakMap(),
   };
 }
 

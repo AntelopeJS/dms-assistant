@@ -108,7 +108,7 @@ describe("conversation modes", () => {
   it("keeps a mode chosen before the first message without listing the chat", () => {
     const { modes, conversationStore } = build();
     modes.update(CONVERSATION_ID, { mode: "acceptEdits" });
-    expect(conversationStore.list()).toEqual([]);
+    expect(conversationStore.list(null)).toEqual([]);
     expect(modes.state(CONVERSATION_ID).mode).toBe("acceptEdits");
     startChat(conversationStore, CONVERSATION_ID);
     modes.pinDefaults(CONVERSATION_ID);

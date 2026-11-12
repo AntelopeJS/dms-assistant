@@ -54,7 +54,13 @@ export interface ConversationStore {
     timestampMs: number,
   ): void;
   setModes(conversationId: string, patch: ConversationModesPatch): void;
-  list(): StoredConversationSummary[];
+  /**
+   * Records `ownerId` as the conversation's owner, creating the conversation
+   * when it is new. An owner already recorded is kept.
+   */
+  claim(conversationId: string, ownerId: string): void;
+  /** The conversations `viewerId` may see, newest first; see `isVisibleTo`. */
+  list(viewerId: string | null): StoredConversationSummary[];
   entries(): ConversationEntry[];
   delete(conversationId: string): void;
   loadFromDisk(): Promise<void>;
@@ -201,6 +207,30 @@ function setModes(
   persistCache(state);
 }
 
+function claimConversation(
+  state: CacheState,
+  conversationId: string,
+  ownerId: string,
+): void {
+  const conversation = ensureConversation(state, conversationId);
+  if (conversation.ownerId !== undefined) return;
+  conversation.ownerId = ownerId;
+  persistCache(state);
+}
+
+/**
+ * Whether `viewerId` (null: a connection that named no actor) may see and
+ * delete the conversation: its owner, and everyone when it has no owner.
+ */
+export function isVisibleTo(
+  conversation: StoredConversation,
+  viewerId: string | null,
+): boolean {
+  return (
+    conversation.ownerId === undefined || conversation.ownerId === viewerId
+  );
+}
+
 function deriveTitle(conversation: StoredConversation): string {
   const firstUser = conversation.messages.find((m) => m.role === "user");
   if (firstUser === undefined) return TITLE_FALLBACK;
@@ -230,10 +260,13 @@ function summarize(
   };
 }
 
-function listConversations(state: CacheState): StoredConversationSummary[] {
-  const summaries = [...state.cache].map(([id, conversation]) =>
-    summarize(id, conversation),
-  );
+function listConversations(
+  state: CacheState,
+  viewerId: string | null,
+): StoredConversationSummary[] {
+  const summaries = [...state.cache]
+    .filter(([, conversation]) => isVisibleTo(conversation, viewerId))
+    .map(([id, conversation]) => summarize(id, conversation));
   summaries.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   return summaries;
 }
@@ -278,7 +311,8 @@ export function createConversationStore(
     recordTurnUsage: (id, usage, timestampMs) =>
       recordTurnUsage(state, id, usage, timestampMs),
     setModes: (id, patch) => setModes(state, id, patch),
-    list: () => listConversations(state),
+    claim: (id, ownerId) => claimConversation(state, id, ownerId),
+    list: (viewerId) => listConversations(state, viewerId),
     entries: () => listEntries(state),
     delete: (id) => deleteConversation(state, id),
     loadFromDisk: () => loadCacheFromDisk(state),

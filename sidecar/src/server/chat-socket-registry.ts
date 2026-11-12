@@ -1,6 +1,6 @@
 import { WS_LOG_PREFIX } from "../constants/ws.js";
 import type { AnyServerEventType } from "../protocol/events.js";
-import type { SocketSender } from "./host-socket-registry.js";
+import type { EventForSocket, SocketSender } from "./host-socket-registry.js";
 
 export interface ChatSocketRegistry {
   set: (conversationId: string, socket: SocketSender) => void;
@@ -16,6 +16,8 @@ export interface ChatSocketRegistry {
   send: (conversationId: string, event: AnyServerEventType) => void;
   /** Every chat socket, attached to a conversation or not. */
   broadcast: (event: AnyServerEventType) => void;
+  /** `broadcast` with an event built for each socket. */
+  broadcastEach: (eventFor: EventForSocket) => void;
   /** Whether `broadcast` reaches the socket. */
   isChat: (socket: SocketSender) => boolean;
   has: (conversationId: string) => boolean;
@@ -113,6 +115,9 @@ export function createChatSocketRegistry(): ChatSocketRegistry {
     },
     broadcast: (event) => {
       for (const socket of state.chats) trySend(socket, event);
+    },
+    broadcastEach: (eventFor) => {
+      for (const socket of state.chats) trySend(socket, eventFor(socket));
     },
     isChat: (socket) => state.chats.has(socket),
     has: (conversationId) => state.byConversation.has(conversationId),

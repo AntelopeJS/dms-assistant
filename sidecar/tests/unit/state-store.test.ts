@@ -43,7 +43,7 @@ describe("state file parsing", () => {
       store: createStore({ filePath }),
     });
     await conversations.loadFromDisk();
-    expect(conversations.list()).toEqual([]);
+    expect(conversations.list(null)).toEqual([]);
   });
 
   it("keeps the conversations of a well-formed file", async () => {

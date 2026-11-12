@@ -314,7 +314,8 @@
 				"hint_history": "historique",
 				"usage": "{count} jetons · cette conversation",
 				"usage_new": "nouvelle conversation",
-				"usage_offline": "hors ligne"
+				"usage_offline": "hors ligne",
+				"remove_block": "Retirer le bloc"
 			},
 			"drawer": {
 				"title": "Conversations",
@@ -391,6 +392,17 @@
 			"fold": {
 				"name": "Assistant",
 				"open": "Ouvrir l’assistant"
+			},
+			"build": {
+				"message": "Construis la maquette « {mockup} » en vraies pages avec le skill dms-mockup-build : crée les pages, vérifie les types, compare chaque page à la maquette et corrige les différences, puis dis-moi ce qu’il reste.",
+				"title": "Construction de « {mockup} »",
+				"title_done": "« {mockup} » construite",
+				"description": "L’assistant transforme la maquette en vraies pages, puis les compare avec elle.",
+				"steps": "Étapes de la construction",
+				"starting": "Démarrage de la construction…",
+				"background": "Continuer en arrière-plan",
+				"close": "Fermer",
+				"open_pages": "Ouvrir les pages"
 			}
 		},
 		"tools": {

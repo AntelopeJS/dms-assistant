@@ -27,6 +27,7 @@ import {
 import { useConversationList } from "../composables/useConversationList";
 import { useConversationMode } from "../composables/useConversationMode";
 import { useFollowScroll } from "../composables/useFollowScroll";
+import { useMockupIntents } from "../composables/useMockupIntents";
 import { usePermissionQueue } from "../composables/usePermissionQueue";
 import { useQuestionQueue } from "../composables/useQuestionQueue";
 import { useQueueActions } from "../composables/useQueueActions";
@@ -54,6 +55,7 @@ import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
 import ApprovalDock from "./ApprovalDock.vue";
 import BlockOutline from "./BlockOutline.vue";
+import BuildDialog from "./BuildDialog.vue";
 import ChatEmpty from "./ChatEmpty.vue";
 import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
@@ -160,6 +162,17 @@ const isStalled = computed(
 		isRunStalled(conversation.lastEventAtMs.value, nowMs.value),
 );
 const todos = computed(() => latestTodos(conversation.messages.value));
+const mockup = useMockupIntents({
+	activeId,
+	messages: conversation.messages,
+	isRunning,
+	newConversation,
+	setDraft,
+	whenConnected,
+	requestBuild: (name) =>
+		sendUserMessage(t("dms_ai.panel.build.message", { mockup: name })),
+	navigate,
+});
 const outlinedBlock = computed(() =>
 	changingBlock(conversation.messages.value, isRunning.value),
 );
@@ -273,11 +286,10 @@ function submit(
 	attachments: PendingAttachment[],
 	includePage: boolean,
 ): void {
-	sendUserMessage(
-		content,
-		attachments,
-		includePage ? {} : { includePageContext: false },
-	);
+	sendUserMessage(content, attachments, {
+		...(includePage ? {} : { includePageContext: false }),
+		...mockup.takeFocusBlock(),
+	});
 }
 
 function answerQuestions(requestId: string, replies: QuestionReply[]): void {
@@ -358,6 +370,12 @@ const INTENT_HANDLERS: Record<
 	},
 	start: (intent) => {
 		if (intent.kind === "start") startConversation(intent);
+	},
+	prompt: (intent) => {
+		if (intent.kind === "prompt") mockup.takePrompt(intent);
+	},
+	build: (intent) => {
+		if (intent.kind === "build") mockup.startBuild(intent);
 	},
 	focus: () => void nextTick(() => composerRef.value?.focus()),
 	approvals: () => {
@@ -528,9 +546,11 @@ onBeforeUnmount(() => {
 				:provider="settings.provider"
 				:builder-available="settings.builderAvailable"
 				:page="page"
+				:block="mockup.focusBlock.value"
 				:usage-label="usageLabel"
 				:placeholder="placeholder"
 				@submit="submit"
+				@remove-block="mockup.focusBlock.value = null"
 				@stop="stopTurn"
 				@set-scope="mode.setScope"
 				@set-mode="mode.setMode"
@@ -574,6 +594,13 @@ onBeforeUnmount(() => {
 		/>
 
 		<BlockOutline :path="outlinedBlock" />
+
+		<BuildDialog
+			v-if="mockup.build.value"
+			:view="mockup.build.value"
+			@background="mockup.closeBuild"
+			@open-pages="mockup.openBuiltPages"
+		/>
 	</main>
 </template>
 

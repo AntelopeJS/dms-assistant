@@ -21,6 +21,7 @@ import {
 } from "../utils/attachments";
 import { shortcutLabel } from "../utils/platform";
 import { pageChipLabel } from "../utils/suggestions";
+import type { MockupBlock } from "../../runtime/assistant-prompt";
 
 interface Props {
 	isDisabled: boolean;
@@ -29,6 +30,8 @@ interface Props {
 	provider: ProviderName;
 	builderAvailable: boolean;
 	page: CurrentPage | null;
+	/** The mockup block the next message is about, handed over by the mockup editor. */
+	block?: MockupBlock | null;
 	/** "9.6k tokens · this chat", "new chat", "offline". */
 	usageLabel: string;
 	placeholder: string;
@@ -44,6 +47,7 @@ interface Emits {
 	setScope: [scope: Scope];
 	setMode: [mode: ApprovalMode];
 	openSettings: [];
+	removeBlock: [];
 }
 
 interface ModeLook {
@@ -218,10 +222,26 @@ defineExpose({
 			<div
 				v-if="
 					(page && pageLabel && isPageIncluded) ||
+					block ||
 					files.attachments.value.length > 0
 				"
 				class="cb-input__chips"
 			>
+				<span
+					v-if="block"
+					class="att is-block"
+					:title="`${block.mockup} › ${block.page} › ${block.path}`"
+				>
+					<UIcon name="i-ph-squares-four" />
+					{{ block.type ? `${block.type} · ${block.path}` : block.path }}
+					<button
+						type="button"
+						:aria-label="t('dms_ai.panel.composer.remove_block')"
+						@click="emit('removeBlock')"
+					>
+						<UIcon name="i-ph-x" />
+					</button>
+				</span>
 				<span
 					v-if="page && pageLabel && isPageIncluded"
 					class="att is-page"
@@ -453,6 +473,13 @@ defineExpose({
 	border-color: var(--dms-accent-line);
 	background: var(--dms-accent-tint);
 	color: var(--dms-accent);
+	font: 500 11px var(--ai-font-mono);
+}
+
+.att.is-block {
+	border-color: var(--ai-line);
+	background: var(--ai-tint);
+	color: var(--ai);
 	font: 500 11px var(--ai-font-mono);
 }
 

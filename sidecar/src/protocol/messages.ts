@@ -107,9 +107,23 @@ export const AttachmentSchema = z.object({
   data: z.string().max(MAX_ATTACHMENT_BASE64_CHARS),
 });
 
+const FOCUS_BLOCK_NAME = z.string().min(1).max(500);
+
+/**
+ * The mockup block a turn is about, handed over by the mockup editor: the
+ * mockup, its page in the spec, the block's path there, and its type.
+ */
+export const FocusBlockSchema = z.object({
+  mockup: FOCUS_BLOCK_NAME,
+  page: FOCUS_BLOCK_NAME,
+  path: FOCUS_BLOCK_NAME,
+  type: FOCUS_BLOCK_NAME.optional(),
+});
+
 /**
  * Chat -> server: a user turn. `includePageContext` is false when the user
  * removed the page chip: the turn is sent without the page it was typed on.
+ * `focusBlock` is the mockup block the user asked about, when there is one.
  */
 export const UserMessageMsg = z.object({
   type: z.literal(MESSAGE_TYPES.USER_MESSAGE),
@@ -120,6 +134,7 @@ export const UserMessageMsg = z.object({
     .max(MAX_ATTACHMENTS_PER_MESSAGE)
     .optional(),
   includePageContext: z.boolean().optional(),
+  focusBlock: FocusBlockSchema.optional(),
 });
 
 /**
@@ -135,6 +150,7 @@ export const QueuedItemSchema = z.object({
     .max(MAX_ATTACHMENTS_PER_MESSAGE)
     .optional(),
   includePageContext: z.boolean().optional(),
+  focusBlock: FocusBlockSchema.optional(),
 });
 
 /**
@@ -381,6 +397,7 @@ export type EchoMsgType = z.infer<typeof EchoMsg>;
 export type ServerEchoReplyMsgType = z.infer<typeof ServerEchoReplyMsg>;
 export type UserMessageMsgType = z.infer<typeof UserMessageMsg>;
 export type AttachmentType = z.infer<typeof AttachmentSchema>;
+export type FocusBlockType = z.infer<typeof FocusBlockSchema>;
 export type PermissionResponseMsgType = z.infer<typeof PermissionResponseMsg>;
 export type QuestionResponseMsgType = z.infer<typeof QuestionResponseMsg>;
 export type HostStateUpdateMsgType = z.infer<typeof HostStateUpdateMsg>;

@@ -5,7 +5,7 @@ import {
 } from "../constants/agent.js";
 import { DEFAULT_SETTINGS } from "../constants/settings.js";
 import type { AiMcpServer } from "../mcp/types.js";
-import type { AttachmentType } from "../protocol/messages.js";
+import type { AttachmentType, FocusBlockType } from "../protocol/messages.js";
 import type { CurrentPage } from "../state/host-state.js";
 import {
   type AppSettings,
@@ -44,6 +44,8 @@ export interface RunnerContext extends ToolCallHooks {
   attachments?: AttachmentType[];
   /** False when the user removed the page chip from the composer. */
   includePageContext?: boolean;
+  /** The mockup block the user asked about, stated in the host context. */
+  focusBlock?: FocusBlockType;
   permissionBus?: PermissionBus;
   /**
    * Built lazily: the server is consumed once, when the session opens, never
@@ -183,6 +185,7 @@ async function* startTurn(
     message,
     ctx.includePageContext === false ? WITHOUT_PAGE : ctx.getCurrentPage(),
     effectiveGenerationMode(settings.generationMode),
+    ctx.focusBlock,
   );
   yield* session.runTurn(
     { text: grounded, attachments: ctx.attachments ?? [] },

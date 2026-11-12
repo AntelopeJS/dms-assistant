@@ -71,6 +71,7 @@ import {
 	buildCurrentPageUpdate,
 	installCurrentPageTracker,
 } from "../runtime/current-page";
+import { installAssistantPromptListener } from "../runtime/assistant-prompt";
 import { mountFoldBar } from "../runtime/fold-bar";
 import { createFrameRouter } from "../runtime/frame-router";
 import {
@@ -312,7 +313,16 @@ function installFold(app: App, session: AssistantSession): () => void {
 		panel: session.panel,
 	});
 	const unmountBar = mountFoldBar(app, fold, session.launcherState);
+	const stopPrompts = installAssistantPromptListener((prompt) => {
+		session.intents.push(
+			prompt.source === "build"
+				? { kind: "build", mockup: prompt.prompt }
+				: { kind: "prompt", prompt: prompt.prompt, block: prompt.block },
+		);
+		fold.unfold();
+	});
 	return () => {
+		stopPrompts();
 		unmountBar();
 		fold.stop();
 	};

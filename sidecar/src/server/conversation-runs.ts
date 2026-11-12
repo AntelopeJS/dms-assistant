@@ -56,7 +56,10 @@ export function persistUserMessage(
 export function runUserTurn(
   services: SidecarServices,
   conversationId: string,
-  item: Pick<QueuedItemType, "content" | "attachments" | "includePageContext">,
+  item: Pick<
+    QueuedItemType,
+    "content" | "attachments" | "includePageContext" | "focusBlock"
+  >,
 ): Promise<void> {
   return runTurnWithHealing(services, {
     conversationId,
@@ -65,6 +68,7 @@ export function runUserTurn(
     attachments: item.attachments,
     isAutoFix: false,
     includePageContext: item.includePageContext,
+    focusBlock: item.focusBlock,
   });
 }
 
@@ -166,6 +170,7 @@ export function enqueueUserMessage(
     queued.attachments = msg.attachments;
   }
   if (msg.includePageContext === false) queued.includePageContext = false;
+  if (msg.focusBlock !== undefined) queued.focusBlock = msg.focusBlock;
   ctx.pendingQueue.enqueue(msg.conversationId, queued);
   broadcastQueueState(ctx, msg.conversationId);
 }

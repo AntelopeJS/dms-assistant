@@ -7,7 +7,7 @@ import { effectiveGenerationMode } from "../builder/capability.js";
 import { MAX_AUTO_HEAL_ATTEMPTS } from "../constants/safety-net.js";
 import { WS_LOG_PREFIX } from "../constants/ws.js";
 import { type AnyServerEventType, EVENT_TYPES } from "../protocol/events.js";
-import type { AttachmentType } from "../protocol/messages.js";
+import type { AttachmentType, FocusBlockType } from "../protocol/messages.js";
 import { truncateTitle } from "../state/conversations.js";
 import type { ChangeSetRecord, TokenUsage } from "../state/types.js";
 import { broadcastConversationList, emitNotice } from "./chat-events.js";
@@ -39,6 +39,7 @@ export interface TurnRequest {
   attachments?: AttachmentType[];
   isAutoFix: boolean;
   includePageContext?: boolean;
+  focusBlock?: FocusBlockType;
 }
 
 /** Where a turn's wire events go: the live replay and the chat sockets. */
@@ -210,6 +211,7 @@ function buildRunnerContext(
     getCurrentPage: () => services.hostState.getCurrentPage(),
     attachments: request.attachments,
     includePageContext: request.includePageContext,
+    focusBlock: request.focusBlock,
     permissionBus: services.permissionBus,
     createMcpServer: () => services.createMcpServer(conversationId),
     onToolDecision: (decision) => {

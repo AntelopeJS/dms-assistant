@@ -314,7 +314,8 @@
 				"hint_history": "history",
 				"usage": "{count} tokens · this chat",
 				"usage_new": "new chat",
-				"usage_offline": "offline"
+				"usage_offline": "offline",
+				"remove_block": "Remove the block"
 			},
 			"drawer": {
 				"title": "Conversations",
@@ -391,6 +392,17 @@
 			"fold": {
 				"name": "Assistant",
 				"open": "Open the assistant"
+			},
+			"build": {
+				"message": "Build the mockup “{mockup}” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains.",
+				"title": "Building “{mockup}”",
+				"title_done": "Built “{mockup}”",
+				"description": "The assistant turns the mockup into real pages, then compares them with it.",
+				"steps": "Build steps",
+				"starting": "Starting the build…",
+				"background": "Run in background",
+				"close": "Close",
+				"open_pages": "Open the pages"
 			}
 		},
 		"tools": {

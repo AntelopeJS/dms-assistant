@@ -1,4 +1,5 @@
 import { type Ref, ref } from "vue";
+import type { MockupBlock } from "./assistant-prompt";
 import type { ConversationStartMode } from "./assistant-session";
 
 /** Opens the panel on a stored conversation. */
@@ -28,11 +29,29 @@ interface ReviewApprovalsIntent {
 	kind: "approvals";
 }
 
+/**
+ * A prompt the mockup editor handed over: put in the composer with the block
+ * it is about as context, never sent by itself.
+ */
+export interface MockupPromptIntent {
+	kind: "prompt";
+	prompt: string;
+	block?: MockupBlock;
+}
+
+/** Builds a mockup into real pages through a turn, followed in the build dialog. */
+export interface BuildMockupIntent {
+	kind: "build";
+	mockup: string;
+}
+
 export type PanelIntent =
 	| OpenConversationIntent
 	| StartConversationIntent
 	| FocusComposerIntent
-	| ReviewApprovalsIntent;
+	| ReviewApprovalsIntent
+	| MockupPromptIntent
+	| BuildMockupIntent;
 
 /**
  * What the dashboard asked the panel to do: open a chat, start one, focus the

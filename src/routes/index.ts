@@ -8,6 +8,7 @@ export * from "./health";
 export * from "./logs";
 export * from "./mcp";
 export * from "./metrics";
+export * from "./onboarding";
 export * from "./pages-registry";
 export * from "./settings";
 export * from "./sidecar-info";

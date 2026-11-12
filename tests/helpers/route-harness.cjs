@@ -132,6 +132,7 @@ function loadControllers() {
       ...require("../../dist/routes/changes.js"),
       ...require("../../dist/routes/codex-account.js"),
       ...require("../../dist/routes/metrics.js"),
+      ...require("../../dist/routes/onboarding.js"),
       ...require("../../dist/routes/settings.js"),
       ...require("../../dist/routes/skills.js"),
       ...require("../../dist/routes/status.js"),

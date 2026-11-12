@@ -1,4 +1,4 @@
-import { computed, nextTick, type Ref, ref } from "vue";
+import { computed, nextTick, type Ref, ref, watch } from "vue";
 import type { MockupBlock } from "../../runtime/assistant-prompt";
 import type {
 	BuildMockupIntent,
@@ -32,6 +32,14 @@ interface Building {
 export function useMockupIntents(deps: MockupIntentsDeps) {
 	const focusBlock = ref<MockupBlock | null>(null);
 	const building = ref<Building | null>(null);
+
+	watch(
+		deps.activeId,
+		() => {
+			focusBlock.value = null;
+		},
+		{ flush: "sync" },
+	);
 
 	const build = computed<BuildView | null>(() => {
 		const current = building.value;

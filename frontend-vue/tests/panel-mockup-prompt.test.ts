@@ -123,6 +123,24 @@ describe("a prompt handed to the panel", () => {
 	});
 });
 
+describe("a block handed to one conversation", () => {
+	it("leaves the composer when another conversation opens (fails when the block follows into a build)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		harness.session.intents.push({
+			kind: "prompt",
+			prompt: "Connect this chart",
+			block: BLOCK,
+		});
+		await flushPromises();
+		harness.session.intents.push({ kind: "build", mockup: "bikes" });
+		await flushPromises();
+		expect(panel.find(".att.is-block").exists()).toBe(false);
+		const [build] = sentOfType(harness, "user_message");
+		expect(build.focusBlock).toBeUndefined();
+	});
+});
+
 function lastSentConversation(harness: Harness): string {
 	const sent = sentOfType(harness, "user_message").at(-1);
 	if (sent === undefined || typeof sent.conversationId !== "string")

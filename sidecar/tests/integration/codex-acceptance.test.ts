@@ -187,10 +187,52 @@ function unpaired(events: RunnerEvent[]): string[] {
   return [...open];
 }
 
-describe.skipIf(!ENABLED)("Codex acceptance", () => {
-  let harness: Harness | undefined;
-  let session: ProviderSession | undefined;
+let harness: Harness | undefined;
+let session: ProviderSession | undefined;
 
+function registerLateCases(): void {
+  it(
+    "9 — a settings change mid-conversation applies on the next turn",
+    async () => {
+      harness = await startHarness(ALLOW);
+      const vibe = settingsFor({});
+      session = await openSession(harness, vibe);
+      await collect(session, "Reply with just: one", vibe);
+
+      const safe = settingsFor({ generationMode: "safe" });
+      session.applySettings?.(safe);
+      const events = await collect(
+        session,
+        "Create a file named later.txt containing the word gamma.",
+        safe,
+      );
+      expect(harness.prompted).toEqual([]);
+      expect(events.at(-1)).toEqual({ type: "done" });
+      expect(unpaired(events)).toEqual([]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "12 — disposing a conversation leaves no app-server process behind",
+    async () => {
+      harness = await startHarness(ALLOW);
+      const settings = settingsFor({});
+      const opened = await openSession(harness, settings);
+      const before = await readRecordedPids(harness.stateDir);
+      expect(before.length).toBe(1);
+
+      await opened.dispose();
+      expect(await readRecordedPids(harness.stateDir)).toEqual([]);
+      for (const pid of before) {
+        expect(isProcessAlive(pid)).toBe(false);
+      }
+    },
+    TEST_TIMEOUT_MS,
+  );
+}
+
+describe.skipIf(!ENABLED)("Codex acceptance", () => {
   beforeAll(() => {
     if (REAL_CONFIG_HOME === undefined) delete process.env[XDG_CONFIG_HOME_ENV];
     else process.env[XDG_CONFIG_HOME_ENV] = REAL_CONFIG_HOME;
@@ -289,43 +331,5 @@ describe.skipIf(!ENABLED)("Codex acceptance", () => {
     TEST_TIMEOUT_MS,
   );
 
-  it(
-    "9 — a settings change mid-conversation applies on the next turn",
-    async () => {
-      harness = await startHarness(ALLOW);
-      const vibe = settingsFor({});
-      session = await openSession(harness, vibe);
-      await collect(session, "Reply with just: one", vibe);
-
-      const safe = settingsFor({ generationMode: "safe" });
-      session.applySettings?.(safe);
-      const events = await collect(
-        session,
-        "Create a file named later.txt containing the word gamma.",
-        safe,
-      );
-      expect(harness.prompted).toEqual([]);
-      expect(events.at(-1)).toEqual({ type: "done" });
-      expect(unpaired(events)).toEqual([]);
-    },
-    TEST_TIMEOUT_MS,
-  );
-
-  it(
-    "12 — disposing a conversation leaves no app-server process behind",
-    async () => {
-      harness = await startHarness(ALLOW);
-      const settings = settingsFor({});
-      const opened = await openSession(harness, settings);
-      const before = await readRecordedPids(harness.stateDir);
-      expect(before.length).toBe(1);
-
-      await opened.dispose();
-      expect(await readRecordedPids(harness.stateDir)).toEqual([]);
-      for (const pid of before) {
-        expect(isProcessAlive(pid)).toBe(false);
-      }
-    },
-    TEST_TIMEOUT_MS,
-  );
+  registerLateCases();
 });

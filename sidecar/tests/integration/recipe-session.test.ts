@@ -56,15 +56,15 @@ const SKILL_EVIDENCE: Record<ProviderName, (skillDir: string) => string> = {
 const PDF_BASE64 =
   "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA5OSA5OV0+PgplbmRvYmoKdHJhaWxlcgo8PC9Sb290IDEgMCBSPj4K";
 
+let harness: WsHarness | undefined;
+let client: WebSocket | undefined;
+let dir: string;
+
 function isTerminal(msg: WireMessage): boolean {
   return msg.type === "run_done" || msg.type === "run_error";
 }
 
 describe.each(PROVIDER_FIXTURES)("recipe — session on $name", (fixture) => {
-  let harness: WsHarness | undefined;
-  let client: WebSocket | undefined;
-  let dir: string;
-
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "dms-ai-recipe-"));
   });
@@ -187,59 +187,42 @@ describe.each(PROVIDER_FIXTURES)("recipe — session on $name", (fixture) => {
   );
 });
 
-describe("recipe — session on codex only", () => {
-  let harness: WsHarness | undefined;
-  let client: WebSocket | undefined;
-  let dir: string;
-
-  beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-recipe-codex-"));
+async function runOneTurn(options: {
+  script: string;
+  skillDirs?: { module: string; dir: string }[];
+  allowLocalSkills?: boolean;
+  onMessage?: (msg: WireMessage, socket: WebSocket) => void;
+}): Promise<WireMessage[]> {
+  CODEX_FIXTURE.use("simple");
+  process.env.MOCK_CODEX_SCRIPT = options.script;
+  traceCodexInto(join(dir, "trace.jsonl"));
+  harness = await startWsHarness({
+    provider: "codex",
+    skillDirs: options.skillDirs,
+    settings: { allowLocalSkills: options.allowLocalSkills ?? false },
   });
-
-  afterEach(async () => {
-    client?.close();
-    client = undefined;
-    CODEX_FIXTURE.reset();
-    await harness?.close();
-    harness = undefined;
-    await rm(dir, { recursive: true, force: true });
-  });
-
-  async function runOneTurn(options: {
-    script: string;
-    skillDirs?: { module: string; dir: string }[];
-    allowLocalSkills?: boolean;
-    onMessage?: (msg: WireMessage, socket: WebSocket) => void;
-  }): Promise<WireMessage[]> {
-    CODEX_FIXTURE.use("simple");
-    process.env.MOCK_CODEX_SCRIPT = options.script;
-    traceCodexInto(join(dir, "trace.jsonl"));
-    harness = await startWsHarness({
-      provider: "codex",
-      skillDirs: options.skillDirs,
-      settings: { allowLocalSkills: options.allowLocalSkills ?? false },
+  client = await openChat(harness.port);
+  const collector = createCollector(client, WAIT_TIMEOUT_MS);
+  if (options.onMessage !== undefined) {
+    const socket = client;
+    client.on("message", (data) => {
+      const raw = rawDataToText(data);
+      options.onMessage?.(parseWireMessage(raw), socket);
     });
-    client = await openChat(harness.port);
-    const collector = createCollector(client, WAIT_TIMEOUT_MS);
-    if (options.onMessage !== undefined) {
-      const socket = client;
-      client.on("message", (data) => {
-        const raw = rawDataToText(data);
-        options.onMessage?.(parseWireMessage(raw), socket);
-      });
-    }
-    sendHello(client, CONVERSATION_A);
-    sendUserMessage(client, CONVERSATION_A, "go");
-    await collector.next(isTerminal);
-    return collector.events;
   }
+  sendHello(client, CONVERSATION_A);
+  sendUserMessage(client, CONVERSATION_A, "go");
+  await collector.next(isTerminal);
+  return collector.events;
+}
 
-  function tracedMethods(): string[] {
-    return readCodexTrace(join(dir, "trace.jsonl"))
-      .filter((entry) => entry.kind === "request")
-      .map((entry) => entry.method ?? "");
-  }
+function tracedMethods(): string[] {
+  return readCodexTrace(join(dir, "trace.jsonl"))
+    .filter((entry) => entry.kind === "request")
+    .map((entry) => entry.method ?? "");
+}
 
+function registerCodexSkillAndAskCases(): void {
   it(
     "6 — module skills are handed to the agent as extra roots",
     async () => {
@@ -302,7 +285,9 @@ describe("recipe — session on codex only", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerCodexTraceCases(): void {
   it(
     "11b — the same skill is left alone once the setting is on",
     async () => {
@@ -369,4 +354,23 @@ describe("recipe — session on codex only", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
+
+describe("recipe — session on codex only", () => {
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "dms-ai-recipe-codex-"));
+  });
+
+  afterEach(async () => {
+    client?.close();
+    client = undefined;
+    CODEX_FIXTURE.reset();
+    await harness?.close();
+    harness = undefined;
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  registerCodexSkillAndAskCases();
+
+  registerCodexTraceCases();
 });

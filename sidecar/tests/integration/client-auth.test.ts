@@ -105,6 +105,17 @@ async function startServer() {
   };
 }
 
+function putSettings(port: number, body: SettingsBody) {
+  return fetch(`http://127.0.0.1:${port}/settings`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${CLIENT_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 describe("sidecar client authentication", () => {
   let server: Awaited<ReturnType<typeof startServer>>;
   const clients: WebSocket[] = [];
@@ -162,15 +173,7 @@ describe("sidecar client authentication", () => {
   });
 
   it("refuses Auto review on Codex and merges a partial body", async () => {
-    const put = (body: SettingsBody) =>
-      fetch(`http://127.0.0.1:${server.port}/settings`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${CLIENT_TOKEN}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
+    const put = (body: SettingsBody) => putSettings(server.port, body);
     const refused = await put({ defaultModes: { codex: "auto" } });
     expect(refused.status).toBe(400);
     expect(await refused.json()).toHaveProperty("message");

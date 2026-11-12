@@ -7,6 +7,55 @@ import { createPermissionRuleStore } from "../../src/agent/permission-rules.js";
 
 const CONVERSATION_ID = "conv-preview";
 
+function registerRuleMatchCases(getRoot: () => string): void {
+  it("matches file and directory rules on every file an edit touches", () => {
+    const root = getRoot();
+    const rules = createPermissionRuleStore();
+    rules.add(CONVERSATION_ID, { kind: "directory", value: "src" });
+    const subject = (args: Parameters<typeof rules.matches>[1]["args"]) => ({
+      toolName: "Edit",
+      args,
+      hostProjectRoot: root,
+    });
+    expect(
+      rules.matches(
+        CONVERSATION_ID,
+        subject({ file_path: join(root, "src/a/b.ts") }),
+      ),
+    ).toBe(true);
+    expect(
+      rules.matches(
+        CONVERSATION_ID,
+        subject({ file_path: join(root, "srcx/b.ts") }),
+      ),
+    ).toBe(false);
+    expect(
+      rules.matches(
+        CONVERSATION_ID,
+        subject({
+          file_paths: [join(root, "src/a.ts"), join(root, "lib/b.ts")],
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      rules.matches(CONVERSATION_ID, {
+        toolName: "Bash",
+        args: { command: "ls" },
+        hostProjectRoot: root,
+      }),
+    ).toBe(false);
+    rules.add(CONVERSATION_ID, { kind: "file", value: "lib/b.ts" });
+    expect(
+      rules.matches(
+        CONVERSATION_ID,
+        subject({
+          file_paths: [join(root, "src/a.ts"), join(root, "lib/b.ts")],
+        }),
+      ),
+    ).toBe(true);
+  });
+}
+
 describe("permission previews and rules", () => {
   let root: string;
 
@@ -128,49 +177,5 @@ describe("permission previews and rules", () => {
     expect(search).toMatchObject({ kind: "web", ruleOptions: [] });
   });
 
-  it("matches file and directory rules on every file an edit touches", () => {
-    const rules = createPermissionRuleStore();
-    rules.add(CONVERSATION_ID, { kind: "directory", value: "src" });
-    const subject = (args: Parameters<typeof rules.matches>[1]["args"]) => ({
-      toolName: "Edit",
-      args,
-      hostProjectRoot: root,
-    });
-    expect(
-      rules.matches(
-        CONVERSATION_ID,
-        subject({ file_path: join(root, "src/a/b.ts") }),
-      ),
-    ).toBe(true);
-    expect(
-      rules.matches(
-        CONVERSATION_ID,
-        subject({ file_path: join(root, "srcx/b.ts") }),
-      ),
-    ).toBe(false);
-    expect(
-      rules.matches(
-        CONVERSATION_ID,
-        subject({
-          file_paths: [join(root, "src/a.ts"), join(root, "lib/b.ts")],
-        }),
-      ),
-    ).toBe(false);
-    expect(
-      rules.matches(CONVERSATION_ID, {
-        toolName: "Bash",
-        args: { command: "ls" },
-        hostProjectRoot: root,
-      }),
-    ).toBe(false);
-    rules.add(CONVERSATION_ID, { kind: "file", value: "lib/b.ts" });
-    expect(
-      rules.matches(
-        CONVERSATION_ID,
-        subject({
-          file_paths: [join(root, "src/a.ts"), join(root, "lib/b.ts")],
-        }),
-      ),
-    ).toBe(true);
-  });
+  registerRuleMatchCases(() => root);
 });

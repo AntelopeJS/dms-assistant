@@ -108,6 +108,84 @@ function nested(depth: number): PreviewNodeType {
   return { type: "Section", children: [nested(depth - 1)] };
 }
 
+function registerAttachmentCases(): void {
+  it("resolves `latest` to the last image the user attached", async () => {
+    const { shown, tool } = buildHarness([MOCKUP_NAME, LATER_MOCKUP_NAME]);
+    await tool.handler({
+      title: "Card",
+      tree: KPI_NODE,
+      reference: {
+        attachmentId: PREVIEW_LATEST_ATTACHMENT_ID,
+        caption: "Your mockup",
+      },
+    });
+    expect(shown[0]?.reference).toEqual({
+      attachmentName: LATER_MOCKUP_NAME,
+      url: undefined,
+      caption: "Your mockup",
+    });
+  });
+
+  it("accepts an attachment by name", async () => {
+    const { shown, tool } = buildHarness([MOCKUP_NAME, LATER_MOCKUP_NAME]);
+    await tool.handler({
+      title: "Card",
+      tree: KPI_NODE,
+      reference: { attachmentId: MOCKUP_NAME },
+    });
+    expect(shown[0]?.reference?.attachmentName).toBe(MOCKUP_NAME);
+  });
+
+  it("lists the attached images when the name is unknown", async () => {
+    const { shown, tool } = buildHarness([MOCKUP_NAME]);
+    const result = await tool.handler({
+      title: "Card",
+      tree: KPI_NODE,
+      reference: { attachmentId: "nope.png" },
+    });
+    const body = parse(result);
+    expect(body.error?.code).toBe(PREVIEW_ERROR_CODES.UNKNOWN_ATTACHMENT);
+    expect(body.message).toContain(MOCKUP_NAME);
+    expect(shown).toHaveLength(0);
+  });
+
+  it("refuses an attachment when the user attached no image", async () => {
+    const { tool } = buildHarness();
+    const result = await tool.handler({
+      title: "Card",
+      tree: KPI_NODE,
+      reference: { attachmentId: PREVIEW_LATEST_ATTACHMENT_ID },
+    });
+    expect(parse(result).error?.code).toBe(
+      PREVIEW_ERROR_CODES.UNKNOWN_ATTACHMENT,
+    );
+  });
+
+  it.each(["/media/mockup.png", "https://example.com/mockup.png"])(
+    "accepts the reference url %s",
+    async (url) => {
+      const { shown, tool } = buildHarness();
+      await tool.handler({ title: "Card", tree: KPI_NODE, reference: { url } });
+      expect(shown[0]?.reference?.url).toBe(url);
+    },
+  );
+
+  it.each([
+    "//evil.example/x.png",
+    "javascript:alert(1)",
+    "data:image/png;base64,AA",
+  ])("refuses the reference url %s", async (url) => {
+    const { shown, tool } = buildHarness();
+    const result = await tool.handler({
+      title: "Card",
+      tree: KPI_NODE,
+      reference: { url },
+    });
+    expect(parse(result).error?.code).toBe(PREVIEW_ERROR_CODES.INVALID_URL);
+    expect(shown).toHaveLength(0);
+  });
+}
+
 describe("preview_blocks tool", () => {
   it("is named preview_blocks", () => {
     expect(buildHarness().tool.name).toBe(PREVIEW_BLOCKS_TOOL_NAME);
@@ -230,81 +308,7 @@ describe("preview_blocks tool", () => {
     expect(parse(result).error?.code).toBe(PREVIEW_ERROR_CODES.TOO_LARGE);
   });
 
-  it("resolves `latest` to the last image the user attached", async () => {
-    const { shown, tool } = buildHarness([MOCKUP_NAME, LATER_MOCKUP_NAME]);
-    await tool.handler({
-      title: "Card",
-      tree: KPI_NODE,
-      reference: {
-        attachmentId: PREVIEW_LATEST_ATTACHMENT_ID,
-        caption: "Your mockup",
-      },
-    });
-    expect(shown[0]?.reference).toEqual({
-      attachmentName: LATER_MOCKUP_NAME,
-      url: undefined,
-      caption: "Your mockup",
-    });
-  });
-
-  it("accepts an attachment by name", async () => {
-    const { shown, tool } = buildHarness([MOCKUP_NAME, LATER_MOCKUP_NAME]);
-    await tool.handler({
-      title: "Card",
-      tree: KPI_NODE,
-      reference: { attachmentId: MOCKUP_NAME },
-    });
-    expect(shown[0]?.reference?.attachmentName).toBe(MOCKUP_NAME);
-  });
-
-  it("lists the attached images when the name is unknown", async () => {
-    const { shown, tool } = buildHarness([MOCKUP_NAME]);
-    const result = await tool.handler({
-      title: "Card",
-      tree: KPI_NODE,
-      reference: { attachmentId: "nope.png" },
-    });
-    const body = parse(result);
-    expect(body.error?.code).toBe(PREVIEW_ERROR_CODES.UNKNOWN_ATTACHMENT);
-    expect(body.message).toContain(MOCKUP_NAME);
-    expect(shown).toHaveLength(0);
-  });
-
-  it("refuses an attachment when the user attached no image", async () => {
-    const { tool } = buildHarness();
-    const result = await tool.handler({
-      title: "Card",
-      tree: KPI_NODE,
-      reference: { attachmentId: PREVIEW_LATEST_ATTACHMENT_ID },
-    });
-    expect(parse(result).error?.code).toBe(
-      PREVIEW_ERROR_CODES.UNKNOWN_ATTACHMENT,
-    );
-  });
-
-  it.each(["/media/mockup.png", "https://example.com/mockup.png"])(
-    "accepts the reference url %s",
-    async (url) => {
-      const { shown, tool } = buildHarness();
-      await tool.handler({ title: "Card", tree: KPI_NODE, reference: { url } });
-      expect(shown[0]?.reference?.url).toBe(url);
-    },
-  );
-
-  it.each([
-    "//evil.example/x.png",
-    "javascript:alert(1)",
-    "data:image/png;base64,AA",
-  ])("refuses the reference url %s", async (url) => {
-    const { shown, tool } = buildHarness();
-    const result = await tool.handler({
-      title: "Card",
-      tree: KPI_NODE,
-      reference: { url },
-    });
-    expect(parse(result).error?.code).toBe(PREVIEW_ERROR_CODES.INVALID_URL);
-    expect(shown).toHaveLength(0);
-  });
+  registerAttachmentCases();
 });
 
 describe("preview_blocks sketches", () => {

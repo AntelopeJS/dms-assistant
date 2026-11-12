@@ -76,6 +76,67 @@ function idOf(record: { id: string } | null | undefined): string {
   return record.id;
 }
 
+function registerIsolationCases(getProject: () => Project): void {
+  it("flags a change set whose turn overlapped another running one", async () => {
+    const project = getProject();
+    const one = project.checkpoints.beginTurn("conv-1");
+    const two = project.checkpoints.beginTurn("conv-2");
+    await one.ready();
+    await two.ready();
+    await writeFile(join(project.root, "a.ts"), "overlap\n");
+    const record = await one.finish(meta("One"));
+    await two.finish(meta("Two"));
+    expect(record?.overlapped).toBe(true);
+  });
+
+  it("never touches the project's own repository", async () => {
+    const project = getProject();
+    const { root } = project;
+    execFileSync("git", ["init", "--quiet"], { cwd: root });
+    await turn(project, "Edit", async () => {
+      await writeFile(join(root, "a.ts"), "changed\n");
+    });
+    const status = execFileSync("git", ["status", "--porcelain"], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(status).toContain("?? a.ts");
+    expect(
+      execFileSync("git", ["rev-list", "--all"], {
+        cwd: root,
+        encoding: "utf8",
+      }),
+    ).toBe("");
+  });
+
+  it("prunes change sets older than the retention at start", async () => {
+    const project = getProject();
+    const { root } = project;
+    const record = await turn(project, "Old", async () => {
+      await writeFile(join(root, "a.ts"), "old\n");
+    });
+    await project.checkpoints.flush();
+    const file = join(project.stateDir, "change-sets.json");
+    const stored = StoredChangeSets.parse(
+      JSON.parse(await readFile(file, "utf8")),
+    );
+    const expiredAtMs = Date.now() - (RETENTION_DAYS + 1) * MS_PER_DAY;
+    await writeFile(
+      file,
+      JSON.stringify({
+        ...stored,
+        changeSets: stored.changeSets.map((changeSet, index) =>
+          index === 0 ? { ...changeSet, createdAtMs: expiredAtMs } : changeSet,
+        ),
+      }),
+    );
+    const reopened = await openProject(root);
+    expect(reopened.checkpoints.get(idOf(record))).toBeNull();
+    expect(reopened.checkpoints.all()).toEqual([]);
+    await reopened.checkpoints.flush();
+  });
+}
+
 describe("checkpoints", () => {
   let root: string;
   let project: Project;
@@ -173,57 +234,5 @@ describe("checkpoints", () => {
     expect(await read(root, "c.ts")).toBe("c\n");
   });
 
-  it("flags a change set whose turn overlapped another running one", async () => {
-    const one = project.checkpoints.beginTurn("conv-1");
-    const two = project.checkpoints.beginTurn("conv-2");
-    await one.ready();
-    await two.ready();
-    await writeFile(join(root, "a.ts"), "overlap\n");
-    const record = await one.finish(meta("One"));
-    await two.finish(meta("Two"));
-    expect(record?.overlapped).toBe(true);
-  });
-
-  it("never touches the project's own repository", async () => {
-    execFileSync("git", ["init", "--quiet"], { cwd: root });
-    await turn(project, "Edit", async () => {
-      await writeFile(join(root, "a.ts"), "changed\n");
-    });
-    const status = execFileSync("git", ["status", "--porcelain"], {
-      cwd: root,
-      encoding: "utf8",
-    });
-    expect(status).toContain("?? a.ts");
-    expect(
-      execFileSync("git", ["rev-list", "--all"], {
-        cwd: root,
-        encoding: "utf8",
-      }),
-    ).toBe("");
-  });
-
-  it("prunes change sets older than the retention at start", async () => {
-    const record = await turn(project, "Old", async () => {
-      await writeFile(join(root, "a.ts"), "old\n");
-    });
-    await project.checkpoints.flush();
-    const file = join(project.stateDir, "change-sets.json");
-    const stored = StoredChangeSets.parse(
-      JSON.parse(await readFile(file, "utf8")),
-    );
-    const expiredAtMs = Date.now() - (RETENTION_DAYS + 1) * MS_PER_DAY;
-    await writeFile(
-      file,
-      JSON.stringify({
-        ...stored,
-        changeSets: stored.changeSets.map((changeSet, index) =>
-          index === 0 ? { ...changeSet, createdAtMs: expiredAtMs } : changeSet,
-        ),
-      }),
-    );
-    const reopened = await openProject(root);
-    expect(reopened.checkpoints.get(idOf(record))).toBeNull();
-    expect(reopened.checkpoints.all()).toEqual([]);
-    await reopened.checkpoints.flush();
-  });
+  registerIsolationCases(() => project);
 });

@@ -217,6 +217,64 @@ async function startFromSettings(): Promise<StartedLogin> {
   };
 }
 
+function registerRejectedSignInCases(): void {
+  it("does not store a sign-in that did not grant plan usage", async () => {
+    const { state } = await startFromSettings();
+    stubFetch(() => tokenAnswer("noplan", "openid email"));
+    const response = await finishLogin(
+      new URLSearchParams({ state, code: "c", client_id: ISSUED_CLIENT_ID }),
+    );
+    expect(response).toMatchObject({ status: 403 });
+    expect(readAccountStatus().isSignedIn).toBe(false);
+  });
+
+  it("treats a registration answered without an issued client id as incomplete", async () => {
+    const { state } = await startFromSettings();
+    const calls = stubFetch(() => tokenAnswer("never"));
+    const response = await finishLogin(
+      new URLSearchParams({ state, code: "c" }),
+    );
+    expect(response).toMatchObject({ status: 400 });
+    expect(calls).toEqual([]);
+  });
+
+  it("answers a replayed callback as expired", async () => {
+    const { state } = await startFromSettings();
+    stubFetch(() => tokenAnswer("x"));
+    await finishLogin(new URLSearchParams({ state, error: "access_denied" }));
+    const replay = await finishLogin(new URLSearchParams({ state, code: "c" }));
+    expect(replay).toMatchObject({
+      status: 400,
+      title: "This sign-in link has expired",
+    });
+  });
+
+  it("refuses a pasted address that is not the return address, keeping the attempt open", async () => {
+    const { state } = await startFromSettings();
+    const calls = stubFetch(() => tokenAnswer("never"));
+    const wrong = await finishPastedLogin(
+      `https://chatgpt.com/?code=c&state=${state}`,
+    );
+    expect(wrong).toMatchObject({
+      status: 400,
+      title: "Not the sign-in address",
+    });
+    expect(await finishPastedLogin("not a url")).toMatchObject({ status: 400 });
+    expect(calls).toEqual([]);
+    /** The real address still completes it. */
+    const cancelled = await finishPastedLogin(
+      `http://127.0.0.1:${PORT}/auth/chatgpt/callback?error=access_denied&state=${state}`,
+    );
+    expect(cancelled.title).toBe("Sign-in cancelled");
+  });
+
+  it("derives the PKCE challenge as base64url SHA-256 without padding", () => {
+    expect(pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe(
+      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+    );
+  });
+}
+
 describe("sign-in", () => {
   it("registers the host on first sign-in, with PKCE and a loopback redirect", async () => {
     const { authorize } = await startFromSettings();
@@ -308,59 +366,5 @@ describe("sign-in", () => {
     expect(readAccountStatus().isSignedIn).toBe(false);
   });
 
-  it("does not store a sign-in that did not grant plan usage", async () => {
-    const { state } = await startFromSettings();
-    stubFetch(() => tokenAnswer("noplan", "openid email"));
-    const response = await finishLogin(
-      new URLSearchParams({ state, code: "c", client_id: ISSUED_CLIENT_ID }),
-    );
-    expect(response).toMatchObject({ status: 403 });
-    expect(readAccountStatus().isSignedIn).toBe(false);
-  });
-
-  it("treats a registration answered without an issued client id as incomplete", async () => {
-    const { state } = await startFromSettings();
-    const calls = stubFetch(() => tokenAnswer("never"));
-    const response = await finishLogin(
-      new URLSearchParams({ state, code: "c" }),
-    );
-    expect(response).toMatchObject({ status: 400 });
-    expect(calls).toEqual([]);
-  });
-
-  it("answers a replayed callback as expired", async () => {
-    const { state } = await startFromSettings();
-    stubFetch(() => tokenAnswer("x"));
-    await finishLogin(new URLSearchParams({ state, error: "access_denied" }));
-    const replay = await finishLogin(new URLSearchParams({ state, code: "c" }));
-    expect(replay).toMatchObject({
-      status: 400,
-      title: "This sign-in link has expired",
-    });
-  });
-
-  it("refuses a pasted address that is not the return address, keeping the attempt open", async () => {
-    const { state } = await startFromSettings();
-    const calls = stubFetch(() => tokenAnswer("never"));
-    const wrong = await finishPastedLogin(
-      `https://chatgpt.com/?code=c&state=${state}`,
-    );
-    expect(wrong).toMatchObject({
-      status: 400,
-      title: "Not the sign-in address",
-    });
-    expect(await finishPastedLogin("not a url")).toMatchObject({ status: 400 });
-    expect(calls).toEqual([]);
-    /** The real address still completes it. */
-    const cancelled = await finishPastedLogin(
-      `http://127.0.0.1:${PORT}/auth/chatgpt/callback?error=access_denied&state=${state}`,
-    );
-    expect(cancelled.title).toBe("Sign-in cancelled");
-  });
-
-  it("derives the PKCE challenge as base64url SHA-256 without padding", () => {
-    expect(pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe(
-      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
-    );
-  });
+  registerRejectedSignInCases();
 });

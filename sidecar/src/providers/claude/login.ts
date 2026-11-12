@@ -4,7 +4,9 @@ import path from "node:path";
 import { z } from "zod";
 import {
   CLAUDE_CLI_ACCOUNT_FILE,
-  CLAUDE_CLI_CREDENTIALS_PATH,
+  CLAUDE_CLI_CREDENTIALS_FILE,
+  CLAUDE_CLI_DEFAULT_DIR,
+  CLAUDE_CONFIG_DIR_ENV_VAR,
   DARWIN_PLATFORM,
 } from "../../constants/onboarding.js";
 import type { ProviderLogin } from "../login.js";
@@ -101,15 +103,38 @@ function readJson(file: string): CliFile {
   }
 }
 
+/**
+ * Where the Claude CLI keeps its login: with `CLAUDE_CONFIG_DIR` set, both files
+ * live in that directory; without it, the credentials are in `~/.claude` and the
+ * account file is `~/.claude.json`.
+ */
+export function claudeCliPaths(env: ClaudeProcessEnv, home: string) {
+  const configDir = env[CLAUDE_CONFIG_DIR_ENV_VAR];
+  if (configDir === undefined || configDir === "") {
+    return {
+      credentials: path.join(
+        home,
+        CLAUDE_CLI_DEFAULT_DIR,
+        CLAUDE_CLI_CREDENTIALS_FILE,
+      ),
+      account: path.join(home, CLAUDE_CLI_ACCOUNT_FILE),
+    };
+  }
+  return {
+    credentials: path.join(configDir, CLAUDE_CLI_CREDENTIALS_FILE),
+    account: path.join(configDir, CLAUDE_CLI_ACCOUNT_FILE),
+  };
+}
+
 /** The login of this machine and process right now. */
 export function readClaudeLogin(): ProviderLogin {
-  const home = os.homedir();
+  const paths = claudeCliPaths(process.env, os.homedir());
   return detectClaudeLogin({
     env: process.env,
     saved: readSavedClaudeToken(),
     cli: {
-      credentials: readJson(path.join(home, ...CLAUDE_CLI_CREDENTIALS_PATH)),
-      account: readJson(path.join(home, CLAUDE_CLI_ACCOUNT_FILE)),
+      credentials: readJson(paths.credentials),
+      account: readJson(paths.account),
     },
     platform: process.platform,
     nowMs: Date.now(),

@@ -30,7 +30,12 @@ export const CLAUDE_TOKEN_CHECK_HEADERS = {
   "anthropic-beta": "oauth-2025-04-20",
 } as const;
 
-/** Where the Claude CLI keeps its own login, relative to the home directory. */
-export const CLAUDE_CLI_CREDENTIALS_PATH = [".claude", ".credentials.json"];
+/**
+ * Where the Claude CLI keeps its own login. `CLAUDE_CONFIG_DIR` moves both files into that
+ * directory; without it the credentials sit in `~/.claude` and the account file in `~`.
+ */
+export const CLAUDE_CONFIG_DIR_ENV_VAR = "CLAUDE_CONFIG_DIR";
+export const CLAUDE_CLI_DEFAULT_DIR = ".claude";
+export const CLAUDE_CLI_CREDENTIALS_FILE = ".credentials.json";
 export const CLAUDE_CLI_ACCOUNT_FILE = ".claude.json";
 export const DARWIN_PLATFORM = "darwin";

@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type ClaudeLoginSources,
   detectClaudeLogin,
+  readClaudeLogin,
 } from "../../src/providers/claude/login.js";
 
 const NOW_MS = 1_700_000_000_000;
@@ -134,6 +138,81 @@ describe("the Claude login the assistant runs on", () => {
     });
     expect(detectClaudeLogin(sources({ cli, platform: "linux" }))).toEqual({
       status: "signed-out",
+    });
+  });
+});
+
+function writeCliLogin(
+  accountDirectory: string,
+  email: string,
+  credentialsDirectory: string,
+): void {
+  mkdirSync(credentialsDirectory, { recursive: true });
+  writeFileSync(
+    path.join(credentialsDirectory, ".credentials.json"),
+    JSON.stringify({
+      claudeAiOauth: {
+        accessToken: "cli-access-test",
+        refreshToken: "cli-refresh-test",
+        expiresAt: Date.now() + HOUR_MS,
+        subscriptionType: "max",
+      },
+    }),
+  );
+  writeFileSync(
+    path.join(accountDirectory, ".claude.json"),
+    JSON.stringify({ oauthAccount: { emailAddress: email } }),
+  );
+}
+
+describe("where the Claude CLI's own login is read", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  function isolatedEnvironment() {
+    for (const name of [
+      "CLAUDE_CODE_OAUTH_TOKEN",
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+      "CLAUDE_CONFIG_DIR",
+    ]) {
+      vi.stubEnv(name, "");
+    }
+    const home = mkdtempSync(path.join(tmpdir(), "claude-login-home-"));
+    vi.stubEnv("HOME", home);
+    vi.stubEnv("XDG_CONFIG_HOME", path.join(home, "xdg"));
+    return {
+      home,
+      configDir: mkdtempSync(path.join(tmpdir(), "claude-login-config-")),
+    };
+  }
+
+  it("reads the credentials and the account file from CLAUDE_CONFIG_DIR when it is set", () => {
+    const { home, configDir } = isolatedEnvironment();
+    writeCliLogin(configDir, "configured@example.com", configDir);
+    writeCliLogin(home, "home@example.com", path.join(home, ".claude"));
+    vi.stubEnv("CLAUDE_CONFIG_DIR", configDir);
+    expect(readClaudeLogin()).toEqual({
+      status: "signed-in",
+      source: "claude-cli",
+      email: "configured@example.com",
+      plan: "max",
+    });
+  });
+
+  it("is signed out when CLAUDE_CONFIG_DIR holds no login, whatever the home directory holds", () => {
+    const { home, configDir } = isolatedEnvironment();
+    writeCliLogin(home, "home@example.com", path.join(home, ".claude"));
+    vi.stubEnv("CLAUDE_CONFIG_DIR", configDir);
+    expect(readClaudeLogin()).toEqual({ status: "signed-out" });
+  });
+
+  it("reads ~/.claude/.credentials.json and ~/.claude.json without it, an empty value counting as unset", () => {
+    const { home } = isolatedEnvironment();
+    writeCliLogin(home, "home@example.com", path.join(home, ".claude"));
+    expect(readClaudeLogin()).toMatchObject({
+      status: "signed-in",
+      source: "claude-cli",
+      email: "home@example.com",
     });
   });
 });

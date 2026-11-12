@@ -225,7 +225,8 @@
 					"connected": "Connecté · {who}",
 					"rejected": "Ce jeton a été refusé. Relancez la commande et collez le nouveau jeton.",
 					"unreachable": "Anthropic est injoignable. Vérifiez votre connexion et réessayez.",
-					"malformed": "Ce n’est pas un jeton Claude. Collez celui que la commande affiche, qui commence par sk-ant-."
+					"malformed": "Ce n’est pas un jeton Claude. Collez celui que la commande affiche, qui commence par sk-ant-.",
+					"unsaved": "Le jeton fonctionne, mais il n’a pas pu être enregistré sur cette machine. Vérifiez que son dossier de configuration est accessible en écriture, puis réessayez."
 				},
 				"codex": {
 					"title": "Se connecter avec ChatGPT",

@@ -23,6 +23,7 @@ const PROBLEMS: Record<ClaudeTokenProblem, string> = {
 	rejected: "dms_ai.views.onboarding.claude.rejected",
 	unreachable: "dms_ai.views.onboarding.claude.unreachable",
 	malformed: "dms_ai.views.onboarding.claude.malformed",
+	unsaved: "dms_ai.views.onboarding.claude.unsaved",
 };
 
 const onboarding = useOnboarding();

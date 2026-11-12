@@ -92,6 +92,20 @@ describe("the Claude token step", () => {
 		expect(continueButton().disabled).toBe(true);
 	});
 
+	it("says a working token could not be saved, not that Anthropic was unreachable", async () => {
+		await openOnTheTokenStep();
+		harness.api.checkClaudeToken.mockResolvedValueOnce({
+			ok: false,
+			reason: "unsaved",
+		});
+
+		await paste("sk-ant-oat01-good");
+		await vi.advanceTimersByTimeAsync(CHECK_DELAY_MS);
+		await flushPromises();
+		expect(hint()).toContain("could not be saved on this machine");
+		expect(continueButton().disabled).toBe(true);
+	});
+
 	it("drops the answer about a token the user has since replaced", async () => {
 		await openOnTheTokenStep();
 		const stale = deferred<ClaudeTokenCheck>();

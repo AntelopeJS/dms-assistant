@@ -74,6 +74,22 @@ void test("relays a pasted token as the only field and answers the check uncache
   );
 });
 
+void test("relays a working token the sidecar could not save as unsaved", async () => {
+  reset();
+  answer("POST", "/onboarding/claude-token", 200, {
+    ok: false,
+    reason: "unsaved",
+  });
+  const result = await new harness.routes.AIOnboardingController().claudeToken({
+    token: "sk-ant-oat01-test-only",
+  });
+  assert.equal(result.getStatus(), 200);
+  assert.deepEqual(bodyOf(JsonSchema, result), {
+    ok: false,
+    reason: "unsaved",
+  });
+});
+
 void test("refuses a token body without a token before it reaches the sidecar", async () => {
   reset();
   const controller = new harness.routes.AIOnboardingController();

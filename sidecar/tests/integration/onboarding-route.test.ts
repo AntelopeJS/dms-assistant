@@ -1,7 +1,7 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { writeAuthRecord } from "../../src/providers/codex/chatgpt/store.js";
 import { createHttpServer } from "../../src/server/http.js";
@@ -14,6 +14,7 @@ import { createStore } from "../../src/state/store.js";
 import { signedInRecord, signInForTests } from "../helpers/chatgpt-auth.js";
 
 const CLIENT_TOKEN = "onboarding-route-credential";
+const realFetch = globalThis.fetch;
 
 interface Running {
   base: string;
@@ -56,7 +57,7 @@ const StateSchema = z.looseObject({
 });
 
 function call(running: Running, path: string, body?: Record<string, string>) {
-  return fetch(`${running.base}${path}`, {
+  return realFetch(`${running.base}${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers: {
       Authorization: `Bearer ${CLIENT_TOKEN}`,
@@ -79,7 +80,7 @@ describe("the onboarding routes", () => {
       "/onboarding/claude-token",
       "/onboarding/provider",
     ]) {
-      const response = await fetch(`${running.base}${path}`);
+      const response = await realFetch(`${running.base}${path}`);
       expect(response.status).toBe(401);
     }
   });
@@ -157,6 +158,25 @@ describe("the onboarding routes", () => {
     const text = await response.text();
     expect(JSON.parse(text)).toEqual({ ok: false, reason: "malformed" });
     expect(text).not.toContain(pasted);
+  });
+
+  it("answers 200 unsaved when the token works but this machine cannot save it", async () => {
+    const home = await mkdtemp(join(tmpdir(), "dms-assistant-unsaved-"));
+    const configHome = join(home, "xdg");
+    await writeFile(configHome, "a file where the config directory should go");
+    vi.stubEnv("XDG_CONFIG_HOME", configHome);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, status: 200 })),
+    );
+    const response = await call(running, "/onboarding/claude-token", {
+      token: "sk-ant-oat01-route-test-only",
+    });
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    await rm(home, { recursive: true, force: true });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: false, reason: "unsaved" });
   });
 
   it("refuses a token body without a token", async () => {

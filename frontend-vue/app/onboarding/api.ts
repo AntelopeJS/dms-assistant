@@ -34,7 +34,10 @@ const SOURCES: ReadonlySet<string> = new Set<LoginSource>([
 ]);
 function isProblem(value: unknown): value is ClaudeTokenProblem {
 	return (
-		value === "rejected" || value === "unreachable" || value === "malformed"
+		value === "rejected" ||
+		value === "unreachable" ||
+		value === "malformed" ||
+		value === "unsaved"
 	);
 }
 

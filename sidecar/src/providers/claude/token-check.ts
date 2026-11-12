@@ -8,10 +8,13 @@ import {
 import { HTTP_STATUS } from "../../constants/http.js";
 import { writeSavedClaudeToken } from "./credentials.js";
 
-/** The answer to a pasted Claude token. It never carries the token. */
+/**
+ * The answer to a pasted Claude token. It never carries the token. `unsaved`:
+ * the token works but this machine could not write it.
+ */
 export type ClaudeTokenCheck =
   | { ok: true; email?: string; plan?: string }
-  | { ok: false; reason: "rejected" | "unreachable" | "malformed" };
+  | { ok: false; reason: "rejected" | "unreachable" | "malformed" | "unsaved" };
 
 /** The part of `fetch` the check uses, so a test can stand in for Anthropic. */
 export type TokenCheckFetch = (
@@ -81,14 +84,33 @@ const REAL_DEPS: ClaudeTokenSubmitDeps = {
   save: writeSavedClaudeToken,
 };
 
-/** Checks a pasted token and saves it only when the check passes. */
+let latestSubmit = 0;
+let lastSave: Promise<unknown> = Promise.resolve();
+
+/**
+ * Checks a pasted token and saves it only when the check passes and no later
+ * paste has started since. Saves run one at a time in the order of the pastes,
+ * so a slow check of an older token never overwrites a newer one; an older
+ * token that passes after a newer paste is answered but not saved. A token that
+ * works but cannot be written answers `unsaved`.
+ */
 export async function submitClaudeToken(
   pasted: string,
   deps: ClaudeTokenSubmitDeps = REAL_DEPS,
 ): Promise<ClaudeTokenCheck> {
+  const ticket = ++latestSubmit;
   const token = pasted.trim();
   const result = await deps.check(token);
   if (!result.ok) return result;
-  await deps.save({ token, email: result.email, plan: result.plan });
-  return result;
+  const saved = lastSave.then(async (): Promise<boolean> => {
+    if (ticket !== latestSubmit) return true;
+    try {
+      await deps.save({ token, email: result.email, plan: result.plan });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  lastSave = saved;
+  return (await saved) ? result : { ok: false, reason: "unsaved" };
 }

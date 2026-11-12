@@ -54,7 +54,7 @@ const ClaudeTokenCheckSchema = z.discriminatedUnion("ok", [
   }),
   z.object({
     ok: z.literal(false),
-    reason: z.enum(["rejected", "unreachable", "malformed"]),
+    reason: z.enum(["rejected", "unreachable", "malformed", "unsaved"]),
   }),
 ]);
 

@@ -21,8 +21,12 @@ export interface OnboardingState {
 	codexLoginUrl?: string;
 }
 
-/** Why a pasted Claude token does not work. */
-export type ClaudeTokenProblem = "rejected" | "unreachable" | "malformed";
+/** Why a pasted Claude token does not work; `unsaved`: it works, but this machine could not store it. */
+export type ClaudeTokenProblem =
+	| "rejected"
+	| "unreachable"
+	| "malformed"
+	| "unsaved";
 
 /** `POST /ai/onboarding/claude-token`: the token, checked live against Anthropic and saved when it works. */
 export type ClaudeTokenCheck =

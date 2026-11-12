@@ -225,7 +225,8 @@
 					"connected": "Connected · {who}",
 					"rejected": "This token was rejected. Run the command again and paste the new token.",
 					"unreachable": "Anthropic could not be reached. Check your connection and try again.",
-					"malformed": "This is not a Claude token. Paste the one the command prints, starting with sk-ant-."
+					"malformed": "This is not a Claude token. Paste the one the command prints, starting with sk-ant-.",
+					"unsaved": "The token works but could not be saved on this machine. Check that its configuration folder is writable, then try again."
 				},
 				"codex": {
 					"title": "Sign in with ChatGPT",

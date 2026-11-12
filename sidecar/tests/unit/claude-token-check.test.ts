@@ -6,6 +6,8 @@ import {
   writeSavedClaudeToken,
 } from "../../src/providers/claude/credentials.js";
 import {
+  type ClaudeTokenCheck,
+  type ClaudeTokenSubmitDeps,
   checkClaudeToken,
   submitClaudeToken,
   type TokenCheckFetch,
@@ -99,6 +101,50 @@ describe("submitting a pasted Claude token", () => {
       save: async () => undefined,
     });
     expect(JSON.stringify(result)).not.toContain(TOKEN);
+  });
+
+  it("saves the token pasted last when an older paste's check finishes after it", async () => {
+    const save = vi.fn<ClaudeTokenSubmitDeps["save"]>(async () => undefined);
+    let releaseFirst: () => void = () => undefined;
+    const firstCheck = new Promise<ClaudeTokenCheck>((release) => {
+      releaseFirst = () => release({ ok: true });
+    });
+    const check = (token: string): Promise<ClaudeTokenCheck> =>
+      token === `${TOKEN}-first` ? firstCheck : Promise.resolve({ ok: true });
+    const first = submitClaudeToken(`${TOKEN}-first`, { check, save });
+    const second = submitClaudeToken(`${TOKEN}-second`, { check, save });
+    await second;
+    releaseFirst();
+    await first;
+    expect(save.mock.calls.map(([saved]) => saved.token)).toEqual([
+      `${TOKEN}-second`,
+    ]);
+  });
+
+  it("answers unsaved, without rejecting, when a working token cannot be written", async () => {
+    const result = await submitClaudeToken(TOKEN, {
+      check: async () => ({ ok: true }),
+      save: async () => {
+        throw new Error("EACCES");
+      },
+    });
+    expect(result).toEqual({ ok: false, reason: "unsaved" });
+  });
+
+  it("saves a later token after an earlier one failed to save", async () => {
+    const save = vi
+      .fn<ClaudeTokenSubmitDeps["save"]>()
+      .mockRejectedValueOnce(new Error("EACCES"))
+      .mockResolvedValue(undefined);
+    const deps = {
+      check: async (): Promise<ClaudeTokenCheck> => ({ ok: true }),
+      save,
+    };
+    await submitClaudeToken(`${TOKEN}-first`, deps);
+    expect(await submitClaudeToken(`${TOKEN}-second`, deps)).toEqual({
+      ok: true,
+    });
+    expect(save).toHaveBeenCalledTimes(2);
   });
 
   it("saves nothing when the check rejects, is unreachable or finds it malformed", async () => {

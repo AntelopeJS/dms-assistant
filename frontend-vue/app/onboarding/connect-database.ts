@@ -11,6 +11,7 @@ import {
 	connectSteps,
 	connectVariables,
 	connectionId,
+	connectionUrl,
 	type DatabaseEngine,
 	fieldProblem,
 	managedNames,
@@ -192,11 +193,16 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		if (written === connection) return true;
 		try {
 			const project = await api.projectModules();
-			const result = await api.configureProject(
-				connectSteps(form, project),
-				false,
-				connectVariables(form),
-			);
+			const result = project.modules.includes(managedNames(form).driverModule)
+				? await api.setConnectionUrl(
+						connection,
+						connectionUrl(form.engine, form.fields),
+					)
+				: await api.configureProject(
+						connectSteps(form, project),
+						false,
+						connectVariables(form),
+					);
 			if (!result.ok) {
 				refusal.value = refusalText(result.error);
 				return false;

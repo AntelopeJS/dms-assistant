@@ -61,7 +61,7 @@ function fakeBuilder(overrides: Record<string, unknown> = {}) {
 	);
 	const configureProject = vi.fn(async () => ({ ok: true }));
 	const api = {
-		projectModules: async () => ({}),
+		projectModules: async () => ({ modules: [] as string[] }),
 		configureProject,
 		failure: (error: unknown) => ({
 			detail: error instanceof Error ? error.message : String(error),
@@ -153,6 +153,29 @@ describe("the popup's connect form", () => {
 		expect(problem).toEqual({ kind: "no-name" });
 		expect(fake.configureProject).not.toHaveBeenCalled();
 		expect(connect.phase.value).toEqual({ kind: "form" });
+	});
+
+	it("points a connection an earlier visit already wrote at the new URL instead of adding its module again", async () => {
+		const setConnectionUrl = vi.fn(async () => ({
+			ok: true,
+			data: { variable: "SHOP_URL" },
+		}));
+		const fake = fakeBuilder({
+			projectModules: async () => ({ modules: ["builder-db-shop"] }),
+			setConnectionUrl,
+		});
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(fake.configureProject).not.toHaveBeenCalled();
+		expect(setConnectionUrl).toHaveBeenCalledWith(
+			"shop",
+			"postgres://app:secret@db.example.com:5432/shop",
+		);
+		expect(connect.refusal.value).toBeNull();
+		expect(connect.phase.value).toMatchObject({
+			kind: "checking",
+			connection: "shop",
+		});
 	});
 });
 

@@ -64,11 +64,3 @@ export function periodParams(search: URLSearchParams): QueryParams {
   }
   return params;
 }
-
-/** The value a column is filtered on, `is:` mode only. */
-export function filteredValue(
-  search: URLSearchParams,
-  column: string,
-): string | undefined {
-  return equalsValue(search.get(`${FILTER_PARAM_PREFIX}${column}`));
-}

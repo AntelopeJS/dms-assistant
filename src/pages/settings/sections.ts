@@ -1,13 +1,15 @@
 import { DefaultDataTypes } from "@antelopejs/interface-dms/base/data-types";
-import type { FormSection } from "@antelopejs/interface-dms/base/form-types";
-import { SETTINGS_SKILLS_SECTION } from "../../constants/pages";
+import type {
+  FieldGroup,
+  FormField,
+  FormSection,
+} from "@antelopejs/interface-dms/base/form-types";
 import {
   CLAUDE_MODE_OPTIONS,
   CODEX_MODE_OPTIONS,
   PROVIDER_OPTIONS,
   REQUEST_TIMEOUT_OPTIONS,
   RETENTION_OPTIONS,
-  SCOPE_OPTIONS,
   settingsText,
   THINKING_OPTIONS,
 } from "./options";
@@ -23,178 +25,157 @@ function switchType(field: string) {
   });
 }
 
-const AGENT: FormSection = {
-  id: "agent",
-  label: settingsText("sections", "agent", "label"),
-  description: settingsText("sections", "agent", "description"),
-  icon: "i-ph-robot",
-  fields: [
-    {
-      id: "provider",
-      label: settingsText("provider", "label"),
-      description: settingsText("provider", "description"),
-      hint: NEXT_TURN_HINT,
-      type: new DefaultDataTypes.SelectType({
-        display: "cards",
-        items: PROVIDER_OPTIONS,
-      }),
-      required: true,
-    },
-    {
-      id: "thinking",
-      label: settingsText("thinking", "label"),
-      description: settingsText("thinking", "description"),
-      hint: NEXT_MESSAGE_HINT,
-      type: new DefaultDataTypes.SelectType({
-        display: "segmented",
-        items: THINKING_OPTIONS,
-      }),
-      required: true,
-    },
-    {
-      id: "claudeModel",
-      label: settingsText("claude_model", "label"),
-      description: settingsText("claude_model", "description"),
-      hint: NEXT_MESSAGE_HINT,
-      type: new DefaultDataTypes.StringType({
-        placeholder: "claude-opus-5-5",
-      }),
-      required: true,
-    },
-  ],
+const PROVIDER_FIELD: FormField = {
+  id: "provider",
+  label: settingsText("provider", "label"),
+  description: settingsText("provider", "description"),
+  hint: NEXT_TURN_HINT,
+  type: new DefaultDataTypes.SelectType({
+    display: "cards",
+    items: PROVIDER_OPTIONS,
+  }),
+  required: true,
 };
 
-const APPROVALS: FormSection = {
-  id: "approvals",
-  label: settingsText("sections", "approvals", "label"),
-  description: settingsText("sections", "approvals", "description"),
-  icon: "i-ph-hand-palm",
-  fields: [
-    {
-      id: "defaultModeClaude",
-      label: settingsText("default_mode_claude", "label"),
-      description: settingsText("default_mode_claude", "description"),
-      hint: NEW_CONVERSATIONS_HINT,
-      type: new DefaultDataTypes.SelectType({
-        display: "cards",
-        items: CLAUDE_MODE_OPTIONS,
-      }),
-      required: true,
-    },
-    {
-      id: "defaultModeCodex",
-      label: settingsText("default_mode_codex", "label"),
-      description: settingsText("default_mode_codex", "description"),
-      hint: NEW_CONVERSATIONS_HINT,
-      type: new DefaultDataTypes.SelectType({
-        display: "cards",
-        items: CODEX_MODE_OPTIONS,
-      }),
-      required: true,
-    },
-    {
-      id: "alwaysAsk",
-      label: settingsText("always_ask", "label"),
-      description: settingsText("always_ask", "description"),
-      orientation: "vertical",
-      fields: [
-        {
-          id: "alwaysAskDeletions",
-          label: settingsText("always_ask_deletions", "label"),
-          type: switchType("always_ask_deletions"),
-          readonly: {
-            badge: {
-              label: settingsText("always_ask_deletions", "locked"),
-              tone: "neutral",
-            },
-          },
-        },
-        {
-          id: "alwaysAskDependencies",
-          type: switchType("always_ask_dependencies"),
-        },
-        {
-          id: "alwaysAskBlockRemoval",
-          type: switchType("always_ask_block_removal"),
-        },
-      ],
-    },
-    {
-      id: "unanswered",
-      label: settingsText("unanswered", "label"),
-      description: settingsText("unanswered", "description"),
-      orientation: "vertical",
-      fields: [
-        {
-          id: "requestTimeoutMinutes",
-          label: settingsText("request_timeout", "label"),
-          type: new DefaultDataTypes.SelectType({
-            items: REQUEST_TIMEOUT_OPTIONS,
-          }),
-          required: true,
-        },
-        { id: "notifyRequests", type: switchType("notify_requests") },
-      ],
-    },
-  ],
+const MODEL_FIELD: FormField = {
+  id: "claudeModel",
+  label: settingsText("claude_model", "label"),
+  description: settingsText("claude_model", "description"),
+  hint: NEXT_MESSAGE_HINT,
+  type: new DefaultDataTypes.StringType({
+    placeholder: "claude-opus-5-5",
+  }),
+  required: true,
 };
 
-const SCOPE: FormSection = {
-  id: "scope",
-  label: settingsText("sections", "scope", "label"),
-  description: settingsText("sections", "scope", "description"),
-  icon: "i-ph-shield-check",
-  fields: [
-    {
-      id: "generationMode",
-      label: settingsText("generation_mode", "label"),
-      description: settingsText("generation_mode", "description"),
-      hint: NEW_CONVERSATIONS_HINT,
-      type: new DefaultDataTypes.SelectType({
-        display: "cards",
-        items: SCOPE_OPTIONS,
-      }),
-      required: true,
-    },
-  ],
+const THINKING_FIELD: FormField = {
+  id: "thinking",
+  label: settingsText("thinking", "label"),
+  description: settingsText("thinking", "description"),
+  hint: NEXT_MESSAGE_HINT,
+  type: new DefaultDataTypes.SelectType({
+    display: "segmented",
+    items: THINKING_OPTIONS,
+  }),
+  required: true,
 };
 
-const SKILLS: FormSection = {
-  id: SETTINGS_SKILLS_SECTION,
-  label: settingsText("sections", "skills", "label"),
-  description: settingsText("sections", "skills", "description"),
-  icon: "i-ph-books",
-  fields: [
-    {
-      id: "allowLocalSkills",
-      label: settingsText("allow_local_skills", "title"),
-      hint: NEW_CONVERSATIONS_HINT,
-      type: switchType("allow_local_skills"),
-    },
-  ],
-};
-
-const HISTORY: FormSection = {
-  id: "history",
-  label: settingsText("sections", "history", "label"),
-  description: settingsText("sections", "history", "description"),
-  icon: "i-ph-clock-counter-clockwise",
-  fields: [
-    {
-      id: "checkpointRetentionDays",
-      label: settingsText("checkpoint_retention", "label"),
-      description: settingsText("checkpoint_retention", "description"),
-      type: new DefaultDataTypes.SelectType({ items: RETENTION_OPTIONS }),
-      required: true,
-    },
-  ],
-};
-
-/** The settings form's sections, in the mockup's order. */
-export const SETTINGS_SECTIONS: FormSection[] = [
-  AGENT,
-  APPROVALS,
-  SCOPE,
-  SKILLS,
-  HISTORY,
+const DEFAULT_MODE_FIELDS: FormField[] = [
+  {
+    id: "defaultModeClaude",
+    label: settingsText("default_mode_claude", "label"),
+    description: settingsText("default_mode_claude", "description"),
+    hint: NEW_CONVERSATIONS_HINT,
+    type: new DefaultDataTypes.SelectType({
+      display: "cards",
+      items: CLAUDE_MODE_OPTIONS,
+    }),
+    required: true,
+  },
+  {
+    id: "defaultModeCodex",
+    label: settingsText("default_mode_codex", "label"),
+    description: settingsText("default_mode_codex", "description"),
+    hint: NEW_CONVERSATIONS_HINT,
+    type: new DefaultDataTypes.SelectType({
+      display: "cards",
+      items: CODEX_MODE_OPTIONS,
+    }),
+    required: true,
+  },
 ];
+
+const UNANSWERED_GROUP: FieldGroup = {
+  id: "unanswered",
+  label: settingsText("unanswered", "label"),
+  description: settingsText("unanswered", "description"),
+  orientation: "vertical",
+  fields: [
+    {
+      id: "requestTimeoutMinutes",
+      label: settingsText("request_timeout", "label"),
+      type: new DefaultDataTypes.SelectType({
+        items: REQUEST_TIMEOUT_OPTIONS,
+      }),
+      required: true,
+    },
+    { id: "notifyRequests", type: switchType("notify_requests") },
+  ],
+};
+
+const LOCAL_SKILLS_FIELD: FormField = {
+  id: "allowLocalSkills",
+  label: settingsText("allow_local_skills", "title"),
+  hint: NEW_CONVERSATIONS_HINT,
+  type: switchType("allow_local_skills"),
+};
+
+const AI: FormSection = {
+  id: "ai",
+  label: settingsText("sections", "ai", "label"),
+  description: settingsText("sections", "ai", "description"),
+  icon: "i-ph-sparkle",
+  fields: [
+    PROVIDER_FIELD,
+    MODEL_FIELD,
+    THINKING_FIELD,
+    ...DEFAULT_MODE_FIELDS,
+    UNANSWERED_GROUP,
+    LOCAL_SKILLS_FIELD,
+  ],
+};
+
+const SAFE_MODE_FIELD: FormField = {
+  id: "safeMode",
+  label: settingsText("safe_mode", "label"),
+  description: settingsText("safe_mode", "description"),
+  hint: NEW_CONVERSATIONS_HINT,
+  type: switchType("safe_mode"),
+};
+
+const ALWAYS_ASK_GROUP: FieldGroup = {
+  id: "alwaysAsk",
+  label: settingsText("always_ask", "label"),
+  description: settingsText("always_ask", "description"),
+  orientation: "vertical",
+  fields: [
+    {
+      id: "alwaysAskDeletions",
+      label: settingsText("always_ask_deletions", "label"),
+      type: switchType("always_ask_deletions"),
+      readonly: {
+        badge: {
+          label: settingsText("always_ask_deletions", "locked"),
+          tone: "neutral",
+        },
+      },
+    },
+    {
+      id: "alwaysAskDependencies",
+      type: switchType("always_ask_dependencies"),
+    },
+    {
+      id: "alwaysAskBlockRemoval",
+      type: switchType("always_ask_block_removal"),
+    },
+  ],
+};
+
+const RETENTION_FIELD: FormField = {
+  id: "checkpointRetentionDays",
+  label: settingsText("checkpoint_retention", "label"),
+  description: settingsText("checkpoint_retention", "description"),
+  type: new DefaultDataTypes.SelectType({ items: RETENTION_OPTIONS }),
+  required: true,
+};
+
+const BUILDER: FormSection = {
+  id: "builder",
+  label: settingsText("sections", "builder", "label"),
+  description: settingsText("sections", "builder", "description"),
+  icon: "i-ph-hammer",
+  fields: [SAFE_MODE_FIELD, ALWAYS_ASK_GROUP, RETENTION_FIELD],
+};
+
+/** The settings form's sections: the agent, then the Builder. */
+export const SETTINGS_SECTIONS: FormSection[] = [AI, BUILDER];

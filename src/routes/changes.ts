@@ -12,7 +12,6 @@ import { AuthOwnerOnly, AuthRawUser } from "@antelopejs/interface-dms/auth";
 import type { ConfirmDialogSerialized } from "@antelopejs/interface-dms/base";
 import type { User } from "@antelopejs/interface-dms/auth/db";
 import { ROUTE_PREFIX } from "../constants/module";
-import { RECENT_CHANGE_SETS } from "../constants/pages";
 import {
   buildQuery,
   type JsonBody,
@@ -51,17 +50,6 @@ function changesParams(search: URLSearchParams): QueryParams {
   return { ...direct, ...sidecarListParams(search, FILTERS) };
 }
 
-/**
- * The latest change sets only, as one page: the Overview lists them and links
- * to the Changes page for the rest, so its table never pages.
- */
-function recentPage(
-  page: SidecarList<ChangeSetSummary>,
-): SidecarList<ChangeSetTableRow> {
-  const results = page.results.slice(0, RECENT_CHANGE_SETS);
-  return tablePage({ results, total: results.length });
-}
-
 /** What Undo may send: the dialog's choice to undo later sets too. */
 interface UndoBody {
   [INCLUDE_LATER_FIELD]?: boolean;
@@ -91,8 +79,7 @@ function tablePage(
 }
 
 /**
- * Change sets: the Overview's source table, a set's detail and Undo preview
- * for the Changes view, the dialog Undo asks in, and Undo / Redo stamped with
+ * Change sets: the Changes page's source table, a set's detail and Undo preview, the dialog Undo asks in, and Undo / Redo stamped with
  * the signed-in user.
  */
 @AuthOwnerOnly()
@@ -103,22 +90,6 @@ export class AIChangesController extends Controller(ROUTE_PREFIX) {
   ): Promise<SidecarList<ChangeSetTableRow> | HTTPResult> {
     const query = buildQuery(changesParams(ctx.url.searchParams));
     return relay(`${CHANGES_PATH}${query}`, CHANGE_SET_PAGE_ANSWER, tablePage);
-  }
-
-  @Get("/recent-changes")
-  recent(
-    @Context() ctx: RequestContext,
-  ): Promise<SidecarList<ChangeSetTableRow> | HTTPResult> {
-    const params: QueryParams = {
-      ...changesParams(ctx.url.searchParams),
-      offset: undefined,
-      limit: String(RECENT_CHANGE_SETS),
-    };
-    return relay(
-      `${CHANGES_PATH}${buildQuery(params)}`,
-      CHANGE_SET_PAGE_ANSWER,
-      recentPage,
-    );
   }
 
   @Get(`${CHANGES_PATH}/:id`)

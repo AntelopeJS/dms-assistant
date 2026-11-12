@@ -116,7 +116,6 @@ void test("answers 503 with a message from lists and settings while the sidecar 
   const answers = [
     await new harness.routes.AIActivityController().list(context("")),
     await new harness.routes.AIChangesController().list(context("")),
-    await new harness.routes.AISkillsController().catalog(context("")),
     await new harness.routes.AISettingsController().getSettings(),
     await new harness.routes.AISettingsController().updateSettings({
       thinking: "low",
@@ -131,120 +130,12 @@ void test("answers 503 with a message from lists and settings while the sidecar 
   }
 });
 
-void test("keeps the charts empty rather than failing while the sidecar is down", async () => {
+void test("keeps the usage figures empty rather than failing while the sidecar is down", async () => {
   reset();
   sidecar.isDown = true;
   const metrics = new harness.routes.AIMetricsController();
-  assert.equal((await metrics.kpi("actions")).value, 0);
-  assert.deepEqual((await metrics.series()).series, []);
-  assert.deepEqual(await metrics.allowed(), { items: [] });
-  assert.deepEqual(await metrics.topTools(), { items: [] });
+  assert.deepEqual((await metrics.usage("14")).series[0].data, []);
   assert.deepEqual((await metrics.usageSummary("14")).items.length, 2);
-});
-
-void test("words the How-allowed breakdown and the top tools with $dms_ai keys", async () => {
-  reset();
-  answer("GET", "/metrics/allowed", 200, {
-    items: [
-      { id: "approved", value: 21 },
-      { id: "read_auto", value: 118 },
-    ],
-    deletionsAsked: 2,
-    deletions: 2,
-  });
-  answer("GET", "/metrics/top-tools", 200, {
-    items: [
-      { id: "mcp__dms-ai__builder_add_block", value: 42, source: "builder" },
-      { id: "SomethingNew", value: 1, source: "code" },
-    ],
-  });
-  const metrics = new harness.routes.AIMetricsController();
-  const allowed = await metrics.allowed("a", "b");
-  assert.deepEqual(
-    allowed.items.map((item) => [item.title, item.value]),
-    [
-      ["$dms_ai.activity.allowed_by.read_auto", 118],
-      ["$dms_ai.activity.allowed_by.approved", 21],
-      ["$dms_ai.activity.allowed_metric.deletions_asked", 2],
-    ],
-  );
-  const tools = await metrics.topTools(undefined, undefined, "5");
-  assert.equal(sidecar.requests.at(-1).query.limit, "5");
-  assert.deepEqual(
-    tools.items.map((item) => item.title),
-    ["$dms_ai.activity.tools.builder_add_block", "SomethingNew"],
-  );
-});
-
-void test("shapes the approved KPI's caption from the sidecar's totals", async () => {
-  reset();
-  answer("GET", "/metrics/kpi/approved", 200, {
-    value: 21,
-    delta: 5,
-    previousValue: 20,
-    sparkline: [],
-    total: 25,
-  });
-  const kpi = await new harness.routes.AIMetricsController().kpi("approved");
-  assert.equal(kpi.caption, "21 / 25 · 84%");
-});
-
-void test("captions the undone KPI with the change sets of the period, none without any", async () => {
-  const metrics = new harness.routes.AIMetricsController();
-  reset();
-  answer("GET", "/metrics/kpi/undone", 200, {
-    value: 1,
-    sparkline: [],
-    total: 4,
-  });
-  assert.equal((await metrics.kpi("undone")).caption, "1 / 4");
-  reset();
-  answer("GET", "/metrics/kpi/undone", 200, {
-    value: 0,
-    sparkline: [],
-    total: 0,
-  });
-  assert.equal((await metrics.kpi("undone")).caption, undefined);
-});
-
-void test("forwards each comparison window of the Overview, none without one", async () => {
-  const metrics = new harness.routes.AIMetricsController();
-  const from = "2026-10-11T00:00:00.000Z";
-  const to = "2026-10-18T09:30:00.000Z";
-  const compareFrom = "2025-10-11T00:00:00.000Z";
-  const compareTo = "2025-10-18T09:30:00.000Z";
-  reset();
-  answer("GET", "/metrics/kpi/actions", 200, { value: 4, sparkline: [] });
-  answer("GET", "/metrics/series", 200, { value: 4, series: [] });
-  answer("GET", "/metrics/allowed", 200, {
-    items: [{ id: "approved", value: 3, delta: 50 }],
-    deletionsAsked: 0,
-    deletions: 0,
-  });
-  answer("GET", "/metrics/top-tools", 200, {
-    items: [{ id: "Edit", value: 2, delta: -50, source: "code" }],
-  });
-  await metrics.kpi("actions", from, to, compareFrom, compareTo);
-  await metrics.series(from, to, compareFrom, compareTo);
-  const allowed = await metrics.allowed(from, to, compareFrom, compareTo);
-  const tools = await metrics.topTools(
-    from,
-    to,
-    undefined,
-    compareFrom,
-    compareTo,
-  );
-  for (const request of sidecar.requests) {
-    assert.deepEqual(request.query, { from, to, compareFrom, compareTo });
-  }
-  assert.equal(allowed.items[0].delta, 50);
-  assert.equal(tools.items[0].delta, -50);
-  reset();
-  answer("GET", "/metrics/kpi/actions", 200, { value: 4, sparkline: [] });
-  const kpi = await metrics.kpi("actions", from, to);
-  assert.deepEqual(sidecar.requests[0].query, { from, to });
-  assert.equal(kpi.delta, undefined);
-  assert.equal(kpi.previousValue, undefined);
 });
 
 void test("serves the settings flat, numbers as text, deletions locked on", async () => {
@@ -309,6 +200,38 @@ void test("offers the sidecar's defaults on the settings form, numbers as text",
     ],
   );
   assert.equal(deletions.offersDefault, undefined);
+});
+
+void test("serves the Safe mode switch from the stored scope, beside the scope", async () => {
+  reset();
+  const settings = new harness.routes.AISettingsController();
+  answer("GET", "/settings", 200, { generationMode: "safe" });
+  const safe = await settings.getSettings();
+  answer("GET", "/settings", 200, { generationMode: "vibe" });
+  const code = await settings.getSettings();
+  assert.deepEqual(
+    [safe.safeMode, safe.generationMode, code.safeMode, code.generationMode],
+    [true, "safe", false, "vibe"],
+  );
+});
+
+void test("saves the Safe mode switch as the stored scope, the switch itself never reaching the sidecar", async () => {
+  reset();
+  answer("PUT", "/settings", 200, {});
+  const settings = new harness.routes.AISettingsController();
+  await settings.updateSettings({ safeMode: false });
+  await settings.updateSettings({ safeMode: true });
+  await settings.updateSettings({ generationMode: "vibe" });
+  await settings.updateSettings({ safeMode: "yes" });
+  assert.deepEqual(
+    sidecar.requests.map((request) => request.body),
+    [
+      { generationMode: "vibe" },
+      { generationMode: "safe" },
+      { generationMode: "vibe" },
+      { generationMode: "yes" },
+    ],
+  );
 });
 
 void test("forwards no default back to the sidecar", async () => {
@@ -402,7 +325,7 @@ void test("asks Undo's confirmation with the later change sets it collides with"
   );
 });
 
-void test("keys the change sets for the Overview table", async () => {
+void test("keys the change sets for the Changes table", async () => {
   reset();
   answer("GET", "/changes", 200, {
     total: 1,
@@ -435,39 +358,6 @@ void test("keys the change sets for the Overview table", async () => {
   assert.equal(page.results[0]._id, "set-1");
   assert.equal(page.results[0].diffstat, "1 · +19 −0");
   assert.equal(page.results[0].stateDetail, "Camille");
-});
-
-void test("lists the latest change sets as one page for the Overview", async () => {
-  reset();
-  /** @param {string} id */
-  const set = (id) => ({
-    ...CHANGE_SET_BASE,
-    id,
-    number: 1,
-    title: id,
-    createdAtMs: 0,
-    files: [],
-    added: 0,
-    removed: 0,
-    state: "applied",
-  });
-  answer("GET", "/changes", 200, {
-    total: 9,
-    results: ["a", "b", "c", "d"].map(set),
-  });
-  const page = await new harness.routes.AIChangesController().recent(
-    context("offset=4&limit=10&filter_state=is:applied"),
-  );
-  assert.deepEqual(sidecar.requests[0].query, {
-    limit: "4",
-    state: "applied",
-  });
-  assert.ok(!(page instanceof HTTPResult));
-  assert.equal(page.total, 4);
-  assert.deepEqual(
-    page.results.map((row) => row._id),
-    ["a", "b", "c", "d"],
-  );
 });
 
 void test("exports the audit log as CSV, cells escaped and formulas neutralized", async () => {

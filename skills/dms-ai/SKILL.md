@@ -1,6 +1,6 @@
 ---
 name: dms-ai
-description: Sets up and troubleshoots @antelopejs/dms-assistant, the AI development assistant of the AntelopeJS DMS (chat panel, sidecar running Claude Code or Codex, change sets with undo, audit log and skills pages under /modules/ai). Use when installing or configuring dms-ai (backendUrl, DMS_AI, providers, Codex), when the assistant is offline, or when a module must ship skills to it through antelopeJs.skills.
+description: Sets up and troubleshoots @antelopejs/dms-assistant, the AI development assistant of the AntelopeJS DMS (chat panel, sidecar running Claude Code or Codex, settings, change sets with undo and audit log pages under /modules/ai). Use when installing or configuring dms-ai (backendUrl, DMS_AI, providers, Codex), when the assistant is offline, or when a module must ship skills to it through antelopeJs.skills.
 icon: i-lucide-sparkles
 category: ai
 tags: [ai, assistant, sidecar, claude-code, codex, skills]
@@ -19,13 +19,13 @@ An owner-only development assistant. The backend starts a sidecar (child process
 
 ## Skills
 
-The sidecar loads every directory a loaded module declares in `package.json` `antelopeJs.skills` (and `~/.claude/skills` when Settings allow it). Ship a module's skill as `skills/<name>/SKILL.md` with `name`, `description`, `icon`, `category`, `tags: [a, b]` frontmatter, add `skills` to `files`. Two skills with one name: one is Shadowed.
+The sidecar loads every directory a loaded module declares in `package.json` `antelopeJs.skills` (and `~/.claude/skills` when Settings allow it). Ship a module's skill as `skills/<name>/SKILL.md` with `name`, `description`, `icon`, `category`, `tags: [a, b]` frontmatter, add `skills` to `files`. Two skills with one name: the agent uses one.
 
 ## Gotchas
 
 - Refuses to run with `NODE_ENV=production`; `DMS_AI=0` starts the backend without the sidecar.
-- Overview and Activity open with the DMS `PageToolbar` (period only, no live: "updated" + refresh); their selectors share `rememberKey: "ai"`. The Overview offers previous period / previous year / none in a menu (`comparisonControl: "menu"`); its KPI, series, allowed and top-tools routes forward `compareFrom` / `compareTo` (absent under none); the top lists carry a per-row `delta`. `/ai/activity` filters on the `from` / `to` the table sends; the CSV export ignores them.
-- Offline assistant: Restart on the Overview; lists and settings answer `503` while the sidecar is down.
+- Settings is the landing page of the module, then Changes and Activity. Activity opens with the DMS `PageToolbar` (period only, no live: "updated" + refresh). `/ai/activity` filters on the `from` / `to` the table sends; the CSV export ignores them.
+- Offline assistant: Restart on the Settings banner; lists and settings answer `503` while the sidecar is down.
 - Remote over plain HTTP: start the frontend with `DMS_COOKIE_SECURE=false`.
 - Deleting pages, tables, fields or queries asks in every mode, Auto review included. So does a database mapping that would remove a page, and so does every edit of a git hook file (anything inside a `.git` directory, `.husky/*`, a lefthook config file, `.pre-commit-config.yaml`), whatever the dependencies toggle says. With Codex, the sandbox is read-only in every mode, so every write asks, and the card for such a file offers no rule.
 - Claude Code defaults to Auto review (a safety check approves routine file edits and web access); every shell command, scheduled task and tool it does not know still asks the person, and so does every edit of `package.json`, a lockfile, `pnpm-workspace.yaml`, `.npmrc`, `.pnpmfile.cjs`, `.yarnrc`, `.yarnrc.yml` or `bunfig.toml` unless the person turned off the dependency approval. Codex defaults to Ask first and has no Auto review. Ask first asks before every command, read-only ones included, and before any change outside the Builder. Accept edits applies file edits unasked, except dependency and git hook files, and asks before every command; with Codex it works as Ask first, asking before every file edit and any command that writes.

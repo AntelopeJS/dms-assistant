@@ -122,24 +122,6 @@
 				"view_change_set": "Voir le lot de modifications",
 				"view_change_set_number": "Voir le lot #{number}"
 			},
-			"skills": {
-				"source": {
-					"module": "Module",
-					"local": "Local"
-				},
-				"shadowed": "Masqué",
-				"shadowed_by": "Ignoré : {winner} porte le même nom et est utilisé à sa place.",
-				"shadowed_description": "Ignoré : une autre compétence porte le même nom et est utilisée à sa place.",
-				"uses": "{count} utilisation | {count} utilisations",
-				"never_used": "jamais utilisée",
-				"source_label": "Source",
-				"qualified_name_label": "Nom complet",
-				"origin_label": "Origine",
-				"used_label": "Utilisée",
-				"used_value": "{count}× · 30 jours",
-				"last_used_label": "Dernière utilisation",
-				"open_last_conversation": "Ouvrir la dernière conversation"
-			},
 			"onboarding": {
 				"close": "Fermer",
 				"dont_show": "Ne plus afficher au démarrage",

@@ -1,79 +1,49 @@
 import { MODULE_ID, ROUTE_PREFIX } from "./module";
 
 export const AI_MODULE_ICON = "i-ph-sparkle";
-export const AI_MODULE_LANDING_PAGE = "overview";
+export const AI_MODULE_LANDING_PAGE = "settings";
 
 /** Where the module's pages live in the dashboard. */
 const MODULE_PAGES_PATH = "/modules/ai";
 
 export const PAGE_IDS = {
-  OVERVIEW: "overview",
+  SETTINGS: "settings",
   CHANGES: "changes",
   ACTIVITY: "activity",
-  SKILLS: "skills",
-  SETTINGS: "settings",
 } as const;
 
 export const PAGE_ORDER = {
-  OVERVIEW: 0,
+  SETTINGS: 0,
   CHANGES: 1,
   ACTIVITY: 2,
-  SKILLS: 3,
-  SETTINGS: 4,
 } as const;
 
-/** The period selector of the Overview, which its cards follow. */
-export const OVERVIEW_PERIOD_SCOPE = "ai-overview";
 /** The period selector of the Activity page, which its audit log follows. */
 export const ACTIVITY_PERIOD_SCOPE = "ai-activity";
 /** Shared by the module's period selectors: the period follows the owner. */
 export const PERIOD_REMEMBER_KEY = MODULE_ID;
 
-/** Rows of the Overview's recent change sets. */
-export const RECENT_CHANGE_SETS = 4;
-/** Rows of the Overview's top tools. */
-export const TOP_TOOLS_LIMIT = 5;
 /** Rows a page of the audit log holds, and each "Load more" adds. */
 export const ACTIVITY_PAGE_SIZE = 25;
 /** Days of the Settings › Usage chart. */
 const USAGE_DAYS = 14;
 
-/** Field key of the settings form: part of its section anchors. */
-const SETTINGS_FORM_KEY = "settings";
-export const SETTINGS_SKILLS_SECTION = "skills";
-
 /** The routes the pages read, by what they serve. */
 export const PAGE_ROUTES = {
-  STATUS: `${ROUTE_PREFIX}/status`,
-  STATUS_FACTS: `${ROUTE_PREFIX}/status/facts`,
   STATUS_BANNER: `${ROUTE_PREFIX}/status/banner`,
   SIDECAR_RESTART: `${ROUTE_PREFIX}/sidecar/restart`,
   CODEX_ACCOUNT_BANNER: `${ROUTE_PREFIX}/codex/account/banner`,
   CODEX_LOGOUT: `${ROUTE_PREFIX}/codex/logout`,
   CODEX_CALLBACK: `${ROUTE_PREFIX}/codex/callback`,
-  KPI: `${ROUTE_PREFIX}/metrics/kpi`,
-  SERIES: `${ROUTE_PREFIX}/metrics/series`,
-  ALLOWED: `${ROUTE_PREFIX}/metrics/allowed`,
-  TOP_TOOLS: `${ROUTE_PREFIX}/metrics/top-tools?limit=${TOP_TOOLS_LIMIT}`,
   USAGE: `${ROUTE_PREFIX}/metrics/usage?days=${USAGE_DAYS}`,
   USAGE_SUMMARY: `${ROUTE_PREFIX}/metrics/usage/summary?days=${USAGE_DAYS}`,
   CHANGES: `${ROUTE_PREFIX}/changes`,
-  RECENT_CHANGES: `${ROUTE_PREFIX}/recent-changes`,
-  CHANGE_UNDO: `${ROUTE_PREFIX}/changes/{{row._id}}/undo`,
-  CHANGE_UNDO_CONFIRM: `${ROUTE_PREFIX}/changes/{{row._id}}/undo-confirm`,
-  CHANGE_REDO: `${ROUTE_PREFIX}/changes/{{row._id}}/redo`,
   ACTIVITY: `${ROUTE_PREFIX}/activity`,
   ACTIVITY_EXPORT: `${ROUTE_PREFIX}/activity/export.csv`,
-  SKILLS_CATALOG: `${ROUTE_PREFIX}/skills/catalog`,
-  SKILL_CONFLICTS: `${ROUTE_PREFIX}/skills/conflicts`,
   SETTINGS: `${ROUTE_PREFIX}/settings`,
 } as const;
 
 /** Dashboard links between the pages. */
 export const PAGE_LINKS = {
-  CHANGES: `${MODULE_PAGES_PATH}/${PAGE_IDS.CHANGES}`,
-  CHANGE_SET: `${MODULE_PAGES_PATH}/${PAGE_IDS.CHANGES}?set={{row._id}}`,
   ACTIVITY: `${MODULE_PAGES_PATH}/${PAGE_IDS.ACTIVITY}`,
-  SETTINGS: `${MODULE_PAGES_PATH}/${PAGE_IDS.SETTINGS}`,
-  SKILL_SETTINGS: `${MODULE_PAGES_PATH}/${PAGE_IDS.SETTINGS}#dms-form-${SETTINGS_FORM_KEY}-section-${SETTINGS_SKILLS_SECTION}`,
 } as const;

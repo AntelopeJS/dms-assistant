@@ -12,9 +12,8 @@ import { requestSidecar } from "../sidecar";
 import type { AssistantStatus } from "../types";
 import type { JsonBody } from "../sidecar/json-body";
 import { bannerAnswer } from "./banner";
-import { contentJson } from "./content-json";
 import { assistantUnavailable } from "./sidecar-results";
-import { OFFLINE_STATUS, statusBanner, statusFacts } from "./status-shapes";
+import { OFFLINE_STATUS, statusBanner } from "./status-shapes";
 
 const STATUS_PATH = "/status";
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -56,8 +55,8 @@ function processState(): ProcessState {
 
 /**
  * The sidecar's own status, or `{ status: "offline" }` when it does not
- * answer, both with the process state: the Overview always has something to
- * draw, and knows whether a restart can help.
+ * answer, both with the process state: the chat and the Settings banner always
+ * have something to draw, and knows whether a restart can help.
  */
 async function readStatus(): Promise<AssistantStatus> {
   try {
@@ -80,19 +79,14 @@ function fresh(body: StatusAnswer): HTTPResult {
 }
 
 /**
- * The assistant's live status, the Overview's status rows and banner drawn
- * from it, and the way to restart it.
+ * The assistant's live status, the Settings banner drawn from it, and the way
+ * to restart it.
  */
 @AuthOwnerOnly()
 export class AIStatusController extends Controller(ROUTE_PREFIX) {
   @Get(STATUS_PATH)
   async status(): Promise<HTTPResult> {
     return fresh(await readStatus());
-  }
-
-  @Get(`${STATUS_PATH}/facts`)
-  async facts(): Promise<HTTPResult> {
-    return fresh(contentJson({ items: statusFacts(await readStatus()) }));
   }
 
   @Get(`${STATUS_PATH}/banner`)

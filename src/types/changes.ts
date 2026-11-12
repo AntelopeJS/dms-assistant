@@ -29,7 +29,7 @@ export interface ChangeSetSummary {
   builderOps: number;
 }
 
-/** A change set as the Overview's table reads it. */
+/** A change set as the Changes table reads it. */
 export interface ChangeSetTableRow extends ChangeSetSummary {
   _id: string;
   createdAt: string;

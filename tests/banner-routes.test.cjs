@@ -1,7 +1,6 @@
 const assert = require("node:assert/strict");
 const { z } = require("zod");
 const { test } = require("node:test");
-const { HTTPResult } = require("@antelopejs/interface-api");
 const {
   PAGE_LOCALES: PAGE_LOCALE_FILES,
   readLocale,
@@ -16,13 +15,6 @@ const {
 
 const TextSchema = z.string();
 const GroupSchema = z.record(z.string(), z.unknown());
-const FactSchema = z.looseObject({
-  id: z.string(),
-  value: z.unknown().optional(),
-  tone: z.unknown().optional(),
-  detail: z.unknown().optional(),
-});
-const FactsSchema = z.looseObject({ items: z.array(FactSchema) });
 const ActionSchema = z.looseObject({
   to: z.unknown().optional(),
   target: z.looseObject({ url: z.unknown().optional() }).optional(),
@@ -97,112 +89,6 @@ const ONLINE_STATUS = {
   port: 4123,
   checkpointsAvailable: true,
 };
-
-void test("warns once about every skill name several skills share, linking to the skill sources", async () => {
-  reset();
-  /**
-   * @param {string} source
-   * @param {string} origin
-   */
-  const copy = (source, origin) => ({ source, origin });
-  answer("GET", "/skills/conflicts", 200, {
-    conflicts: [
-      {
-        name: "release",
-        winner: copy("module", "@x/m"),
-        ignored: [copy("local", "~/.claude/skills")],
-      },
-      {
-        name: "review",
-        winner: copy("module", "@x/m"),
-        ignored: [copy("module", "@x/n")],
-      },
-    ],
-  });
-  const banner = await new harness.routes.AISkillsController().conflicts();
-  assert.ok(!(banner instanceof HTTPResult));
-  assert.equal(banner.tone, "warning");
-  const count = { type: "count", value: 2 };
-  assert.deepEqual(banner.title, {
-    key: "$dms_ai.skills.conflicts.title",
-    params: { count },
-  });
-  assert.deepEqual(banner.description, {
-    key: "$dms_ai.skills.conflicts.description",
-    params: { count, names: "release, review" },
-  });
-  assert.equal(
-    banner.actions[0].to,
-    "/modules/ai/settings#dms-form-settings-section-skills",
-  );
-  assert.deepEqual(untranslated(banner), []);
-});
-
-void test("draws no conflict banner when no name is shared or the sidecar is down", async () => {
-  reset();
-  answer("GET", "/skills/conflicts", 200, { conflicts: [] });
-  const skills = new harness.routes.AISkillsController();
-  assert.equal((await skills.conflicts()).getStatus(), 204);
-  sidecar.isDown = true;
-  assert.equal((await skills.conflicts()).getStatus(), 204);
-});
-
-void test("lists the assistant's status as key / value rows, the sidecar's address copyable", async () => {
-  reset();
-  answer("GET", "/status", 200, { ...ONLINE_STATUS, pendingApprovals: 2 });
-  const { items } = bodyOf(
-    FactsSchema,
-    await new harness.routes.AIStatusController().facts(),
-  );
-  assert.deepEqual(
-    items.map((item) => item.id),
-    ["state", "agent", "scope", "mode", "builder", "sidecar"],
-  );
-  assert.deepEqual(items[0].detail, {
-    key: "$dms_ai.status.facts.waiting_count",
-    params: { count: { type: "count", value: 2 } },
-  });
-  assert.equal(items[2].tone, "success");
-  assert.deepEqual(items.at(-1), {
-    id: "sidecar",
-    label: "$dms_ai.status.facts.sidecar",
-    value: "localhost:4123",
-    type: "mono",
-    copy: true,
-  });
-  assert.deepEqual(untranslated(items), []);
-});
-
-void test("shows the scope turns run in: Code mode when Safe mode lacks Builder", async () => {
-  reset();
-  answer("GET", "/status", 200, { ...ONLINE_STATUS, builderAvailable: false });
-  const { items } = bodyOf(
-    FactsSchema,
-    await new harness.routes.AIStatusController().facts(),
-  );
-  const scope = items.find((item) => item.id === "scope");
-  assert.equal(scope.value, "$dms_ai.status.scope.vibe");
-  assert.equal(scope.tone, "warning");
-  assert.equal(scope.detail, "$dms_ai.status.facts.scope_safe_needs_builder");
-  assert.deepEqual(untranslated(items), []);
-});
-
-void test("keeps only the state and the stopped sidecar while the assistant is offline", async () => {
-  reset();
-  sidecar.isDown = true;
-  const { items } = bodyOf(
-    FactsSchema,
-    await new harness.routes.AIStatusController().facts(),
-  );
-  assert.deepEqual(
-    items.map((item) => [item.id, item.value, item.tone]),
-    [
-      ["state", "$dms_ai.status.state.offline", "error"],
-      ["sidecar", "$dms_ai.status.facts.sidecar_stopped", "error"],
-    ],
-  );
-  assert.deepEqual(untranslated(items), []);
-});
 
 void test("raises the most pressing status banner: offline with Restart, a failed turn, then requests waiting", async () => {
   reset();
@@ -281,6 +167,80 @@ void test("hands a pasted return address to the sidecar, and its refusal back", 
     message: "Not the sign-in address",
   });
   assert.deepEqual(sidecar.requests.at(-1).body, { url: pasted });
+});
+
+const SAFE_MODE_FIELD = {
+  id: "safeMode",
+  type: "boolean",
+  description: "$dms_ai.settings.safe_mode.description",
+  component: { type: "x", options: {} },
+};
+
+const SafeModeFormSchema = z.object({
+  fields: z.array(
+    z.object({ disabled: z.boolean().optional(), description: z.string() }),
+  ),
+});
+
+void test("turns the Safe mode switch off the table, saying why, while the Builder is missing", async () => {
+  reset();
+  answer("GET", "/settings", 200, { builderAvailable: false });
+  const missing = SafeModeFormSchema.parse(
+    await harness.routes.applySidecarSettings(new Set(), {
+      fields: [SAFE_MODE_FIELD],
+    }),
+  );
+  answer("GET", "/settings", 200, { builderAvailable: true });
+  const present = SafeModeFormSchema.parse(
+    await harness.routes.applySidecarSettings(new Set(), {
+      fields: [SAFE_MODE_FIELD],
+    }),
+  );
+  assert.deepEqual(
+    [missing.fields[0].disabled, missing.fields[0].description],
+    [true, "$dms_ai.settings.safe_mode.builder_missing"],
+  );
+  assert.deepEqual(
+    [present.fields[0].disabled, present.fields[0].description],
+    [undefined, "$dms_ai.settings.safe_mode.description"],
+  );
+  assert.deepEqual(untranslated(missing), []);
+});
+
+void test("groups the settings in the AI and Builder sections, every setting kept", () => {
+  assert.deepEqual(
+    SETTINGS_SECTIONS.map((section) => [
+      section.id,
+      section.fields.map((field) => field.id),
+    ]),
+    [
+      [
+        "ai",
+        [
+          "provider",
+          "claudeModel",
+          "thinking",
+          "defaultModeClaude",
+          "defaultModeCodex",
+          "unanswered",
+          "allowLocalSkills",
+        ],
+      ],
+      ["builder", ["safeMode", "alwaysAsk", "checkpointRetentionDays"]],
+    ],
+  );
+  assert.deepEqual(
+    SETTINGS_SECTIONS.flatMap((section) => section.fields).flatMap((field) =>
+      "fields" in field ? field.fields.map((nested) => nested.id) : [],
+    ),
+    [
+      "requestTimeoutMinutes",
+      "notifyRequests",
+      "alwaysAskDeletions",
+      "alwaysAskDependencies",
+      "alwaysAskBlockRemoval",
+    ],
+  );
 });
 
 const OptionValuesSchema = z.array(z.string());

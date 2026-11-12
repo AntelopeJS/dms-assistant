@@ -60,7 +60,6 @@ const VIEWS_DYNAMIC_FAMILIES = {
     "denied",
     "expired",
   ],
-  "dms_ai.views.skills.source": ["module", "local"],
 };
 
 /**

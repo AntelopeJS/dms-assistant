@@ -1,9 +1,8 @@
 import type {
   BannerAction,
   BannerContent,
-  KeyValueListItem,
 } from "@antelopejs/interface-dms/base";
-import type { BlockText, Tone } from "@antelopejs/interface-dms/base/types";
+import type { BlockText } from "@antelopejs/interface-dms/base/types";
 import { I18N_SECTIONS } from "../constants/i18n";
 import { PAGE_LINKS, PAGE_ROUTES } from "../constants/pages";
 import type { AssistantStatus } from "../types";
@@ -11,18 +10,6 @@ import { i18nKey } from "../vocabulary";
 
 /** The status `/ai/status` reports when the sidecar does not answer. */
 export const OFFLINE_STATUS = "offline";
-
-const SIDECAR_HOST = "localhost";
-const STATE_TONES = new Map<string, Tone>([
-  ["ready", "success"],
-  ["working", "info"],
-  ["waiting", "warning"],
-  [OFFLINE_STATUS, "error"],
-]);
-const SCOPE_TONES = new Map<string, Tone>([
-  ["safe", "success"],
-  ["vibe", "warning"],
-]);
 
 /** The banner of one state, or nothing when the status is not in it. */
 type BannerRule = (status: AssistantStatus) => BannerContent | null;
@@ -41,98 +28,6 @@ function waitingCount(status: AssistantStatus): number {
 
 function isOffline(status: AssistantStatus): boolean {
   return status.status === OFFLINE_STATUS;
-}
-
-/** "2 waiting for you", else "1 conversation working", else nothing. */
-function activityDetail(status: AssistantStatus): BlockText | undefined {
-  const waiting = waitingCount(status);
-  if (waiting > 0) return counted(text("facts", "waiting_count"), waiting);
-  const working = status.workingConversations ?? 0;
-  if (working > 0) return counted(text("facts", "working_count"), working);
-  return undefined;
-}
-
-function stateFact(status: AssistantStatus): KeyValueListItem {
-  return {
-    id: "state",
-    label: text("facts", "state"),
-    value: text("state", status.status),
-    type: "status",
-    tone: STATE_TONES.get(status.status) ?? "neutral",
-    detail: activityDetail(status),
-  };
-}
-
-function sidecarFact(status: AssistantStatus): KeyValueListItem {
-  const label = text("facts", "sidecar");
-  if (isOffline(status) || status.port === undefined) {
-    return {
-      id: "sidecar",
-      label,
-      value: text("facts", "sidecar_stopped"),
-      tone: "error",
-    };
-  }
-  return {
-    id: "sidecar",
-    label,
-    value: `${SIDECAR_HOST}:${status.port}`,
-    type: "mono",
-    copy: true,
-  };
-}
-
-/**
- * The scope turns actually run in, as the chat composer shows it: Safe mode
- * needs Builder, so without it the sidecar runs every turn in Code mode.
- */
-function effectiveScope(status: AssistantStatus): string {
-  const scope = status.generationMode ?? "";
-  return scope === "safe" && status.builderAvailable === false ? "vibe" : scope;
-}
-
-/** What the sidecar tells only while it runs: agent, scope, approvals, Builder. */
-function settingsFacts(status: AssistantStatus): KeyValueListItem[] {
-  if (isOffline(status)) return [];
-  const scope = effectiveScope(status);
-  const isSafeWithoutBuilder = scope !== status.generationMode;
-  return [
-    {
-      id: "agent",
-      label: text("facts", "agent"),
-      value: text("agent", status.provider ?? ""),
-    },
-    {
-      id: "scope",
-      label: text("facts", "default_scope"),
-      value: text("scope", scope),
-      type: "status",
-      tone: SCOPE_TONES.get(scope) ?? "neutral",
-      detail: isSafeWithoutBuilder
-        ? text("facts", "scope_safe_needs_builder")
-        : undefined,
-    },
-    {
-      id: "mode",
-      label: text("facts", "approvals"),
-      value: text("mode", status.mode ?? ""),
-    },
-    {
-      id: "builder",
-      label: text("facts", "builder"),
-      value: text(
-        "facts",
-        status.builderAvailable ? "builder_connected" : "builder_missing",
-      ),
-      type: "status",
-      tone: status.builderAvailable ? "success" : "neutral",
-    },
-  ];
-}
-
-/** The Overview's status rows: state, agent, scope, approvals, Builder, sidecar. */
-export function statusFacts(status: AssistantStatus): KeyValueListItem[] {
-  return [stateFact(status), ...settingsFacts(status), sidecarFact(status)];
 }
 
 function restartAction(): BannerAction {
@@ -199,7 +94,7 @@ const BANNER_RULES: readonly BannerRule[] = [
   waitingBanner,
 ];
 
-/** The Overview's status banner, or nothing when all is well. */
+/** The Settings status banner, or nothing when all is well. */
 export function statusBanner(status: AssistantStatus): BannerContent | null {
   return (
     BANNER_RULES.map((rule) => rule(status)).find((content) => content) ?? null

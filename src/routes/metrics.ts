@@ -3,52 +3,15 @@ import { AuthOwnerOnly } from "@antelopejs/interface-dms/auth";
 import { ROUTE_PREFIX } from "../constants/module";
 import type { z } from "zod";
 import {
-  ALLOWED_ANSWER,
   buildQuery,
-  CHART_ANSWER,
-  KPI_ANSWER,
-  pathSegment,
   type QueryParams,
   readSidecar,
-  TOP_TOOLS_ANSWER,
   USAGE_ANSWER,
 } from "../sidecar";
-import type {
-  AllowedBreakdown,
-  ChartPayload,
-  KeyValueItem,
-  KpiPayload,
-  SidecarKpi,
-  TopListPayload,
-  TopTools,
-  UsageReport,
-} from "../types";
-import {
-  allowedPayload,
-  kpiPayload,
-  topToolsPayload,
-  usageChartPayload,
-  usageSummaryPayload,
-} from "./metric-shapes";
+import type { ChartPayload, KeyValueItem, UsageReport } from "../types";
+import { usageChartPayload, usageSummaryPayload } from "./metric-shapes";
 
-/** No comparison while the sidecar is down: the cards show no trend. */
-const EMPTY_KPI: SidecarKpi = { value: 0, sparkline: [] };
-const EMPTY_CHART: ChartPayload = { value: 0, series: [] };
-const EMPTY_ALLOWED: AllowedBreakdown = {
-  items: [],
-  deletionsAsked: 0,
-  deletions: 0,
-};
-const EMPTY_TOOLS: TopTools = { items: [] };
 const EMPTY_USAGE: UsageReport = { days: [], totalTokens: 0, conversations: 0 };
-
-/** The period parameters the DMS chart blocks append to their `fetchUrl`. */
-interface PeriodParams extends QueryParams {
-  from?: string;
-  to?: string;
-  compareFrom?: string;
-  compareTo?: string;
-}
 
 /** Reads a sidecar metric and turns it into a payload; an empty one while the sidecar is down. */
 async function readMetric<T, R>(
@@ -64,74 +27,11 @@ async function readMetric<T, R>(
 }
 
 /**
- * The figures of the Overview and of Settings › Usage. They render empty
+ * The figures of Settings › Usage. They render empty
  * rather than fail while the sidecar is down, so they never answer 503.
  */
 @AuthOwnerOnly()
 export class AIMetricsController extends Controller(`${ROUTE_PREFIX}/metrics`) {
-  @Get("kpi/:metric")
-  kpi(
-    @Parameter("metric", "param") metric: string,
-    @Parameter("from", "query") from?: string,
-    @Parameter("to", "query") to?: string,
-    @Parameter("compareFrom", "query") compareFrom?: string,
-    @Parameter("compareTo", "query") compareTo?: string,
-  ): Promise<KpiPayload> {
-    const period: PeriodParams = { from, to, compareFrom, compareTo };
-    const path = `/metrics/kpi/${pathSegment(metric)}`;
-    return readMetric(path, period, KPI_ANSWER, EMPTY_KPI, kpiPayload(metric));
-  }
-
-  @Get("series")
-  series(
-    @Parameter("from", "query") from?: string,
-    @Parameter("to", "query") to?: string,
-    @Parameter("compareFrom", "query") compareFrom?: string,
-    @Parameter("compareTo", "query") compareTo?: string,
-  ): Promise<ChartPayload> {
-    const period: PeriodParams = { from, to, compareFrom, compareTo };
-    return readSidecar(
-      `/metrics/series${buildQuery(period)}`,
-      CHART_ANSWER,
-      EMPTY_CHART,
-    );
-  }
-
-  @Get("allowed")
-  allowed(
-    @Parameter("from", "query") from?: string,
-    @Parameter("to", "query") to?: string,
-    @Parameter("compareFrom", "query") compareFrom?: string,
-    @Parameter("compareTo", "query") compareTo?: string,
-  ): Promise<TopListPayload> {
-    const period: PeriodParams = { from, to, compareFrom, compareTo };
-    return readMetric(
-      "/metrics/allowed",
-      period,
-      ALLOWED_ANSWER,
-      EMPTY_ALLOWED,
-      allowedPayload,
-    );
-  }
-
-  @Get("top-tools")
-  topTools(
-    @Parameter("from", "query") from?: string,
-    @Parameter("to", "query") to?: string,
-    @Parameter("limit", "query") limit?: string,
-    @Parameter("compareFrom", "query") compareFrom?: string,
-    @Parameter("compareTo", "query") compareTo?: string,
-  ): Promise<TopListPayload> {
-    const params: PeriodParams = { from, to, compareFrom, compareTo, limit };
-    return readMetric(
-      "/metrics/top-tools",
-      params,
-      TOP_TOOLS_ANSWER,
-      EMPTY_TOOLS,
-      topToolsPayload,
-    );
-  }
-
   @Get("usage")
   usage(@Parameter("days", "query") days?: string): Promise<ChartPayload> {
     return readMetric(

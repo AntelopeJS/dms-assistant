@@ -22,19 +22,14 @@ const ONLINE_STATUS = {
   lastError: "Agent exited",
 };
 
-void test("answers the status, its rows and its banner in the bytes the Overview reads", async () => {
+void test("answers the status and its banner in the bytes the chat and Settings read", async () => {
   reset();
   answer("GET", "/status", 200, ONLINE_STATUS);
   const status = new harness.routes.AIStatusController();
   assert.deepEqual(
-    [
-      textOf(await status.status()),
-      textOf(await status.facts()),
-      textOf(await status.banner()),
-    ],
+    [textOf(await status.status()), textOf(await status.banner())],
     [
       '{"status":"ready","provider":"claude","builderAvailable":true,"mode":"normal","generationMode":"safe","workingConversations":0,"pendingApprovals":0,"pendingQuestions":1,"port":4123,"lastError":"Agent exited","isRunning":true,"hasGivenUp":false,"disabled":false}',
-      '{"items":[{"id":"state","label":"$dms_ai.status.facts.state","value":"$dms_ai.status.state.ready","type":"status","tone":"success","detail":{"key":"$dms_ai.status.facts.waiting_count","params":{"count":{"type":"count","value":1}}}},{"id":"agent","label":"$dms_ai.status.facts.agent","value":"$dms_ai.status.agent.claude"},{"id":"scope","label":"$dms_ai.status.facts.default_scope","value":"$dms_ai.status.scope.safe","type":"status","tone":"success"},{"id":"mode","label":"$dms_ai.status.facts.approvals","value":"$dms_ai.status.mode.normal"},{"id":"builder","label":"$dms_ai.status.facts.builder","value":"$dms_ai.status.facts.builder_connected","type":"status","tone":"success"},{"id":"sidecar","label":"$dms_ai.status.facts.sidecar","value":"localhost:4123","type":"mono","copy":true}]}',
       '{"tone":"error","icon":"i-ph-warning-octagon","title":"$dms_ai.status.banner.last_error.title","description":{"key":"$dms_ai.status.banner.last_error.description","params":{"error":"Agent exited"}},"actions":[{"label":"$dms_ai.status.banner.last_error.action","to":"/modules/ai/activity","icon":"i-ph-clock-counter-clockwise"}]}',
     ],
   );

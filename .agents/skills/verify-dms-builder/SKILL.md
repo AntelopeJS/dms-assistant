@@ -77,7 +77,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 ## Gotchas
 
 - Every dashboard page renders on the server and hydrates after `load`; a click that lands first does nothing. `openBuilder` clicks the hammer until the editor bar shows.
-- On a project with no external database the dashboard asks a fresh browser to connect one, in a dialog over every page. `guarded` answers Not now once per browser before any page script runs; `database/the-connect-prompt-asks-once-per-browser` removes that answer to drive the dialog.
+- In a development dashboard dms-assistant's onboarding popup covers every page until onboarding is done. `guarded` ticks its "Don't show on startup" once per browser before any page script runs; verify-dms-ai drives the popup itself.
 - The page files the builder writes are not served until the project is compiled and the backend restarted, which `ajs project dev -w` does on its own; journeys that need the rendered page call `rebuild`.
 - A frontend is built once: the dashboard keeps its builder button after the backend turns the builder off, so the button's absence is Not driven; the routes' 404 is driven.
 - `CreatePage` places a page at `<category-folder>/<name>/page.ts` when a barrel sits beside the category's file, and at `src/<name>.ts` otherwise; journeys create a category first when they need the folder form.

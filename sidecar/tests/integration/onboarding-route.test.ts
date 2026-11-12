@@ -1,0 +1,136 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
+import { createHttpServer } from "../../src/server/http.js";
+import { createConversationStore } from "../../src/state/conversations.js";
+import {
+  createSettingsStore,
+  type SettingsStore,
+} from "../../src/state/settings-store.js";
+import { createStore } from "../../src/state/store.js";
+
+const CLIENT_TOKEN = "onboarding-route-credential";
+
+interface Running {
+  base: string;
+  settingsStore: SettingsStore;
+  close: () => Promise<void>;
+}
+
+async function start(): Promise<Running> {
+  const directory = await mkdtemp(join(tmpdir(), "dms-assistant-onboarding-"));
+  const conversationStore = createConversationStore({
+    store: createStore({ filePath: join(directory, "state.json") }),
+  });
+  const settingsStore = createSettingsStore({
+    filePath: join(directory, "settings.json"),
+  });
+  const { server, port } = await createHttpServer({
+    clientToken: CLIENT_TOKEN,
+    port: 0,
+    conversationStore,
+    settingsStore,
+    settingsApplier: { apply: (next) => settingsStore.set(next) },
+  });
+  return {
+    base: `http://127.0.0.1:${port}`,
+    settingsStore,
+    close: async () => {
+      await new Promise<void>((done) => server.close(() => done()));
+      await rm(directory, { recursive: true, force: true });
+    },
+  };
+}
+
+const StateSchema = z.looseObject({
+  bootId: z.string(),
+  provider: z.string(),
+  logins: z.looseObject({
+    claude: z.looseObject({ status: z.string() }),
+    codex: z.looseObject({ status: z.string() }),
+  }),
+});
+
+function call(running: Running, path: string, body?: Record<string, string>) {
+  return fetch(`${running.base}${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: {
+      Authorization: `Bearer ${CLIENT_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+describe("the onboarding routes", () => {
+  let running: Running;
+  beforeEach(async () => {
+    running = await start();
+  });
+  afterEach(() => running.close());
+
+  it("refuses a caller without the client credential", async () => {
+    for (const path of [
+      "/onboarding",
+      "/onboarding/claude-token",
+      "/onboarding/provider",
+    ]) {
+      const response = await fetch(`${running.base}${path}`);
+      expect(response.status).toBe(401);
+    }
+  });
+
+  it("answers the provider, both logins and one boot id that stays the same", async () => {
+    const first = StateSchema.parse(
+      await (await call(running, "/onboarding")).json(),
+    );
+    const second = StateSchema.parse(
+      await (await call(running, "/onboarding")).json(),
+    );
+    expect(first).toMatchObject({
+      provider: "claude",
+      logins: { codex: { status: "signed-in", source: "chatgpt" } },
+    });
+    expect(["signed-in", "signed-out", "expired"]).toContain(
+      first.logins.claude.status,
+    );
+    expect(first).not.toHaveProperty("codexLoginUrl");
+    expect(first.bootId.length).toBeGreaterThan(0);
+    expect(second.bootId).toBe(first.bootId);
+  });
+
+  it("sets the provider setting and answers the new state", async () => {
+    const response = await call(running, "/onboarding/provider", {
+      provider: "codex",
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ provider: "codex" });
+    expect(running.settingsStore.get().provider).toBe("codex");
+  });
+
+  it("refuses an unknown provider and keeps the setting", async () => {
+    const response = await call(running, "/onboarding/provider", {
+      provider: "gemini",
+    });
+    expect(response.status).toBe(400);
+    expect(running.settingsStore.get().provider).toBe("claude");
+  });
+
+  it("answers a malformed token without a request and without echoing it", async () => {
+    const pasted = "not-a-claude-token";
+    const response = await call(running, "/onboarding/claude-token", {
+      token: pasted,
+    });
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({ ok: false, reason: "malformed" });
+    expect(text).not.toContain(pasted);
+  });
+
+  it("refuses a token body without a token", async () => {
+    const response = await call(running, "/onboarding/claude-token", {});
+    expect(response.status).toBe(400);
+  });
+});

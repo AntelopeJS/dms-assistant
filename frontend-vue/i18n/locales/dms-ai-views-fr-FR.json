@@ -143,9 +143,11 @@
 			"exclusions": {
 				"page": "Page",
 				"table": "Table",
-				"column": "Colonne",
-				"add": "Exclure la colonne",
-				"failed": "L'exclusion n'a pas été enregistrée",
+				"route": "Route de données",
+				"existing": "Cette route a déjà des exclusions : vous les modifiez.",
+				"not_found": "Introuvable",
+				"save": "Enregistrer",
+				"failed": "Les exclusions n'ont pas été enregistrées",
 				"none": "Aucune page visible ne contient de table."
 			}
 		}

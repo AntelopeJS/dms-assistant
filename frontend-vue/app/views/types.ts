@@ -180,16 +180,21 @@ export interface Fact {
 	tone?: Tone;
 }
 
-/** The pages, tables and columns the owner can pick an exclusion from. */
+/** One field of a data route in the exclusion checklist. */
+export interface ExclusionField {
+	field: string;
+	header: string;
+	isExcluded: boolean;
+	/** A table the owner can see shows it: else it is excluded and stale. */
+	isShown: boolean;
+}
+
+/** The pages and tables the owner can pick a data route from, and each route's fields. */
 export interface ExclusionCandidates {
 	pages: {
 		path: string;
 		title: string;
-		tables: {
-			id: string;
-			title: string;
-			route: string;
-			columns: { field: string; header: string }[];
-		}[];
+		tables: { id: string; title: string; route: string }[];
 	}[];
+	routes: { route: string; fields: ExclusionField[] }[];
 }

@@ -214,11 +214,11 @@
 			"exclusions": {
 				"entries": {
 					"name": "Exclusion list",
-					"description": "The fields Analyst never reads"
+					"description": "The data routes and the fields Analyst never reads on them"
 				},
-				"add": {
-					"name": "Add an exclusion",
-					"description": "Pick a page, a table and a column to exclude"
+				"editor": {
+					"name": "Exclusion editor",
+					"description": "Pick a data route and check the fields to exclude"
 				}
 			}
 		},
@@ -682,16 +682,18 @@
 		},
 		"exclusions": {
 			"search": "Search exclusions",
-			"count": "exclusions",
+			"count": "routes",
 			"add": "Add exclusion",
-			"add_title": "Add an exclusion",
-			"add_description": "Analyst will never read this column, on any table that reads the same data.",
+			"add_title": "Exclude fields",
+			"add_description": "Analyst will never read the checked fields, on any table that reads this data route.",
+			"edit": "Edit",
+			"edit_title": "Edit exclusions",
 			"remove": "Remove",
-			"removed": "Exclusion removed",
+			"removed": "Exclusions removed",
 			"columns": {
 				"route": "Data route",
-				"field": "Field",
 				"covers": "Covers",
+				"fields": "Excluded fields",
 				"status": "Status"
 			},
 			"status": {
@@ -699,12 +701,12 @@
 				"not_found": "Not found"
 			},
 			"remove_confirm": {
-				"title": "Remove this exclusion?",
-				"description": "Analyst will be able to read this field again."
+				"title": "Remove every exclusion on this route?",
+				"description": "Analyst will be able to read these fields again."
 			},
 			"empty": {
 				"title": "Nothing is excluded",
-				"description": "Add a column to keep it away from Analyst."
+				"description": "Add a data route to keep some of its fields away from Analyst."
 			},
 			"error": {
 				"title": "Exclusions unavailable",

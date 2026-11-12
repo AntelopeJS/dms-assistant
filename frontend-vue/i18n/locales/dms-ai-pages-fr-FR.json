@@ -214,11 +214,11 @@
 			"exclusions": {
 				"entries": {
 					"name": "Liste des exclusions",
-					"description": "Les champs qu'Analyst ne lit jamais"
+					"description": "Les routes de données et les champs qu'Analyst n'y lit jamais"
 				},
-				"add": {
-					"name": "Ajouter une exclusion",
-					"description": "Choisir une page, une table et une colonne à exclure"
+				"editor": {
+					"name": "Éditeur d'exclusions",
+					"description": "Choisir une route de données et cocher les champs à exclure"
 				}
 			}
 		},
@@ -682,16 +682,18 @@
 		},
 		"exclusions": {
 			"search": "Rechercher une exclusion",
-			"count": "exclusions",
+			"count": "routes",
 			"add": "Ajouter une exclusion",
-			"add_title": "Ajouter une exclusion",
-			"add_description": "Analyst ne lira jamais cette colonne, sur aucune table lisant les mêmes données.",
+			"add_title": "Exclure des champs",
+			"add_description": "Analyst ne lira jamais les champs cochés, sur aucune table lisant cette route de données.",
+			"edit": "Modifier",
+			"edit_title": "Modifier les exclusions",
 			"remove": "Retirer",
-			"removed": "Exclusion retirée",
+			"removed": "Exclusions retirées",
 			"columns": {
 				"route": "Route de données",
-				"field": "Champ",
 				"covers": "Couvre",
+				"fields": "Champs exclus",
 				"status": "Statut"
 			},
 			"status": {
@@ -699,12 +701,12 @@
 				"not_found": "Introuvable"
 			},
 			"remove_confirm": {
-				"title": "Retirer cette exclusion ?",
-				"description": "Analyst pourra de nouveau lire ce champ."
+				"title": "Retirer toutes les exclusions de cette route ?",
+				"description": "Analyst pourra de nouveau lire ces champs."
 			},
 			"empty": {
 				"title": "Rien n'est exclu",
-				"description": "Ajoutez une colonne pour la cacher à Analyst."
+				"description": "Ajoutez une route de données pour cacher certains de ses champs à Analyst."
 			},
 			"error": {
 				"title": "Exclusions indisponibles",

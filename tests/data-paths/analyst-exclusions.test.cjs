@@ -40,12 +40,28 @@ const Tables = z.object({
 });
 const Rows = z.object({ rows: z.array(z.looseObject({})) });
 const Refusal = z.object({ error: z.string(), detail: z.string() });
-const Added = z.object({ _id: z.string() });
+const Saved = z.object({
+  _id: z.string().optional(),
+  route: z.string(),
+  fields: z.array(z.string()),
+});
 const Candidates = z.object({
   pages: z.array(
     z.object({
       path: z.string(),
       tables: z.array(z.object({ id: z.string(), route: z.string() })),
+    }),
+  ),
+  routes: z.array(
+    z.object({
+      route: z.string(),
+      fields: z.array(
+        z.object({
+          field: z.string(),
+          isExcluded: z.boolean(),
+          isShown: z.boolean(),
+        }),
+      ),
     }),
   ),
 });
@@ -54,7 +70,7 @@ const Entries = z.object({
     z.object({
       _id: z.string(),
       route: z.string(),
-      field: z.string(),
+      fields: z.array(z.string()),
       covers: z.string(),
       status: z.string(),
     }),
@@ -98,14 +114,31 @@ async function routeOfPage(pageId) {
 
 /**
  * @param {string} route
+ * @param {string[]} fields
+ */
+async function save(route, fields) {
+  const { token } = person("ownerA");
+  const body = { route, fields };
+  const saved = await call(EXCLUSIONS, Saved, { token, method: "PUT", body });
+  assert.ok(saved.body, saved.text);
+  return saved.body;
+}
+
+/**
+ * @param {string} route
  * @param {string} field
  */
 async function exclude(route, field) {
+  const { _id } = await save(route, [field]);
+  assert.ok(_id);
+  return _id;
+}
+
+async function entries() {
   const { token } = person("ownerA");
-  const body = { route, field };
-  const added = await call(EXCLUSIONS, Added, { token, method: "POST", body });
-  assert.ok(added.body, added.text);
-  return added.body._id;
+  const list = await call(EXCLUSIONS, Entries, { token });
+  assert.ok(list.body, list.text);
+  return list.body.results;
 }
 
 /** @param {string} id */
@@ -247,15 +280,28 @@ describe("[data paths] an excluded field on a data route", function () {
     );
   });
 
-  it("shows the owner every page and table it covers", async () => {
-    const { token } = person("ownerA");
-    const list = await call(EXCLUSIONS, Entries, { token });
-    assert.ok(list.body, list.text);
-    const entry = list.body.results.find((e) => e._id === entryId);
-    assert.ok(entry, list.text);
+  it("shows the owner every page and table its route covers, and its fields", async () => {
+    const entry = (await entries()).find((e) => e._id === entryId);
+    assert.ok(entry);
     assert.equal(entry.status, "active");
+    assert.deepEqual(entry.fields, [EXCLUDED_FIELD]);
     assert.match(entry.covers, /Sales ›/);
     assert.match(entry.covers, /Sales report ›/);
+  });
+
+  it("lists the route's columns for the owner to check, the excluded one checked", async () => {
+    const { token } = person("ownerA");
+    const answer = await call(CANDIDATES, Candidates, { token });
+    assert.ok(answer.body, answer.text);
+    const route = await routeOfPage(SALES_PAGE_ID);
+    const checklist = answer.body.routes.find((r) => r.route === route);
+    const byField = new Map(checklist?.fields.map((f) => [f.field, f]));
+    assert.deepEqual(byField.get(EXCLUDED_FIELD), {
+      field: EXCLUDED_FIELD,
+      isExcluded: true,
+      isShown: true,
+    });
+    assert.equal(byField.get("label")?.isExcluded, false);
   });
 });
 
@@ -292,28 +338,43 @@ describe("[data paths] the exclusion list", function () {
     }
   });
 
-  it("keeps an entry nothing shows any more, marked not found", async () => {
+  it("keeps an entry nothing shows any more, marked not found, its field still offered", async () => {
     const id = await exclude(GONE_ROUTE, "email");
     try {
-      const { token } = person("ownerA");
-      const list = await call(EXCLUSIONS, Entries, { token });
-      assert.ok(list.body, list.text);
-      const entry = list.body.results.find((e) => e._id === id);
-      assert.equal(entry?.route, GONE_ROUTE, list.text);
+      const entry = (await entries()).find((e) => e._id === id);
+      assert.equal(entry?.route, GONE_ROUTE);
       assert.equal(entry?.status, "not_found");
       assert.equal(entry?.covers, "");
+      const { token } = person("ownerA");
+      const answer = await call(CANDIDATES, Candidates, { token });
+      const gone = answer.body?.routes.find((r) => r.route === GONE_ROUTE);
+      assert.deepEqual(gone?.fields, [
+        { field: "email", isExcluded: true, isShown: false },
+      ]);
     } finally {
       await include(id);
     }
   });
 
-  it("adds the same entry once, without the route's query string", async () => {
+  it("keeps one entry per route, without its query string, saving replaces its fields", async () => {
     const first = await exclude(`${GONE_ROUTE}?tab=open`, "email");
     try {
-      assert.equal(await exclude(GONE_ROUTE, "email"), first);
+      const saved = await save(GONE_ROUTE, ["phone", "email", "phone"]);
+      assert.equal(saved._id, first);
+      const onRoute = (await entries()).filter((e) => e.route === GONE_ROUTE);
+      assert.deepEqual(
+        onRoute.map((e) => e.fields),
+        [["email", "phone"]],
+      );
     } finally {
       await include(first);
     }
+  });
+
+  it("removes a route's entry when its last field is unchecked", async () => {
+    await exclude(GONE_ROUTE, "email");
+    await save(GONE_ROUTE, []);
+    assert.ok(!(await entries()).some((e) => e.route === GONE_ROUTE));
   });
 
   it("is closed to a user who is not an owner, and so is its page", async () => {
@@ -321,13 +382,14 @@ describe("[data paths] the exclusion list", function () {
     for (const [path, method] of [
       [EXCLUSIONS, "GET"],
       [CANDIDATES, "GET"],
-      [EXCLUSIONS, "POST"],
+      [EXCLUSIONS, "PUT"],
       [`${EXCLUSIONS}/any`, "DELETE"],
     ]) {
       const answer = await call(path, z.unknown(), {
         token,
         method,
-        body: method === "POST" ? { route: GONE_ROUTE, field: "x" } : undefined,
+        body:
+          method === "PUT" ? { route: GONE_ROUTE, fields: ["x"] } : undefined,
       });
       assert.equal(answer.status, HTTP_FORBIDDEN, `${method} ${path}`);
     }

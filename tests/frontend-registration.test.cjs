@@ -244,7 +244,7 @@ const COMPONENTS_DIR = path.resolve(
 const PAGE_CUSTOM_COMPONENTS = [
   "DmsAiActivityDetail",
   "DmsAiChangesView",
-  "DmsAiExclusionAdd",
+  "DmsAiExclusionEditor",
   "DmsAiSkillCard",
   "DmsAiSkillDetail",
 ];

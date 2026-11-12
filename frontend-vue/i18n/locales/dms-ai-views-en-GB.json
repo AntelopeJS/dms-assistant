@@ -143,9 +143,11 @@
 			"exclusions": {
 				"page": "Page",
 				"table": "Table",
-				"column": "Column",
-				"add": "Exclude column",
-				"failed": "The exclusion was not saved",
+				"route": "Data route",
+				"existing": "This route already has exclusions: you are editing them.",
+				"not_found": "Not found",
+				"save": "Save",
+				"failed": "The exclusions were not saved",
 				"none": "No page you can see has a table to exclude from."
 			}
 		}

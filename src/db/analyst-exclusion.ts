@@ -10,14 +10,14 @@ import { DMS_AI_SCHEMA_NAME } from "../constants/database";
 const ANALYST_EXCLUSIONS_TABLE = "analyst_exclusions";
 
 /**
- * A field Analyst never reads on a data route, whichever table view reads
- * that route. One list for the project, in no tenant.
+ * The fields Analyst never reads on one data route, whichever table view
+ * reads that route. One list for the project, in no tenant.
  */
 @RegisterTable(ANALYST_EXCLUSIONS_TABLE, DMS_AI_SCHEMA_NAME)
 class AnalystExclusion extends Table {
   @Field("string") declare _id: string;
   @Field("string") declare route: string;
-  @Field("string") declare field: string;
+  @Field(["string"]) declare fields: string[];
 }
 
 class AnalystExclusionModel extends BasicDataModel(
@@ -25,14 +25,22 @@ class AnalystExclusionModel extends BasicDataModel(
   ANALYST_EXCLUSIONS_TABLE,
 ) {}
 
+/** A data route and the fields excluded on it, as stored. */
+export interface StoredExclusion {
+  _id: string;
+  route: string;
+  fields: string[];
+}
+
 /** What the module does with the exclusion list. */
 interface AnalystExclusionStore {
-  getAll(): PromiseLike<{ _id: string; route: string; field: string }[]>;
-  insert(entry: { route: string; field: string }): Promise<string[]>;
+  getAll(): PromiseLike<StoredExclusion[]>;
+  insert(entry: { route: string; fields: string[] }): Promise<string[]>;
+  update(id: string, entry: { fields: string[] }): Promise<number>;
   delete(id: string): Promise<number>;
 }
 
-/** The project's one exclusion list. */
+/** The project's one exclusion list: one entry per data route. */
 export function analystExclusions(): AnalystExclusionStore {
   return GetModel(AnalystExclusionModel);
 }

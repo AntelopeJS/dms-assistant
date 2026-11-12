@@ -6,7 +6,7 @@ import {
   HTTPResult,
   JSONBody,
   Parameter,
-  Post,
+  Put,
   type RequestContext,
 } from "@antelopejs/interface-api";
 import { AuthOwnerOnly, AuthUser } from "@antelopejs/interface-dms/auth";
@@ -18,19 +18,31 @@ import type { AnalystTable } from "../analyst/layouts";
 import { requestSessionId } from "../assistant/grants";
 import { authorizeAssistantUser } from "../assistant/permission";
 import { ROUTE_PREFIX } from "../constants/module";
-import { analystExclusions } from "../db/analyst-exclusion";
+import {
+  analystExclusions,
+  type StoredExclusion,
+} from "../db/analyst-exclusion";
 
 const EXCLUSIONS_PATH = "/exclusions";
 const HTTP_BAD_REQUEST = 400;
 const I18N_KEY_MARK = "$";
 const COVERS_SEPARATOR = ", ";
 
-const NewExclusionSchema = z.object({
+const SavedExclusionSchema = z.object({
   route: z.string().trim().min(1),
-  field: z.string().trim().min(1),
+  fields: z.array(z.string().trim().min(1)),
 });
 
 type VisiblePages = Awaited<ReturnType<typeof listPageTables>>;
+
+/** One field of a data route, as the route's checklist lists it. */
+interface RouteField {
+  field: string;
+  header: string;
+  isExcluded: boolean;
+  /** A table the owner can see shows it: else it is excluded and stale. */
+  isShown: boolean;
+}
 
 /** A name to show as it is: a translation key is no name, so the fallback is. */
 function plain(label: string | undefined, fallback: string): string {
@@ -51,28 +63,62 @@ async function visiblePages(
   });
 }
 
-function tableReads(table: AnalystTable, route: string, field: string) {
-  return (
-    dataRouteOf(table) === route &&
-    table.columns.some((column) => column.field === field)
-  );
-}
-
-function coverage(pages: VisiblePages, route: string, field: string): string[] {
-  return pages.flatMap(({ page, tables }) =>
+function coverage(pages: VisiblePages, route: string): string[] {
+  const covers = pages.flatMap(({ page, tables }) =>
     tables
-      .filter((table) => tableReads(table, route, field))
+      .filter((table) => dataRouteOf(table) === route)
       .map(
         (table) =>
           `${plain(page.title, page.path)} › ${plain(table.caption, table.id)}`,
       ),
   );
+  return [...new Set(covers)];
+}
+
+function shownFields(pages: VisiblePages): Map<string, Map<string, string>> {
+  const byRoute = new Map<string, Map<string, string>>();
+  const tables: AnalystTable[] = pages.flatMap(({ tables }) => tables);
+  for (const table of tables) {
+    const route = dataRouteOf(table);
+    const fields = byRoute.get(route) ?? new Map<string, string>();
+    for (const { field, header } of table.columns) {
+      if (!fields.has(field)) fields.set(field, plain(header, field));
+    }
+    byRoute.set(route, fields);
+  }
+  return byRoute;
 }
 
 /**
- * The owner's list of what Analyst may never read, and the columns they can
- * pick from. An entry stays listed, and enforced, when nothing they can see
- * shows its route or field any more.
+ * Every route the owner can see or has an entry for, each with the columns
+ * of every table reading it, merged, and its excluded fields, a stale one
+ * included.
+ */
+function routeChecklists(pages: VisiblePages, entries: StoredExclusion[]) {
+  const shown = shownFields(pages);
+  const excluded = new Map(entries.map((e) => [e.route, new Set(e.fields)]));
+  const routes = new Set([...shown.keys(), ...excluded.keys()]);
+  return [...routes].map((route) => {
+    const headers = shown.get(route) ?? new Map<string, string>();
+    const fields = excluded.get(route) ?? new Set<string>();
+    const listed: RouteField[] = [...headers].map(([field, header]) => ({
+      field,
+      header,
+      isExcluded: fields.has(field),
+      isShown: true,
+    }));
+    for (const field of fields) {
+      if (headers.has(field)) continue;
+      listed.push({ field, header: field, isExcluded: true, isShown: false });
+    }
+    return { route, fields: listed };
+  });
+}
+
+/**
+ * The owner's list of what Analyst may never read, one entry per data route,
+ * and what they can pick from. An entry stays listed, and enforced, when
+ * nothing they can see shows its route or a field any more.
  */
 @AuthOwnerOnly()
 export class AIExclusionsController extends Controller(ROUTE_PREFIX) {
@@ -82,13 +128,13 @@ export class AIExclusionsController extends Controller(ROUTE_PREFIX) {
       analystExclusions().getAll(),
       visiblePages(ctx, user),
     ]);
-    const results = entries.map(({ _id, route, field }) => {
-      const covers = coverage(pages, route, field);
+    const results = entries.map(({ _id, route, fields }) => {
+      const covers = coverage(pages, route);
       return {
         _id,
         route,
-        field,
-        covers: [...new Set(covers)].join(COVERS_SEPARATOR),
+        fields: [...fields].sort(),
+        covers: covers.join(COVERS_SEPARATOR),
         status: covers.length > 0 ? "active" : "not_found",
       };
     });
@@ -97,7 +143,10 @@ export class AIExclusionsController extends Controller(ROUTE_PREFIX) {
 
   @Get(`${EXCLUSIONS_PATH}/candidates`)
   async candidates(@Context() ctx: RequestContext, @AuthUser() user: User) {
-    const pages = await visiblePages(ctx, user);
+    const [entries, pages] = await Promise.all([
+      analystExclusions().getAll(),
+      visiblePages(ctx, user),
+    ]);
     return {
       pages: pages
         .filter(({ tables }) => tables.length > 0)
@@ -108,33 +157,38 @@ export class AIExclusionsController extends Controller(ROUTE_PREFIX) {
             id: table.id,
             title: plain(table.caption, table.id),
             route: dataRouteOf(table),
-            columns: table.columns.map(({ field, header }) => ({
-              field,
-              header: plain(header, field),
-            })),
           })),
         })),
+      routes: routeChecklists(pages, entries),
     };
   }
 
-  @Post(EXCLUSIONS_PATH)
-  async add(@JSONBody() body?: unknown) {
-    const parsed = NewExclusionSchema.safeParse(body);
+  /**
+   * Sets the fields excluded on a route, its entry made, replaced, or removed
+   * when no field is left.
+   */
+  @Put(EXCLUSIONS_PATH)
+  async save(@JSONBody() body?: unknown) {
+    const parsed = SavedExclusionSchema.safeParse(body);
     if (!parsed.success) {
       return new HTTPResult(HTTP_BAD_REQUEST, {
-        message: "An exclusion needs a route and a field.",
+        message: "An exclusion needs a route and its list of fields.",
       });
     }
     const route = routePath(parsed.data.route);
-    const { field } = parsed.data;
-    const model = analystExclusions();
-    const entries = await model.getAll();
-    const existing = entries.find(
-      (entry) => entry.route === route && entry.field === field,
-    );
-    if (existing !== undefined) return { _id: existing._id, route, field };
-    const [id] = await model.insert({ route, field });
-    return { _id: id, route, field };
+    const fields = [...new Set(parsed.data.fields)];
+    const store = analystExclusions();
+    const existing = (await store.getAll()).find((e) => e.route === route);
+    if (fields.length === 0) {
+      if (existing !== undefined) await store.delete(existing._id);
+      return { route, fields };
+    }
+    if (existing !== undefined) {
+      await store.update(existing._id, { fields });
+      return { _id: existing._id, route, fields };
+    }
+    const [id] = await store.insert({ route, fields });
+    return { _id: id, route, fields };
   }
 
   @Delete(`${EXCLUSIONS_PATH}/:id`)

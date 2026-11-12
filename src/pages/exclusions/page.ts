@@ -28,16 +28,15 @@ const COLUMNS = {
     sortable: true,
     order: 1,
   },
-  field: {
-    name: text("columns", "field"),
-    type: new DefaultDataTypes.StringType(),
-    display: new DefaultDisplays.MonoDisplay(),
-    sortable: true,
-    order: 2,
-  },
   covers: {
     name: text("columns", "covers"),
     type: new DefaultDataTypes.StringType(),
+    order: 2,
+  },
+  fields: {
+    name: text("columns", "fields"),
+    type: new DefaultDataTypes.StringType(),
+    display: new DefaultDisplays.PillsDisplay(),
     order: 3,
   },
   status: {
@@ -52,11 +51,15 @@ const COLUMNS = {
   },
 } satisfies Record<string, TableViewSourceColumn>;
 
+const EDITOR = CustomComponent("DmsAiExclusionEditor").meta(
+  blockMeta("exclusions.editor", "i-ph-eye-slash"),
+);
+
 /**
  * AI Exclusions — the data Analyst may never read, one list for the project:
- * a data route and a field, applied to every table reading that route. A
- * source table on `/ai/exclusions`, with a dialog picking from the pages,
- * tables and columns the owner can see.
+ * one row per data route with its excluded fields, applied to every table
+ * reading that route. A source table on `/ai/exclusions`; one dialog adds a
+ * route, picked from the pages and tables the owner can see, or edits one.
  */
 @RegisterPage()
 export class AIExclusionsPage extends PageController(
@@ -67,7 +70,7 @@ export class AIExclusionsPage extends PageController(
   static entries = TableView.fromSource({
     fetchUrl: PAGE_ROUTES.EXCLUSIONS,
     columns: COLUMNS,
-    labelKey: "field",
+    labelKey: "route",
     searchPlaceholder: text("search"),
     defaultSort: { field: "route", desc: false },
     customButtons: [
@@ -76,9 +79,7 @@ export class AIExclusionsPage extends PageController(
         icon: "i-ph-plus",
         target: {
           type: "modal",
-          component: CustomComponent("DmsAiExclusionAdd").meta(
-            blockMeta("exclusions.add", "i-ph-plus"),
-          ),
+          component: EDITOR,
           title: text("add_title"),
           description: text("add_description"),
         },
@@ -86,6 +87,18 @@ export class AIExclusionsPage extends PageController(
     ],
     rowActions: {
       custom: [
+        {
+          label: text("edit"),
+          icon: "i-ph-pencil-simple",
+          isDefault: true,
+          isVisible: true,
+          target: {
+            type: "modal",
+            component: EDITOR,
+            title: text("edit_title"),
+            description: text("add_description"),
+          },
+        },
         {
           label: text("remove"),
           icon: "i-ph-trash",

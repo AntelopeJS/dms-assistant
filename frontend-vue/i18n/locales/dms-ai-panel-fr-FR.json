@@ -387,6 +387,10 @@
 				"sketch_badge": "Esquisse",
 				"with_sketch": "esquisse sur mesure",
 				"sketch_frame": "Esquisse statique d'un composant sur mesure : {caption}"
+			},
+			"fold": {
+				"name": "Assistant",
+				"open": "Ouvrir l’assistant"
 			}
 		},
 		"tools": {

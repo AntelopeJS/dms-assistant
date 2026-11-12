@@ -387,6 +387,10 @@
 				"sketch_badge": "Custom sketch",
 				"with_sketch": "custom sketch",
 				"sketch_frame": "Static sketch of a custom component: {caption}"
+			},
+			"fold": {
+				"name": "Assistant",
+				"open": "Open the assistant"
 			}
 		},
 		"tools": {

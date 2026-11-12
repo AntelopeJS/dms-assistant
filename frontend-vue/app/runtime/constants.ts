@@ -49,6 +49,8 @@ export const HOST_COMMAND_TYPES: ReadonlySet<string> = new Set([
 export const TOGGLE_SHORTCUT_KEY = "k";
 export const MODAL_OPEN_SELECTOR = '[role="dialog"][aria-modal="true"]';
 
+/** The dashboard route of the mockups, drawn full width with the panel folded. */
+export const MOCKUP_PATH = "/mockup";
 export const CHAT_PANEL_COMPONENT_NAME = "DmsAiChatPanel";
 /** The panel's id among the dashboard's docked side panels. */
 export const SIDE_PANEL_ID = "dms-ai:assistant";

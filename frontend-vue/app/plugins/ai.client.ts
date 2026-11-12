@@ -5,6 +5,7 @@ import {
 	useDmsRouter,
 } from "#dms/frontend-module";
 import {
+	type App,
 	computed,
 	type Ref,
 	readonly,
@@ -70,6 +71,7 @@ import {
 	buildCurrentPageUpdate,
 	installCurrentPageTracker,
 } from "../runtime/current-page";
+import { mountFoldBar } from "../runtime/fold-bar";
 import { createFrameRouter } from "../runtime/frame-router";
 import {
 	createHostCommandDispatcher,
@@ -80,6 +82,7 @@ import {
 	type LauncherStateHandle,
 } from "../runtime/launcher-state";
 import { installNavigationCompleteEmitter } from "../runtime/navigation-complete";
+import { createMockupFold } from "../runtime/mockup-fold";
 import { createPanelIntents } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
 import { installToggleShortcut } from "../runtime/shortcuts";
@@ -302,6 +305,19 @@ function createSession(parts: SessionParts): AssistantSession {
 	};
 }
 
+function installFold(app: App, session: AssistantSession): () => void {
+	const router = useDmsRouter();
+	const fold = createMockupFold({
+		path: computed(() => router.currentRoute.value.path),
+		panel: session.panel,
+	});
+	const unmountBar = mountFoldBar(app, fold, session.launcherState);
+	return () => {
+		unmountBar();
+		fold.stop();
+	};
+}
+
 function registerDashboardEntries(
 	session: AssistantSession,
 	i18n: ChatI18n,
@@ -380,7 +396,12 @@ function registerOnceMounted(
 	void appMounted.then(() => {
 		if (!isActive) return;
 		context.runWithContext(() => {
-			stop = registerDashboardEntries(session, i18n);
+			const stopEntries = registerDashboardEntries(session, i18n);
+			const stopFold = installFold(context.vueApp, session);
+			stop = () => {
+				stopEntries();
+				stopFold();
+			};
 		});
 	});
 	return () => {

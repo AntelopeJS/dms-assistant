@@ -10,12 +10,11 @@ import { storageJourneys } from "./changes/storage.mjs";
 export const journeys = guarded([
   {
     id: "no-change-set-yet-says-so",
-    title: "before any turn changed a file the Changes page and the Overview say No changes yet, the routes answer empty lists, and a set that does not exist answers 404 on every route",
-    entryPoint: "/modules/ai/changes, GET /ai/changes, /ai/changes/:id, /ai/recent-changes",
+    title: "before any turn changed a file the Changes page says No changes yet, the routes answer empty lists, and a set that does not exist answers 404 on every route",
+    entryPoint: "/modules/ai/changes, GET /ai/changes, /ai/changes/:id",
     async run(/** @type {Ctx} */ ctx) {
       await seedStore(ctx, {});
       const changes = await ai(ctx, "list", "GET", "/changes");
-      const recent = await ai(ctx, "recent", "GET", "/recent-changes");
       const unknown = [];
       for (const [method, path] of [["GET", "/changes/nope"], ["GET", "/changes/nope/undo-preview"], ["GET", "/changes/nope/undo-confirm"], ["POST", "/changes/nope/undo"], ["POST", "/changes/nope/redo"]]) {
         const answer = await ai(ctx, `${method} ${path}`, method, path, { body: method === "POST" ? {} : undefined });
@@ -23,7 +22,6 @@ export const journeys = guarded([
       }
       await ctx.verify("the API", [
         same("an empty list", changes.body, { results: [], total: 0 }),
-        same("an empty recent list", recent.body, { results: [], total: 0 }),
         same("an unknown set is 404 everywhere", unknown.filter(([, status]) => status !== 404), []),
         same("with the same message", [...new Set(unknown.map(([, , message]) => message))], ["Unknown change set."]),
       ]);

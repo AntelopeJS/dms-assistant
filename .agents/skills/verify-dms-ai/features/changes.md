@@ -3,7 +3,6 @@ covers:
   - src/routes/changes.ts
   - src/routes/undo-confirm.ts
   - src/pages/changes/**
-  - src/pages/overview/recent-changes.ts
   - src/types/changes.ts
   - sidecar/src/checkpoints/**
   - sidecar/src/state/change-sets.ts

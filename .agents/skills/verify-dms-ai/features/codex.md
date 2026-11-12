@@ -7,7 +7,7 @@ covers:
   - sidecar/src/constants/native-binary.ts
 docs:
   - docs/3.configuration.md
-  - docs/4.usage/6.settings.md
+  - docs/4.usage/2.settings.md
 ---
 
 # Codex account

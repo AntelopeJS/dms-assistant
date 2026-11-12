@@ -43,7 +43,7 @@ const config: VerifyConfig = {
     "frontend-vue/.*",
   ],
   smoke: "smoke",
-  smokeJourney: "onboard, open the Overview, read the assistant's status, change a setting and see it kept",
+  smokeJourney: "onboard, read the assistant's status, open Settings, change a setting and see it kept",
   doors: {
     data: {
       globs: ["sidecar/src/state/**", "sidecar/src/checkpoints/**", "sidecar/src/server/change-set-actions.ts"],

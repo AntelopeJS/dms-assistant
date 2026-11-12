@@ -13,7 +13,7 @@ export const journeys = guarded([
       const status = await ai(ctx, "status", "GET", "/status");
       const tab = await ctx.tab();
       await tab.signIn("admin");
-      for (const path of ["/home", "/modules/ai/overview", "/verify-plain"]) {
+      for (const path of ["/home", "/modules/ai/settings", "/verify-plain"]) {
         await tab.goto(path);
         await tab.page.waitForTimeout(3000);
         await tab.page.keyboard.press("Control+Shift+K");

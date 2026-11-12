@@ -1,6 +1,6 @@
 ---
 name: verify-dms-ai
-description: "Drive the AntelopeJS dms-ai module (the AI assistant: its sidecar, Overview, Changes, Activity, Skills and Settings pages, the Codex sign-in banner and the owner-only routes) the way the platform owner does, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-ai works before merge, or to verify a PR. A turn with Claude Code or Codex needs credentials a run never holds: that part is NOT VERIFIED, so a verdict is never a plain PASS."
+description: "Drive the AntelopeJS dms-ai module (the AI assistant: its sidecar, Settings, Changes and Activity pages, the Codex sign-in banner and the owner-only routes) the way the platform owner does, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-ai works before merge, or to verify a PR. A turn with Claude Code or Codex needs credentials a run never holds: that part is NOT VERIFIED, so a verdict is never a plain PASS."
 ---
 
 # Verify dms-ai
@@ -20,7 +20,7 @@ Give `doors` and `--skill` absolute paths. `mongod` comes from `DMS_CONTROL_MONG
 
 A run holds no `ANTHROPIC_API_KEY`, no Claude Code login and no ChatGPT sign-in, so no model turn runs. These are NOT VERIFIED in every verdict, never PASS: a turn with Claude Code or Codex (the chat, tool calls as they happen, approvals, questions, queued messages, auto-fix turns, token counts a turn reports), block previews, and the ChatGPT consent, token exchange and refresh. The chat panel is also out of reach: it exists in the development dashboard only (`import.meta.env.DEV`) and `dms-control up` builds a production one (AntelopeJS/dms#749). The best result of a verdict is therefore PASS+NOTES.
 
-What a turn leaves behind is not out of reach. The Activity rows, the Overview figures, the change sets with their diffs and Undo and Redo, the skills use counts and the token usage are read from the sidecar's stored conversations, change sets and shadow repository. The journeys write those files (`seed.mjs`, `sample.mjs`), start the assistant on them and drive the pages and routes that read them, so those features are verified.
+What a turn leaves behind is not out of reach. The Activity rows, the change sets with their diffs and Undo and Redo and the token usage are read from the sidecar's stored conversations, change sets and shadow repository. The journeys write those files (`seed.mjs`, `sample.mjs`), start the assistant on them and drive the pages and routes that read them, so those features are verified.
 
 ## Launch
 
@@ -35,7 +35,7 @@ RUN=$($C up --prepare --base origin/main --skill "$PWD/.agents/skills/verify-dms
 - a `mongod` the run owns serves `verify_<run>` databases;
 - the backend runs `ajs project start -e docs`, the dashboard `ajs dms start -e docs -b <api>`.
 
-The module under verification is a `local` source at the checkout root, and `@antelopejs/dms` comes from the registry, pinned by the playground's lockfile. The fixture module (`playground/src`) serves a member with a role (`POST /verify-ai/member`) and registers a home page and a plain page; it writes the skills the Skills journeys read into `generated-skills/` when it is constructed (a committed `SKILL.md` would be read as a skill of this repository), among them a name shared by two folders and three `SKILL.md` the catalog must skip.
+The module under verification is a `local` source at the checkout root, and `@antelopejs/dms` comes from the registry, pinned by the playground's lockfile. The fixture module (`playground/src`) serves a member with a role (`POST /verify-ai/member`) and registers a home page and a plain page; it declares no skills.
 
 ## Doctor
 
@@ -84,11 +84,9 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 - Every dashboard page renders on the server and hydrates after `load`; `guard.mjs` waits for the sign-in form to hydrate, and `choose` and `clickUntil` click again until a radio, a switch or a dialog responds.
 - A step whose check fails because the backend or the dashboard stopped answering ends the journey with a `NOT VERIFIED` error and no failing check.
-- The sample holds one more record than every documented limit it drives (5 change sets for the 4 listed, 9 tools for the 5 listed, 29 log records for the 25 of a page, 10,005 for the 10,000 of an export, 61 skills for the 24 of a page, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
+- The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
 - The 24 hour, 7 day and 30 day windows are driven with calls 3 hours, 10 days and 40 days old, not at the edge of each window.
-- Text the dashboard uppercases (card and section titles) is matched without regard to case.
-- Known findings, each a failing journey that fails a verdict only when the diff touches its feature:
-  - `skills/two-skills-of-one-module-with-one-name-shadow-one-copy`: two skills of one module with one name are never marked Shadowed (dms-ai#169). A local skill named like a module skill is.
+- Text the dashboard uppercases (section titles) is matched without regard to case.
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it` sets `DMS_AI_IDLE_SHUTDOWN_MS` to 20 seconds and restarts the backend with it; it takes about a minute, and nothing else may use the checkout while it runs.
 
 ## Not driven
@@ -100,7 +98,7 @@ List these under `notVerified` in the judgement of every verdict:
 - block previews and custom sketches (`preview_blocks`, the 64 KB and depth limits, the sketch refusals): the agent's tool, reachable only through a turn;
 - the ChatGPT consent page, the token exchange and refresh, `chatgpt-auth.json` with a token, the sign-out of a real session and the pinned `codex` CLI version gate: they need an OpenAI account and the optional peer;
 - Safe mode and the Builder-backed rows (Builder Connected, Safe mode enabled): the playground does not load `@antelopejs/dms-builder`;
-- the Overview banners "The assistant's last turn failed" with Open activity and "N requests are waiting for you": they read a live turn and live approvals;
+- the Settings banners "The assistant's last turn failed" with Open activity and "N requests are waiting for you": they read a live turn and live approvals;
 - the MCP bridge process (`src/mcp-bridge.ts`) that an outside Claude Code session runs from the project's `.mcp.json`: the backend only resolves its path, and the journey sends the request the bridge would send to `POST /ai/mcp`;
 - the Conversation link of the Changes page, the Open conversation button of the Activity detail, and the reload and toast after Undo: they belong to the chat session;
 - `NODE_ENV=production`: the DMS itself changes with it, so the run cannot start the backend that way;

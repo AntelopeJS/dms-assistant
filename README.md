@@ -24,7 +24,7 @@ The module has two parts, both for development.
 - Runs a coding agent in a local sidecar. The agent is Claude Code by default, or OpenAI's Codex, and it reads the project, its loaded modules and their skills.
 - Edits pages through the builder in Safe mode, or writes code in Code mode. It then typechecks and shows the result live.
 - Saves every turn that touches the project as a change set you can review, undo and redo.
-- Adds an **Assistant** module for owners, with the **Overview**, **Changes**, **Activity**, **Skills** and **Settings** pages.
+- Adds an **Assistant** module for owners, with the **Settings**, **Changes** and **Activity** pages.
 
 With `NODE_ENV=production`, the backend starts no sidecar and the dashboard shows no assistant. The sidecar exits if you start it yourself in production.
 

@@ -16,15 +16,15 @@ docs:
 
 # Smoke
 
-The fixed journey every verdict runs, whatever the diff touches: the introduction's first look at the Overview and a default changed.
+The fixed journey every verdict runs, whatever the diff touches: the introduction's first look at Settings, the landing page, and a default changed.
 
 ## Sub-features
 
-- `smoke`: an owner opens the Assistant Overview, reads Ready and Claude Code, changes Thinking to High and sees it kept after a reload.
+- `smoke`: an owner reads Ready and Claude Code from the status, opens the Settings landing page, changes Thinking to High and sees it kept after a reload.
 
 ## How to get to it (user POV)
 
-- Modules › Assistant › Overview, then Settings › Thinking.
+- Modules › Assistant, which opens Settings › Thinking.
 
 ## Driving it with dms-control
 

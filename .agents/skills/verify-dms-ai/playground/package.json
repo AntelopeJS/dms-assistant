@@ -25,9 +25,6 @@
   },
   "antelopeJs": {
     "baseUrl": "dist",
-    "skills": [
-      "./generated-skills"
-    ],
     "paths": {
       "@/*": [
         "*"

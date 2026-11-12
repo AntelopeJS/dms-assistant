@@ -35,11 +35,6 @@ export default [
     ],
   },
   {
-    id: "ai-overview",
-    route: "/modules/ai/overview",
-    output: "docs/images/captures/ai-overview.webp",
-  },
-  {
     id: "ai-changes",
     route: "/modules/ai/changes",
     output: "docs/images/captures/ai-changes.webp",
@@ -48,41 +43,6 @@ export default [
     id: "ai-activity",
     route: "/modules/ai/activity",
     output: "docs/images/captures/ai-activity.webp",
-  },
-  {
-    id: "ai-skills",
-    route: "/modules/ai/skills",
-    output: "docs/images/captures/ai-skills.webp",
-  },
-  {
-    id: "ai-skills-filtered",
-    route: "/modules/ai/skills",
-    steps: [
-      { action: "click", selector: 'button[aria-label="Open search"]' },
-      {
-        action: "fill",
-        selector: 'input[aria-label="Search name, module or tag"]',
-        value: "dms-ai",
-      },
-      { action: "wait", selector: "text=/^[1-9] skills?$/" },
-    ],
-    output: "docs/images/captures/ai-skills-filtered.webp",
-  },
-  {
-    id: "ai-skill-detail",
-    route: "/modules/ai/skills",
-    steps: [
-      { action: "click", selector: 'button[aria-label="Open search"]' },
-      {
-        action: "fill",
-        selector: 'input[aria-label="Search name, module or tag"]',
-        value: "dms-ai-code-mode",
-      },
-      { action: "wait", selector: "text=/^1 skill$/" },
-      { action: "click", selector: "text=dms-ai-code-mode >> nth=0" },
-      { action: "wait", selector: '[role="dialog"]' },
-    ],
-    output: "docs/images/captures/ai-skill-detail.webp",
   },
   {
     id: "ai-settings",

@@ -1,8 +1,10 @@
 import { Logging } from "@antelopejs/interface-core/logging";
+import { RegisterSchema } from "@antelopejs/interface-database-decorators";
 import { AddFrontendModule } from "@antelopejs/interface-dms/page";
 import { isBuilderAvailable } from "./builder/presence";
 import { closeAllBridges } from "./channels/registry";
 import { ConfigSchema, getConfig, setConfig } from "./config";
+import { DMS_AI_SCHEMA_NAME } from "./constants/database";
 import { DEFAULT_BACKEND_URL } from "./constants/mcp";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
 import { collectModuleRoots } from "./lifecycle/module-roots";
@@ -32,6 +34,7 @@ export function construct(config: unknown): void {
  */
 export async function start() {
   startLogCapture();
+  await RegisterSchema(DMS_AI_SCHEMA_NAME);
   await loadRuntimeMode();
   registerAssistantPermission();
   await AddFrontendModule(frontendModule());

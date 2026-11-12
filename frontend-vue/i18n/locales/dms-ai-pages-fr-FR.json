@@ -28,6 +28,10 @@
 			"settings": {
 				"title": "Réglages",
 				"description": "Valeurs par défaut des nouvelles conversations. Les changements s'enregistrent au fur et à mesure"
+			},
+			"exclusions": {
+				"title": "Exclusions",
+				"description": "Les données que l'assistant ne peut jamais lire en mode Analyst"
 			}
 		},
 		"blocks": {
@@ -205,6 +209,16 @@
 				"usage_chart_series": {
 					"name": "Barres du graphique des tokens",
 					"description": "Le graphique en colonnes dessiné dans la carte des tokens"
+				}
+			},
+			"exclusions": {
+				"entries": {
+					"name": "Liste des exclusions",
+					"description": "Les routes de données et les champs qu'Analyst n'y lit jamais"
+				},
+				"editor": {
+					"name": "Éditeur d'exclusions",
+					"description": "Choisir une route de données et cocher les champs à exclure"
 				}
 			}
 		},
@@ -664,6 +678,39 @@
 					"title": "{count} demande vous attend | {count} demandes vous attendent",
 					"description": "Ouvrez l'assistant pour répondre : le bouton de l'en-tête, ou ⌘⇧K."
 				}
+			}
+		},
+		"exclusions": {
+			"search": "Rechercher une exclusion",
+			"count": "routes",
+			"add": "Ajouter une exclusion",
+			"add_title": "Exclure des champs",
+			"add_description": "Analyst ne lira jamais les champs cochés, sur aucune table lisant cette route de données.",
+			"edit": "Modifier",
+			"edit_title": "Modifier les exclusions",
+			"remove": "Retirer",
+			"removed": "Exclusions retirées",
+			"columns": {
+				"route": "Route de données",
+				"covers": "Couvre",
+				"fields": "Champs exclus",
+				"status": "Statut"
+			},
+			"status": {
+				"active": "Active",
+				"not_found": "Introuvable"
+			},
+			"remove_confirm": {
+				"title": "Retirer toutes les exclusions de cette route ?",
+				"description": "Analyst pourra de nouveau lire ces champs."
+			},
+			"empty": {
+				"title": "Rien n'est exclu",
+				"description": "Ajoutez une route de données pour cacher certains de ses champs à Analyst."
+			},
+			"error": {
+				"title": "Exclusions indisponibles",
+				"description": "La liste des exclusions n'a pas pu être lue."
 			}
 		}
 	}

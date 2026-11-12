@@ -237,8 +237,10 @@ async function startThread(
 }
 
 /**
- * Appended rather than prepended: the host-context block opens every turn, and
- * the reminder is about what the agent just tried, so it reads last.
+ * Appended rather than prepended: a host-context block opens the turn when it
+ * has one, and the reminder is about what the agent just tried, so it reads
+ * last. Analyst turns get no reminder: the approval mode does not apply to
+ * Analyst.
  */
 function withDenialReminder(backend: CodexBackend, text: string): string {
   if (backend.profile === "analyst") return text;

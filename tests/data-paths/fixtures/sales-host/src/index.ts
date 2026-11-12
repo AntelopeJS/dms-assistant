@@ -85,6 +85,17 @@ export class SalesPage extends RootPageController("dms-ai-test-sales", {
   static content = TableView(SalesDataAPI, { realtime: false });
 }
 
+/** A second, read-only table view over the same sales route. */
+@RegisterPage()
+export class SalesReportPage extends RootPageController("dms-ai-test-report", {
+  displayName: "Sales report",
+}) {
+  static content = TableView(SalesDataAPI, {
+    realtime: false,
+    rowActions: { add: false, duplicate: false, edit: false, delete: false },
+  });
+}
+
 const LEDGER_TABLE = "dms_ai_test_ledger";
 
 @RegisterTable(LEDGER_TABLE, TENANT_SCHEMA_NAME)

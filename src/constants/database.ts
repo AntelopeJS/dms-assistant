@@ -5,3 +5,6 @@ export const DATABASE_DESCRIBE_PATH = "/database/describe";
 export const DATABASE_PROFILE_PATH = "/database/profile";
 export const HTTP_NOT_FOUND = 404;
 export const HTTP_CATALOG_FAILED = 422;
+
+/** The module's own tenant-less database schema. */
+export const DMS_AI_SCHEMA_NAME = "dms-ai";

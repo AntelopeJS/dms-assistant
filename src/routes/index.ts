@@ -5,6 +5,7 @@ export * from "./changes";
 export * from "./channels";
 export * from "./codex-account";
 export * from "./database";
+export * from "./exclusions";
 export * from "./health";
 export * from "./logs";
 export * from "./mcp";

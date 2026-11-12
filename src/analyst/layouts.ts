@@ -81,6 +81,7 @@ const SourceSchema = z.object({
 
 const TableViewOptionsSchema = z.object({
   location: z.string(),
+  caption: z.string().optional().catch(undefined),
   columns: z.array(z.unknown()),
   searchable: z.boolean().optional().catch(undefined),
   archiveMode: z.boolean().optional().catch(undefined),
@@ -115,6 +116,8 @@ export interface AnalystColumn {
   type?: string;
   sortable: boolean;
   filterModes: string[];
+  /** Excluded from Analyst: the column exists, its values are never read. */
+  redacted?: true;
 }
 
 /**
@@ -139,10 +142,13 @@ export interface AnalystSource {
 export interface AnalystTable {
   id: string;
   location: string;
+  caption?: string;
   searchable: boolean;
   columns: AnalystColumn[];
   archive?: { canView: boolean };
   source?: AnalystSource;
+  /** Every field excluded on this table's route, listed as a column or not. */
+  excludedFields?: string[];
 }
 
 function sourceOf(source: z.infer<typeof SourceSchema>): AnalystSource {
@@ -187,6 +193,7 @@ function tableOf(
     return {
       id,
       location: options.location,
+      caption: options.caption,
       searchable: source.search,
       columns: columns.map((column) => ({
         ...column,
@@ -198,6 +205,7 @@ function tableOf(
   return {
     id,
     location: options.location,
+    caption: options.caption,
     searchable: options.searchable === true,
     columns,
     archive:

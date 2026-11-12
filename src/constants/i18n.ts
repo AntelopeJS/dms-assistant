@@ -8,6 +8,7 @@ export const I18N_SECTIONS = {
   ACTIVITY: "activity",
   SETTINGS: "settings",
   SKILLS: "skills",
+  EXCLUSIONS: "exclusions",
   STATUS: "status",
   CHANGES_TABLE: "changes_table",
 } as const;

@@ -27,6 +27,9 @@ function loadModule(
     "@antelopejs/interface-core/logging": {
       Logging: { Error() {} },
     },
+    "@antelopejs/interface-database-decorators": {
+      RegisterSchema: async () => undefined,
+    },
     "./builder/presence": { isBuilderAvailable: () => true },
     "./lifecycle/module-roots": {
       collectModuleRoots: () => ["fixture-module"],

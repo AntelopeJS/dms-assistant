@@ -139,6 +139,17 @@
 				"used_value": "{count}× · 30 jours",
 				"last_used_label": "Dernière utilisation",
 				"open_last_conversation": "Ouvrir la dernière conversation"
+			},
+			"exclusions": {
+				"page": "Page",
+				"table": "Table",
+				"route": "Route de données",
+				"existing": "Cette route a déjà des exclusions : vous les modifiez.",
+				"not_found": "Introuvable",
+				"save": "Enregistrer",
+				"failed": "Les exclusions n'ont pas été enregistrées",
+				"none": "Aucune page visible ne contient de table.",
+				"load_failed": "Les champs de cette route de données n'ont pas pu être lus : rien ne peut être enregistré."
 			}
 		}
 	}

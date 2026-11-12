@@ -60,6 +60,12 @@ export const CHANGE_STATES: Vocabulary = {
   undone: { icon: "i-ph-arrow-counter-clockwise", tone: "neutral" },
 };
 
+/** Whether anything the owner can see still shows an excluded field. */
+export const EXCLUSION_STATUSES: Vocabulary = {
+  active: { icon: "i-ph-eye-slash", tone: "success" },
+  not_found: { icon: "i-ph-question", tone: "warning" },
+};
+
 /** Where a skill comes from. */
 export const SKILL_SOURCES: Vocabulary = {
   module: { icon: "i-ph-package", tone: "secondary" },

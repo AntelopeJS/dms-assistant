@@ -44,6 +44,38 @@ function notSupported(what: string): AnalystRefusal {
   );
 }
 
+function excludedRefusal(reason: string, detail: string): AnalystRefusal {
+  return new AnalystRefusal(HTTP_FORBIDDEN, reason, detail);
+}
+
+function refuseExcluded(table: AnalystTable, query: URLSearchParams): void {
+  const excluded = new Set(table.excludedFields);
+  if (excluded.size === 0) return;
+  for (const key of query.keys()) {
+    if (!key.startsWith(FILTER_QUERY_PREFIX)) continue;
+    const field = key.slice(FILTER_QUERY_PREFIX.length);
+    if (excluded.has(field)) {
+      throw excludedRefusal(
+        "excluded_filter",
+        `The column "${field}" is excluded from the assistant by the project's owner, so it cannot be filtered on. Tell the user.`,
+      );
+    }
+  }
+  const sortKey = query.get(SORT_KEY_QUERY_KEY);
+  if (sortKey !== null && excluded.has(sortKey)) {
+    throw excludedRefusal(
+      "excluded_sort",
+      `The column "${sortKey}" is excluded from the assistant by the project's owner, so it cannot be sorted on. Tell the user.`,
+    );
+  }
+  if (query.has(SEARCH_QUERY_KEY)) {
+    throw excludedRefusal(
+      "excluded_search",
+      "This table has a field excluded from the assistant by the project's owner, and a search could match it, so free-text search is refused on this table. Filter on another column, or tell the user.",
+    );
+  }
+}
+
 function forwardFilters(
   table: AnalystTable,
   query: URLSearchParams,
@@ -191,11 +223,14 @@ function sourceRequest(
  * one never reads as a valid unfiltered answer. A table in archive mode is
  * always sent which rows it lists, active ones unless `archived` asks for the
  * archived ones; a source table's route is sent only what it handles itself.
+ * A filter or a sort on an excluded field, and any search on a table with an
+ * exclusion, is refused and says why.
  */
 export function rowsRequest(
   table: AnalystTable,
   query: URLSearchParams,
 ): RowsRequest {
+  refuseExcluded(table, query);
   const forwarded = new URLSearchParams();
   forwardFilters(table, query, forwarded);
   forwardSort(table, query, forwarded);

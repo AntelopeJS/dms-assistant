@@ -20,7 +20,7 @@
 - Runs a coding agent in a local sidecar. The agent is Claude Code by default, or OpenAI's Codex, and it reads the project, its loaded modules and their skills.
 - Edits pages through the [Builder](https://github.com/AntelopeJS/dms-builder) in Safe mode, or writes code in Code mode. It then typechecks and shows the result live.
 - Saves every turn that touches the project as a change set you can review, undo and redo.
-- Adds an **Assistant** module for owners, with the **Overview**, **Changes**, **Activity**, **Skills** and **Settings** pages.
+- Adds an **Assistant** module for owners, with the **Overview**, **Changes**, **Activity**, **Skills**, **Exclusions** and **Settings** pages.
 
 Each conversation runs in one of two modes. **Builder** edits the project, for owners, in development only. **Analyst** answers questions about the data, reading it only as the signed-in user sees it through the DMS's own tables, and runs in development and in production for every user holding the `ai.assistant` permission. `DMS_AI=0` turns the assistant off.
 

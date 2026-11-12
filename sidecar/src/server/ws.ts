@@ -5,6 +5,7 @@ import { createCallAudit } from "../audit/call-audit.js";
 import { createCallLedger } from "../agent/call-ledger.js";
 import { createConversationModes } from "../agent/conversation-modes.js";
 import { createEditTracker, type EditTracker } from "../agent/edit-tracker.js";
+import { groundAnalystTurn } from "../agent/host-context.js";
 import {
   createPermissionBus,
   type PermissionBus,
@@ -201,15 +202,14 @@ function analystSettings(
   return { ...settings, mode: "normal" };
 }
 
-function keepMessage(message: string): string {
-  return message;
-}
-
-/** Analyst's profile: its own session setup on either provider, no host context. */
+/**
+ * Analyst's profile: its own session setup on either provider, and a host
+ * context of the page alone (path and title) while the page chip is kept.
+ */
 const ANALYST_PROFILE: RunnerProfile = {
   mode: "analyst",
   resolveSettings: analystSettings,
-  ground: keepMessage,
+  ground: groundAnalystTurn,
 };
 
 function buildRunner(

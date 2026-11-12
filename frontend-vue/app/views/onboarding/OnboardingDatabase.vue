@@ -23,7 +23,7 @@ import OnboardingFrame from "./OnboardingFrame.vue";
  * the connection is written into the project and analysed. The analysis opens once it is ready.
  */
 const ENGINE_ICONS: Record<DatabaseEngine, string> = {
-	postgres: "i-ph-elephant",
+	postgres: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
 	rethinkdb: "i-ph-circles-three",
 };

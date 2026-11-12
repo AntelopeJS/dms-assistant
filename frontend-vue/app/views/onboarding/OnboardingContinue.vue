@@ -11,8 +11,8 @@ import { relativeTime } from "./when";
 const MOCKUPS_SHOWN = 3;
 
 const ENGINE_ICONS: Record<string, string> = {
-	postgres: "i-ph-elephant",
-	postgresql: "i-ph-elephant",
+	postgres: "i-ph-cylinder",
+	postgresql: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
 	rethinkdb: "i-ph-circles-three",
 };

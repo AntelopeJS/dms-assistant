@@ -96,8 +96,8 @@
 				}
 			},
 			"tool": {
-				"using": "Outils en cours",
-				"used": "{count} outil utilisé | {count} outils utilisés",
+				"using": "En cours",
+				"used": "{count} étape | {count} étapes",
 				"earlier": "▴ {count} plus tôt",
 				"raw_json": "JSON brut",
 				"named_args": "Arguments nommés",

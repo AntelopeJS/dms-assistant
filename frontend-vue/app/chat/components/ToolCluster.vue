@@ -129,11 +129,7 @@ const title = computed(() =>
 
 const headline = computed<string>(() => {
 	const current = views.value.find((view) => view.state === "running");
-	if (current !== undefined) return phrase(current.tool);
-	const verbs = props.tools.map((tool) =>
-		toolVerb(describeTool(tool.toolName, tool.args), t).toLocaleLowerCase(),
-	);
-	return [...new Set(verbs)].join(HEADLINE_SEPARATOR);
+	return current === undefined ? "" : phrase(current.tool);
 });
 
 const clock = computed<string>(() => {

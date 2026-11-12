@@ -70,7 +70,7 @@ describe("tool rows and change sets", () => {
 		expect(rows[0].text()).toContain("Read file");
 		expect(rows[0].text()).toContain("customer.form.ts");
 		expect(rows[2].text()).toContain("1 of 1 · below");
-		expect(panel.find(".cb-tools__head").text()).toContain("Used 3 tools");
+		expect(panel.find(".cb-tools__head").text()).toContain("3 steps");
 	});
 
 	it("shows the raw JSON of a call on demand", async () => {

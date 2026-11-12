@@ -96,8 +96,8 @@
 				}
 			},
 			"tool": {
-				"using": "Using tools",
-				"used": "Used {count} tool | Used {count} tools",
+				"using": "Working",
+				"used": "{count} step | {count} steps",
 				"earlier": "▴ {count} earlier",
 				"raw_json": "Raw JSON",
 				"named_args": "Named arguments",

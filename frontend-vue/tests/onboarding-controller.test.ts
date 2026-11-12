@@ -89,6 +89,97 @@ describe("opening on its own", () => {
 	});
 });
 
+describe("the project's content as this session left it", () => {
+	it("opens on Continue, and drops the widget's dot, once a conversation exists that the load did not see", async () => {
+		const harness = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+		});
+		const { controller } = harness;
+		await controller.load();
+		expect(controller.flow.value.view.kind).toBe("ready");
+		expect(controller.needsAttention.value).toBe(true);
+
+		harness.setContent(CONVERSATION);
+		controller.close();
+		controller.open();
+		await vi.waitFor(() =>
+			expect(controller.flow.value.view.kind).toBe("continue"),
+		);
+		expect(controller.needsAttention.value).toBe(false);
+	});
+
+	it("keeps the view the user already moved on from while the content is read again", async () => {
+		const harness = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+		});
+		const { controller } = harness;
+		await controller.load();
+		harness.setContent(CONVERSATION);
+		controller.close();
+		controller.open();
+		controller.send({ type: "back" });
+		const moved = controller.flow.value;
+		await vi.waitFor(() => expect(controller.needsAttention.value).toBe(false));
+		expect(controller.flow.value).toBe(moved);
+	});
+});
+
+describe("a backend that did not answer the first read", () => {
+	it("opens on a later open once the backend answers, on the step an earlier open asked for", async () => {
+		const harness = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+			content: CONVERSATION,
+		});
+		const { controller, api } = harness;
+		const answer = await api.readState();
+		api.readState.mockRejectedValueOnce(new Error("503"));
+		controller.open("connect-database");
+		await controller.load().catch(() => undefined);
+		expect(controller.isAvailable.value).toBe(false);
+		expect(controller.isOpen.value).toBe(false);
+
+		api.readState.mockResolvedValue(answer);
+		controller.open();
+		await vi.waitFor(() => expect(controller.isOpen.value).toBe(true));
+		expect(controller.isAvailable.value).toBe(true);
+		expect(controller.flow.value.view).toEqual({ kind: "connect-database" });
+	});
+
+	it("does not read before the first load has been tried", () => {
+		const { controller, api } = harnessed({});
+		controller.open();
+		expect(api.readState).not.toHaveBeenCalled();
+	});
+});
+
+async function waitingForChatGpt(): Promise<OnboardingHarness> {
+	const harness = harnessed({
+		state: onboardingState(
+			{},
+			{ codexLoginUrl: "https://auth.openai.com/authorize?state=1" },
+		),
+	});
+	await harness.controller.load();
+	harness.controller.send({ type: "get-started" });
+	harness.controller.send({ type: "sign-in", provider: "codex" });
+	harness.controller.signInWithChatGpt();
+	return harness;
+}
+
+function lateAnswer(api: OnboardingHarness["api"]): { signedIn: () => void } {
+	let answer: (state: ReturnType<typeof onboardingState>) => void = () =>
+		undefined;
+	api.readState.mockImplementation(
+		() => new Promise((resolve) => (answer = resolve)),
+	);
+	return {
+		signedIn: () =>
+			answer(
+				onboardingState({ codex: { status: "signed-in", source: "chatgpt" } }),
+			),
+	};
+}
+
 describe("signing in with ChatGPT", () => {
 	it("asks every two seconds whether the sign-in completed, then runs the assistant on Codex", async () => {
 		vi.useFakeTimers();
@@ -129,5 +220,30 @@ describe("signing in with ChatGPT", () => {
 
 		await vi.advanceTimersByTimeAsync(CODEX_POLL_MS * 3);
 		expect(api.readState).toHaveBeenCalledTimes(2);
+	});
+
+	it("drops a poll answer that arrives after the user went back from the waiting view", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = await waitingForChatGpt();
+		const late = lateAnswer(api);
+		await vi.advanceTimersByTimeAsync(CODEX_POLL_MS);
+		controller.send({ type: "back" });
+		controller.send({ type: "sign-in", provider: "claude" });
+		late.signedIn();
+		await vi.advanceTimersByTimeAsync(10);
+		expect(controller.flow.value.view.kind).toBe("claude");
+		expect(api.setProvider).not.toHaveBeenCalled();
+	});
+
+	it("drops a poll answer that arrives after the popup was closed", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = await waitingForChatGpt();
+		const late = lateAnswer(api);
+		await vi.advanceTimersByTimeAsync(CODEX_POLL_MS);
+		controller.close();
+		late.signedIn();
+		await vi.advanceTimersByTimeAsync(10);
+		expect(api.setProvider).not.toHaveBeenCalled();
+		expect(controller.state.value?.logins.codex.status).toBe("signed-out");
 	});
 });

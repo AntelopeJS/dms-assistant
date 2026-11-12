@@ -273,6 +273,7 @@
 					"connect": "Connecter et analyser",
 					"unreadable": "Ce n’est pas une URL de connexion {engine}.",
 					"no_database": "L’URL ne nomme aucune base de données.",
+					"no_name": "Le nom de la base doit contenir au moins une lettre ou un chiffre, pour nommer la connexion.",
 					"reachable_running": "Connexion au serveur…",
 					"reachable": "Serveur joignable",
 					"reachable_latency": "Serveur joignable · {ms} ms",

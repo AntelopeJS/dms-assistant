@@ -57,9 +57,16 @@ export interface OnboardingController {
 	/** Why the last action failed, until the next view. */
 	problem: Readonly<Ref<string | null>>;
 	canConnectDatabase: boolean;
-	/** Reads the onboarding state and the project's content, then opens the popup if it should. */
+	/**
+	 * Reads the onboarding state and the project's content, then opens the popup if it should.
+	 * Rejects when the backend does not answer its state; `open` reads again after that.
+	 */
 	load: () => Promise<void>;
-	/** Opens the popup, on `step` if given; before the first read, once it answered. */
+	/**
+	 * Opens the popup, on `step` if given, and reads the project's content again so it shows this
+	 * session's conversations and mockups. While the state is unread, it opens once a read
+	 * answers, and asks for that read again if the last one failed.
+	 */
 	open: (step?: OnboardingStep) => void;
 	close: () => void;
 	send: (event: FlowEvent) => void;
@@ -101,6 +108,8 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 	const problem = ref<string | null>(null);
 	let pendingStep: OnboardingStep | null | undefined;
 	let codexTimer: ReturnType<typeof setInterval> | undefined;
+	let loading: Promise<void> | undefined;
+	let loadFailed = false;
 
 	const done = computed(
 		() =>
@@ -124,30 +133,53 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		remember({ ...preferences.value, seenBootId: current.bootId });
 	}
 
-	function refreshState(): void {
-		deps.api.readState().then(
-			(next) => {
-				state.value = next;
-			},
-			() => undefined,
-		);
+	async function refresh(step: OnboardingStep | null, shown: OnboardingFlow) {
+		const [next, project] = await Promise.all([
+			deps.api.readState().catch(() => null),
+			deps.readContent().catch(() => null),
+		]);
+		if (next !== null) state.value = next;
+		if (project !== null) content.value = project;
+		if (flow.value !== shown || state.value === null) return;
+		flow.value = firstFlow({
+			state: state.value,
+			hasContent: hasContent(content.value),
+			canConnectDatabase: deps.canConnectDatabase,
+			step,
+		});
 	}
 
 	function open(step?: OnboardingStep): void {
 		const current = state.value;
 		if (current === null) {
-			pendingStep = step ?? null;
+			pendingStep = step ?? pendingStep ?? null;
+			if (loadFailed) void load().catch(() => undefined);
 			return;
 		}
 		show(current, step ?? null);
-		refreshState();
+		void refresh(step ?? null, flow.value);
 	}
 
-	async function load(): Promise<void> {
-		const [read, project] = await Promise.all([
-			deps.api.readState(),
-			deps.readContent().catch(() => NO_CONTENT),
-		]);
+	function load(): Promise<void> {
+		loading ??= loadOnce().finally(() => {
+			loading = undefined;
+		});
+		return loading;
+	}
+
+	async function loadOnce(): Promise<void> {
+		let read: OnboardingState;
+		let project: ProjectContent;
+		try {
+			[read, project] = await Promise.all([
+				deps.api.readState(),
+				deps.readContent().catch(() => content.value),
+			]);
+		} catch (error) {
+			loadFailed = true;
+			throw error;
+		}
+		loadFailed = false;
 		state.value = read;
 		content.value = project;
 		const step = pendingStep ?? null;
@@ -204,25 +236,24 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		codexTimer = undefined;
 	}
 
+	const waitingOnCodex = computed(() => {
+		const view = flow.value.view;
+		return isOpen.value && view.kind === "codex" && view.mode === "waiting";
+	});
+
 	async function pollCodex(): Promise<void> {
 		const next = await deps.api.readState().catch(() => null);
-		if (next === null) return;
+		if (next === null || !waitingOnCodex.value) return;
 		state.value = next;
 		if (next.logins.codex.status !== "signed-in") return;
 		await useLogin("codex", "signed-in");
 	}
 
-	const stopWatchingCodex = watch(
-		() => {
-			const view = flow.value.view;
-			return isOpen.value && view.kind === "codex" && view.mode === "waiting";
-		},
-		(waiting) => {
-			stopCodexPoll();
-			if (waiting)
-				codexTimer = setInterval(() => void pollCodex(), CODEX_POLL_MS);
-		},
-	);
+	const stopWatchingCodex = watch(waitingOnCodex, (waiting) => {
+		stopCodexPoll();
+		if (waiting)
+			codexTimer = setInterval(() => void pollCodex(), CODEX_POLL_MS);
+	});
 
 	return {
 		isOpen: readonly(isOpen),

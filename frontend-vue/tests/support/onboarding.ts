@@ -73,6 +73,8 @@ export interface OnboardingHarness {
 		navigate: ReturnType<typeof vi.fn>;
 	};
 	openTab: ReturnType<typeof vi.fn>;
+	/** Changes what the project holds, as the next read of its content answers. */
+	setContent: (next: ProjectContent) => void;
 	/** What a mounted view injects: the controller and the views' English strings. */
 	provide: Record<symbol, unknown>;
 }
@@ -109,10 +111,11 @@ export function createOnboardingHarness(
 		navigate: vi.fn(),
 	};
 	const openTab = vi.fn();
+	let content = options.content ?? NO_CONTENT;
 	const controller = createOnboarding({
 		api,
 		assistant,
-		readContent: async () => options.content ?? NO_CONTENT,
+		readContent: async () => content,
 		preferences: options.preferences ?? memoryPreferences(),
 		canConnectDatabase: options.canConnectDatabase ?? true,
 		openTab,
@@ -122,6 +125,9 @@ export function createOnboardingHarness(
 		api,
 		assistant,
 		openTab,
+		setContent: (next) => {
+			content = next;
+		},
 		provide: {
 			[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
 			[CHAT_I18N_KEY]: createTestI18n(views),

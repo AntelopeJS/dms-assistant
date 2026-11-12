@@ -104,8 +104,8 @@ async function readContent(
 /**
  * Starts the onboarding popup in a tab where the assistant runs: provides its controller, follows
  * `?assistant=connect`, and once the app is mounted and past the DMS's setup wizard reads whether
- * the popup opens, then registers the overlay and the widget. A backend without the onboarding
- * routes leaves neither.
+ * the popup opens, then registers the overlay and the widget, whether or not that read answered:
+ * a backend that does not answer yet leaves the popup unavailable until a later `open` reads again.
  */
 export function startOnboarding(host: OnboardingHost): () => void {
 	const { session } = host;
@@ -137,7 +137,9 @@ export function startOnboarding(host: OnboardingHost): () => void {
 			});
 			return wizard.done;
 		})
-		.then(() => (isActive ? controller.load() : undefined))
+		.then(() =>
+			isActive ? controller.load().catch(() => undefined) : undefined,
+		)
 		.then(() => {
 			if (isActive) unregister = host.runWithContext(registerOverlay);
 		})

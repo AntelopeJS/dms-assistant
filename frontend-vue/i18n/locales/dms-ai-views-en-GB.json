@@ -273,6 +273,7 @@
 					"connect": "Connect and analyse",
 					"unreadable": "This is not a {engine} connection URL.",
 					"no_database": "The URL names no database.",
+					"no_name": "The database name needs at least one letter or digit, to name the connection after it.",
 					"reachable_running": "Reaching the server…",
 					"reachable": "Server reachable",
 					"reachable_latency": "Server reachable · {ms} ms",

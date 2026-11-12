@@ -40,9 +40,27 @@ function schemaCheck(view: BuildView): ConnectCheck {
 /**
  * The checks as the builder's answers and the access check stand: the server is reached once the
  * project lists the connection, then the access check names the user and its read access, then
- * the analysis reads the schema. `view` is `null` while the connection is being written.
+ * the analysis reads the schema. `view` is `null` while the connection is being written. A
+ * `failure` of the analysis itself, refused by the builder or lost to a request that threw, fails
+ * the schema check with its text.
  */
 export function connectChecks(
+	view: BuildView | null,
+	access: DatabaseAccess | null,
+	failure: string | null = null,
+): ConnectCheck[] {
+	const checks = stateOfChecks(view, access);
+	if (failure === null || view?.gaveUp || view?.connectionError !== undefined) {
+		return checks;
+	}
+	return checks.map((check) =>
+		check.key === "schema"
+			? { key: "schema", status: "failed", problem: "failed", error: failure }
+			: check,
+	);
+}
+
+function stateOfChecks(
 	view: BuildView | null,
 	access: DatabaseAccess | null,
 ): ConnectCheck[] {

@@ -107,15 +107,18 @@ function checkText(check: ConnectCheck): string {
 }
 
 const urlHint = computed(() => {
-	if (urlProblem.value === "no-database") {
+	const problem = urlProblem.value;
+	if (problem === null) return null;
+	if (problem.kind === "invalid") return problem.message;
+	if (problem.kind === "no-database") {
 		return t("dms_ai.views.onboarding.database.no_database");
 	}
-	if (urlProblem.value === "unreadable") {
-		return t("dms_ai.views.onboarding.database.unreadable", {
-			engine: ENGINES[engine.value].label,
-		});
+	if (problem.kind === "no-name") {
+		return t("dms_ai.views.onboarding.database.no_name");
 	}
-	return null;
+	return t("dms_ai.views.onboarding.database.unreadable", {
+		engine: ENGINES[engine.value].label,
+	});
 });
 
 function editUrl(value: string): void {
@@ -157,7 +160,7 @@ watch(database.phase, (phase) => {
 				:color="engine === option ? 'primary' : 'neutral'"
 				:variant="engine === option ? 'soft' : 'outline'"
 				:class="engine === option && 'ring-primary ring-1 ring-inset'"
-				:disabled="submitted"
+				:disabled="busy"
 				@click="engine = option"
 			/>
 		</div>
@@ -173,10 +176,10 @@ watch(database.phase, (phase) => {
 				spellcheck="false"
 				size="lg"
 				class="w-full"
-				:disabled="submitted"
+				:disabled="busy"
 				:ui="{ base: 'font-mono text-[13px]' }"
 				@update:model-value="editUrl(String($event))"
-				@keydown.enter="url.trim() && !submitted && connect()"
+				@keydown.enter="url.trim() && !busy && connect()"
 			/>
 		</UFormField>
 		<ul
@@ -223,7 +226,7 @@ watch(database.phase, (phase) => {
 			<UButton
 				:label="t('dms_ai.views.onboarding.database.connect')"
 				trailing-icon="i-ph-arrow-right"
-				:disabled="url.trim() === '' || submitted"
+				:disabled="url.trim() === '' || busy"
 				:loading="busy"
 				@click="connect"
 			/>

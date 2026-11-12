@@ -113,7 +113,7 @@
 				}
 			},
 			"change": {
-				"applied": "Appliqué · point de contrôle {number}",
+				"applied": "Modification appliquée · n°{number}",
 				"undone": "Annulé · point de contrôle {number} restauré",
 				"files": "{count} fichier modifié | {count} fichiers modifiés",
 				"builder_ops": "{count} opération Builder | {count} opérations Builder",
@@ -390,7 +390,6 @@
 				"sketch_frame": "Esquisse statique d'un composant sur mesure : {caption}"
 			},
 			"fold": {
-				"name": "Assistant",
 				"open": "Ouvrir l’assistant"
 			},
 			"build": {

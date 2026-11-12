@@ -113,7 +113,7 @@
 				}
 			},
 			"change": {
-				"applied": "Applied · checkpoint {number}",
+				"applied": "Change applied · #{number}",
 				"undone": "Undone · checkpoint {number} restored",
 				"files": "{count} file changed | {count} files changed",
 				"builder_ops": "{count} Builder operation | {count} Builder operations",
@@ -390,7 +390,6 @@
 				"sketch_frame": "Static sketch of a custom component: {caption}"
 			},
 			"fold": {
-				"name": "Assistant",
 				"open": "Open the assistant"
 			},
 			"build": {

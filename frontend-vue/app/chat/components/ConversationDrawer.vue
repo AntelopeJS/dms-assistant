@@ -169,6 +169,13 @@ function onKeydown(event: KeyboardEvent): void {
 								class="convo__open"
 								@click="emit('select', item.id)"
 							>
+								<UIcon
+									:name="
+										item.generationMode === 'vibe' ? 'i-ph-code' : 'i-ph-hammer'
+									"
+									class="convo__mode"
+									:data-mode="item.generationMode ?? 'safe'"
+								/>
 								<span class="convo__title">
 									{{ item.title || t("dms_ai.panel.new_conversation") }}
 								</span>
@@ -384,7 +391,7 @@ function onKeydown(event: KeyboardEvent): void {
 
 .convo__open {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-columns: auto minmax(0, 1fr) auto;
 	gap: 2px 8px;
 	width: 100%;
 	padding: 8px 36px 8px 8px;
@@ -393,6 +400,18 @@ function onKeydown(event: KeyboardEvent): void {
 	color: inherit;
 	text-align: left;
 	cursor: pointer;
+}
+
+.convo__mode {
+	grid-row: span 2;
+	width: 15px;
+	height: 15px;
+	margin-top: 2px;
+	color: var(--dms-accent);
+}
+
+.convo__mode[data-mode="vibe"] {
+	color: var(--ui-text-muted);
 }
 
 .convo__title {
@@ -411,7 +430,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .convo__meta {
-	grid-column: 1 / -1;
+	grid-column: 2 / -1;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;

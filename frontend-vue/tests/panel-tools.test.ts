@@ -105,7 +105,7 @@ describe("tool rows and change sets", () => {
 		deliver(harness, { type: "run_done" });
 		await nextTick();
 		const card = panel.find(".cb-change");
-		expect(card.text()).toContain("Applied · checkpoint 14");
+		expect(card.text()).toContain("Change applied · #14");
 		expect(card.text()).toContain("2 files changed · 2 Builder operations");
 		expect(card.text()).toContain("new");
 		await buttonWithText(card, "Review diff").trigger("click");

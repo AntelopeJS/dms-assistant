@@ -12,10 +12,10 @@ const ASSISTANT_COLUMNS = 3;
 
 const ASSISTANT_PAGES = [
   {
-    id: "overview",
-    title: "$dms_ai.pages.overview.title",
-    description: "$dms_ai.pages.overview.description",
-    icon: "i-ph-chart-line",
+    id: "settings",
+    title: "$dms_ai.pages.settings.title",
+    description: "$dms_ai.pages.settings.description",
+    icon: "i-ph-gear-six",
   },
   {
     id: "changes",
@@ -28,18 +28,6 @@ const ASSISTANT_PAGES = [
     title: "$dms_ai.pages.activity.title",
     description: "$dms_ai.pages.activity.description",
     icon: "i-ph-clock-counter-clockwise",
-  },
-  {
-    id: "skills",
-    title: "$dms_ai.pages.skills.title",
-    description: "$dms_ai.pages.skills.description",
-    icon: "i-ph-books",
-  },
-  {
-    id: "settings",
-    title: "$dms_ai.pages.settings.title",
-    description: "$dms_ai.pages.settings.description",
-    icon: "i-ph-gear-six",
   },
 ];
 

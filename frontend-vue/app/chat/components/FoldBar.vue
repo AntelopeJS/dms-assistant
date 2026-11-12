@@ -38,7 +38,7 @@ const label = computed(
 					<UIcon name="i-ph-sparkle" />
 				</span>
 				<span class="dms-ai-fold__dot" aria-hidden="true" />
-				<span class="dms-ai-fold__name">{{ t("dms_ai.panel.fold.name") }}</span>
+				<span class="dms-ai-fold__name">{{ t("dms_ai.panel.assistant") }}</span>
 				<UIcon name="i-ph-caret-double-left" class="dms-ai-fold__caret" />
 			</button>
 		</aside>

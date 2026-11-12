@@ -62,11 +62,6 @@ const SelectMenu = defineComponent({
 	emits: ["update:modelValue"],
 	setup: () => () => h("div"),
 });
-const Checkbox = defineComponent({
-	props: { modelValue: Boolean, label: String },
-	emits: ["update:modelValue"],
-	setup: () => () => h("input"),
-});
 const Badge = defineComponent({
 	props: { label: String },
 	setup: () => () => h("span"),
@@ -84,7 +79,6 @@ function mountEditor(rowData?: { route: string }) {
 		global: {
 			stubs: {
 				USelectMenu: SelectMenu,
-				UCheckbox: Checkbox,
 				UBadge: Badge,
 				UButton: Button,
 				UIcon: true,
@@ -92,17 +86,18 @@ function mountEditor(rowData?: { route: string }) {
 			},
 		},
 	});
-	const checkbox = (label: string) => {
-		const found = wrapper
-			.findAllComponents(Checkbox)
-			.find((c) => c.props("label") === label);
-		if (!found) throw new Error(`no checkbox ${label}`);
+	const field = (name: string) => {
+		const found = wrapper.find(`[role="checkbox"][data-field="${name}"]`);
+		if (!found.exists()) throw new Error(`no field ${name}`);
 		return found;
 	};
+	const isExcluded = (name: string) =>
+		field(name).attributes("aria-checked") === "true";
 	return {
 		wrapper,
 		selects: wrapper.findAllComponents(SelectMenu),
-		checkbox,
+		field,
+		isExcluded,
 		button: wrapper.findComponent(Button),
 		onSuccessCallback,
 	};
@@ -123,14 +118,15 @@ beforeEach(() => {
 describe("the exclusion editor", () => {
 	it("opens a picked route that already has exclusions with them checked, and saves the whole list", async () => {
 		authFetch.mockResolvedValue({});
-		const { selects, checkbox, button, onSuccessCallback } = mountEditor();
+		const { selects, field, isExcluded, button, onSuccessCallback } =
+			mountEditor();
 		selects[0]?.vm.$emit("update:modelValue", "/customers");
 		await flushPromises();
-		expect(checkbox("Email").props("modelValue")).toBe(true);
-		expect(checkbox("fax").props("modelValue")).toBe(true);
-		expect(checkbox("Name").props("modelValue")).toBe(false);
-		checkbox("Name").vm.$emit("update:modelValue", true);
-		checkbox("Email").vm.$emit("update:modelValue", false);
+		expect(isExcluded("email")).toBe(true);
+		expect(isExcluded("fax")).toBe(true);
+		expect(isExcluded("name")).toBe(false);
+		await field("name").trigger("click");
+		await field("email").trigger("click");
 		await flushPromises();
 		button.vm.$emit("click");
 		await flushPromises();
@@ -139,6 +135,13 @@ describe("the exclusion editor", () => {
 			body: { route: "/api/customers", fields: ["fax", "name"] },
 		});
 		expect(onSuccessCallback).toHaveBeenCalledOnce();
+	});
+
+	it("shows a field's id next to its name, and not twice when they match", async () => {
+		const { field } = mountEditor({ route: "/api/customers" });
+		await flushPromises();
+		expect(field("email").find("code").text()).toBe("email");
+		expect(field("fax").find("code").exists()).toBe(false);
 	});
 
 	it("marks an excluded field no table shows any more as not found", async () => {
@@ -164,14 +167,14 @@ describe("the exclusion editor", () => {
 	});
 
 	it("shows the new route's fields when another page has a table with the same id", async () => {
-		const { selects, checkbox, button } = mountEditor();
+		const { selects, field, isExcluded, button } = mountEditor();
 		selects[0]?.vm.$emit("update:modelValue", "/customers");
 		await flushPromises();
 		selects[0]?.vm.$emit("update:modelValue", "/invoices");
 		await flushPromises();
 		expect(selects[1]?.props("modelValue")).toBe("content");
-		expect(checkbox("Total").props("modelValue")).toBe(false);
-		expect(() => checkbox("Email")).toThrow();
+		expect(isExcluded("total")).toBe(false);
+		expect(() => field("email")).toThrow();
 		expect(button.props("disabled")).toBe(false);
 	});
 

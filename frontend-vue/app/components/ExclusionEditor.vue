@@ -67,9 +67,9 @@ watch(
 	{ immediate: true },
 );
 
-function setExcluded(field: string, isExcluded: boolean | "indeterminate") {
+function setExcluded(field: string, isExcluded: boolean) {
 	const next = new Set(excluded.value);
-	if (isExcluded === true) next.add(field);
+	if (isExcluded) next.add(field);
 	else next.delete(field);
 	excluded.value = next;
 }
@@ -128,29 +128,38 @@ async function save(): Promise<void> {
 			<p v-if="!editedRoute && isExisting" class="text-muted text-sm">
 				{{ t("dms_ai.views.exclusions.existing") }}
 			</p>
-			<ul class="flex flex-col gap-2">
-				<li
-					v-for="item in checklist?.fields ?? []"
-					:key="item.field"
-					class="flex items-center gap-2"
-				>
-					<UIcon
-						:name="excluded.has(item.field) ? 'i-ph-eye-slash' : 'i-ph-eye'"
-						:class="excluded.has(item.field) ? 'text-warning' : 'text-dimmed'"
-					/>
-					<UCheckbox
-						:model-value="excluded.has(item.field)"
-						:label="item.header"
-						:description="item.header === item.field ? undefined : item.field"
-						@update:model-value="setExcluded(item.field, $event)"
-					/>
-					<UBadge
-						v-if="!item.isShown"
-						:label="t('dms_ai.views.exclusions.not_found')"
-						color="warning"
-						variant="subtle"
-						size="sm"
-					/>
+			<ul class="grid grid-cols-1 gap-1 sm:grid-cols-2">
+				<li v-for="item in checklist?.fields ?? []" :key="item.field">
+					<button
+						type="button"
+						role="checkbox"
+						:aria-checked="excluded.has(item.field)"
+						:data-field="item.field"
+						class="hover:bg-elevated focus-visible:outline-primary flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm focus-visible:outline-2"
+						:class="excluded.has(item.field) ? 'bg-warning/10' : undefined"
+						@click="setExcluded(item.field, !excluded.has(item.field))"
+					>
+						<UIcon
+							:name="excluded.has(item.field) ? 'i-ph-eye-slash' : 'i-ph-eye'"
+							class="shrink-0"
+							:class="excluded.has(item.field) ? 'text-warning' : 'text-dimmed'"
+						/>
+						<span class="truncate">{{ item.header }}</span>
+						<code
+							v-if="item.header !== item.field"
+							class="text-muted truncate text-xs"
+						>
+							{{ item.field }}
+						</code>
+						<UBadge
+							v-if="!item.isShown"
+							:label="t('dms_ai.views.exclusions.not_found')"
+							color="warning"
+							variant="subtle"
+							size="sm"
+							class="ms-auto shrink-0"
+						/>
+					</button>
 				</li>
 			</ul>
 		</template>

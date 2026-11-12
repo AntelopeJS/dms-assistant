@@ -9,7 +9,6 @@ import {
   ACTION_LABEL,
   ACTION_ORDER,
   APP_OVERLAYS_STATE_KEY,
-  CONNECT_PROMPT_COMPONENT_NAME,
   HEADER_ACTIONS_STATE_KEY,
   OVERLAY_COMPONENT_NAME,
 } from '../runtime/constants'
@@ -60,7 +59,6 @@ export default defineDmsPlugin(() => {
   const builder = useBuilder()
   const route = useDmsRoute()
   registerOverlay(OVERLAY_COMPONENT_NAME)
-  registerOverlay(CONNECT_PROMPT_COMPONENT_NAME)
   registerAction(
     () => {
       if (builder.session.value.active) {

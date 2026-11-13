@@ -7,10 +7,12 @@ import {
 	TOOL_VERB_KEYS,
 	toolVerb,
 } from "../../app/chat/utils/tool-lexicon";
-import { toolRowState } from "../../app/chat/utils/tool-state";
+import {
+	findWaitingRequest,
+	toolRowState,
+} from "../../app/chat/utils/tool-state";
 import type { ToolCallMessage } from "../../app/chat/types/conversation";
 import type { PermissionRequestData } from "../../app/chat/types/permission";
-import { findWaitingRequest } from "../../app/chat/utils/tool-state";
 import { permissionCardText } from "../../app/chat/utils/permission-view";
 
 const echo = (key: string): string => key;

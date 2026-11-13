@@ -212,7 +212,7 @@ function parameters(fields: ConnectionFields): string {
 const SOCKET_DIRECTORY = /^\//
 const IPV6 = /^[0-9a-f.]*:[0-9a-f.]*:[0-9a-f:.]*$/i
 const BRACKETED_IPV6 = /^\[[0-9a-f:.]+\]$/i
-const HOST_NAME = /^[A-Za-z0-9._~-]+$/
+const HOST_NAME = /^[\w.~-]+$/
 const PORT = /^\d{1,5}$/
 /** The characters a database name cannot hold: the driver reads the name with `decodeURI`, which keeps them encoded. */
 const UNWRITABLE_DATABASE = /[?#]/

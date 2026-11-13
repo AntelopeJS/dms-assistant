@@ -5,7 +5,6 @@
  * profile or a sampled row, so it is safe to keep in the browser.
  */
 import type {
-	AnalysisState,
 	ColumnDisplay,
 	MapResourcesInput,
 	MappedField,
@@ -113,16 +112,20 @@ export function resourceIn(
 	return draft.resources.find((resource) => resource.relation === relation)
 }
 
+function withoutRelation(excluded: Record<string, string>, relation: string): Record<string, string> {
+	return Object.fromEntries(Object.entries(excluded).filter(([key]) => key !== relation))
+}
+
 const PURPOSE_ANSWERS: Record<string, (resource: ResourceDraft, draft: MappingDraft) => void> = {
 	tableView: (resource, draft) => {
 		resource.include = true
 		resource.tableView = true
-		delete draft.excluded[resource.relation]
+		draft.excluded = withoutRelation(draft.excluded, resource.relation)
 	},
 	statsOnly: (resource, draft) => {
 		resource.include = true
 		resource.tableView = false
-		delete draft.excluded[resource.relation]
+		draft.excluded = withoutRelation(draft.excluded, resource.relation)
 	},
 	excluded: (resource, draft) => {
 		resource.include = false
@@ -159,7 +162,7 @@ export function includeResource(draft: MappingDraft, relation: string, include: 
 	}
 	resource.include = include
 	if (include) {
-		delete draft.excluded[relation]
+		draft.excluded = withoutRelation(draft.excluded, relation)
 	} else {
 		draft.excluded[relation] = 'decided against in the builder'
 	}

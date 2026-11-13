@@ -15,6 +15,11 @@ export interface ToolCallSubject {
 
 type CallAnswer = Pick<RunnerToolResult, "result" | "isError">;
 
+interface Hold {
+  tool: string;
+  expiresAtMs: number;
+}
+
 /**
  * The DMS MCP's calls held until someone confirms them. The DMS refuses the
  * first such call and runs an identical one repeated within its window, so
@@ -24,6 +29,11 @@ type CallAnswer = Pick<RunnerToolResult, "result" | "isError">;
 export interface HeldCalls {
   /** A held call is recorded by the DMS's refusal and released once it ran. */
   observe(call: ToolCallSubject, answer: CallAnswer): void;
+  /**
+   * Whether the call's tool has a held call pending, whatever the call's
+   * arguments: the DMS drops the arguments its tool does not know before it
+   * looks its hold up, so a repeat with another key can still run.
+   */
   isHeld(call: ToolCallSubject): boolean;
 }
 
@@ -80,13 +90,15 @@ function isHoldRefusal(call: ToolCallSubject, answer: CallAnswer): boolean {
  * A refused call stays held for the DMS's whole window, counted from when its
  * refusal arrived, so never for less time than the DMS holds it. Any other
  * failure, a refusal by the person included, leaves it held: the DMS still
- * runs the next identical call.
+ * runs the next identical call. Only a run with the same arguments releases
+ * it, so a run the chat cannot match to it costs one more question, never a
+ * missing one.
  */
 export function createHeldCalls(now: () => number = Date.now): HeldCalls {
-  const expiryByCall = new Map<string, number>();
+  const holdByCall = new Map<string, Hold>();
   const dropExpired = (at: number): void => {
-    for (const [key, expiresAt] of expiryByCall) {
-      if (expiresAt < at) expiryByCall.delete(key);
+    for (const [key, hold] of holdByCall) {
+      if (hold.expiresAtMs < at) holdByCall.delete(key);
     }
   };
   return {
@@ -95,15 +107,19 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
       const at = now();
       dropExpired(at);
       if (isHoldRefusal(call, answer)) {
-        expiryByCall.set(callKey(call), at + DMS_MCP_HOLD_WINDOW_MS);
+        holdByCall.set(callKey(call), {
+          tool: bareToolName(call.toolName),
+          expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
+        });
       } else if (!answer.isError) {
-        expiryByCall.delete(callKey(call));
+        holdByCall.delete(callKey(call));
       }
     },
     isHeld(call) {
       if (!isDmsTool(call)) return false;
       dropExpired(now());
-      return expiryByCall.has(callKey(call));
+      const tool = bareToolName(call.toolName);
+      return [...holdByCall.values()].some((hold) => hold.tool === tool);
     },
   };
 }

@@ -49,11 +49,27 @@ describe("held calls", () => {
     },
   );
 
-  it("counts another argument, tool or server as another call (fails a key on the tool alone)", () => {
+  it("holds every call to the held tool, whatever its arguments, as the DMS drops the keys its tool does not know (fails a hold keyed on the raw arguments)", () => {
     const { held } = heldAfterRefusal();
-    expect(held.isHeld({ ...HELD, args: { ...ARGS, keepData: true } })).toBe(
-      false,
-    );
+    expect(held.isHeld({ ...HELD, args: { ...ARGS, force: true } })).toBe(true);
+    expect(held.isHeld({ ...HELD, args: { ref: "customers" } })).toBe(true);
+  });
+
+  it("keeps the tool held while another of its calls is held, after one ran (fails a release of the whole tool)", () => {
+    const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+    const held = createHeldCalls(() => 0);
+    const other = { toolName: DELETE, args: { ref: "customers" } };
+    for (const call of [HELD, other]) {
+      const refusal = gate.hold("builder_delete_resource", call.args);
+      held.observe(call, { result: refusal?.content, isError: true });
+    }
+    held.observe(HELD, { result: '{"ok":true}', isError: false });
+    expect(gate.hold("builder_delete_resource", other.args)).toBeUndefined();
+    expect(held.isHeld(other)).toBe(true);
+  });
+
+  it("counts another tool or server as another call (fails a hold that asks before every DMS tool)", () => {
+    const { held } = heldAfterRefusal();
     expect(
       held.isHeld({ toolName: "mcp__dms__builder_delete_page", args: ARGS }),
     ).toBe(false);

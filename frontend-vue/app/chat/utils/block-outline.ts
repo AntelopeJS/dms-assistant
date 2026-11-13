@@ -25,7 +25,7 @@ function isUnder(element: Element, path: string): boolean {
  * `null` when the page shows none of them, or a modal dialog covers the page.
  */
 export function blockOutlineRect(
-	root: ParentNode,
+	root: Pick<Document, "querySelector" | "querySelectorAll">,
 	path: string,
 ): OutlineRect | null {
 	if (root.querySelector(MODAL_SELECTOR) !== null) return null;

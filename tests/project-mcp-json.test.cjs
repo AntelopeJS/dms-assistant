@@ -125,12 +125,16 @@ function readMcpJson() {
   return readFile(path.join(dir, MCP_JSON), "utf8");
 }
 
-function coreStarts() {
+/**
+ * Core's start writing its bridge, launcher included.
+ * @param {boolean} [writeMcpJson] - Whether core adds its entry to `.mcp.json` too.
+ */
+function coreStarts(writeMcpJson = true) {
   return core.publishBridge({
     projectPath: dir,
     url: "http://localhost:5010/mcp",
     token: "token",
-    writeMcpJson: true,
+    writeMcpJson,
   });
 }
 
@@ -163,6 +167,7 @@ void test("dms first: core's write, then the step, leave core's entry and no dea
 });
 
 void test("no .mcp.json: the step writes core's entry alone, or nothing when the project turned core's writing off (fails a step that throws on a missing file or writes more)", async () => {
+  await coreStarts(false);
   await loadStep().syncProjectMcpJson(dir);
   assertHolds(await readMcpJson(), { mcpServers: { dms: DMS_ENTRY } });
   await rm(path.join(dir, MCP_JSON));
@@ -187,11 +192,24 @@ void test("a hand-edited .mcp.json keeps every other server, key and order, and 
       },
     ],
   ];
+  await coreStarts(false);
   for (const [before, after] of cases) {
     await writeMcpJson(before);
     await loadStep().syncProjectMcpJson(dir);
     assertHolds(await readMcpJson(), after);
   }
+});
+
+void test("core wrote no launcher, as when its backend is not on this machine: the step removes the dead entry and adds no dms one (fails a step that adds an entry whose launcher does not exist)", async () => {
+  await writeMcpJson({ mcpServers: { "dms-ai": STALE_ENTRY, other: {} } });
+  const step = loadStep({ mcp: { backendUrl: "https://api.example.com" } });
+  await step.syncProjectMcpJson(dir);
+  assertHolds(await readMcpJson(), { mcpServers: { other: {} } });
+  await coreStarts(false);
+  await step.syncProjectMcpJson(dir);
+  assertHolds(await readMcpJson(), {
+    mcpServers: { other: {}, dms: DMS_ENTRY },
+  });
 });
 
 void test("nothing to change: the step does not rewrite the file, its bytes and mtime unchanged (fails a step that rewrites the file on every start)", async () => {

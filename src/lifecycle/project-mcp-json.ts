@@ -1,9 +1,10 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Logging } from "@antelopejs/interface-core/logging";
 import { GetModuleInfo, ListModules } from "@antelopejs/interface-core/modules";
 import { z } from "zod";
 import {
+  DMS_MCP_LAUNCHER,
   DMS_MCP_SERVER_ENTRY,
   DMS_MCP_SERVER_KEY,
   DMS_PACKAGE_NAME,
@@ -126,6 +127,14 @@ function dmsWritesMcpJson(): Promise<boolean> {
   });
 }
 
+async function isLauncherWritten(projectRoot: string): Promise<boolean> {
+  try {
+    return (await stat(path.join(projectRoot, DMS_MCP_LAUNCHER))).isFile();
+  } catch {
+    return false;
+  }
+}
+
 async function readMcpJson(filePath: string): Promise<McpJsonState> {
   let text: string;
   try {
@@ -219,14 +228,16 @@ async function syncFile(projectRoot: string, addsDms: boolean): Promise<void> {
  * Brings the project's `.mcp.json` to this version: it removes the `dms-ai`
  * server the previous version added, whose launcher needs a bridge that is
  * gone, and adds the `dms` server of `@antelopejs/dms` when that module
- * writes one and it is missing. Every other server and key is kept as it is,
+ * writes one, its launcher is there and the server is missing. Every other server and key is kept as it is,
  * and a file that already matches is not written. A file that is not a JSON
  * object with an object of servers is left alone with a warning. Running it
  * again changes nothing, so it runs on every start.
  */
 export async function syncProjectMcpJson(projectRoot: string): Promise<void> {
   try {
-    await syncFile(projectRoot, await dmsWritesMcpJson());
+    const addsDms =
+      (await dmsWritesMcpJson()) && (await isLauncherWritten(projectRoot));
+    await syncFile(projectRoot, addsDms);
   } catch (error) {
     Logging.Warn(
       `${SIDECAR_LOG_PREFIX} ${PROJECT_MCP_JSON_FILE_NAME} could not be updated:`,

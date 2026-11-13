@@ -16,7 +16,13 @@ integrator gave you:
   { "op": "ConfigureModule", "id": "mongodb", "entry": {
       "exportPriority": { "@antelopejs/interface-database": 1 } } },
   { "op": "ConfigureModule", "id": "dms-assistant", "entry": {
-      "importOverrides": [{ "interface": "@antelopejs/interface-database-catalog", "source": "postgres-erp", "id": "erp" }] } }
+      "importOverrides": [{ "interface": "@antelopejs/interface-database-catalog", "source": "postgres-erp", "id": "erp" }] } },
+  { "op": "ConfigureModule", "id": "dms-database", "entry": {
+      "importOverrides": [
+        { "interface": "@antelopejs/interface-database", "source": "mongodb" },
+        { "interface": "@antelopejs/interface-database", "source": "postgres-erp", "id": "erp" },
+        { "interface": "@antelopejs/interface-database-catalog", "source": "postgres-erp", "id": "erp" }],
+      "config": { "externalConnections": { "erp": { "access": "read" } } } } }
 ] }
 ```
 
@@ -27,6 +33,15 @@ integrator gave you:
 - **Step 3** keeps the DMS and its modules on the project's own database. Leave it out if the
   project already pins them.
 - **Step 4** gives the Builder and you the connection `erp`: both run in `dms-assistant`.
+- **Step 5** registers `erp` with dms-database, so its console lists and browses it. Leave it
+  out when the project has no dms-database. The project's own database comes first (`mongodb` here),
+  then `erp` on both interfaces under the same id. `access` is `read`: write `read-write` only when
+  the integrator asks for it. Never rewrite `access` of a connection that is registered already.
+- **Pins.** Once a second `interface-database` provider exists, core refuses to start a module that
+  imports `interface-database` without a pin. For each configured module whose code imports it,
+  that does not provide it and has no pin without an `id`, add a `ConfigureModule` step with
+  `"importOverrides": [{ "interface": "@antelopejs/interface-database", "source": "mongodb" }]`,
+  the project's own database. The Builder's *Database* workspace writes them itself.
 
 For MongoDB and RethinkDB, step 1 changes, and the other steps name its id in place of
 `postgres-erp`. The `disabledExports` entry keeps the external instance from ever serving the raw

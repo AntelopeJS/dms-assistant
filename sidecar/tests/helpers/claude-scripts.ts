@@ -14,6 +14,8 @@ export interface ScriptedCall {
    * error result follow the call, as CLI 2.1.316 sends them.
    */
   refusedBy?: UnpromptedRefusal;
+  /** What the tool answers when it runs; "ok" by default. */
+  answer?: { text: string; isError: boolean };
 }
 
 const SESSION_ID = "mock-session-scripted";
@@ -76,6 +78,9 @@ function assistant(
 
 function toolResult(call: ScriptedCall) {
   const isRefused = call.refusedBy !== undefined;
+  const answer = isRefused
+    ? { text: AUTO_REVIEW_DENIAL, isError: true }
+    : (call.answer ?? { text: "ok", isError: false });
   return {
     type: "user",
     parent_tool_use_id: null,
@@ -86,8 +91,8 @@ function toolResult(call: ScriptedCall) {
         {
           type: "tool_result",
           tool_use_id: call.id,
-          content: isRefused ? AUTO_REVIEW_DENIAL : "ok",
-          is_error: isRefused,
+          content: answer.text,
+          is_error: answer.isError,
         },
       ],
     },

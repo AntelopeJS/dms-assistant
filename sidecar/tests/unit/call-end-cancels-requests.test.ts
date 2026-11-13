@@ -60,6 +60,7 @@ function buildHarness(): Harness {
       appendMessage: () => {},
     },
     callAudit: { lookup: () => undefined },
+    heldCalls: { observe: () => {} },
     chatSocketRegistry: { send },
     liveTurns: { append: () => {}, end: () => {} },
     editTracker: { record: () => {} },

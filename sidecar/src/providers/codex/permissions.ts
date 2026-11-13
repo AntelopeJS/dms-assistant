@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ToolCallSubject } from "../../agent/held-calls.js";
 import type { PermissionBus } from "../../agent/permission-bus.js";
 import {
   CODEX_CHANGE_DIFF_ARG,
@@ -64,6 +65,7 @@ export interface CodexPermissionDeps {
   onToolDecision?: (decision: ToolDecision) => void;
   /** Awaited before an approved change runs (the turn's checkpoint). */
   beforeMutation?: () => Promise<void>;
+  isHeldCall?: (call: ToolCallSubject) => boolean;
 }
 
 export interface CodexPermissionHandler {
@@ -115,14 +117,36 @@ const DECLINED_ELICITATION: CodexElicitationResponse = {
   _meta: null,
 };
 
+function pendingMcpCall(
+  deps: CodexPermissionDeps,
+  callId: string | undefined,
+): CodexMcpCall | undefined {
+  return deps.getPendingMcpCalls().find((pending) => pending.id === callId);
+}
+
+/**
+ * Whether an auto-allowed MCP call still asks the person: a block removal
+ * while the setting says so, and the repeat of a call the DMS MCP holds.
+ */
+function asksPerson(
+  deps: CodexPermissionDeps,
+  decision: ToolDecision,
+): boolean {
+  if (asksBeforeBlockRemoval(decision.toolName, deps.getSettings())) {
+    return true;
+  }
+  const call = pendingMcpCall(deps, decision.callId);
+  if (call === undefined) return false;
+  const subject = { toolName: decision.toolName, args: call.arguments };
+  return deps.isHeldCall?.(subject) === true;
+}
+
 async function askBeforeMcpCall(
   deps: CodexPermissionDeps,
   decision: ToolDecision,
 ): Promise<CodexElicitationResponse> {
   if (deps.permissionBus === undefined) return DECLINED_ELICITATION;
-  const call = deps
-    .getPendingMcpCalls()
-    .find((pending) => pending.id === decision.callId);
+  const call = pendingMcpCall(deps, decision.callId);
   const outcome = await deps.permissionBus.requestPermission({
     conversationId: deps.conversationId,
     toolName: decision.toolName,
@@ -144,9 +168,7 @@ async function answerElicitation(
     return DECLINED_ELICITATION;
   }
   const { decision } = verdict;
-  if (asksBeforeBlockRemoval(decision.toolName, deps.getSettings())) {
-    return askBeforeMcpCall(deps, decision);
-  }
+  if (asksPerson(deps, decision)) return askBeforeMcpCall(deps, decision);
   deps.onToolDecision?.(decision);
   if (isMutatingTool(decision.toolName)) await deps.beforeMutation?.();
   return ACCEPTED_ELICITATION;

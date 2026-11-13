@@ -377,7 +377,6 @@ export const DestructivePreviewSchema = z.object({
   target: z.string(),
   consequence: z.enum(["deletes_data", "removes_code"]),
   confirmText: z.string().optional(),
-  canKeepData: z.boolean(),
 });
 
 export const WebPreviewSchema = z.object({

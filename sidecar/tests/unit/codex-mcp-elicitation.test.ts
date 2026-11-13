@@ -1,4 +1,6 @@
+import { isDeepStrictEqual } from "node:util";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import type { ToolCallSubject } from "../../src/agent/held-calls.js";
 import type { ToolDecision } from "../../src/agent/provider.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
 import { createCodexAdapter } from "../../src/providers/codex/adapter.js";
@@ -29,6 +31,7 @@ function setup(
   settings: TurnSettings,
   calls: StartedCall[],
   beforeMutation?: () => Promise<void>,
+  isHeldCall?: (call: ToolCallSubject) => boolean,
 ) {
   const adapter = createCodexAdapter();
   for (const call of calls) {
@@ -52,6 +55,7 @@ function setup(
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: (decision) => decisions.push(decision),
     beforeMutation,
+    isHeldCall,
   });
   return { handler, decisions, requestPermission };
 }
@@ -282,6 +286,45 @@ describe("a DMS MCP call the chat holds", () => {
     expect(await handler.handle(consent)).toEqual(ACCEPTED);
     expect(requestPermission).not.toHaveBeenCalled();
   });
+});
+
+describe("the repeat of a call the DMS holds", () => {
+  const isHeldCall = (call: ToolCallSubject) =>
+    call.toolName === "mcp__dms__builder_delete_page" &&
+    isDeepStrictEqual(call.args, DELETE_CALL.arguments);
+
+  it.each([
+    [true, ACCEPTED],
+    [false, DECLINED],
+  ])(
+    "asks the person once, then answers allowed=%s (fails an auto-allow that lets the DMS run the repeat unasked)",
+    async (isAllowed, answer) => {
+      const { handler, requestPermission } = setup(
+        TURN_SETTINGS,
+        [DELETE_CALL],
+        undefined,
+        isHeldCall,
+      );
+      requestPermission.mockResolvedValue({
+        isAllowed,
+        allowedBy: isAllowed ? "approved" : "denied",
+      });
+      const consent = toolConsent(
+        DMS_SERVER,
+        "builder_delete_page",
+        DELETE_CALL.arguments,
+      );
+      expect(await handler.handle(consent)).toEqual(answer);
+      expect(requestPermission).toHaveBeenCalledTimes(1);
+      expect(requestPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          toolName: "mcp__dms__builder_delete_page",
+          args: DELETE_CALL.arguments,
+          callId: "call_delete",
+        }),
+      );
+    },
+  );
 });
 
 describe("an elicitation the sidecar declines", () => {

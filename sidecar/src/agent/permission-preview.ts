@@ -2,8 +2,10 @@ import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 import { z } from "zod";
 import type { PermissionKind } from "../constants/audit.js";
+import type { BUILDER_TOOL_NAMES } from "../constants/builder.js";
 import type {
   CommandPreviewType,
+  DestructivePreviewType,
   DiffPreviewType,
   PermissionPreviewType,
 } from "../protocol/events.js";
@@ -42,6 +44,17 @@ const CODEX_DELETED_KIND = "delete";
 /** Argument keys of a Codex file change, set by its permission handler. */
 export const CODEX_CHANGE_KIND_ARG = "change_kind";
 export const CODEX_CHANGE_DIFF_ARG = "diff";
+/** Argument keys naming what a DMS MCP deletion deletes, most specific first. */
+const DELETION_TARGET_KEYS: readonly string[] = [
+  "pageRef",
+  "ref",
+  "path",
+  "query",
+];
+/** The deletion that also clears the stored rows, unless its `keepData` is true. */
+const DATA_DELETING_TOOL_NAME: (typeof BUILDER_TOOL_NAMES)[number] =
+  "builder_delete_resource";
+const KEEP_DATA_ARG = "keepData";
 
 /** What the bus needs to know to present, scope and gate one request. */
 export interface RequestDescription {
@@ -179,6 +192,37 @@ function commandPreview(options: ParsedOptions): CommandPreviewType {
   return { ...preview, effect: change.effect, touches: change.touches };
 }
 
+/**
+ * What a deletion deletes, as the call's own arguments say: a table's rows go
+ * with it unless the call keeps them, and only then does the card ask to type
+ * its name.
+ */
+function destructivePreview(options: ParsedOptions): DestructivePreviewType {
+  const operation = bareToolName(options.toolName);
+  const key = DELETION_TARGET_KEYS.find(
+    (candidate) => readString(options.args, candidate) !== "",
+  );
+  const target = key === undefined ? "" : readString(options.args, key);
+  const deletesData =
+    operation === DATA_DELETING_TOOL_NAME &&
+    options.args[KEEP_DATA_ARG] !== true;
+  if (!deletesData) {
+    return {
+      type: "destructive",
+      operation,
+      target,
+      consequence: "removes_code",
+    };
+  }
+  return {
+    type: "destructive",
+    operation,
+    target,
+    consequence: "deletes_data",
+    confirmText: target,
+  };
+}
+
 function webPreview(options: ParsedOptions): PermissionPreviewType {
   const url = readString(options.args, "url");
   const host = hostOf(url);
@@ -207,7 +251,7 @@ const PREVIEW_BY_KIND: Record<PermissionKind, PreviewBuilder> = {
     (await diffPreview(options)) ?? genericPreview(options),
   command: async (options) => commandPreview(options),
   web: async (options) => webPreview(options),
-  destructive: async (options) => genericPreview(options),
+  destructive: async (options) => destructivePreview(options),
   builder: async (options) => genericPreview(options),
   other: async (options) => genericPreview(options),
 };

@@ -1,3 +1,4 @@
+import type { HeldCalls } from "../agent/held-calls.js";
 import type {
   RunnerToolResult,
   RunnerToolUse,
@@ -15,6 +16,7 @@ import {
   STATUS,
   type ToolCallEndEventType,
 } from "../protocol/events.js";
+import { JsonValueSchema } from "../protocol/json.js";
 import type { CallAudit, CallDecision } from "../audit/call-audit.js";
 import type { ConversationStore } from "../state/conversations.js";
 import type { ActiveTurn, TurnRegistry } from "./turn-registry.js";
@@ -27,6 +29,7 @@ export interface ToolCallServices {
     "get" | "appendMessage" | "patchMessages"
   >;
   callAudit: Pick<CallAudit, "lookup">;
+  heldCalls: Pick<HeldCalls, "observe">;
 }
 
 /**
@@ -98,6 +101,7 @@ export function startToolCall(
   const turn = services.turns.get(conversationId);
   turn?.openCalls.set(ev.callId, {
     toolName: ev.toolName,
+    args: ev.args,
     startedAtMs: Date.now(),
   });
   if (turn !== undefined && isMutatingTool(ev.toolName)) {
@@ -129,13 +133,22 @@ function toolNameOf(
 }
 
 function trackEnd(
+  services: ToolCallServices,
   turn: ActiveTurn | undefined,
   ev: RunnerToolResult,
   toolName: string,
   outcome: ToolOutcome,
 ): void {
   if (turn === undefined) return;
+  const open = turn.openCalls.get(ev.callId);
   turn.openCalls.delete(ev.callId);
+  const args = JsonValueSchema.safeParse(open?.args);
+  if (open !== undefined && args.success) {
+    services.heldCalls.observe(
+      { toolName: open.toolName, args: args.data },
+      ev,
+    );
+  }
   if (outcome === "done" && isMutatingBuilderTool(toolName)) turn.builderOps++;
 }
 
@@ -153,7 +166,7 @@ export function endToolCall(
   const decision = decisionOf(services, conversationId, ev.callId);
   const outcome = outcomeOf(ev, decision);
   const allowedBy = decision?.allowedBy ?? defaultAllowedBy(toolName);
-  trackEnd(services.turns.get(conversationId), ev, toolName, outcome);
+  trackEnd(services, services.turns.get(conversationId), ev, toolName, outcome);
   const status = ev.isError ? STATUS.ERROR : STATUS.SUCCESS;
   services.conversationStore.patchMessages(
     conversationId,

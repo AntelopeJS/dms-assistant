@@ -445,6 +445,7 @@ async function createProviderSession(
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: ctx.onToolDecision,
     beforeMutation: ctx.beforeMutation,
+    isHeldCall: ctx.isHeldCall,
   });
 
   const { codexProcess, threadId, isSafeModeSkillIndexed } =

@@ -1,22 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createEditTracker } from "../../src/agent/edit-tracker.js";
-import type { RunnerEvent } from "../../src/agent/runner-events.js";
-import {
-  createTurnRegistry,
-  type ActiveTurn,
-} from "../../src/server/turn-registry.js";
-import {
-  handleTurnEvent,
-  type TurnEventServices,
-  turnTypecheck,
-} from "../../src/server/turns.js";
+import type { ActiveTurn } from "../../src/server/turn-registry.js";
+import { turnTypecheck } from "../../src/server/turns.js";
+import { playTurn } from "../helpers/turn-events.js";
 
-const CONVERSATION_ID = "conv-1";
 const MODULE_FILE = "/proj/modules/mymod/src/a.ts";
 
 function turn(overrides: Partial<ActiveTurn>): ActiveTurn {
   return {
-    conversationId: CONVERSATION_ID,
+    conversationId: "conv-1",
     request: "Edit",
     isAutoFix: false,
     checkpoint: { ready: async () => {}, finish: async () => null },
@@ -27,33 +18,6 @@ function turn(overrides: Partial<ActiveTurn>): ActiveTurn {
     mutatingCallIds: [],
     ...overrides,
   };
-}
-
-function runTurn(events: readonly RunnerEvent[]): ActiveTurn {
-  const turns = createTurnRegistry();
-  const running = turns.begin({
-    conversationId: CONVERSATION_ID,
-    request: "Edit",
-    isAutoFix: false,
-    checkpoint: { ready: async () => {}, finish: async () => null },
-  });
-  const ignore = () => {};
-  const services: TurnEventServices = {
-    turns,
-    editTracker: createEditTracker(),
-    conversationStore: {
-      get: () => null,
-      appendMessage: ignore,
-      patchMessages: ignore,
-    },
-    callAudit: { lookup: () => undefined },
-    chatSocketRegistry: { send: ignore },
-    liveTurns: { append: ignore, end: ignore },
-    permissionBus: { cancelCall: ignore, cancelConversation: ignore },
-    questionBus: { cancelCall: ignore, cancelConversation: ignore },
-  };
-  for (const ev of events) handleTurnEvent(services, CONVERSATION_ID, ev);
-  return running;
 }
 
 describe("turnTypecheck", () => {
@@ -70,7 +34,7 @@ describe("turnTypecheck", () => {
   });
 
   it("leaves a turn that edited a module to the safety net, whatever an untargeted typecheck read", () => {
-    const edited = runTurn([
+    const { turn: edited } = playTurn([
       {
         type: "tool_use",
         callId: "edit",

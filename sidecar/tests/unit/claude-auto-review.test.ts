@@ -1,5 +1,7 @@
 import { join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
+import type { ToolCallSubject } from "../../src/agent/held-calls.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
 import { DMS_MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
 import { PERMISSION_DECISIONS } from "../../src/constants/permissions.js";
@@ -315,6 +317,35 @@ function registerBuilderAndLedgerCases({ runTurn }: TurnFixture): void {
       });
       expect(unasked.prompts).toEqual([]);
       expect(unasked.announced).toEqual(["delete", "remove"]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    [PERMISSION_DECISIONS.ALLOW_ONCE, ASKED],
+    [PERMISSION_DECISIONS.DENY, REFUSED_WHEN_ASKED],
+  ])(
+    "asks once before the repeat of a call the DMS holds, and the answer %s decides it (fails an auto-allow that lets the DMS run the repeat unasked)",
+    async (answer, repeat) => {
+      const held = { ref: "orders" };
+      const isHeldCall = (call: ToolCallSubject) =>
+        call.toolName === `${DMS}builder_delete_resource` &&
+        isDeepStrictEqual(call.args, held);
+      const turn = await runTurn(
+        [
+          { id: "repeat", name: `${DMS}builder_delete_resource`, input: held },
+          {
+            id: "other",
+            name: `${DMS}builder_delete_resource`,
+            input: { ref: "customers" },
+          },
+        ],
+        { isHeldCall, answer },
+      );
+      expect(turn.prompts.map((p) => [p.callId, p.kind])).toEqual([
+        ["repeat", "destructive"],
+      ]);
+      expect(turn.tools).toMatchObject([repeat, ASKED]);
     },
     TEST_TIMEOUT_MS,
   );

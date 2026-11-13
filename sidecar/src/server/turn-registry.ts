@@ -4,6 +4,7 @@ import { EMPTY_TOKEN_USAGE, type TokenUsage } from "../state/types.js";
 /** A tool call of the running turn that has not ended yet. */
 interface OpenCall {
   toolName: string;
+  args: unknown;
   startedAtMs: number;
 }
 

@@ -1,13 +1,17 @@
 import { z } from "zod";
 import type { ProbeConnections } from "./probe-connections";
 
-/**
- * The engines of the *Connect a database* form, by the name the form sends.
- * Mirrored in `frontend-vue/builder/app/runtime/database-connect.ts`.
- */
+/** The engines of the *Connect a database* form, by the name the form sends. */
 export const DATABASE_ENGINES = ["postgres", "mongodb", "rethinkdb"] as const;
 
 export type DatabaseEngine = (typeof DATABASE_ENGINES)[number];
+
+/** The URL schemes of each engine, with their colon, as the live check accepts them. */
+export const ENGINE_SCHEMES: Record<DatabaseEngine, readonly string[]> = {
+  postgres: ["postgres:", "postgresql:"],
+  mongodb: ["mongodb:"],
+  rethinkdb: ["rethinkdb:"],
+};
 
 /** What a live check of a database connection found: the answer of `POST /database/connections/check`. */
 export interface DatabaseAccess {

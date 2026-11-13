@@ -1,7 +1,9 @@
 import { API_PREFIX } from './constants'
+import type { DatabaseEngine } from './database-connect'
 import type {
 	AnalysisState,
 	ConnectionInfo,
+	DatabaseAccess,
 	DatabaseConnection,
 	MappedRelation,
 	MapResourcesInput,
@@ -58,6 +60,15 @@ export function useBuilderApi() {
 	return {
 		failure,
 		databaseConnections: () => get<DatabaseConnection[]>('/database/connections'),
+		/**
+		 * Connects to the URL live and answers what its account may do, writing nothing. The module
+		 * answers in development only; a URL of another engine is refused with a 400.
+		 */
+		checkConnection: (engine: DatabaseEngine, url: string) =>
+			$authFetch<DatabaseAccess>(`${API_PREFIX}/database/connections/check`, {
+				method: 'POST',
+				body: { engine, url },
+			}),
 		analyseDatabase: (connection: string, module: string, schemas?: string[]) =>
 			post<AnalysisState>('/database/analyse', { connection, module, schemas }),
 		analysis: (id: string) => read<AnalysisState>('/database/analysis', { id }),

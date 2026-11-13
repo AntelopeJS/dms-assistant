@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useChatI18n } from "../../chat/composables/useChatI18n";
+import { engineNames } from "../../onboarding/connect-database";
 import { useOnboarding } from "../../onboarding/runtime";
 import OnboardingDontShow from "./OnboardingDontShow.vue";
 import OnboardingFrame from "./OnboardingFrame.vue";
 
 /** The starting point of an empty project: from scratch, or from a database it already has. */
 const onboarding = useOnboarding();
-const { t } = useChatI18n();
+const { t, locale } = useChatI18n();
 
 const paths = computed(() => [
 	{
@@ -24,7 +25,9 @@ const paths = computed(() => [
 					icon: "i-ph-database",
 					tone: "bg-(--dms-accent-tint) text-primary",
 					title: t("dms_ai.views.onboarding.paths.database_title"),
-					text: t("dms_ai.views.onboarding.paths.database_text"),
+					text: t("dms_ai.views.onboarding.paths.database_text", {
+						engines: engineNames(locale.value),
+					}),
 				},
 			]
 		: []),

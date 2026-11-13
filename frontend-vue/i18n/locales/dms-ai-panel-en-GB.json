@@ -401,7 +401,9 @@
 				"starting": "Starting the build…",
 				"background": "Run in background",
 				"close": "Close",
-				"open_pages": "Open the pages"
+				"open_pages": "Open the pages",
+				"title_failed": "“{mockup}” did not build",
+				"title_stopped": "Build of “{mockup}” stopped"
 			}
 		},
 		"tools": {

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
-import type { BuildStep, BuildStepState, BuildView } from "../utils/build-view";
+import type {
+	BuildOutcome,
+	BuildStep,
+	BuildStepState,
+	BuildView,
+} from "../utils/build-view";
 import { toolVerb } from "../utils/tool-lexicon";
 import BlockPreviewCard from "./BlockPreviewCard.vue";
 
@@ -22,15 +27,18 @@ const STATE_ICONS: Record<Exclude<BuildStepState, "running">, string> = {
 	done: "i-ph-check-circle-fill",
 	pending: "i-ph-circle",
 	failed: "i-ph-x-circle-fill",
+	stopped: "i-ph-stop-circle",
+};
+
+const TITLE_KEYS: Record<BuildOutcome, string> = {
+	running: "dms_ai.panel.build.title",
+	built: "dms_ai.panel.build.title_done",
+	failed: "dms_ai.panel.build.title_failed",
+	stopped: "dms_ai.panel.build.title_stopped",
 };
 
 const title = computed(() =>
-	t(
-		props.view.isDone
-			? "dms_ai.panel.build.title_done"
-			: "dms_ai.panel.build.title",
-		{ mockup: props.view.mockup },
-	),
+	t(TITLE_KEYS[props.view.outcome], { mockup: props.view.mockup }),
 );
 
 function label(step: BuildStep): string {
@@ -94,7 +102,7 @@ function onOpenChange(isOpen: boolean): void {
 		<template #footer>
 			<div class="cb-build__foot">
 				<UButton
-					v-if="!view.isDone"
+					v-if="view.outcome === 'running'"
 					color="neutral"
 					variant="ghost"
 					:label="t('dms_ai.panel.build.background')"
@@ -110,7 +118,7 @@ function onOpenChange(isOpen: boolean): void {
 				<UButton
 					color="primary"
 					icon="i-ph-arrow-square-out"
-					:disabled="!view.isDone || view.pagePath === null"
+					:disabled="view.outcome !== 'built' || view.pagePath === null"
 					:label="t('dms_ai.panel.build.open_pages')"
 					@click="openPages"
 				/>

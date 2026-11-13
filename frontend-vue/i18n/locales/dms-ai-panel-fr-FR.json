@@ -401,7 +401,9 @@
 				"starting": "Démarrage de la construction…",
 				"background": "Continuer en arrière-plan",
 				"close": "Fermer",
-				"open_pages": "Ouvrir les pages"
+				"open_pages": "Ouvrir les pages",
+				"title_failed": "« {mockup} » n’a pas pu être construite",
+				"title_stopped": "Construction de « {mockup} » arrêtée"
 			}
 		},
 		"tools": {

@@ -425,6 +425,7 @@ describe("v2 assistant flow over the socket", () => {
       await waitTurns(session, 1);
       const reloaded = await openChat(session.harness.port);
       const snapshots = createCollector(reloaded, WAIT_TIMEOUT_MS);
+      sendWire(reloaded, { type: "actor", userId: "u1", name: "Camille" });
       sendHello(reloaded, CONVERSATION_ID);
       const snapshot = await snapshots.next(
         (e) => e.type === "conversation_snapshot",

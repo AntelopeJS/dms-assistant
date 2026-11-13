@@ -24,13 +24,21 @@ export interface MockupFold {
 /**
  * A mockup takes the dashboard's full width, so the docked panel folds to a
  * bar while one is on screen: entering a mockup closes an open panel, and
- * leaving it opens the panel again if the fold closed it.
+ * leaving it opens the panel again if the fold closed it and nothing opened it
+ * since, so a panel the person closed on the mockup stays closed.
  */
 export function createMockupFold(deps: MockupFoldDeps): MockupFold {
 	const { path, panel } = deps;
 	let reopenOnLeave = false;
 	const onMockup = computed(() => isMockupPath(path.value));
-	const stop = watch(
+	const stopFollowingOpen = watch(
+		panel.isOpen,
+		(isOpen) => {
+			if (isOpen) reopenOnLeave = false;
+		},
+		{ flush: "sync" },
+	);
+	const stopFollowingPath = watch(
 		onMockup,
 		(isOnMockup, wasOnMockup) => {
 			if (isOnMockup && wasOnMockup !== true) {
@@ -47,10 +55,10 @@ export function createMockupFold(deps: MockupFoldDeps): MockupFold {
 	);
 	return {
 		isFolded: computed(() => onMockup.value && !panel.isOpen.value),
-		unfold: () => {
-			reopenOnLeave = false;
-			panel.open();
+		unfold: panel.open,
+		stop: () => {
+			stopFollowingOpen();
+			stopFollowingPath();
 		},
-		stop,
 	};
 }

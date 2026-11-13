@@ -65,7 +65,7 @@ describe("the build dialog's view of a build turn", () => {
 		const earlier = tool("c0", "Read", { file_path: "/a.ts" });
 		const view = buildView("bikes", [earlier, request], true);
 		expect(view.steps).toEqual([]);
-		expect(view.isDone).toBe(false);
+		expect(view.outcome).toBe("running");
 	});
 
 	it("opens the last page the build worked on, once done (fails when a non-Builder path or the block part is kept)", () => {
@@ -79,10 +79,10 @@ describe("the build dialog's view of a build turn", () => {
 			false,
 		);
 		expect(view.pagePath).toBe("/rentals");
-		expect(view.isDone).toBe(true);
+		expect(view.outcome).toBe("built");
 	});
 
-	it("shows a failed call as failed, and a pending call as done once the turn ended (fails when a stopped call spins)", () => {
+	it("shows a failed call as failed, and a call left open by the end of the turn as stopped (fails when a stopped call reads as done)", () => {
 		const view = buildView(
 			"bikes",
 			[
@@ -92,6 +92,43 @@ describe("the build dialog's view of a build turn", () => {
 			],
 			false,
 		);
-		expect(view.steps.map((step) => step.state)).toEqual(["failed", "done"]);
+		expect(view.steps.map((step) => step.state)).toEqual(["failed", "stopped"]);
+		expect(view.outcome).toBe("stopped");
+	});
+
+	it("reads a build that ended on an error as failed, not built (fails when any ended turn reads as built)", () => {
+		const error: ConversationMessage = {
+			id: "e1",
+			role: "error",
+			content: "The agent stopped: rate limited",
+			isRetryable: true,
+			timestampMs: 0,
+		};
+		expect(buildView("bikes", [request, error], false).outcome).toBe("failed");
+		const lastFailed = buildView(
+			"bikes",
+			[
+				request,
+				tool("c1", "mcp__dms-ai__builder_create_page", { page: "/rentals" }),
+				tool("c2", "Bash", { command: "tsc" }, "error"),
+			],
+			false,
+		);
+		expect(lastFailed.outcome).toBe("failed");
+	});
+
+	it("reads a build whose failed check was fixed later as built (fails when one failed step marks the whole build failed)", () => {
+		const view = buildView(
+			"bikes",
+			[
+				request,
+				tool("c1", "Bash", { command: "tsc" }, "error"),
+				tool("c2", "mcp__dms-ai__builder_configure_block", {
+					path: "/rentals#grid",
+				}),
+			],
+			false,
+		);
+		expect(view.outcome).toBe("built");
 	});
 });

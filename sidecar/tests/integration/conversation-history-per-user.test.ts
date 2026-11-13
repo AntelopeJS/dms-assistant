@@ -142,6 +142,57 @@ describe("a person's conversation history in the sidecar", () => {
   );
 
   it(
+    "refuses a message into another person's conversation and leaves its transcript alone (fails when the second person's text lands in the first person's history)",
+    async () => {
+      const running = await start();
+      const camille = await connect(CAMILLE);
+      const dana = await connect(DANA);
+      await ask(camille, CAMILLE_CONVERSATION, "camille's request");
+      const before =
+        running.conversationStore.get(CAMILLE_CONVERSATION)?.messages.length;
+      const refused = dana.frames.next(
+        (msg) => msg.type === "run_error" && msg.error === REFUSAL,
+      );
+      await ask(dana, CAMILLE_CONVERSATION, "dana's request");
+      await refused;
+      const after = running.conversationStore.get(CAMILLE_CONVERSATION);
+      expect(after?.messages.length).toBe(before);
+      expect(JSON.stringify(after?.messages)).not.toContain("dana's request");
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "sends no transcript of another person's conversation to a chat that opens it by id (fails when hello replays a hidden conversation)",
+    async () => {
+      await start();
+      const camille = await connect(CAMILLE);
+      await ask(camille, CAMILLE_CONVERSATION, "camille's private request");
+      const dana = await connect(DANA);
+      await settle(dana);
+      sendHello(dana.socket, CAMILLE_CONVERSATION);
+      await settle(dana);
+      const seen = dana.frames.events.map((msg) => JSON.stringify(msg));
+      expect(seen.some((text) => text.includes("private request"))).toBe(false);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "keeps a conversation stored before owners existed everyone's when someone writes into it (fails when the first writer takes it over)",
+    async () => {
+      const running = await start();
+      seedLegacyConversation(running);
+      const camille = await connect(CAMILLE);
+      const dana = await connect(DANA);
+      await ask(dana, LEGACY, "a follow-up");
+      expect(running.conversationStore.get(LEGACY)?.ownerId).toBeUndefined();
+      expect(await listed(camille)).toContain(LEGACY);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "shows a conversation stored without an owner to everyone, named or not (fails a list that hides unowned conversations)",
     async () => {
       const running = await start();

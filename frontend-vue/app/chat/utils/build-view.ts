@@ -12,7 +12,18 @@ import {
 	type ToolDescription,
 } from "./tool-lexicon";
 
-export type BuildStepState = "done" | "running" | "pending" | "failed";
+export type BuildStepState =
+	| "done"
+	| "running"
+	| "pending"
+	| "failed"
+	| "stopped";
+
+/**
+ * Where the build stands: still running, built, ended on an error or a failed
+ * last step, or stopped before it finished.
+ */
+export type BuildOutcome = "running" | "built" | "failed" | "stopped";
 
 /** One line of the build dialog's checklist: a todo of the build, or one of its tool calls. */
 export type BuildStep =
@@ -27,7 +38,7 @@ export interface BuildView {
 	comparison: BlockPreviewMessage | null;
 	/** The mockup that comparison is drawn against. */
 	reference: ReferenceView | null;
-	isDone: boolean;
+	outcome: BuildOutcome;
 	/** The last dashboard page the build worked on, to open once it is done. */
 	pagePath: string | null;
 }
@@ -55,10 +66,34 @@ function isToolCall(message: ConversationMessage): message is ToolCallMessage {
 	return message.role === MESSAGE_ROLES.TOOL;
 }
 
+const FAILED_OUTCOMES: ReadonlySet<string> = new Set([
+	"failed",
+	"denied",
+	"blocked",
+]);
+
 function toolState(tool: ToolCallMessage, isRunning: boolean): BuildStepState {
-	if (tool.status === "error") return "failed";
-	if (tool.status === "success" || !isRunning) return "done";
-	return "running";
+	if (tool.outcome === "stopped") return "stopped";
+	if (tool.status === "error" || FAILED_OUTCOMES.has(tool.outcome ?? ""))
+		return "failed";
+	if (tool.status === "success") return "done";
+	return isRunning ? "running" : "stopped";
+}
+
+function outcomeOf(
+	turn: readonly ConversationMessage[],
+	isRunning: boolean,
+): BuildOutcome {
+	if (isRunning || turn.length === 0) return "running";
+	if (turn.some((message) => message.role === MESSAGE_ROLES.ERROR))
+		return "failed";
+	const calls = turn.filter(isToolCall);
+	if (calls.some((tool) => toolState(tool, false) === "stopped"))
+		return "stopped";
+	const last = calls.at(-1);
+	return last !== undefined && toolState(last, false) === "failed"
+		? "failed"
+		: "built";
 }
 
 function stepsOf(
@@ -119,7 +154,7 @@ export function buildView(
 			comparison === null
 				? null
 				: referenceView(comparison.preview.reference, messages),
-		isDone: !isRunning && turn.length > 0,
+		outcome: outcomeOf(turn, isRunning),
 		pagePath: pages.at(-1) ?? null,
 	};
 }

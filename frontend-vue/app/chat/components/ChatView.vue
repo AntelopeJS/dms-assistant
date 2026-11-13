@@ -174,7 +174,11 @@ const mockup = useMockupIntents({
 	navigate,
 });
 const outlinedBlock = computed(() =>
-	changingBlock(conversation.messages.value, isRunning.value),
+	changingBlock(
+		conversation.messages.value,
+		isRunning.value,
+		props.page?.path ?? null,
+	),
 );
 const agentName = computed(() =>
 	t(`dms_ai.common.agent.${settings.value.provider}`),

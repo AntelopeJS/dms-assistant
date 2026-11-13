@@ -6,9 +6,9 @@ import type {
 } from "../../app/chat/types/conversation";
 import { blockOutlineRect } from "../../app/chat/utils/block-outline";
 import {
+	blockTargetFromPath,
 	blockTargetOf,
 	changingBlock,
-	layoutPathOf,
 } from "../../app/chat/utils/block-target";
 
 function tool(toolName: string, args: unknown): ToolCallMessage {
@@ -31,24 +31,34 @@ const user: ConversationMessage = {
 };
 
 describe("the block a Builder call changes", () => {
-	it("reads the Builder path as the page's layout path (fails when the page or the slashes are kept)", () => {
-		expect(layoutPathOf("/dashboard#grid/row/kpi")).toBe("grid.row.kpi");
-		expect(layoutPathOf("/dashboard#chart")).toBe("chart");
-		expect(layoutPathOf("/dashboard#")).toBeNull();
-		expect(layoutPathOf("chart")).toBeNull();
+	it("reads the Builder path as a page and the layout path it draws (fails when the page is dropped or the slashes are kept)", () => {
+		expect(blockTargetFromPath("/shop/board#grid/row/kpi")).toEqual({
+			page: "/shop/board",
+			layoutPath: "grid.row.kpi",
+		});
+		expect(blockTargetFromPath("/dashboard#")).toBeNull();
+		expect(blockTargetFromPath("chart")).toBeNull();
 	});
 
-	it("takes the changed block of a configure and the parent of an add (fails when an add outlines nothing or a read outlines)", () => {
+	it("takes the changed block of a configure, the parent of an add and the named table view (fails when an add outlines nothing or a read outlines)", () => {
 		expect(
 			blockTargetOf(
 				tool("builder_configure_block", { path: "/d#grid/kpi", patch: {} }),
 			),
-		).toBe("grid.kpi");
+		).toEqual({ page: "/d", layoutPath: "grid.kpi" });
 		expect(
 			blockTargetOf(
 				tool("builder_add_block", { page: "/d", parent: "/d#grid" }),
 			),
-		).toBe("grid");
+		).toEqual({ page: "/d", layoutPath: "grid" });
+		expect(
+			blockTargetOf(
+				tool("builder_configure_table_view", {
+					pageRef: "/d/",
+					block: "orders",
+				}),
+			),
+		).toEqual({ page: "/d", layoutPath: "orders" });
 		expect(blockTargetOf(tool("builder_add_block", { page: "/d" }))).toBeNull();
 		expect(
 			blockTargetOf(tool("builder_page_structure", { page: "/d" })),
@@ -62,15 +72,23 @@ describe("the block a running turn is changing", () => {
 		const first = tool("builder_configure_block", { path: "/d#a" });
 		const read = tool("builder_page_structure", { page: "/d" });
 		const latest = tool("builder_move_block", { path: "/d#grid/b" });
-		expect(changingBlock([earlier, user, first, latest, read], true)).toBe(
-			"grid.b",
-		);
-		expect(changingBlock([earlier, user, read], true)).toBeNull();
+		expect(
+			changingBlock([earlier, user, first, latest, read], true, "/d"),
+		).toBe("grid.b");
+		expect(changingBlock([earlier, user, read], true, "/d")).toBeNull();
+	});
+
+	it("is none when the block is on another page than the one on screen (fails when a same-named block of another page is outlined)", () => {
+		const call = tool("builder_configure_block", {
+			path: "/dashboard#grid/kpi",
+		});
+		expect(changingBlock([user, call], true, "/orders")).toBeNull();
+		expect(changingBlock([user, call], true, "/dashboard/")).toBe("grid.kpi");
 	});
 
 	it("is none once the turn ends (fails when the outline stays after the change)", () => {
 		const call = tool("builder_configure_block", { path: "/d#a" });
-		expect(changingBlock([user, call], false)).toBeNull();
+		expect(changingBlock([user, call], false, "/d")).toBeNull();
 	});
 });
 

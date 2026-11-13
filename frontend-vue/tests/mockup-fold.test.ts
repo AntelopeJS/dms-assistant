@@ -59,6 +59,20 @@ describe("the panel on a mockup", () => {
 		expect(fold.isFolded.value).toBe(false);
 	});
 
+	it("leaves the panel closed after the mockup when the person opened it some other way and closed it there (fails when leaving reopens a panel the person closed)", async () => {
+		const { route, open, fold } = dashboard("/dashboard", true);
+		route.value = "/mockup";
+		await nextTick();
+		open.value = true;
+		await nextTick();
+		open.value = false;
+		await nextTick();
+		expect(fold.isFolded.value).toBe(true);
+		route.value = "/dashboard";
+		await nextTick();
+		expect(open.value).toBe(false);
+	});
+
 	it("folds a panel the dashboard opened on a mockup, as a reload does (fails when only a route change folds)", () => {
 		const { open, fold } = dashboard("/mockup/bikes", true);
 		expect(open.value).toBe(false);

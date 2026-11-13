@@ -56,7 +56,8 @@ export interface ConversationStore {
   setModes(conversationId: string, patch: ConversationModesPatch): void;
   /**
    * Records `ownerId` as the conversation's owner, creating the conversation
-   * when it is new. An owner already recorded is kept.
+   * when it is new. A conversation that already has an owner or messages keeps
+   * what it has: one stored before owners existed stays everyone's.
    */
   claim(conversationId: string, ownerId: string): void;
   /** The conversations `viewerId` may see, newest first; see `isVisibleTo`. */
@@ -214,6 +215,7 @@ function claimConversation(
 ): void {
   const conversation = ensureConversation(state, conversationId);
   if (conversation.ownerId !== undefined) return;
+  if (conversation.messages.length > 0) return;
   conversation.ownerId = ownerId;
   persistCache(state);
 }

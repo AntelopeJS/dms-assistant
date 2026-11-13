@@ -115,7 +115,7 @@ describe("the approvals dock", () => {
 		});
 	});
 
-	it("makes a data loss typed, offers to keep the data, and never a chat-wide rule", async () => {
+	it("makes a data loss typed, shows the call's own keepData without a way to change it, and never a chat-wide rule", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		deliver(harness, DELETE_REQUEST);
@@ -123,17 +123,19 @@ describe("the approvals dock", () => {
 		const card = panel.find(".perm.is-danger");
 		expect(card.text()).toContain("Data loss");
 		expect(card.text()).not.toContain("this chat");
+		expect(card.find('input[type="checkbox"]').exists()).toBe(false);
+		expect(
+			card.findAll(".perm__kv dt, .perm__kv dd").map((cell) => cell.text()),
+		).toEqual(["ref", "legacy_coupons", "keepData", "false"]);
 		const confirm = buttonWithText(card, "Delete");
 		expect(confirm.attributes("disabled")).toBeDefined();
 		await card.find(".perm__confirm input").setValue("legacy_coupons");
-		expect(
-			buttonWithText(card, "Delete").attributes("disabled"),
-		).toBeUndefined();
-		await card.find('input[type="checkbox"]').setValue(true);
-		await buttonWithText(card, "Remove the code only").trigger("click");
-		expect(sentOfType(harness, "permission_response")[0]).toMatchObject({
+		await buttonWithText(card, "Delete").trigger("click");
+		expect(sentOfType(harness, "permission_response")[0]).toEqual({
+			type: "permission_response",
+			conversationId: CONVERSATION_ID,
+			requestId: "r3",
 			decision: "allow_once",
-			keepData: true,
 		});
 	});
 

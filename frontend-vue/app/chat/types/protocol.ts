@@ -78,7 +78,6 @@ export interface DestructivePreview {
 	target: string;
 	consequence: DestructiveConsequence;
 	confirmText?: string;
-	canKeepData: boolean;
 }
 
 export interface WebPreview {

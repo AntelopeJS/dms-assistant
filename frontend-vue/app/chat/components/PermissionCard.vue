@@ -35,15 +35,16 @@ const scope = ref<string>(ONCE_SCOPE);
 const isSuggesting = ref(false);
 const feedback = ref("");
 const typedName = ref("");
-const keepData = ref(false);
 
 const text = computed(() => permissionCardText(props.request, t));
 const icon = computed(() => permissionIcon(props.request));
 const preview = computed(() => props.request.preview);
 const isDestructive = computed(() => preview.value.type === "destructive");
-const genericArgs = computed(() =>
-	preview.value.type === "generic" ? namedArguments(preview.value.args) : [],
-);
+const argumentRows = computed(() => {
+	if (preview.value.type === "generic")
+		return namedArguments(preview.value.args);
+	return isDestructive.value ? namedArguments(props.request.args) : [];
+});
 
 const scopes = computed(() =>
 	props.request.ruleOptions.map((rule, index) => ({
@@ -57,17 +58,9 @@ const confirmText = computed<string>(() =>
 	preview.value.type === "destructive" ? (preview.value.confirmText ?? "") : "",
 );
 
-const canAllow = computed<boolean>(() => {
-	if (!isDestructive.value || keepData.value) return true;
-	return (
-		confirmText.value === "" || typedName.value.trim() === confirmText.value
-	);
-});
-
-const allowLabel = computed(() =>
-	keepData.value
-		? t("dms_ai.panel.approvals.remove_code_only")
-		: text.value.allowLabel,
+const canAllow = computed<boolean>(
+	() =>
+		confirmText.value === "" || typedName.value.trim() === confirmText.value,
 );
 
 function chosenRule(): PermissionRule | undefined {
@@ -80,7 +73,7 @@ function allow(): void {
 	emit(
 		"answer",
 		rule === undefined
-			? { decision: "allow_once", keepData: keepData.value }
+			? { decision: "allow_once" }
 			: { decision: "allow_rule", rule },
 	);
 }
@@ -153,10 +146,13 @@ defineExpose({ allow, deny });
 					<UIcon name="i-ph-globe" />
 					<span>{{ preview.url }}</span>
 				</div>
-				<label
-					v-else-if="preview.type === 'destructive' && confirmText"
-					class="perm__confirm"
-				>
+				<dl v-else-if="argumentRows.length > 0" class="perm__kv">
+					<template v-for="arg in argumentRows" :key="arg.name">
+						<dt>{{ arg.name }}</dt>
+						<dd>{{ arg.value }}</dd>
+					</template>
+				</dl>
+				<label v-if="confirmText" class="perm__confirm">
 					<span>
 						{{ t("dms_ai.panel.approvals.type_to_confirm_before") }}
 						<code class="inline-code">{{ confirmText }}</code>
@@ -166,18 +162,11 @@ defineExpose({ allow, deny });
 						v-model="typedName"
 						size="sm"
 						class="perm__confirm-input"
-						:disabled="keepData"
 						:placeholder="confirmText"
 						autocomplete="off"
 						spellcheck="false"
 					/>
 				</label>
-				<dl v-else-if="genericArgs.length > 0" class="perm__kv">
-					<template v-for="arg in genericArgs" :key="arg.name">
-						<dt>{{ arg.name }}</dt>
-						<dd>{{ arg.value }}</dd>
-					</template>
-				</dl>
 			</div>
 
 			<div
@@ -196,17 +185,6 @@ defineExpose({ allow, deny });
 					<small>{{ t("dms_ai.panel.approvals.this_chat") }}</small>
 				</label>
 			</div>
-			<div
-				v-if="preview.type === 'destructive' && preview.canKeepData"
-				class="perm__scope"
-			>
-				<label class="scope-opt">
-					<input v-model="keepData" type="checkbox" />
-					{{ t("dms_ai.panel.approvals.keep_data") }}
-					<small>{{ t("dms_ai.panel.approvals.recommended") }}</small>
-				</label>
-			</div>
-
 			<div v-if="isSuggesting" class="perm__suggest">
 				<UTextarea
 					v-model="feedback"
@@ -258,12 +236,12 @@ defineExpose({ allow, deny });
 				</UButton>
 				<UButton
 					size="sm"
-					:color="isDestructive && !keepData ? 'error' : 'secondary'"
+					:color="isDestructive ? 'error' : 'secondary'"
 					class="perm__allow"
 					:disabled="!canAllow"
 					@click="allow"
 				>
-					{{ allowLabel }}
+					{{ text.allowLabel }}
 					<UKbd v-if="!isDestructive" value="↵" size="sm" />
 				</UButton>
 			</div>
@@ -355,6 +333,8 @@ defineExpose({ allow, deny });
 }
 
 .perm__body {
+	display: grid;
+	gap: 8px;
 	padding: 10px 12px 0;
 }
 

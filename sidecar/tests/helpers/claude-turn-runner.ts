@@ -6,6 +6,7 @@ import type {
   PendingRequest,
   PermissionPolicy,
 } from "../../src/agent/permission-bus.js";
+import type { ToolCallSubject } from "../../src/agent/held-calls.js";
 import type { ToolDecision } from "../../src/agent/provider.js";
 import { type AgentRunner, createAgentRunner } from "../../src/agent/runner.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
@@ -30,6 +31,7 @@ interface TurnOptions {
   settings?: Partial<AppSettings>;
   policy?: Partial<PermissionPolicy>;
   answer?: PermissionDecisionValue;
+  isHeldCall?: (call: ToolCallSubject) => boolean;
 }
 
 interface Turn {
@@ -124,6 +126,7 @@ export function useClaudeTurnRunner(): TurnFixture {
       permissionBus: bus,
       onToolDecision: (decision) => decisions.push(decision),
       onToolAnnounced: (callId) => announced.push(callId),
+      isHeldCall: options.isHeldCall,
     })) {
     }
     const trace = readClaudeTrace(traceFile);

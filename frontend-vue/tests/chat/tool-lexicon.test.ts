@@ -176,7 +176,6 @@ describe("permission cards are titled from the preview, never the raw tool", () 
 					operation: "builder_delete_page",
 					target: "/home",
 					consequence: "removes_code",
-					canKeepData: false,
 				},
 			},
 			t,

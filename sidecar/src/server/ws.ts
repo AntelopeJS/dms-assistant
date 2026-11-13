@@ -3,6 +3,7 @@ import type { Duplex } from "node:stream";
 import { type WebSocket, WebSocketServer } from "ws";
 import { createCallAudit } from "../audit/call-audit.js";
 import { createCallLedger } from "../agent/call-ledger.js";
+import { createHeldCalls } from "../agent/held-calls.js";
 import { createConversationModes } from "../agent/conversation-modes.js";
 import { createEditTracker, type EditTracker } from "../agent/edit-tracker.js";
 import {
@@ -406,6 +407,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     checkpoints: options.checkpoints ?? createDisabledCheckpoints(),
     callAudit: createCallAudit(),
     callLedger: createCallLedger(),
+    heldCalls: createHeldCalls(),
     turns: createTurnRegistry(),
     askers: new Map(),
     viewers: new WeakMap(),

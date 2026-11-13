@@ -163,7 +163,6 @@ function answerMessage(
 		decision: answer.decision,
 		...(answer.rule === undefined ? {} : { rule: answer.rule }),
 		...(feedback ? { feedback } : {}),
-		...(answer.keepData === true ? { keepData: true } : {}),
 	};
 }
 

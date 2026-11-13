@@ -1,4 +1,5 @@
 import { Logging } from "@antelopejs/interface-core/logging";
+import { Events } from "@antelopejs/interface-core/modules";
 import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { AddFrontendModule } from "@antelopejs/interface-dms/page";
 import { construct as constructBuilder } from "./builder";
@@ -6,6 +7,7 @@ import { closeAllBridges } from "./channels/registry";
 import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
 import { collectModuleRoots } from "./lifecycle/module-roots";
+import { syncProjectMcpJson } from "./lifecycle/project-mcp-json";
 import { collectSkillSources } from "./lifecycle/skill-sources";
 import { spawnSidecar } from "./lifecycle/spawn-sidecar";
 import { startLogCapture } from "./logging/log-buffer";
@@ -31,11 +33,18 @@ export async function construct(config?: AIConfig): Promise<void> {
  * Spawns the sidecar from start(), not module load: by now every module is
  * loaded, so interface-core can report their on-disk roots and declared skills
  * authoritatively. The builder's operations ship in this module, so the
- * sidecar always has them for Safe mode.
+ * sidecar always has them for Safe mode. In development, once every module
+ * has started, `@antelopejs/dms` included, the project's `.mcp.json` is
+ * brought to this version.
  */
 export async function start() {
   startLogCapture();
-  const { dev } = await GetRuntimeInfo();
+  const { dev, projectPath } = await GetRuntimeInfo();
+  if (dev) {
+    Events.ModulesStarted.register(() => {
+      void syncProjectMcpJson(projectPath);
+    });
+  }
   await AddFrontendModule(frontendModule(getConfig(), { dev }));
   const hostProjectRoot = process.cwd();
   const [moduleRoots, skillDirs] = await Promise.all([

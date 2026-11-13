@@ -159,4 +159,19 @@ describe("safety net report", () => {
     });
     expect(report.typecheck).toBe("skipped");
   });
+
+  it("does not pass a turn when one edited root could not be typechecked", async () => {
+    const report = await inspectBuild({
+      ...base,
+      editedFiles: ["/proj/src/a.ts", "/proj/modules/mymod/src/b.ts"],
+      knownRoots: ["/proj", "/proj/modules/mymod"],
+      runTypecheckFn: async (root) => ({
+        ran: root === "/proj",
+        ok: true,
+        errorCount: 0,
+        summary: "",
+      }),
+    });
+    expect(report.typecheck).toBe("skipped");
+  });
 });

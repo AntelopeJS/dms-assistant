@@ -32,6 +32,9 @@ function loadModule(
         env: "default",
       }),
     },
+    "@antelopejs/interface-core/modules": {
+      Events: { ModulesStarted: { register() {} } },
+    },
     "./builder": {
       /** @param {unknown} config - The builder config the module constructs it with. */
       construct: async (config) => {

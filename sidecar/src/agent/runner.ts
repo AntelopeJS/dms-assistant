@@ -136,6 +136,7 @@ function createSession(
     onToolDecision: ctx.onToolDecision,
     onToolAnnounced: ctx.onToolAnnounced,
     beforeMutation: ctx.beforeMutation,
+    isHeldCall: ctx.isHeldCall,
     onTokenUsage: ctx.onTokenUsage,
     onModelUsed: ctx.onModelUsed,
     onModelFallback: ctx.onModelFallback,

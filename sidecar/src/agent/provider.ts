@@ -6,6 +6,7 @@ import type { CurrentPage } from "../state/host-state.js";
 import type { AppSettings, TurnSettings } from "../state/settings-types.js";
 import type { TokenUsage } from "../state/types.js";
 import type { ToolArgs } from "./edit-targets.js";
+import type { ToolCallSubject } from "./held-calls.js";
 import type { PermissionBus } from "./permission-bus.js";
 import type { RunnerError, RunnerEvent } from "./runner-events.js";
 
@@ -37,6 +38,11 @@ export interface ToolCallHooks {
   onToolAnnounced?: (callId: string, toolName: string, args: ToolArgs) => void;
   /** Awaited before a mutating tool runs: the turn's checkpoint is taken. */
   beforeMutation?: () => Promise<void>;
+  /**
+   * Whether a call repeats one the DMS MCP holds until someone confirms it:
+   * the DMS runs it, so the person is asked first.
+   */
+  isHeldCall?: (call: ToolCallSubject) => boolean;
 }
 
 /** Everything a provider needs to open a session for one conversation. */

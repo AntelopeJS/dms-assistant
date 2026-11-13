@@ -323,7 +323,7 @@
 			},
 			"always_ask_deletions": {
 				"label": "Supprimer des pages, tables, champs ou requêtes",
-				"description": "Verrouillé : peut supprimer des données.",
+				"description": "Verrouillé. La conversation demande votre approbation sur une carte avant chacune.",
 				"locked": "Supprimer des pages, tables, champs ou requêtes · verrouillé"
 			},
 			"always_ask_dependencies": {

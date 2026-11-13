@@ -57,6 +57,7 @@ import { STATE_DIR_SEGMENTS } from "../../constants/paths.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import { readProjectInfo } from "../../host/project-info.js";
 import { dmsMcpLaunch } from "../../mcp/dms-server.js";
+import { JsonValueSchema } from "../../protocol/json.js";
 import type { AiMcpServer } from "../../mcp/types.js";
 import {
   buildSkillCatalog,
@@ -291,6 +292,19 @@ function allowAutomatically(
   return Promise.resolve(buildAllowResult(input));
 }
 
+function asksPerson(
+  deps: CanUseToolDeps,
+  toolName: string,
+  input: ToolInput,
+): boolean {
+  if (asksBeforeBlockRemoval(toolName, deps.getSettings())) return true;
+  const args = JsonValueSchema.safeParse(input);
+  return (
+    args.success &&
+    deps.ctx.isHeldCall?.({ toolName, args: args.data }) === true
+  );
+}
+
 function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
   const { ctx } = deps;
   return (toolName, input, options) => {
@@ -298,10 +312,7 @@ function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
       return Promise.resolve(buildAskUserRedirectResult());
     }
     const callId = options.toolUseID;
-    if (
-      isFirstPartyMcpTool(toolName) &&
-      !asksBeforeBlockRemoval(toolName, deps.getSettings())
-    ) {
+    if (isFirstPartyMcpTool(toolName) && !asksPerson(deps, toolName, input)) {
       ctx.onToolAnnounced?.(callId, toolName, input);
       return allowAutomatically(deps, toolName, input, callId);
     }

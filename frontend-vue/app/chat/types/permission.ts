@@ -34,5 +34,4 @@ export interface PermissionAnswer {
 	decision: "allow_once" | "allow_rule" | "deny";
 	rule?: PermissionRule;
 	feedback?: string;
-	keepData?: boolean;
 }

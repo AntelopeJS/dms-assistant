@@ -57,8 +57,9 @@ function findCall(
 /**
  * Accepts the consent for the chat's and the DMS MCP's auto-allowed tools, as
  * the Claude path auto-allows them in every mode and scope: the DMS MCP holds
- * its own risky calls until the agent repeats them. Declines any other tool,
- * and any elicitation that asks for user input.
+ * its own risky calls until the agent repeats them, and the permission handler
+ * asks the person before that repeat. Declines any other tool, and any
+ * elicitation that asks for user input.
  */
 export function decideElicitation(
   params: McpElicitationParams | undefined,

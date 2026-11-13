@@ -25,6 +25,14 @@ export const MCP_TOOL_NAME_PREFIX = `mcp__${MCP_SERVER_KEY}__`;
 /** The DMS MCP server of `@antelopejs/dms`: its key in `.mcp.json`, and so its tools' prefix. */
 export const DMS_MCP_SERVER_KEY = "dms";
 export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
+/**
+ * How the DMS MCP's answer to a call it holds until someone confirms it
+ * continues after the tool's name. The DMS runs an identical call repeated
+ * within `DMS_MCP_HOLD_WINDOW_MS`.
+ */
+export const DMS_MCP_HOLD_REFUSAL_SUFFIX =
+  " was not run: no one has confirmed it yet.";
+export const DMS_MCP_HOLD_WINDOW_MS = 10 * MS_PER_MINUTE;
 /** How `.mcp.json` starts the DMS MCP server: `node` on the stdio launcher the DMS writes under the project root. */
 export const DMS_MCP_COMMAND = "node";
 export const DMS_MCP_LAUNCHER_PATH = [

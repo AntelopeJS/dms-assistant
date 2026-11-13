@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  DMS_MCP_HOLD_PREVIEW_PREFIX,
   DMS_MCP_HOLD_REFUSAL_SUFFIX,
   DMS_MCP_HOLD_WINDOW_MS,
   DMS_MCP_TOOL_NAME_PREFIX,
@@ -14,7 +15,22 @@ export interface ToolCallSubject {
   args: JsonValue;
 }
 
-interface Hold {
+/**
+ * A call the DMS holds: what it showed of the call in its refusal, its
+ * arguments with what the builder worked out, such as a configuration diff or
+ * the pages a mapping removes. Absent when the refusal shows none, or for
+ * another call of a held tool.
+ */
+export interface HeldCall {
+  preview: JsonValue | undefined;
+}
+
+/** How a call ended, as the held calls read it: a held one with its preview. */
+export type CallEnd =
+  | ({ outcome: "held" } & HeldCall)
+  | { outcome: Exclude<ToolOutcome, "held"> };
+
+interface Hold extends HeldCall {
   tool: string;
   expiresAtMs: number;
 }
@@ -27,13 +43,18 @@ interface Hold {
  */
 export interface HeldCalls {
   /** A call is held by its `held` outcome and released once it ran, success or failure. */
-  observe(call: ToolCallSubject, outcome: ToolOutcome): void;
+  observe(call: ToolCallSubject, end: CallEnd): void;
   /**
    * Whether the call's tool has a held call pending, whatever the call's
    * arguments: the DMS drops the arguments its tool does not know before it
    * looks its hold up, so a repeat with another key can still run.
    */
   isHeld(call: ToolCallSubject): boolean;
+  /**
+   * The held call this call repeats, with the DMS's preview when the
+   * arguments are the same, or `undefined` when its tool has none held.
+   */
+  holdOf(call: ToolCallSubject): HeldCall | undefined;
 }
 
 const TextBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
@@ -78,31 +99,45 @@ function isDmsTool(toolName: string): boolean {
   return toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX);
 }
 
-/** Whether a tool's answer is the DMS's refusal of a call it holds until someone confirms it. */
-export function isHoldRefusal(
+function previewIn(text: string): JsonValue | undefined {
+  const line = text
+    .split("\n")
+    .find((candidate) => candidate.startsWith(DMS_MCP_HOLD_PREVIEW_PREFIX));
+  if (line === undefined) return undefined;
+  try {
+    return JsonValueSchema.parse(
+      JSON.parse(line.slice(DMS_MCP_HOLD_PREVIEW_PREFIX.length)),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/** The DMS's refusal of a call it holds until someone confirms it, when the tool's answer is one. */
+export function holdRefusalOf(
   toolName: string,
   answer: Pick<RunnerToolResult, "result">,
-): boolean {
-  if (!isDmsTool(toolName)) return false;
+): HeldCall | undefined {
+  if (!isDmsTool(toolName)) return undefined;
   const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
-  return text.startsWith(
+  const isRefusal = text.startsWith(
     `${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
   );
+  return isRefusal ? { preview: previewIn(text) } : undefined;
 }
 
 /**
- * What a call's end does to its hold. The DMS consumes its hold once the call
- * ran, whether it then succeeded or failed. A call that never reached the
+ * Whether a call's end releases its hold. The DMS consumes its hold once the
+ * call ran, whether it then succeeded or failed. A call that never reached the
  * DMS, declined by the person, blocked or stopped first, leaves it held, as
  * the DMS still runs the next identical call.
  */
-const HOLD_BY_OUTCOME: Record<ToolOutcome, "hold" | "release" | "keep"> = {
-  held: "hold",
-  done: "release",
-  failed: "release",
-  denied: "keep",
-  blocked: "keep",
-  stopped: "keep",
+const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
+  done: true,
+  failed: true,
+  denied: false,
+  blocked: false,
+  stopped: false,
 };
 
 /**
@@ -118,26 +153,31 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
       if (hold.expiresAtMs < at) holdByCall.delete(key);
     }
   };
+  const holdOf = (call: ToolCallSubject): HeldCall | undefined => {
+    if (!isDmsTool(call.toolName)) return undefined;
+    dropExpired(now());
+    const same = holdByCall.get(callKey(call));
+    if (same !== undefined) return { preview: same.preview };
+    const tool = bareToolName(call.toolName);
+    const isToolHeld = [...holdByCall.values()].some((h) => h.tool === tool);
+    return isToolHeld ? { preview: undefined } : undefined;
+  };
   return {
-    observe(call, outcome) {
+    observe(call, end) {
       if (!isDmsTool(call.toolName)) return;
       const at = now();
       dropExpired(at);
-      const effect = HOLD_BY_OUTCOME[outcome];
-      if (effect === "hold") {
+      if (end.outcome === "held") {
         holdByCall.set(callKey(call), {
           tool: bareToolName(call.toolName),
+          preview: end.preview,
           expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
         });
-      } else if (effect === "release") {
+      } else if (RELEASED_BY_OUTCOME[end.outcome]) {
         holdByCall.delete(callKey(call));
       }
     },
-    isHeld(call) {
-      if (!isDmsTool(call.toolName)) return false;
-      dropExpired(now());
-      const tool = bareToolName(call.toolName);
-      return [...holdByCall.values()].some((hold) => hold.tool === tool);
-    },
+    isHeld: (call) => holdOf(call) !== undefined,
+    holdOf,
   };
 }

@@ -32,6 +32,9 @@ export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
  */
 export const DMS_MCP_HOLD_REFUSAL_SUFFIX =
   " was not run: no one has confirmed it yet.";
+/** How the line of that answer that holds the DMS's preview of the call, as JSON, starts. */
+export const DMS_MCP_HOLD_PREVIEW_PREFIX =
+  "Its arguments, with what the builder previewed: ";
 export const DMS_MCP_HOLD_WINDOW_MS = 10 * MS_PER_MINUTE;
 /** How `.mcp.json` starts the DMS MCP server: `node` on the stdio launcher the DMS writes under the project root. */
 export const DMS_MCP_COMMAND = "node";

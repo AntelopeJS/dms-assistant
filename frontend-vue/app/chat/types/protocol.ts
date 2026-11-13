@@ -97,12 +97,23 @@ interface GenericPreview {
 	args: Record<string, unknown>;
 }
 
+/**
+ * A Builder call the DMS holds until the person confirms it. `details` is the
+ * DMS's preview from its refusal, else the call's own arguments.
+ */
+export interface HeldPreview {
+	type: "held";
+	operation: string;
+	details: unknown;
+}
+
 export type PermissionPreview =
 	| DiffPreview
 	| CommandPreview
 	| DestructivePreview
 	| WebPreview
-	| GenericPreview;
+	| GenericPreview
+	| HeldPreview;
 
 export type PermissionKind =
 	| "edit"

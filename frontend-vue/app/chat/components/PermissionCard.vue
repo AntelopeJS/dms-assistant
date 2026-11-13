@@ -8,6 +8,7 @@ import type {
 } from "../types/permission";
 import type { PermissionRule } from "../types/protocol";
 import {
+	heldPreviewRows,
 	permissionCardText,
 	permissionIcon,
 	ruleLabelKey,
@@ -41,6 +42,8 @@ const icon = computed(() => permissionIcon(props.request));
 const preview = computed(() => props.request.preview);
 const isDestructive = computed(() => preview.value.type === "destructive");
 const argumentRows = computed(() => {
+	if (preview.value.type === "held")
+		return heldPreviewRows(preview.value.details);
 	if (preview.value.type === "generic")
 		return namedArguments(preview.value.args);
 	return isDestructive.value ? namedArguments(props.request.args) : [];
@@ -146,7 +149,11 @@ defineExpose({ allow, deny });
 					<UIcon name="i-ph-globe" />
 					<span>{{ preview.url }}</span>
 				</div>
-				<dl v-else-if="argumentRows.length > 0" class="perm__kv">
+				<dl
+					v-else-if="argumentRows.length > 0"
+					class="perm__kv"
+					:class="{ 'is-full': preview.type === 'held' }"
+				>
 					<template v-for="arg in argumentRows" :key="arg.name">
 						<dt>{{ arg.name }}</dt>
 						<dd>{{ arg.value }}</dd>
@@ -386,6 +393,15 @@ defineExpose({ allow, deny });
 .perm__kv dd {
 	margin: 0;
 	overflow-wrap: anywhere;
+}
+
+.perm__kv.is-full {
+	max-height: 320px;
+	overflow: auto;
+}
+
+.perm__kv.is-full dd {
+	white-space: pre-wrap;
 }
 
 .perm__scope {

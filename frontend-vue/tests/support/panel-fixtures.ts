@@ -72,6 +72,53 @@ export const DELETE_REQUEST = {
 	ruleOptions: [],
 };
 
+/** A diff longer than the cut the generic card makes. */
+export const CONFIGURE_DIFF = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n${"+    shop: {},\n".repeat(30)}`;
+
+const CONFIGURE_STEPS = [
+	{ action: "AddModule", module: "shop", version: "1.0.0" },
+];
+
+export const CONFIGURE_REQUEST = {
+	...DIFF_REQUEST,
+	requestId: "r4",
+	callId: "c4",
+	toolName: "mcp__dms__builder_configure_project",
+	args: { steps: CONFIGURE_STEPS },
+	summary: "Configure project",
+	kind: "builder",
+	preview: {
+		type: "held",
+		operation: "builder_configure_project",
+		details: {
+			plannedChanges: [
+				{ path: "antelope.config.ts", kind: "modify", diff: CONFIGURE_DIFF },
+			],
+			steps: CONFIGURE_STEPS,
+		},
+	},
+	ruleOptions: [],
+};
+
+export const MAP_REQUEST = {
+	...CONFIGURE_REQUEST,
+	requestId: "r5",
+	callId: "c5",
+	toolName: "mcp__dms__builder_map_resources",
+	args: { module: "shop", connection: "pg-main", resources: [] },
+	summary: "Map database tables",
+	preview: {
+		type: "held",
+		operation: "builder_map_resources",
+		details: {
+			connection: "pg-main",
+			module: "shop",
+			pagesToRemove: ["orders", "customers"],
+			resources: [],
+		},
+	},
+};
+
 export const CHANGE_SET = {
 	id: "cs-14",
 	number: 14,

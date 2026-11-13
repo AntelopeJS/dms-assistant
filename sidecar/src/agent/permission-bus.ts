@@ -19,7 +19,9 @@ import type {
   PermissionDecisionValue,
   PermissionRuleType,
 } from "../protocol/messages.js";
+import { JsonValueSchema } from "../protocol/json.js";
 import { ToolArgsSchema } from "./edit-targets.js";
+import type { HeldCall, HeldCalls } from "./held-calls.js";
 import { describeRequest } from "./permission-preview.js";
 import {
   createPermissionRuleStore,
@@ -94,6 +96,8 @@ export interface BusOptions {
   /** Overrides the policy's timeout (tests). */
   timeoutMs?: number;
   rules?: PermissionRuleStore;
+  /** The calls the DMS holds, whose cards show its preview. */
+  heldCalls?: Pick<HeldCalls, "holdOf">;
 }
 
 export interface PermissionBus {
@@ -240,7 +244,17 @@ function scheduleTimeout(
   }, timeoutMs);
 }
 
+function heldCallOf(
+  state: BusState,
+  req: PermissionRequest,
+): HeldCall | undefined {
+  const args = JsonValueSchema.safeParse(req.args);
+  if (!args.success) return undefined;
+  return state.heldCalls?.holdOf({ toolName: req.toolName, args: args.data });
+}
+
 async function buildPending(
+  state: BusState,
   req: PermissionRequest,
   policy: PermissionPolicy,
   timeoutMs: number,
@@ -251,6 +265,7 @@ async function buildPending(
     hostProjectRoot: policy.hostProjectRoot,
     alwaysAskDependencies: policy.alwaysAskDependencies,
     alwaysAskBlockRemoval: policy.alwaysAskBlockRemoval,
+    held: heldCallOf(state, req),
   });
   const createdAtMs = Date.now();
   return {
@@ -286,7 +301,7 @@ async function startRequest(
 ): Promise<PermissionOutcome> {
   const policy = state.getPolicy();
   const timeoutMs = state.timeoutMs ?? policy.timeoutMs;
-  const request = await buildPending(req, policy, timeoutMs);
+  const request = await buildPending(state, req, policy, timeoutMs);
   const automatic = decideWithoutAsking(state, req, request, policy);
   if (automatic !== null) {
     state.onDecided?.({ ...req, outcome: automatic });

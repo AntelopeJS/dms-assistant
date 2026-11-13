@@ -1,4 +1,8 @@
-import { type HeldCalls, isHoldRefusal } from "../agent/held-calls.js";
+import {
+  type CallEnd,
+  type HeldCalls,
+  holdRefusalOf,
+} from "../agent/held-calls.js";
 import type {
   RunnerToolResult,
   RunnerToolUse,
@@ -55,7 +59,9 @@ const DEFAULT_ALLOWED_BY: readonly AllowedByMatcher[] = [
 
 const FALLBACK_ALLOWED_BY: AllowedBy = "read_auto";
 
-const OUTCOME_BY_DECISION: Partial<Record<AllowedBy, ToolOutcome>> = {
+const OUTCOME_BY_DECISION: Partial<
+  Record<AllowedBy, Exclude<ToolOutcome, "held">>
+> = {
   blocked: "blocked",
   denied: "denied",
   auto_denied: "denied",
@@ -79,19 +85,20 @@ function decisionOf(
   return services.callAudit.lookup(conversationId, callId);
 }
 
-function outcomeOf(
+function endOf(
   ev: RunnerToolResult,
   decision: CallDecision | undefined,
   toolName: string,
-): ToolOutcome {
-  if (ev.isStopped === true) return "stopped";
+): CallEnd {
+  if (ev.isStopped === true) return { outcome: "stopped" };
   const decided =
     decision === undefined
       ? undefined
       : OUTCOME_BY_DECISION[decision.allowedBy];
-  if (decided !== undefined) return decided;
-  if (isHoldRefusal(toolName, ev)) return "held";
-  return ev.isError ? "failed" : "done";
+  if (decided !== undefined) return { outcome: decided };
+  const held = holdRefusalOf(toolName, ev);
+  if (held !== undefined) return { outcome: "held", ...held };
+  return { outcome: ev.isError ? "failed" : "done" };
 }
 
 /** Persists a call as it starts and tracks it on the running turn. */
@@ -139,7 +146,7 @@ function trackEnd(
   turn: ActiveTurn | undefined,
   ev: RunnerToolResult,
   toolName: string,
-  outcome: ToolOutcome,
+  end: CallEnd,
 ): void {
   if (turn === undefined) return;
   const open = turn.openCalls.get(ev.callId);
@@ -148,9 +155,10 @@ function trackEnd(
   if (open !== undefined && args.success) {
     services.heldCalls.observe(
       { toolName: open.toolName, args: args.data },
-      outcome,
+      end,
     );
   }
+  const { outcome } = end;
   if (outcome === "held") {
     turn.mutatingCallIds = turn.mutatingCallIds.filter(
       (callId) => callId !== ev.callId,
@@ -171,9 +179,10 @@ export function endToolCall(
 ): ToolCallEndEventType {
   const toolName = toolNameOf(services, conversationId, ev.callId);
   const decision = decisionOf(services, conversationId, ev.callId);
-  const outcome = outcomeOf(ev, decision, toolName);
+  const end = endOf(ev, decision, toolName);
+  const { outcome } = end;
   const allowedBy = decision?.allowedBy ?? defaultAllowedBy(toolName);
-  trackEnd(services, services.turns.get(conversationId), ev, toolName, outcome);
+  trackEnd(services, services.turns.get(conversationId), ev, toolName, end);
   const status = ev.isError ? STATUS.ERROR : STATUS.SUCCESS;
   services.conversationStore.patchMessages(
     conversationId,

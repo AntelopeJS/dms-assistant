@@ -7,8 +7,10 @@ import type {
   CommandPreviewType,
   DestructivePreviewType,
   DiffPreviewType,
+  HeldPreviewType,
   PermissionPreviewType,
 } from "../protocol/events.js";
+import { JsonValueSchema } from "../protocol/json.js";
 import type { PermissionRuleType } from "../protocol/messages.js";
 import {
   commandRulePrefix,
@@ -23,6 +25,7 @@ import {
   ToolArgsSchema,
 } from "./edit-targets.js";
 import { isDependencyFile, isGitHookFile } from "./always-ask-files.js";
+import type { HeldCall } from "./held-calls.js";
 import { type DiffStats, diffTexts, parseUnifiedDiff } from "./line-diff.js";
 import {
   bareToolName,
@@ -68,6 +71,8 @@ export interface DescribeOptions {
   hostProjectRoot: string;
   alwaysAskDependencies: boolean;
   alwaysAskBlockRemoval: boolean;
+  /** Set when the DMS holds the call until the person confirms it. */
+  held?: HeldCall;
 }
 
 interface ParsedOptions extends Omit<DescribeOptions, "args"> {
@@ -227,6 +232,14 @@ function genericPreview(options: ParsedOptions): PermissionPreviewType {
   return { type: "generic", args: options.args };
 }
 
+function heldPreview(options: ParsedOptions, held: HeldCall): HeldPreviewType {
+  return {
+    type: "held",
+    operation: bareToolName(options.toolName),
+    details: held.preview ?? JsonValueSchema.catch({}).parse(options.args),
+  };
+}
+
 export function hostOf(url: string): string | null {
   try {
     return new URL(url).hostname || null;
@@ -245,7 +258,10 @@ const PREVIEW_BY_KIND: Record<PermissionKind, PreviewBuilder> = {
   command: async (options) => commandPreview(options),
   web: async (options) => webPreview(options),
   destructive: async (options) => destructivePreview(options),
-  builder: async (options) => genericPreview(options),
+  builder: async (options) =>
+    options.held === undefined
+      ? genericPreview(options)
+      : heldPreview(options, options.held),
   other: async (options) => genericPreview(options),
 };
 

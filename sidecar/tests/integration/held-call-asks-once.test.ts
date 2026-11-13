@@ -194,3 +194,47 @@ describe("the step and the audit of a call the DMS held", () => {
     TEST_TIMEOUT_MS,
   );
 });
+
+describe("the card of a call the DMS held", () => {
+  it(
+    "shows the DMS's preview from the refusal, its diff in full (fails a card that shows the raw arguments, cut)",
+    async () => {
+      const steps = [{ action: "AddModule", module: "shop", version: "1.0.0" }];
+      const diff = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n${"+ //\n".repeat(80)}`;
+      const plannedChanges = [
+        { path: "antelope.config.ts", kind: "modify", diff },
+      ];
+      const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+      const refusal = gate.hold("builder_configure_project", {
+        steps,
+        plannedChanges,
+      })?.content[0];
+      if (refusal === undefined) throw new Error("the DMS ran a first call");
+      const name = "mcp__dms__builder_configure_project";
+      const events = await runTurn(
+        [
+          {
+            id: "first",
+            name,
+            input: { steps },
+            answer: { text: refusal.text, isError: true },
+          },
+          { id: "repeat", name, input: { steps }, answer: RAN },
+        ],
+        PERMISSION_DECISIONS.ALLOW_ONCE,
+      );
+      const cards = events.filter((msg) => msg.type === "permission_request");
+      expect(cards.map((msg) => [msg.callId, msg.preview])).toEqual([
+        [
+          "repeat",
+          {
+            type: "held",
+            operation: "builder_configure_project",
+            details: { plannedChanges, steps },
+          },
+        ],
+      ]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+});

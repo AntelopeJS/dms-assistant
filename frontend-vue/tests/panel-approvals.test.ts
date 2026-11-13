@@ -12,9 +12,12 @@ import {
 } from "./support/panel-harness";
 import {
 	COMMAND_REQUEST,
+	CONFIGURE_DIFF,
+	CONFIGURE_REQUEST,
 	DELETE_REQUEST,
 	DIFF_REQUEST,
 	keydown,
+	MAP_REQUEST,
 } from "./support/panel-fixtures";
 
 beforeEach(() => {
@@ -113,6 +116,37 @@ describe("the approvals dock", () => {
 			decision: "deny",
 			feedback: "Use the Builder's validation instead",
 		});
+	});
+
+	it("shows a held configuration change with the DMS's preview in full, in a box that scrolls (fails a card that cuts the preview or reads like a removal)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		deliver(harness, CONFIGURE_REQUEST);
+		await nextTick();
+		const card = panel.find(".perm.is-focused");
+		expect(card.find(".perm__why").text()).toBe(
+			"Changes the project's configuration.",
+		);
+		const rows = card.find(".perm__kv.is-full");
+		expect(rows.findAll("dt").map((cell) => cell.text())).toEqual([
+			"plannedChanges[0].path",
+			"plannedChanges[0].kind",
+			"plannedChanges[0].diff",
+			"steps[0].action",
+			"steps[0].module",
+			"steps[0].version",
+		]);
+		expect(rows.findAll("dd")[2].text()).toBe(CONFIGURE_DIFF.trim());
+	});
+
+	it("names the pages a held mapping removes (fails a card that hides them)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		deliver(harness, MAP_REQUEST);
+		await nextTick();
+		expect(panel.find(".perm.is-focused .perm__why").text()).toBe(
+			"Maps the tables and removes the pages orders, customers.",
+		);
 	});
 
 	it("makes a data loss typed, shows the call's own keepData without a way to change it, and never a chat-wide rule", async () => {

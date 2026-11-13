@@ -20,6 +20,7 @@ import {
   THINKING_LEVELS,
 } from "../state/settings-types.js";
 import { PROVIDER_NAMES } from "../state/types.js";
+import { JsonValueSchema } from "./json.js";
 import { BlockPreviewSchema } from "./preview.js";
 import {
   PERMISSION_DECISION_VALUES,
@@ -390,12 +391,24 @@ export const GenericPreviewSchema = z.object({
   args: z.record(z.string(), z.unknown()),
 });
 
+/**
+ * A Builder call the DMS holds until the person confirms it. `details` is the
+ * DMS's preview from its refusal, such as a configuration diff or the pages a
+ * mapping removes, else the call's own arguments.
+ */
+export const HeldPreviewSchema = z.object({
+  type: z.literal("held"),
+  operation: z.string(),
+  details: JsonValueSchema,
+});
+
 export const PermissionPreviewSchema = z.discriminatedUnion("type", [
   DiffPreviewSchema,
   CommandPreviewSchema,
   DestructivePreviewSchema,
   WebPreviewSchema,
   GenericPreviewSchema,
+  HeldPreviewSchema,
 ]);
 
 /**
@@ -588,6 +601,7 @@ export type PermissionPreviewType = z.infer<typeof PermissionPreviewSchema>;
 export type DiffPreviewType = z.infer<typeof DiffPreviewSchema>;
 export type CommandPreviewType = z.infer<typeof CommandPreviewSchema>;
 export type DestructivePreviewType = z.infer<typeof DestructivePreviewSchema>;
+export type HeldPreviewType = z.infer<typeof HeldPreviewSchema>;
 export type ActiveRuleType = z.infer<typeof ActiveRuleSchema>;
 export type ConversationModeType = z.infer<typeof ConversationModeSchema>;
 export type ConversationModeEventType = z.infer<typeof ConversationModeEvent>;

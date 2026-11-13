@@ -1,4 +1,3 @@
-import type { TypecheckOutcome } from "../constants/audit.js";
 import type { TurnCheckpoint } from "../checkpoints/checkpoints.js";
 import { EMPTY_TOKEN_USAGE, type TokenUsage } from "../state/types.js";
 
@@ -22,7 +21,6 @@ export interface ActiveTurn {
   mutatingCallIds: string[];
   approvalsNeeded: number;
   builderOps: number;
-  typecheck: TypecheckOutcome;
   usage: TokenUsage;
 }
 
@@ -63,7 +61,6 @@ export function createTurnRegistry(): TurnRegistry {
         mutatingCallIds: [],
         approvalsNeeded: 0,
         builderOps: 0,
-        typecheck: "skipped",
         usage: EMPTY_TOKEN_USAGE,
       };
       turns.set(options.conversationId, turn);

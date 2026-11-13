@@ -1,26 +1,15 @@
-import { z } from "zod";
 import type {
   RunnerToolResult,
   RunnerToolUse,
 } from "../agent/runner-events.js";
 import {
-  bareToolName,
   isBashTool,
   isEditTool,
   isMutatingBuilderTool,
   isMutatingTool,
   isReadOnlyTool,
 } from "../agent/tool-kinds.js";
-import type {
-  AllowedBy,
-  ToolOutcome,
-  TypecheckOutcome,
-} from "../constants/audit.js";
-import {
-  TYPECHECK_CLEAN_MESSAGE,
-  TYPECHECK_ERRORS_PREFIX,
-  TYPECHECK_TOOL_NAME,
-} from "../constants/typecheck.js";
+import type { AllowedBy, ToolOutcome } from "../constants/audit.js";
 import {
   EVENT_TYPES,
   STATUS,
@@ -100,32 +89,6 @@ function outcomeOf(
   return ev.isError ? "failed" : "done";
 }
 
-const TYPECHECK_OUTCOME_MARKERS: ReadonlyArray<[string, TypecheckOutcome]> = [
-  [TYPECHECK_ERRORS_PREFIX, "failed"],
-  [TYPECHECK_CLEAN_MESSAGE, "passed"],
-];
-
-function noteTypecheck(
-  turn: ActiveTurn,
-  toolName: string,
-  ev: RunnerToolResult,
-) {
-  if (bareToolName(toolName) !== TYPECHECK_TOOL_NAME) return;
-  const asString = z.string().safeParse(ev.result);
-  let text = "";
-  if (asString.success) {
-    text = asString.data;
-  } else {
-    try {
-      text = JSON.stringify(ev.result ?? "");
-    } catch {
-      text = "";
-    }
-  }
-  const marker = TYPECHECK_OUTCOME_MARKERS.find(([m]) => text.includes(m));
-  if (marker !== undefined) turn.typecheck = marker[1];
-}
-
 /** Persists a call as it starts and tracks it on the running turn. */
 export function startToolCall(
   services: ToolCallServices,
@@ -173,7 +136,6 @@ function trackEnd(
 ): void {
   if (turn === undefined) return;
   turn.openCalls.delete(ev.callId);
-  noteTypecheck(turn, toolName, ev);
   if (outcome === "done" && isMutatingBuilderTool(toolName)) turn.builderOps++;
 }
 

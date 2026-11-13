@@ -94,6 +94,17 @@ describe("collectBuildIssues", () => {
     expect(result).toContain("error TS2322");
   });
 
+  it("tells the agent the typecheck target of each broken module", async () => {
+    const result = await collectBuildIssues({
+      ...base,
+      logsClient: noLogs(),
+      runTypecheckFn: async () => broken,
+    });
+    expect(result).toContain(
+      JSON.stringify({ target: "/proj/modules/dms-ai" }),
+    );
+  });
+
   it("returns a heal prompt when the host log has reload errors", async () => {
     const result = await collectBuildIssues({
       ...base,

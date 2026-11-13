@@ -5,6 +5,7 @@ const { test } = require("node:test");
 const {
   noAnswerReason,
   redact,
+  serverRefusal,
   signedIn,
 } = require("../../dist/builder/implementations/dms-builder/engine/database-access.js");
 const { loadModule } = require("./helpers/load-module.cjs");
@@ -276,6 +277,32 @@ void test("a probe that throws is answered, without the password", async () => {
   assert.equal(answer.reachable, false);
   assert.equal(JSON.stringify(answer).includes(SAMPLE_SECRET), false);
   assert.equal(JSON.stringify(answer).includes("db.example.com"), false);
+});
+
+/** Fails on an implementation that answers a driver's message with the query it echoes: ReQL's backtrace, MongoDB's command. */
+void test("a reason holds no query a driver echoes in its message", () => {
+  const reql =
+    'Database name `a.b` invalid (Use A-Z, a-z, 0-9, _ and - only) in:\nr.db("a.b").tableList()\n     ^^\n';
+  assert.equal(
+    noAnswerReason(reql, URL),
+    "Could not check the database: Database name `a.b` invalid (Use A-Z, a-z, 0-9, _ and - only)",
+  );
+  const command =
+    'not authorized on shop to execute command { find: "orders", filter: { card: "4111" }, $db: "shop" }';
+  assert.equal(
+    serverRefusal(command, URL),
+    "The server refused the request: not authorized on shop to execute command",
+  );
+});
+
+/** Fails on an implementation that matches a known sentence against the query a driver echoes, not against its message. */
+void test("a word of the echoed query does not pick the sentence of a refused port or a timeout", () => {
+  const message =
+    'Database `refused` does not exist in:\nr.db("ECONNREFUSED").tableList()\n';
+  assert.match(
+    noAnswerReason(message, URL),
+    /^Could not check the database: Database `refused` does not exist$/,
+  );
 });
 
 /** Fails on an implementation that requires the three clients when it loads, or the other engines' when it checks one. */

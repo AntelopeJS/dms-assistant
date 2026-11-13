@@ -16,6 +16,8 @@ type Reql = RethinkdbClient["r"];
 
 const WRONG_ACCOUNT = "The database refused this user name or password.";
 const NO_DATABASE = "The server has no database with this name.";
+const NO_DATABASE_NAMED =
+  "The URL names no database: add its name after the host and port.";
 const AUTH_ERROR = "ReqlAuthError";
 const DEFAULT_PORT = 28015;
 const DEFAULT_USER = "admin";
@@ -101,7 +103,8 @@ async function accessOfTables(
 
 /**
  * Checks a RethinkDB connection with `rethinkdb-ts`, on the database the URL's path names: it
- * signs in, times a first query, and asks the server what the account may do to each table.
+ * signs in, times a first query, and asks the server what the account may do to each table. A URL
+ * that names no database is answered once the account has signed in, as one that cannot be read.
  * The write check deletes a key no row has, so it changes nothing. The client's `timeout` bounds
  * only the connecting, so the check closes the connection, whatever the server stops answering.
  */
@@ -126,6 +129,14 @@ export const probeRethinkdb: Probe = async (url, timeoutMs, connections) => {
     const started = performance.now();
     await r.expr(1).run(connection);
     const latencyMs = Math.ceil(performance.now() - started);
+    if (target.database === "") {
+      return signedIn(
+        latencyMs,
+        target.user,
+        { canRead: false, canWrite: false },
+        NO_DATABASE_NAMED,
+      );
+    }
     const names = await r
       .db(target.database)
       .tableList()

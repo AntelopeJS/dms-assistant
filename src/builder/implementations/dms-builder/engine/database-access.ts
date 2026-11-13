@@ -19,7 +19,7 @@ export interface DatabaseAccess {
   user?: string;
   canRead: boolean;
   canWrite: boolean;
-  /** A short sentence for the person who connects, whenever the database cannot be read. Never holds the URL or the password. */
+  /** A short sentence for the person who connects, whenever the database cannot be read. Never holds the URL, the password or a query. */
   reason?: string;
 }
 
@@ -147,13 +147,28 @@ export function failureMessage(error: unknown): string {
   return ThrownMessage.parse(error);
 }
 
-/** The sentence for a failure no server answered: its own, or the driver's message with the secrets removed. */
+/**
+ * What a driver appends to its message to show the query it ran: the ReQL of RethinkDB after
+ * `in:`, and the command document of MongoDB's authorization error.
+ */
+const QUERY_ECHOES: readonly RegExp[] = [
+  /\s+in:\s*\n[\s\S]*$/,
+  /(?<=\bcommand) \{[\s\S]*$/,
+];
+
+/** The message without the query the driver echoes, which a reason never shows. */
+function withoutQuery(message: string): string {
+  return QUERY_ECHOES.reduce((text, echo) => text.replace(echo, ""), message);
+}
+
+/** The sentence for a failure no server answered: its own, or the driver's message with the query and the secrets removed. */
 export function noAnswerReason(message: string, url: string): string {
-  const known = NO_ANSWER_REASONS.find(([pattern]) => pattern.test(message));
-  return known ? known[1] : `${NOT_CHECKED}: ${redact(message, url)}`;
+  const text = withoutQuery(message);
+  const known = NO_ANSWER_REASONS.find(([pattern]) => pattern.test(text));
+  return known ? known[1] : `${NOT_CHECKED}: ${redact(text, url)}`;
 }
 
 /** The sentence for a failure a server answered with, when the engine has none of its own. */
 export function serverRefusal(message: string, url: string): string {
-  return `The server refused the request: ${redact(message, url)}`;
+  return `The server refused the request: ${redact(withoutQuery(message), url)}`;
 }

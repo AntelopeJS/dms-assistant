@@ -153,6 +153,23 @@ suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
     );
   });
 
+  it("answers a URL that names no database as a server that answered, saying so and holding no query", async () => {
+    const address = `rethinkdb://admin:${ADMIN_SECRET}@127.0.0.1:${server?.port}`;
+    for (const url of [address, `${address}/`]) {
+      const answer = await checkDatabase("rethinkdb", url, TIMEOUT_MS);
+      expect(answer, url).to.include({
+        reachable: true,
+        user: "admin",
+        canRead: false,
+        canWrite: false,
+      });
+      expect(answer.reason, url).to.equal(
+        "The URL names no database: add its name after the host and port.",
+      );
+      expect(JSON.stringify(answer), url).to.not.include("r.db(");
+    }
+  });
+
   it("answers a refused password as a server that answered, without the password", async () => {
     const answer = await checkDatabase(
       "rethinkdb",

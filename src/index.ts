@@ -3,7 +3,7 @@ import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { AddFrontendModule } from "@antelopejs/interface-dms/page";
 import { construct as constructBuilder } from "./builder";
 import { closeAllBridges } from "./channels/registry";
-import { ConfigSchema, getConfig, setConfig } from "./config";
+import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
 import { DEFAULT_BACKEND_URL } from "./constants/mcp";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
 import { collectModuleRoots } from "./lifecycle/module-roots";
@@ -23,8 +23,7 @@ export type { BuilderApiConfig, DmsBuilderConfig } from "./builder";
  * `@antelopejs/interface-dms-builder` implementation and, when the builder is
  * on, mounts its HTTP API.
  */
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- core calls the published construct hook with the raw project config, so narrowing the parameter changes the published signature; ConfigSchema.safeParse parses it on the next line
-export async function construct(config: unknown): Promise<void> {
+export async function construct(config?: AIConfig): Promise<void> {
   const parsed = ConfigSchema.safeParse(config).data ?? {};
   setConfig(parsed);
   await constructBuilder(parsed.builder);

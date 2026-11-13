@@ -1,19 +1,18 @@
 import type { InterfaceConnection } from "@antelopejs/interface-core";
 import type { ImportOverrideInput } from "@antelopejs/interface-dms-builder";
 import { Node, type ObjectLiteralExpression, SyntaxKind } from "ts-morph";
-import { findConfigFile, propertyNamed } from "./modules";
+import { propertyNamed } from "./modules";
 import { moduleConnections, ownModuleId } from "./own-connections";
 import { DATABASE_INTERFACE } from "./interface-ids";
 import {
-  type ConfigDraft,
   existingOverrides,
   overrideOf,
   MODULES,
   moduleEntries,
   objectAt,
-  openDraft,
   StepRefusal,
 } from "./project-config";
+import { readableConfig } from "./project-config-readers";
 import { hides, overridesWrittenAsLiterals } from "./literal-overrides";
 
 const DEFAULT_PRIORITY = 0;
@@ -176,22 +175,6 @@ function environmentPriorities(modules: ObjectLiteralExpression): boolean {
     ? propertyNamed(root, "environments")
     : undefined;
   return environments?.getText().includes("exportPriority") ?? false;
-}
-
-/** The configuration opened for reading; nothing when the project has none or it is not a literal. */
-function readableConfig(): ConfigDraft | undefined {
-  const configPath = findConfigFile();
-  if (!configPath) {
-    return undefined;
-  }
-  try {
-    return openDraft(configPath);
-  } catch (error) {
-    if (error instanceof StepRefusal) {
-      return undefined;
-    }
-    throw error;
-  }
 }
 
 /** The distinct providers among `connections`. */

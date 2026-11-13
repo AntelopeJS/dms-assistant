@@ -14,6 +14,7 @@ import {
 	missingField,
 	parseConnectionUrl,
 } from '../app/runtime/database-connect'
+import type { ProjectModules } from '../app/runtime/database-types'
 
 function form(overrides: Partial<ConnectForm> = {}): ConnectForm {
 	return {
@@ -111,6 +112,57 @@ describe('the wiring of a database', () => {
 				entry: { importOverrides: [{ interface: '@antelopejs/interface-database', source: 'mongodb' }] },
 			},
 		])
+	})
+
+	describe('and its registration with dms-database', () => {
+		const project: ProjectModules = {
+			modules: ['dms-assistant', 'dms-database', 'mongodb'],
+			ownDatabase: 'mongodb',
+			dmsDatabase: 'dms-database',
+		}
+		const dmsDatabaseStep = (form: ConnectForm, modules = project) =>
+			connectSteps(form, modules).find((step) => step.id === 'dms-database')
+
+		it('writes the own database first, then the connection on both interfaces, and reads it only by default', () => {
+			expect(dmsDatabaseStep(form())).toEqual({
+				op: 'ConfigureModule',
+				id: 'dms-database',
+				entry: {
+					importOverrides: [
+						{ interface: '@antelopejs/interface-database', source: 'mongodb' },
+						{ interface: '@antelopejs/interface-database', source: 'builder-db-erp', id: 'erp' },
+						{ interface: '@antelopejs/interface-database-catalog', source: 'builder-db-erp', id: 'erp' },
+					],
+					config: { externalConnections: { erp: { access: 'read' } } },
+				},
+			})
+		})
+
+		it('writes read-write access when the integrator chose it', () => {
+			expect(dmsDatabaseStep(form({ access: 'read-write' }))).toMatchObject({
+				entry: { config: { externalConnections: { erp: { access: 'read-write' } } } },
+			})
+		})
+
+		it('comes after the catalog connection and before the pins', () => {
+			const steps = connectSteps(form(), {
+				...project,
+				databasePins: [{ module: 'dms', provider: 'mongodb' }],
+			})
+			expect(steps.map((step) => step.id)).toEqual([
+				'builder-db-erp',
+				'builder-db-erp-tables',
+				'dms-assistant',
+				'dms-database',
+				'dms',
+			])
+		})
+
+		it('is written when the project has dms-database and an own database to pin it to, and not otherwise', () => {
+			expect(dmsDatabaseStep(form())).toBeDefined()
+			expect(dmsDatabaseStep(form(), { modules: project.modules, ownDatabase: 'mongodb' })).toBeUndefined()
+			expect(dmsDatabaseStep(form(), { modules: project.modules, dmsDatabase: 'dms-database' })).toBeUndefined()
+		})
 	})
 
 	it('never carries the connection details into the configuration', () => {

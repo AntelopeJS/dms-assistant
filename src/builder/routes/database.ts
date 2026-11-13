@@ -25,6 +25,7 @@ import {
   type DatabasePin,
   databasePins,
 } from "../implementations/dms-builder/engine/database-pin";
+import { dmsDatabaseId } from "../implementations/dms-builder/engine/dms-database";
 import { configuredModuleIds } from "../implementations/dms-builder/engine/modules";
 import { ownModuleId } from "../implementations/dms-builder/engine/own-connections";
 import {
@@ -74,6 +75,8 @@ interface ProjectModules {
   ownDatabase?: string;
   /** The modules to pin to the own database before another one is connected. */
   databasePins: DatabasePin[];
+  /** The id `antelope.config.ts` gives dms-database, when the project has it. */
+  dmsDatabase?: string;
 }
 
 /** One of the builder's catalog connections, with what its provider answers about it. */
@@ -170,6 +173,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
         self: ownModuleId(),
         ownDatabase,
         databasePins: pins,
+        dmsDatabase: dmsDatabaseId(),
       };
     } catch (error) {
       if (isConnectionRefusal(error)) {

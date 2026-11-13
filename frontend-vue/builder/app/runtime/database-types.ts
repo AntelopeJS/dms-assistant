@@ -230,6 +230,8 @@ export interface ProjectModules {
 	ownDatabase?: string
 	/** The modules to pin to the own database, each one importing `interface-database` without a pin. */
 	databasePins?: DatabasePin[]
+	/** The id `antelope.config.ts` gives dms-database, whose console lists the connections registered with it. */
+	dmsDatabase?: string
 }
 
 /** A variable's development value, sent with the batch that maps it and written into `.env` first. */

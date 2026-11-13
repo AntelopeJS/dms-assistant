@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from "vue";
+import { onBeforeUnmount, shallowRef, watch } from "vue";
 import { createIncrementalMarkdown, renderMarkdown } from "../utils/markdown";
+import MarkdownBlock from "./MarkdownBlock.vue";
 
 interface Props {
 	content: string;
@@ -12,8 +13,8 @@ const props = defineProps<Props>();
 
 const STREAMED_RENDER_DELAY_MS = 50;
 
-const settled = ref<readonly string[]>([]);
-const open = ref("");
+const settled = shallowRef<readonly DocumentFragment[]>([]);
+const open = shallowRef(renderMarkdown(""));
 let incremental = createIncrementalMarkdown();
 let pendingFrame: ReturnType<typeof setTimeout> | null = null;
 
@@ -58,13 +59,13 @@ onBeforeUnmount(cancelStreamed);
 
 <template>
 	<div class="chat-markdown">
-		<div
+		<MarkdownBlock
 			v-for="(block, index) in settled"
 			:key="index"
 			class="chat-markdown-block"
-			v-html="block"
+			:fragment="block"
 		/>
-		<div class="chat-markdown-block" v-html="open" />
+		<MarkdownBlock class="chat-markdown-block" :fragment="open" />
 	</div>
 </template>
 

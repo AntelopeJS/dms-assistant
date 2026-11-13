@@ -2,10 +2,10 @@
   "version": 1,
   "cases": [
     {
-      "id": "builder-edit-button-missing",
+      "id": "builder-routes-missing",
       "area": "modules",
       "style": "casual",
-      "prompt": "the edit this page button is gone",
+      "prompt": "all the /api/builder routes are 404 now",
       "expect": {
         "skills": ["dms-builder"],
         "acceptable": ["dms-builder-safe", "dms", "dms-ai"]

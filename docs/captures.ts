@@ -2,14 +2,6 @@
  * The screenshots of the dms-ai docs, taken on the Helio demo. The onboarding
  * runs first and creates the owner every other scene is signed in as.
  */
-const OPEN_BUILDER = [
-  {
-    action: "click",
-    selector: 'button[aria-label="Builder — edit this page"]',
-  },
-  { action: "wait", selector: "[data-path]" },
-];
-
 export default [
   {
     id: "onboarding",
@@ -118,114 +110,5 @@ export default [
     ],
     crop: '[role="dialog"]',
     output: "docs/images/captures/ai-palette.webp",
-  },
-  {
-    id: "editor-selected",
-    route: "/helio/dashboard",
-    steps: [
-      ...OPEN_BUILDER,
-      {
-        action: "click",
-        selector: '[data-path]:has-text("Revenue invoiced") >> nth=-1',
-      },
-      { action: "wait", selector: 'text="Card heading."' },
-    ],
-    output: "docs/8.builder/images/captures/editor-selected.webp",
-  },
-  {
-    id: "editor-layers",
-    route: "/helio/dashboard",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: '[role="tab"]:has-text("Layers")' },
-    ],
-    output: "docs/8.builder/images/captures/editor-layers.webp",
-  },
-  {
-    id: "editor-pages",
-    route: "/helio/dashboard",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: '[role="tab"]:has-text("Pages")' },
-      { action: "wait", selector: 'button[aria-label="Delete Invoices"]' },
-    ],
-    output: "docs/8.builder/images/captures/editor-pages.webp",
-  },
-  {
-    id: "editor-delete-page",
-    route: "/helio/invoices",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: '[role="tab"]:has-text("Pages")' },
-      { action: "click", selector: 'button[aria-label="Delete Invoices"]' },
-      { action: "wait", selector: 'button:has-text("Delete the page")' },
-    ],
-    crop: '[role="alertdialog"], [role="dialog"]',
-    output: "docs/8.builder/images/captures/editor-delete-page.webp",
-  },
-  {
-    id: "editor-table",
-    route: "/helio/dashboard",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: 'button[aria-label="Tables"]' },
-      { action: "click", selector: 'button:has-text("helio/sites")' },
-      { action: "wait", selector: 'button:has-text("Add field")' },
-    ],
-    output: "docs/8.builder/images/captures/editor-table.webp",
-  },
-  {
-    id: "editor-delete-table",
-    route: "/helio/dashboard",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: 'button[aria-label="Tables"]' },
-      { action: "click", selector: 'button:has-text("helio/sites")' },
-      { action: "click", selector: '[role="tab"]:has-text("Settings")' },
-      {
-        action: "wait",
-        selector: 'button:has-text("Delete the table and its rows")',
-      },
-    ],
-    output: "docs/8.builder/images/captures/editor-delete-table.webp",
-  },
-  {
-    id: "editor-data",
-    route: "/helio/monitoring",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: 'button[aria-label="Data"]' },
-      { action: "click", selector: 'button[aria-label="New data source"]' },
-      {
-        action: "fill",
-        selector: 'input[placeholder="inStockCount"]',
-        value: "ticketCount",
-      },
-      { action: "click", selector: 'button:has-text("Pick a table")' },
-      {
-        action: "click",
-        selector: '[role="option"]:has-text("helio/tickets")',
-      },
-      { action: "click", selector: 'button:has-text("Add the source")' },
-      { action: "wait", selector: 'text="Read it now"' },
-    ],
-    output: "docs/8.builder/images/captures/editor-data.webp",
-  },
-  {
-    id: "editor-changes",
-    route: "/helio/invoices",
-    steps: [
-      ...OPEN_BUILDER,
-      { action: "click", selector: 'button[aria-label="Edit page metadata"]' },
-      {
-        action: "fill",
-        selector: "textarea >> nth=0",
-        value:
-          "Every invoice sent to a Helio customer, with its payments and reminders.",
-      },
-      { action: "click", selector: 'button:has-text("unsaved change")' },
-      { action: "wait", selector: 'button:has-text("Save 1 change")' },
-    ],
-    output: "docs/8.builder/images/captures/editor-changes.webp",
   },
 ];

@@ -16,5 +16,5 @@ Docs: `6.queries.md`, `9.drafts-and-preview.md`, `10.a-chart-without-code.md`. J
 | interface-dms-builder/docs/6.queries.md:79 | name, endpoint, expression and path-parameter rules | same | duplicate_name scope query; invalid_config x4; duplicate endpoint; not_found |
 | interface-dms-builder/docs/6.queries.md:147 | a bound value is a declared route parameter | same | Parameter decorator and Number() |
 | interface-dms-builder/docs/6.queries.md:305 | RemoveQuery removes route and model method | same | both gone; again not_found |
-| interface-dms-builder/docs/6.queries.md:247 | response arrangements and compare | - | Not driven: the helpers are exercised only through the Board chart (editor); the card/value/items bodies are not asserted |
+| interface-dms-builder/docs/6.queries.md:247 | response arrangements and compare | - | Not driven: the helpers are exercised only through the Board chart; the card/value/items bodies are not asserted |
 | interface-dms-builder/docs/6.queries.md:289 | opaque queries and hand-written routes | - | Not driven: the playground has no hand-edited query |

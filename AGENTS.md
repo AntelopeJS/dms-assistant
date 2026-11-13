@@ -1,6 +1,6 @@
 # dms-assistant
 
-An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the visual page editor, whose every edit is an AST rewrite of the project sources, and the external database connect flow). The module implements `@antelopejs/interface-dms-builder`, a published dependency. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
+An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). The module implements `@antelopejs/interface-dms-builder`, a published dependency. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
 
 ## Layout
 
@@ -10,7 +10,7 @@ An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant
 | `src/builder`  | The builder: its engine, the `interface-dms-builder` implementation, its `/api/builder` routes and, in `src/builder/test`, its mocha specs |
 | `sidecar`      | The local agent process, an ESM workspace package with its own lockfile and tsconfig; ships as `sidecar/dist` |
 | `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
-| `frontend-vue/builder` | The builder frontend, set up from `frontend-vue/dms.frontend.ts` and gated by the `dmsBuilder.enabled` option, with its own vitest configs |
+| `frontend-vue/builder` | The client and types of the builder's `/api/builder/database` routes and the builder's message catalog, with its own vitest config. The builder has no editor UI: pages change through the AI and the mockup flow |
 | `playground`   | A DMS project that loads the module; its own lockfile, outside the pnpm workspace                       |
 | `skills`       | Agent skills shipped in the npm package through `antelopeJs.skills`                                     |
 
@@ -28,7 +28,7 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 `checks` does not run:
 
-- The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test`, `pnpm --dir frontend-vue test` (the assistant and builder unit suites) and `pnpm --dir frontend-vue test:components` (the builder component suites).
+- The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test` and `pnpm --dir frontend-vue test` (the assistant and builder unit suites).
 - The builder engine specs, which take minutes and run in four CI shards: `pnpm test:specs`.
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.

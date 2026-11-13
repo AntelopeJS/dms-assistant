@@ -15,7 +15,7 @@ The fixed journey every verdict runs, whatever the diff touches: the introductio
 
 ## How to get to it (user POV)
 
-- Any DMS page, the hammer button in the page header, a card, its title.
+- `GET /api/builder/page` on the Board page, then `POST /api/builder/page/blocks` with a card's new title, as the assistant and **Build it** write a page.
 
 ## Driving it with dms-control
 

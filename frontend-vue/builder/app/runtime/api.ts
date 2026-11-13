@@ -1,4 +1,4 @@
-import { API_PREFIX, PAGE_LAYOUT_PATH } from './constants'
+import { API_PREFIX } from './constants'
 import type {
 	AnalysisState,
 	ConnectionInfo,
@@ -12,42 +12,13 @@ import type {
 	ProjectVariable,
 	RowSample,
 } from './database-types'
-import type {
-	AddQueryInput,
-	BlockCatalog,
-	BuilderError,
-	CategorySummary,
-	CreateCategoryInput,
-	CreatePageInput,
-	CreateResourceInput,
-	FieldAspects,
-	FieldSpec,
-	OpResult,
-	PageDraft,
-	PageLayoutPreview,
-	PageLayoutPayload,
-	PageStructure,
-	PageSummary,
-	QueryPreview,
-	QueryTemplateDescriptor,
-	ResourceStructure,
-	ResourceSummary,
-	PageAccess,
-	PageImpact,
-	PermissionChoice,
-	TableUsage,
-} from './types'
-
-interface SaveBody {
-	page: string
-	draft: PageDraft
-	expectedVersion?: string
-}
+import type { BuilderError, OpResult } from './types'
 
 /**
- * The typed client over the module's HTTP API. Plain reads answer with their
- * value; writes, and the reads the module answers with an `OpResult`, answer
- * with one the caller branches on — a request that failed outright included.
+ * The typed client over the module's database routes. Plain reads answer with
+ * their value; writes, and the reads the module answers with an `OpResult`,
+ * answer with one the caller branches on — a request that failed outright
+ * included.
  */
 export function useBuilderApi() {
 	const { $authFetch } = useAuthFetch()
@@ -84,98 +55,8 @@ export function useBuilderApi() {
 		)
 	}
 
-	function put<T>(
-		path: string,
-		body: object,
-	): Promise<OpResult<T>> {
-		return answered(
-			$authFetch<OpResult<T>>(`${API_PREFIX}${path}`, { method: 'PUT', body }),
-		)
-	}
-
-	function remove<T>(
-		path: string,
-		query: Record<string, string>,
-	): Promise<OpResult<T>> {
-		return answered(
-			$authFetch<OpResult<T>>(`${API_PREFIX}${path}`, {
-				method: 'DELETE',
-				query,
-			}),
-		)
-	}
-
 	return {
 		failure,
-		catalog: () => get<BlockCatalog>('/catalog'),
-		pages: () => get<PageSummary[]>('/pages'),
-		categories: () => get<CategorySummary[]>('/categories'),
-		createPage: (input: CreatePageInput) =>
-			post<{ ref: string; filepath: string }>('/pages', input),
-		deletePage: (ref: string) => remove<void>('/page', { ref }),
-		createCategory: (input: CreateCategoryInput) =>
-			post<{ ref: string }>('/categories', input),
-		deleteCategory: (ref: string) => remove<void>('/category', { ref }),
-		structure: (ref: string) => read<PageStructure>('/page', { ref }),
-		resources: () => get<ResourceSummary[]>('/resources'),
-		tableUsage: () => get<TableUsage>('/tables/usage'),
-		pageImpact: (ref: string) => get<PageImpact>('/page/impact', { ref }),
-		permissions: () => get<PermissionChoice[]>('/permissions'),
-		/** `permission`: another the draft gives the page, read too. */
-		pageAccess: (ref: string, permission?: string) =>
-			get<PageAccess>(
-				'/page/access',
-				permission ? { ref, permission } : { ref },
-			),
-		resource: (ref: string) => read<ResourceStructure>('/resource', { ref }),
-		preview: (page: string, draft: PageDraft) =>
-			post<PageLayoutPreview>('/page/preview', { page, draft }),
-		save: (body: SaveBody) =>
-			post<{ version: string }>('/page/blocks', body),
-		/**
-		 * The page as the DMS serves it, outside the builder's own API. It is
-		 * what a block the preview cannot build falls back to — a TableView needs
-		 * its DataAPI class, which only the running page holds.
-		 */
-		pageLayout: (slug: string) =>
-			$authFetch<PageLayoutPayload>(PAGE_LAYOUT_PATH, {
-				method: 'GET',
-				query: { slug },
-			}),
-		deleteResource: (ref: string) => remove<void>('/resource', { ref }),
-		configureCategory: (category: string, patch: Record<string, unknown>) =>
-			put<void>('/category', { category, patch }),
-		// The ref comes back because a patch can change it: a page's category
-		// decides its route.
-		configurePage: (
-			page: string,
-			patch: Record<string, unknown>,
-			expectedVersion?: string,
-		) =>
-			post<{ ref: string; version: string }>('/page/configure', {
-				page,
-				patch,
-				expectedVersion,
-			}),
-		createResource: (input: CreateResourceInput) =>
-			post<{ ref: string }>('/resources', input),
-		addField: (resource: string, field: FieldSpec) =>
-			post<{ path: string }>('/resource/fields', {
-				resource,
-				field,
-			}),
-		configureResource: (resource: string, patch: { routes?: string[] }) =>
-			post<void>('/resource/configure', { resource, patch }),
-		configureField: (path: string, patch: Partial<FieldAspects>) =>
-			put<void>('/resource/fields', { path, patch }),
-		removeField: (path: string) => remove<void>('/resource/fields', { path }),
-		queryTemplates: () =>
-			get<QueryTemplateDescriptor[]>('/query-templates'),
-		previewQuery: (query: AddQueryInput, args?: Record<string, unknown>) =>
-			post<QueryPreview>('/query-preview', {
-				query,
-				args: args ?? {},
-			}),
 		databaseConnections: () => get<DatabaseConnection[]>('/database/connections'),
 		analyseDatabase: (connection: string, module: string, schemas?: string[]) =>
 			post<AnalysisState>('/database/analyse', { connection, module, schemas }),

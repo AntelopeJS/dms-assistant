@@ -88,11 +88,6 @@ export const ENGINES: Record<DatabaseEngine, EngineSpec> = {
 	},
 }
 
-/** The account to connect with, in the engine's own words. */
-export function accountAdvice(engine: DatabaseEngine): string {
-	return t(`database.engines.${engine}_account`)
-}
-
 /** The engine whose URLs have this scheme, as `postgres` or `postgres:`. */
 export function engineOfScheme(scheme: string): DatabaseEngine | undefined {
 	const protocol = scheme.endsWith(':') ? scheme : `${scheme}:`
@@ -309,11 +304,6 @@ export function connectVariables(form: ConnectForm): ProjectVariable[] {
 	return ENGINES[form.engine].separateDatabase
 		? [url, { name: names.databaseVariable, value: form.fields.database }]
 		: [url]
-}
-
-/** Whether the fields still reach the server and user the saved password belongs to. */
-export function keepsServer(saved: ConnectionFields, fields: ConnectionFields): boolean {
-	return saved.host === fields.host && saved.port === fields.port && saved.user === fields.user
 }
 
 /** The fields a connection's saved details fill, the password left empty and a port left out kept out. */

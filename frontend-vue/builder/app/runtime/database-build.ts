@@ -253,31 +253,11 @@ export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
 	}
 }
 
-/**
- * dms-ai's public assistant actions, as its layer provides them under {@link ASSISTANT_ACTIONS_KEY}.
- * The builder declares the shape it calls and depends on nothing of dms-ai.
- */
-export interface AssistantActions {
-	readonly isAvailable: boolean
-	startConversation: (prompt: string, options?: { mode?: 'plan' | 'normal'; send?: boolean }) => void
-}
-
-/** The global key dms-ai provides its assistant actions under, the same symbol in every layer. */
-export const ASSISTANT_ACTIONS_KEY = Symbol.for('dms-ai:assistant-actions')
-
 /** The message *Let the assistant finish* sends, and *Copy prompt* copies: the skills, the connection and its tables module. */
 export function assistantMessage(connection: string, module: string, proposal?: MappingProposal): string {
 	const head = `Use dms-external-database on connection ${connection}, module ${module}. The connection is live and analysed: settle the open items, map the tables, and plan analytics pages from the data with dms-page-design.`
 	if (!proposal) return head
 	return `${head} The summary below is the analysis; plan from it and probe only what it leaves out, instead of reading the proposal again table by table.\n\n${analysisSummary(proposal)}`
-}
-
-/**
- * The message *Review it myself* hands the assistant once the person has applied the mapping: the
- * tables and their pages exist, so what is left is the analytics dashboard and the pages' details.
- */
-export function assistantDashboardMessage(connection: string, module: string): string {
-	return `Use dms-external-database and dms-page-design on connection ${connection}, module ${module}. The person has reviewed and applied the mapping: the tables and their pages exist, keep the mapping as it is. Build the analytics dashboard first in the connection's menu category, then give every page a clear name, an icon and a description, and set the displays, views, footer summaries and KPI cards the data suits.`
 }
 
 /** The schemas the question pre-checks: `public`, or else the one with the most tables. */

@@ -2,7 +2,7 @@ import { defineAsyncComponent, type Component } from "vue";
 import type { DmsFrontendModule } from "#dms/frontend-module";
 import { assistantPlugin } from "./app/plugins/ai.client";
 import sidePanelPlugin from "./app/plugins/side-panel";
-import builderModule, { isBuilderEnabled } from "./builder/dms.frontend";
+import { isBuilderEnabled } from "./builder/app/runtime/enabled";
 
 interface VueModule {
 	default: Component;
@@ -38,7 +38,6 @@ const frontendModule: DmsFrontendModule = {
 			}),
 			{ clientOnly: true },
 		);
-		return builderModule.setup(sdk);
 	},
 };
 

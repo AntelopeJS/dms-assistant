@@ -66,8 +66,10 @@ export interface DatabaseConnect {
 	 * Checks the URL live, writing nothing. A database the account cannot read stops there. A new
 	 * connection whose account can write waits in `choosing` for `choose`; any other is written
 	 * read-only, or keeps the access an earlier visit wrote, then followed until its analysis is
-	 * ready or a check fails. It resolves in every case; called again after a failure, it follows
-	 * the written connection again instead of writing it twice.
+	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
+	 * URL, it follows the written connection again without writing; with another URL for the same
+	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
+	 * unmount replaced change nothing.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -80,6 +82,7 @@ interface Checked {
 	form: ConnectForm;
 	connection: string;
 	module: string;
+	/** The project's modules, `undefined` when this popup already wrote the connection. */
 	project: ProjectModules | undefined;
 }
 
@@ -134,7 +137,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	let reloadingSince: number | undefined;
 	let analysing = false;
 	let answeredSchemas: string | undefined;
-	let written: string | undefined;
+	let written: { connection: string; url: string } | undefined;
 	let generation = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
@@ -162,24 +165,29 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	async function analyse(
 		connection: string,
 		module: string,
+		loop: number,
 		schemas?: string[],
 	): Promise<void> {
 		analysing = true;
 		try {
 			const result = await api.analyseDatabase(connection, module, schemas);
-			if (!result.ok) failure.value = refusalText(result.error);
+			if (!result.ok && current(loop)) {
+				failure.value = refusalText(result.error);
+			}
 		} catch (error) {
-			failure.value = api.failure(error).detail;
+			if (current(loop)) failure.value = api.failure(error).detail;
 		} finally {
-			analysing = false;
+			if (current(loop)) analysing = false;
 		}
 	}
 
 	async function followBuild(
 		connection: string,
 		module: string,
-	): Promise<BuildView> {
+		loop: number,
+	): Promise<BuildView | null> {
 		const answers = await readBuild(api, connection);
+		if (!current(loop)) return null;
 		const first = buildState(answers);
 		reloadingSince = first.reloading
 			? (reloadingSince ?? Date.now())
@@ -191,9 +199,9 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		view.value = next;
 		if (next.schemas && !analysing && next.job !== answeredSchemas) {
 			answeredSchemas = next.job;
-			await analyse(connection, module, preferredSchemas(next.schemas));
+			await analyse(connection, module, loop, preferredSchemas(next.schemas));
 		} else if (next.needsAnalysis && !analysing) {
-			await analyse(connection, module);
+			await analyse(connection, module, loop);
 		}
 		return next;
 	}
@@ -203,14 +211,14 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		module: string,
 		loop: number,
 	): Promise<void> {
-		let next: BuildView;
+		let next: BuildView | null;
 		try {
-			next = await followBuild(connection, module);
+			next = await followBuild(connection, module, loop);
 		} catch (error) {
 			if (current(loop)) failure.value = api.failure(error).detail;
 			return;
 		}
-		if (!current(loop)) return;
+		if (next === null || !current(loop)) return;
 		if (next.fork && next.job) {
 			phase.value = { kind: "analysed", connection, module };
 			return;
@@ -229,28 +237,30 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	async function write(
 		{ form, connection, project }: Checked,
 		choice: ConnectionAccess,
+		loop: number,
 	): Promise<boolean> {
-		if (written === connection || project === undefined) return true;
+		const url = connectionUrl(form.engine, form.fields);
+		if (written?.connection === connection && written.url === url) return true;
+		const exists =
+			project === undefined ||
+			project.modules.includes(managedNames(form).driverModule);
 		try {
-			const result = project.modules.includes(managedNames(form).driverModule)
-				? await api.setConnectionUrl(
-						connection,
-						connectionUrl(form.engine, form.fields),
-					)
+			const result = exists
+				? await api.setConnectionUrl(connection, url)
 				: await api.configureProject(
 						connectSteps({ ...form, access: choice }, project),
 						false,
 						connectVariables(form),
 					);
 			if (!result.ok) {
-				refusal.value = refusalText(result.error);
+				if (current(loop)) refusal.value = refusalText(result.error);
 				return false;
 			}
 		} catch (error) {
-			refusal.value = api.failure(error).detail;
+			if (current(loop)) refusal.value = api.failure(error).detail;
 			return false;
 		}
-		written = connection;
+		written = { connection, url };
 		return true;
 	}
 
@@ -261,7 +271,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	): Promise<void> {
 		const { connection, module } = target;
 		phase.value = { kind: "analysing", connection, module };
-		if (!(await write(target, choice))) {
+		if (!(await write(target, choice, loop))) {
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
@@ -301,7 +311,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			module: managedNames(form).tablesModule,
 			project: undefined,
 		};
-		if (written !== connection) {
+		if (written?.connection !== connection) {
 			try {
 				target.project = await api.projectModules();
 			} catch (error) {

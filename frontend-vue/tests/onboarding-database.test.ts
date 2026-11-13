@@ -419,3 +419,104 @@ describe("following the connection's analysis", () => {
 		expect(fake.configureProject).toHaveBeenCalledTimes(1);
 	});
 });
+
+function deferred<T>() {
+	let resolve: (value: T) => void = () => undefined;
+	const promise = new Promise<T>((settle) => {
+		resolve = settle;
+	});
+	return { promise, resolve };
+}
+
+describe("an attempt the owner replaced", () => {
+	it("writes the new URL of a database already connected under the same name", async () => {
+		vi.useFakeTimers();
+		const setConnectionUrl = vi.fn(async () => ({
+			ok: true,
+			data: { variable: "SHOP_URL" },
+		}));
+		const fake = fakeBuilder({
+			setConnectionUrl,
+			analyseDatabase: vi.fn(async () => ({
+				ok: false,
+				error: { detail: "analysis refused" },
+			})),
+		});
+		const connect = mountConnect(fake.api);
+		void connect.connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(5_000);
+		void connect.connect(
+			"postgres",
+			"postgres://app:secret@db2.example.com/shop",
+		);
+		await vi.advanceTimersByTimeAsync(10);
+		expect(setConnectionUrl).toHaveBeenCalledWith(
+			"shop",
+			"postgres://app:secret@db2.example.com:5432/shop",
+		);
+		expect(fake.configureProject).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows no refusal of a write the owner moved on from", async () => {
+		const write = deferred<{ ok: false; error: { detail: string } }>();
+		const fake = fakeBuilder({
+			checkConnection: vi.fn(async () => WRITER),
+			configureProject: vi.fn(() => write.promise),
+		});
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		const chosen = connect.choose("read");
+		connect.reset();
+		await connect.connect(
+			"postgres",
+			"postgres://app:secret@db.example.com/orders",
+		);
+		write.resolve({ ok: false, error: { detail: "refusal of shop" } });
+		await chosen;
+		expect(connect.refusal.value).toBeNull();
+		expect(connect.phase.value).toEqual({ kind: "choosing" });
+	});
+
+	it("starts no analysis once the step is gone", async () => {
+		const answer = deferred<{ ok: false }>();
+		let reads = 0;
+		const fake = fakeBuilder({
+			latestAnalysis: () => {
+				reads += 1;
+				return answer.promise;
+			},
+		});
+		const connect = mountConnect(fake.api);
+		const run = connect.connect("postgres", URL);
+		await vi.waitFor(() => expect(reads).toBe(1));
+		wrapper?.unmount();
+		wrapper = undefined;
+		answer.resolve({ ok: false });
+		await run;
+		expect(fake.analyseDatabase).not.toHaveBeenCalled();
+	});
+
+	it("leaves the next attempt's steps alone when the replaced one's build answer comes late", async () => {
+		const answer = deferred<{ ok: false }>();
+		let reads = 0;
+		const fake = fakeBuilder({
+			latestAnalysis: () => {
+				reads += 1;
+				return reads === 1 ? answer.promise : Promise.resolve({ ok: false });
+			},
+		});
+		const connect = mountConnect(fake.api);
+		const first = connect.connect("postgres", URL);
+		await vi.waitFor(() => expect(reads).toBe(1));
+		connect.reset();
+		fake.api.checkConnection.mockImplementation(async () => WRITER);
+		await connect.connect(
+			"postgres",
+			"postgres://app:secret@db.example.com/orders",
+		);
+		answer.resolve({ ok: false });
+		await first;
+		expect(fake.analyseDatabase).not.toHaveBeenCalled();
+		expect(schemaCheck(connect)?.status).toBe("pending");
+	});
+});

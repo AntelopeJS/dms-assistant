@@ -119,6 +119,9 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
     await ready(`mongodb://127.0.0.1:${open.port}/shop`);
     const unsecured = new MongoClient(`mongodb://127.0.0.1:${open.port}/shop`);
     await seed(unsecured);
+    await unsecured
+      .db("viewsonly")
+      .createCollection("report", { viewOn: "nothing", pipeline: [] });
     await unsecured.close();
   });
 
@@ -217,17 +220,20 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
     expect(answer).to.not.have.property("user");
   });
 
-  it("answers an empty database of a server without access control as readable and not written to", async () => {
-    const answer = await checkDatabase(
-      "mongodb",
-      `mongodb://127.0.0.1:${open?.port}/empty`,
-      TIMEOUT_MS,
-    );
-    expect(answer).to.include({
-      reachable: true,
-      canRead: true,
-      canWrite: false,
-    });
+  it("gives full privileges on an empty database, and on one that holds only a view, of a server without access control", async () => {
+    for (const database of ["empty", "viewsonly"]) {
+      const answer = await checkDatabase(
+        "mongodb",
+        `mongodb://127.0.0.1:${open?.port}/${database}`,
+        TIMEOUT_MS,
+      );
+      expect(answer, database).to.include({
+        reachable: true,
+        canRead: true,
+        canWrite: true,
+      });
+      expect(answer, database).to.not.have.property("user");
+    }
   });
 
   it("answers a port nothing listens on as unreachable, within the timeout", async () => {

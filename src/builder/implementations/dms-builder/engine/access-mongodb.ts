@@ -30,14 +30,6 @@ const READ = "find";
 const WRITES = ["insert", "update", "remove"];
 
 /**
- * Every privilege a server without access control gives: it signs nobody in and lists no
- * privilege, yet answers every command, so a read that succeeded counts as full privileges.
- */
-const FULL_PRIVILEGES: readonly MongoPrivilege[] = [
-  { resource: { anyResource: true }, actions: [READ, ...WRITES] },
-];
-
-/**
  * Whether a privilege of the account covers `action` on the collection. The same test as `Allows`
  * in the catalog of `@antelopejs/mongodb` 1.7.0 (`dist/implementations/catalog/discovery.js`): the
  * resource names every resource, or this database or any, and this collection or any.
@@ -75,15 +67,20 @@ function relationAccess(
  * What a MongoDB account may do, from the collections it lists. It writes when it may insert,
  * update or remove in any collection that is not a view, which is `Writes` in `discovery.js` of
  * the catalog of `@antelopejs/mongodb` 1.7.0, and the `system.` collections are left out as there.
- * A collection it can read is one it may `find` in. A server without access control gives full
- * privileges.
+ * A collection it can read is one it may `find` in. A server without access control signs nobody
+ * in and lists no privilege, yet answers every command, so a read that succeeded counts as full
+ * privileges, whatever the database holds: an empty database, or one of views, can be written to
+ * there, since an insert creates its collection.
  */
 export function mongoAccess(grants: MongoGrants): Privileges {
-  const privileges =
-    grants.user === undefined ? FULL_PRIVILEGES : grants.privileges;
+  if (grants.user === undefined) {
+    return { canRead: true, canWrite: true };
+  }
   return summarizeRelations(
     grants.relations
       .filter(({ name }) => !name.startsWith(SYSTEM_PREFIX))
-      .map((relation) => relationAccess(privileges, grants.database, relation)),
+      .map((relation) =>
+        relationAccess(grants.privileges, grants.database, relation),
+      ),
   );
 }

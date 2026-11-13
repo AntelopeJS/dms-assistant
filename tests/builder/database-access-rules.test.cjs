@@ -204,9 +204,26 @@ void test("mongodb: a server without access control gives full privileges", () =
   });
 });
 
-/** Fails on an implementation that lets full privileges write to a view. */
-void test("mongodb: a server without access control still writes to no view", () => {
-  assert.deepEqual(mongo({ user: undefined, relations: [REPORT] }), {
+/** Fails on an implementation that reads a server without access control from what the database holds, so an empty one, or one of views, cannot be written to. */
+void test("mongodb: a server without access control reads and writes a database that is empty or holds only views", () => {
+  for (const relations of [[], [REPORT]]) {
+    assert.deepEqual(mongo({ user: undefined, relations }), {
+      canRead: true,
+      canWrite: true,
+    });
+  }
+});
+
+/** Fails on an implementation that counts a view of a signed-in account as writable. */
+void test("mongodb: a signed-in account with every privilege writes to no view and to nothing in an empty database", () => {
+  const everything = [
+    privilege(["find", "insert", "update", "remove"], { anyResource: true }),
+  ];
+  assert.deepEqual(mongo({ privileges: everything, relations: [REPORT] }), {
+    canRead: true,
+    canWrite: false,
+  });
+  assert.deepEqual(mongo({ privileges: everything, relations: [] }), {
     canRead: true,
     canWrite: false,
   });

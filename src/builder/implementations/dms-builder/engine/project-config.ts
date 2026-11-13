@@ -11,11 +11,16 @@ import {
   type PropertyAssignment,
   type SourceFile,
 } from "ts-morph";
-import { isPlainObjectLiteral } from "./literal-overrides";
+import {
+  hasUnreadableMember,
+  isPlainObjectLiteral,
+  shorthandNamed,
+} from "./literal-overrides";
 import { configObject, propertyKey } from "./modules";
 import { indentationText, resolveProjectRoot } from "./project";
 import { keyText, literalText } from "./project-config-text";
 import type { Scaffold } from "./project-scaffold";
+import { isPlainObject } from "./value";
 
 export const ENV_OVERRIDES = "envOverrides";
 export const MODULES = "modules";
@@ -214,7 +219,12 @@ function addProperty(
   );
 }
 
-/** Sets `key` on the object at `path`, replacing its value when present. */
+/**
+ * Sets `key` on the object at `path`, replacing its value when present. A shorthand member of that
+ * name is replaced by an assignment, unless the value is an object: the shorthand's value is a
+ * variable the builder cannot read. An object holding a member under a name the builder cannot
+ * read, a computed name, a method or an accessor, may hold `key` there, so it is refused.
+ */
 export function setProperty(
   draft: ConfigDraft,
   path: string[],
@@ -223,8 +233,22 @@ export function setProperty(
 ): void {
   const owner =
     objectAt(draft, path) ?? refuse(`could not find ${path.join(".")}`);
-  const existing = propertyNamed(owner, key);
+  const shorthand = shorthandNamed(owner, key);
+  if (hasUnreadableMember(owner) || (shorthand && isPlainObject(value))) {
+    refuseUnreadable(path, key);
+  }
   const literal = literalText(value, draft.unit);
+  if (shorthand) {
+    const text = rebased(literal, lineIndent(draft, shorthand));
+    replace(
+      draft,
+      shorthand.getStart(),
+      shorthand.getEnd(),
+      `${keyText(key)}: ${text}`,
+    );
+    return;
+  }
+  const existing = propertyNamed(owner, key);
   if (!existing) {
     addProperty(draft, path, key, literal);
     return;
@@ -241,11 +265,21 @@ export function stringOf(node: Node | undefined): string | undefined {
     : undefined;
 }
 
-/** Refuses an object value for `key` of the object at `path`, which starts at a module's entry. */
+/** Where `key` of the object at `path` sits: by its key path in a module's entry, else from the root. */
+function locate(path: string[], key: string): string {
+  const [head, module, ...inside] = path;
+  if (head !== MODULES) {
+    return `"${[...path, key].join(".")}" in the configuration`;
+  }
+  return module === undefined
+    ? `module "${key}"`
+    : `${[...inside, key].join(".")} of module "${module}"`;
+}
+
+/** Refuses a write to `key` of the object at `path`, held where the builder cannot read what it would replace. */
 export function refuseUnreadable(path: string[], key: string): never {
-  const [, module, ...inside] = path;
   return refuse(
-    `${[...inside, key].join(".")} of module "${module}" is not written as a plain object literal, and writing it again would lose a part: write it as a plain object there, then try again`,
+    `${locate(path, key)} is held in a way the builder cannot read (a variable, a spread, a computed name, a method or an accessor), so writing it again would lose a part: write it as a plain object literal with plain names there, then try again`,
   );
 }
 
@@ -293,7 +327,10 @@ export function moduleEntries(
   const entries: [string, ObjectLiteralExpression][] = [];
   const modules = objectAt(draft, [MODULES]);
   for (const property of modules?.getProperties() ?? []) {
-    if (!Node.isPropertyAssignment(property)) {
+    if (
+      !Node.isPropertyAssignment(property) ||
+      Node.isComputedPropertyName(property.getNameNode())
+    ) {
       continue;
     }
     const entry = property.getInitializer();

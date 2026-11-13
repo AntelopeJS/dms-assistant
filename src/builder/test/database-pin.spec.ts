@@ -177,6 +177,19 @@ describe("the database pins of the modules that import interface-database", () =
     });
   });
 
+  it("refuses when a module is keyed by a computed name, which may be one that imports interface-database", () => {
+    writeConfig(
+      config(
+        DMS_SOURCE,
+        "-1",
+        `    [REPORTS_KEY]: { source: { type: "local", path: "../reports" } },`,
+      ),
+    );
+    expect(() => databasePins(PROJECT)).to.throw(
+      /computed name, a method or an accessor/,
+    );
+  });
+
   it("pins each module that imports interface-database, and no provider, no pinned module and no other", () => {
     writeConfig(
       config(

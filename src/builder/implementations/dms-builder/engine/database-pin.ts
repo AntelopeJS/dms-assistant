@@ -13,6 +13,7 @@ import {
 } from "./project-config";
 import { readableConfig, writtenModules } from "./project-config-readers";
 import {
+  hasUnreadableMember,
   hides,
   isPlainObjectLiteral,
   overridesWrittenAsLiterals,
@@ -253,6 +254,11 @@ export function databasePins(
   const providers = providersOf(lookup(ownModuleId(), DATABASE_INTERFACE));
   if (!draft || !modules || providers.length === 0) {
     return { pins: [] };
+  }
+  if (hasUnreadableMember(modules)) {
+    throw new StepRefusal(
+      `a member of the configuration's modules is written with a computed name, a method or an accessor, so the modules that import ${DATABASE_INTERFACE} cannot all be pinned to the project's database: write the name of each module as plain text, then try again`,
+    );
   }
   const ownDatabase = defaultAmong(modules, providers);
   return {

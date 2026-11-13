@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Node, type ObjectLiteralExpression } from "ts-morph";
-import { isPlainObjectLiteral } from "./literal-overrides";
+import { hasUnreadableMember, isPlainObjectLiteral } from "./literal-overrides";
 import { resolveProjectRoot } from "./project";
 import {
   type ConfigDraft,
+  MODULES,
   moduleEntries,
+  objectAt,
   propertyNamed,
   refuse,
   stringOf,
@@ -81,6 +83,12 @@ export function dmsDatabaseIn(draft: ConfigDraft): string | undefined {
   if (unreadable) {
     refuse(
       `module "${unreadable[0]}" is not written as an object literal, so the builder cannot register a connection with dms-database there: write its entry as an object, then try again`,
+    );
+  }
+  const modules = objectAt(draft, [MODULES]);
+  if (modules && hasUnreadableMember(modules)) {
+    refuse(
+      "a member of the configuration's modules is written with a computed name, a method or an accessor, so the builder cannot tell whether it is dms-database, nor register a connection there: write the name of each module as plain text, then try again",
     );
   }
   return undefined;

@@ -111,6 +111,28 @@ describe("the entry that is dms-database", () => {
     }
   });
 
+  it("is refused when a module is keyed by a computed name, a method or an accessor, and none is found", () => {
+    for (const member of [
+      `[DMS_KEY]: { source: { type: "package", package: "${DMS_DATABASE_PACKAGE}", version: "*" } },`,
+      "console() { return {}; },",
+      "get console() { return {}; },",
+    ]) {
+      writeConfig(`    ${member}`);
+      expect(() => dmsDatabaseId(), member).to.throw(
+        StepRefusal,
+        /computed name, a method or an accessor/,
+      );
+    }
+  });
+
+  it("is the entry written as a literal, whatever a computed name beside it holds", () => {
+    writeConfig(
+      `    "dms-database": { source: { type: "package", package: "x", version: "*" } },
+    [OTHER_KEY]: { source: { type: "package", package: "y", version: "*" } },`,
+    );
+    expect(dmsDatabaseId()).to.equal("dms-database");
+  });
+
   it("is not refused for another module written as a version string", () => {
     writeConfig(`    "@antelopejs/some-app": "^1.0.0",`);
     expect(dmsDatabaseId()).to.equal(undefined);

@@ -7,7 +7,11 @@ import type {
 import { Node } from "ts-morph";
 import { VARIABLE_NAME } from "./env-lines";
 import { heldAt } from "./held-value";
-import { hides, overridesWrittenAsLiterals } from "./literal-overrides";
+import {
+  hides,
+  overridesWrittenAsLiterals,
+  shorthandNamed,
+} from "./literal-overrides";
 import {
   type ConfigDraft,
   ENV_OVERRIDES,
@@ -217,6 +221,9 @@ function mergeDisabledExports(
   const entry =
     objectAt(draft, [MODULES, id]) ??
     refuse(`the project has no module "${id}"`);
+  if (shorthandNamed(entry, DISABLED_EXPORTS)) {
+    refuseUnreadable([MODULES, id], DISABLED_EXPORTS);
+  }
   const current = propertyNamed(entry, DISABLED_EXPORTS)?.getInitializer();
   const existing = current ? existingStrings(current, id) : [];
   setProperty(draft, [MODULES, id], DISABLED_EXPORTS, [

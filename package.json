@@ -170,9 +170,6 @@
   },
   "antelopeJs": {
     "baseUrl": "dist",
-    "implements": [
-      "@antelopejs/interface-dms-builder"
-    ],
     "skills": [
       "./skills"
     ],

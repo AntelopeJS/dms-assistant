@@ -1,4 +1,3 @@
-import { ImplementInterface } from "@antelopejs/interface-core";
 import {
   type DmsBuilderConfig,
   isBuilderEnabled,
@@ -8,17 +7,16 @@ import {
 export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 
 /**
- * Install the implementation and, when the builder is enabled, mount the API:
- * the routes controller registers its routes as it is decorated, so importing
- * it is what mounts them.
+ * Mounts the external-database API when the builder is enabled: the routes
+ * controller registers its routes as it is decorated, so importing it is what
+ * mounts them. The mapping it serves writes queries, so the built-in query
+ * templates are registered first.
  */
 export async function construct(config?: DmsBuilderConfig): Promise<void> {
   setModuleConfig(config);
-  void ImplementInterface(
-    await import("@antelopejs/interface-dms-builder"),
-    await import("./implementations/dms-builder"),
-  );
-  if (await isBuilderEnabled()) {
-    await import("./routes");
-  }
+  if (!(await isBuilderEnabled())) return;
+  const { registerBuiltinQueryTemplates } =
+    await import("./implementations/dms-builder/engine/query-template-emit");
+  registerBuiltinQueryTemplates();
+  await import("./routes");
 }

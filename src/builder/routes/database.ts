@@ -17,7 +17,14 @@ import type {
 } from "@antelopejs/interface-dms-builder";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
 import { type ConnectionCheckBody, runConnectionCheck } from "./database-check";
-import * as engine from "../implementations/dms-builder";
+import {
+  analysisState,
+  latestAnalysis,
+  startAnalysis,
+} from "../implementations/dms-builder/engine/analysis-job";
+import { mapResources } from "../implementations/dms-builder/engine/map-resources";
+import { mappedChoices } from "../implementations/dms-builder/engine/mapped-choices";
+import { configureProject } from "../implementations/dms-builder/engine/project-config-ops";
 import {
   catalogOf,
   listCatalogConnections,
@@ -37,7 +44,6 @@ import {
 } from "../implementations/dms-builder/engine/database-connection";
 import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
 import { repairDatabaseConnections } from "../implementations/dms-builder/engine/database-repair";
-import { latestAnalysis } from "../implementations/dms-builder/engine/analysis-job";
 import {
   configureProjectWithVariables,
   type ProjectVariable,
@@ -152,7 +158,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: AnalyseDatabaseInput,
   ) {
-    return engine.AnalyseDatabase(body);
+    return startAnalysis(body);
   }
 
   /** One analysis by `id`, or the latest of a `connection`: the running one, or else the last to finish. */
@@ -163,7 +169,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @Parameter("connection", "query") connection: string | undefined,
   ) {
     if (id) {
-      return engine.GetAnalysis(id);
+      return analysisState(id);
     }
     const latest = latestAnalysis(connection ?? "");
     if (!latest.ok) {
@@ -177,7 +183,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: MapResourcesInput,
   ) {
-    return engine.MapResources(body);
+    return mapResources(body);
   }
 
   @Get(ROUTES.databaseMapping)
@@ -186,7 +192,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @Parameter("connection", "query") connection: string,
     @Parameter("module", "query") module: string,
   ) {
-    return engine.GetMapping(connection, module);
+    return mappedChoices(connection, module);
   }
 
   @Get(ROUTES.databaseProject)
@@ -213,7 +219,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Post(ROUTES.databaseProject)
   async project(@AuthTenantOwner() _user: User, @JSONBody() body: ProjectBody) {
     if (!body.variables?.length || body.opts?.dryRun) {
-      return engine.ConfigureProject(body.steps, body.opts);
+      return configureProject(body.steps, body.opts);
     }
     return configureProjectWithVariables(body.steps, body.variables);
   }

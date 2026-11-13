@@ -19,7 +19,7 @@
     "max-lines-per-function for src/builder/test/**/*.ts": 1,
     "no-redeclare for frontend-vue/**/*.{ts,vue}": 0,
     "no-undef for frontend-vue/**/*.{ts,vue}": 0,
-    "no-unused-vars for frontend-vue/**/*.{ts,vue}": 1,
+    "no-unused-vars for frontend-vue/**/*.{ts,vue}": 0,
     "unicorn/no-thenable for src/builder/test/**/*.ts": 1,
     "vue/multi-word-component-names for frontend-vue/**/*.{ts,vue}": 0
   },

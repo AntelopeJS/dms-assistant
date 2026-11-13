@@ -14,7 +14,7 @@ const props = defineProps<Props>();
 const STREAMED_RENDER_DELAY_MS = 50;
 
 const settled = shallowRef<readonly DocumentFragment[]>([]);
-const open = shallowRef(renderMarkdown(""));
+const open = shallowRef<DocumentFragment | null>(null);
 let incremental = createIncrementalMarkdown();
 let pendingFrame: ReturnType<typeof setTimeout> | null = null;
 

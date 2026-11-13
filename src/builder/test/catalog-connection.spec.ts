@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
+import Module from "node:module";
 import path from "node:path";
 import { expect } from "chai";
 
@@ -15,22 +16,18 @@ const ENGINE = path.join(
   "engine",
 );
 const CONNECTION_MODULE = path.join(ENGINE, "catalog-connection.js");
+/** A provider module of the catalog interface, exporting each of its functions. */
+const CATALOG_PROVIDER = [
+  "Info",
+  "ListRelations",
+  "DescribeRelations",
+  "Profile",
+  "CheckReference",
+  "SampleRows",
+]
+  .map((name) => `exports.${name} = async () => undefined;\n`)
+  .join("");
 const RELOADED = [CONNECTION_MODULE, path.join(ENGINE, "own-connections.js")];
-
-type Loader = (
-  request: string,
-  parent: NodeJS.Module | null | undefined,
-  isMain: boolean,
-  // oxlint-disable-next-line anti-slop/no-unknown-returns -- the signature of Node's Module._load hook, which answers the exports of any module; the spec only forwards that answer or its stub
-) => unknown;
-
-/** Node's module loader, whose hook a spec replaces to answer a stub for one package. */
-interface ModuleLoader {
-  _load: Loader;
-}
-
-// SAFETY: node:module exports Module, which carries the _load hook that ModuleLoader declares; the hook is undocumented, so no published type names it.
-const loader = require("node:module") as ModuleLoader;
 
 /** The async module context, as the runtime sets it: the builder while it loads, then the HTTP module. */
 const context = { module: BUILDER };
@@ -55,24 +52,31 @@ function interfaceCore(catalogPath: string) {
   };
 }
 
-interface ConnectionModule {
-  listCatalogConnections(): string[];
-  catalogOf(id: string): { connection?: string } | undefined;
-}
+type ConnectionModule = Awaited<
+  typeof import("../implementations/dms-builder/engine/catalog-connection")
+>;
 
-/** Loads the connection module afresh, in the builder's context, against the stubbed interface-core. */
-function loadInBuilderContext(catalogPath: string): ConnectionModule {
-  const original = loader._load;
-  const core = interfaceCore(catalogPath);
-  loader._load = (request, parent, isMain) =>
-    request === INTERFACE_CORE ? core : original(request, parent, isMain);
+/**
+ * Loads the connection module afresh, in the builder's context, with interface-core answered by
+ * a stub that sits in the require cache under the path the engine resolves it to.
+ */
+async function loadInBuilderContext(
+  catalogPath: string,
+): Promise<ConnectionModule> {
+  const corePath = require.resolve(INTERFACE_CORE, { paths: [ENGINE] });
+  const original = require.cache[corePath];
+  const stub = new Module(corePath);
+  stub.filename = corePath;
+  stub.exports = interfaceCore(catalogPath);
+  stub.loaded = true;
+  require.cache[corePath] = stub;
   RELOADED.forEach((file) => delete require.cache[file]);
   try {
     context.module = BUILDER;
-    // SAFETY: ConnectionModule restates the two functions catalog-connection.js exports, listCatalogConnections and catalogOf, which the spec calls; require returns any.
-    return require(CONNECTION_MODULE) as ConnectionModule;
+    return await import("../implementations/dms-builder/engine/catalog-connection");
   } finally {
-    loader._load = original;
+    if (original === undefined) delete require.cache[corePath];
+    else require.cache[corePath] = original;
     RELOADED.forEach((file) => delete require.cache[file]);
   }
 }
@@ -83,13 +87,14 @@ function loadInBuilderContext(catalogPath: string): ConnectionModule {
  */
 describe("the builder's catalog connections", () => {
   let directory: string;
+  let catalogPath: string;
   let connections: ConnectionModule;
 
-  before(() => {
+  before(async () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "catalog-connection-"));
-    const catalogPath = path.join(directory, "catalog.js");
-    fs.writeFileSync(catalogPath, 'exports.connection = "erp";\n');
-    connections = loadInBuilderContext(catalogPath);
+    catalogPath = path.join(directory, "catalog.js");
+    fs.writeFileSync(catalogPath, CATALOG_PROVIDER);
+    connections = await loadInBuilderContext(catalogPath);
     context.module = HTTP_MODULE;
   });
 
@@ -104,7 +109,7 @@ describe("the builder's catalog connections", () => {
   });
 
   it("reaches a connection's catalog from that context", () => {
-    expect(connections.catalogOf("erp")?.connection).to.equal("erp");
+    expect(connections.catalogOf("erp")).to.equal(require(catalogPath));
     expect(connections.catalogOf("crm")).to.equal(undefined);
   });
 });

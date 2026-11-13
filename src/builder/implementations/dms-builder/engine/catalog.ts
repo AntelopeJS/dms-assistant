@@ -48,9 +48,29 @@ interface BlockTypesModule {
 
 let cached: BlockCatalog | undefined;
 
+/**
+ * Whether the installed `block-types` module exports the two functions the catalog reads. Their
+ * signatures cannot be read at run time, so the module is taken at its own declarations' word.
+ */
+function isBlockTypesModule(exported: unknown): exported is BlockTypesModule {
+  return (
+    typeof exported === "object" &&
+    exported !== null &&
+    "ListBlockTypes" in exported &&
+    typeof exported.ListBlockTypes === "function" &&
+    "ListDataSources" in exported &&
+    typeof exported.ListDataSources === "function"
+  );
+}
+
 function blockTypesModule(): BlockTypesModule {
-  // SAFETY: BlockTypesModule restates the two functions `@antelopejs/interface-dms/base/block-types` exports, ListBlockTypes and ListDataSources; require returns any.
-  return require(BLOCK_TYPES_MODULE) as BlockTypesModule;
+  const exported: unknown = require(BLOCK_TYPES_MODULE);
+  if (!isBlockTypesModule(exported)) {
+    throw new Error(
+      `${BLOCK_TYPES_MODULE} does not export ListBlockTypes and ListDataSources`,
+    );
+  }
+  return exported;
 }
 
 /** Read the block types `dms-base` declares. */

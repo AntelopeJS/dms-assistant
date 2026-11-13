@@ -1,8 +1,5 @@
 import { expect } from "chai";
-import type {
-  MappingProposal,
-  ProposedResource,
-} from "@antelopejs/interface-dms-builder";
+import type { MappingProposal } from "@antelopejs/interface-dms-builder";
 import {
   impliedReferenceChecks,
   proposeMapping,
@@ -14,6 +11,7 @@ import {
   Reference,
   Relation,
 } from "./analysis-catalog";
+import { field, resource } from "./helpers/proposal";
 
 const ORDERS_CUSTOMER = Reference(
   "erp.orders",
@@ -70,25 +68,6 @@ const PROFILES = [
     notes: { avgLength: 400 },
   }),
 ];
-
-function resource(
-  proposal: MappingProposal,
-  relation: string,
-): ProposedResource {
-  const found = proposal.resources.find(
-    (candidate) => candidate.relation === relation,
-  );
-  expect(found, relation).to.not.equal(undefined);
-  return found!;
-}
-
-function field(resource: ProposedResource, column: string) {
-  const found = resource.fields.find(
-    (candidate) => candidate.column === column,
-  );
-  expect(found, column).to.not.equal(undefined);
-  return found!;
-}
 
 describe("the analysis of a database", () => {
   const proposal = proposeMapping(Input([CUSTOMERS, ORDERS], PROFILES));
@@ -169,7 +148,7 @@ describe("the analysis of a database", () => {
   });
 });
 
-describe("the relation rules of the analysis", () => {
+function registerRelationExclusionCases(): void {
   it("excludes an unmappable relation with the catalog's reason (R1)", () => {
     const people = Relation({
       relation: "erp.people",
@@ -272,7 +251,9 @@ describe("the relation rules of the analysis", () => {
       "label:erp.lines",
     ]);
   });
+}
 
+function registerRelationLabelCases(): void {
   it("offers every column as the label, the key too, and says how many rows there are", () => {
     const lines = Relation({
       relation: "erp.lines",
@@ -359,23 +340,51 @@ describe("the relation rules of the analysis", () => {
       "label:erp.parts",
     ]);
   });
+}
+
+describe("the relation rules of the analysis", () => {
+  registerRelationExclusionCases();
+  registerRelationLabelCases();
 });
 
-describe("references the database does not declare", () => {
-  const invoices = Relation({
-    relation: "erp.invoices",
-    key: ["id"],
-    columns: [
-      Column("id", "number"),
-      Column("number", "string"),
-      Column("order_ref", "string"),
-    ],
-  });
-  const profiles = [
-    Profiled("erp.invoices", 50, { number: { traits: ["label-candidate"] } }),
-    ...PROFILES,
-  ];
+const invoices = Relation({
+  relation: "erp.invoices",
+  key: ["id"],
+  columns: [
+    Column("id", "number"),
+    Column("number", "string"),
+    Column("order_ref", "string"),
+  ],
+});
 
+const profiles = [
+  Profiled("erp.invoices", 50, { number: { traits: ["label-candidate"] } }),
+  ...PROFILES,
+];
+
+function analysed(containment: number): MappingProposal {
+  return proposeMapping(
+    Input([CUSTOMERS, ORDERS, invoices], profiles, {
+      references: [
+        {
+          from: { relation: "erp.invoices", column: "order_ref" },
+          to: { relation: "erp.orders", column: "id" },
+          match: {
+            status: "ok",
+            value: {
+              containment,
+              checkedRows: 50,
+              sampled: false,
+              targetIsKey: true,
+            },
+          },
+        },
+      ],
+    }),
+  );
+}
+
+function registerImpliedReferenceCases(): void {
   it("checks a column named like a reference against the key its name points at", () => {
     expect(impliedReferenceChecks([CUSTOMERS, ORDERS, invoices])).to.deep.equal(
       [
@@ -386,28 +395,6 @@ describe("references the database does not declare", () => {
       ],
     );
   });
-
-  function analysed(containment: number): MappingProposal {
-    return proposeMapping(
-      Input([CUSTOMERS, ORDERS, invoices], profiles, {
-        references: [
-          {
-            from: { relation: "erp.invoices", column: "order_ref" },
-            to: { relation: "erp.orders", column: "id" },
-            match: {
-              status: "ok",
-              value: {
-                containment,
-                checkedRows: 50,
-                sampled: false,
-                targetIsKey: true,
-              },
-            },
-          },
-        ],
-      }),
-    );
-  }
 
   it("makes one found whole a relation column, marked implied (F5)", () => {
     const proposal = analysed(1);
@@ -478,7 +465,9 @@ describe("references the database does not declare", () => {
       field(resource(proposal, "erp.invoices"), "order_ref").relation,
     ).to.equal(undefined);
   });
+}
 
+function registerPartialReferenceCases(): void {
   it("offers among the other TableViews only those whose key holds the column's kind of value", () => {
     const uuidKeyed = Relation({
       relation: "erp.customers",
@@ -522,4 +511,9 @@ describe("references the database does not declare", () => {
       "reference:erp.invoices.order_ref",
     );
   });
+}
+
+describe("references the database does not declare", () => {
+  registerImpliedReferenceCases();
+  registerPartialReferenceCases();
 });

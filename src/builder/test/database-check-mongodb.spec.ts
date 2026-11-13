@@ -32,106 +32,15 @@ function stallsAtAccountCommand(): Stall {
     fromClient && chunk.includes("connectionStatus");
 }
 
-suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
-  let secured: Container | undefined;
-  let open: Container | undefined;
+let secured: Container | undefined;
 
-  function urlOf(
-    user: string,
-    password = secretOf(user),
-    port = secured?.port,
-  ) {
-    return `mongodb://${user}:${password}@127.0.0.1:${port}/shop?authSource=shop`;
-  }
+let open: Container | undefined;
 
-  async function ready(url: string) {
-    await waitFor("MongoDB", async () => {
-      const client = new MongoClient(url, { serverSelectionTimeoutMS: 500 });
-      try {
-        await client.db("admin").command({ ping: 1 });
-        return true;
-      } catch {
-        return false;
-      } finally {
-        await client.close();
-      }
-    });
-  }
+function urlOf(user: string, password = secretOf(user), port = secured?.port) {
+  return `mongodb://${user}:${password}@127.0.0.1:${port}/shop?authSource=shop`;
+}
 
-  async function seed(client: MongoClient) {
-    const shop = client.db("shop");
-    await shop.collection("orders").insertOne({ total: 1 });
-    await shop.collection("notes").insertOne({ text: "a" });
-    return shop;
-  }
-
-  before(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    [secured, open] = await Promise.all([
-      startContainer("mongo:8", 27017, [
-        "-e",
-        "MONGO_INITDB_ROOT_USERNAME=root",
-        "-e",
-        `MONGO_INITDB_ROOT_PASSWORD=${ROOT_SECRET}`,
-      ]),
-      startContainer("mongo:8", 27017),
-    ]);
-    const rootUrl = `mongodb://root:${ROOT_SECRET}@127.0.0.1:${secured.port}/admin`;
-    await ready(rootUrl);
-    const root = new MongoClient(rootUrl);
-    const shop = await seed(root);
-    for (const user of PLAIN_ROLES) {
-      await shop.command({
-        createUser: user,
-        pwd: secretOf(user),
-        roles: [{ role: user === "reader" ? "read" : "readWrite", db: "shop" }],
-      });
-    }
-    await shop.command({
-      createRole: "listOnly",
-      privileges: [
-        {
-          resource: { db: "shop", collection: "" },
-          actions: ["listCollections"],
-        },
-      ],
-      roles: [],
-    });
-    await shop.command({
-      createRole: "insertOnly",
-      privileges: [
-        {
-          resource: { db: "shop", collection: "orders" },
-          actions: ["insert", "find"],
-        },
-      ],
-      roles: [],
-    });
-    await shop.command({
-      createUser: "lister",
-      pwd: secretOf("lister"),
-      roles: ["listOnly"],
-    });
-    await shop.command({
-      createUser: "inserter",
-      pwd: secretOf("inserter"),
-      roles: ["insertOnly"],
-    });
-    await root.close();
-    await ready(`mongodb://127.0.0.1:${open.port}/shop`);
-    const unsecured = new MongoClient(`mongodb://127.0.0.1:${open.port}/shop`);
-    await seed(unsecured);
-    await unsecured
-      .db("viewsonly")
-      .createCollection("report", { viewOn: "nothing", pipeline: [] });
-    await unsecured.close();
-  });
-
-  after(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    await Promise.all([removeContainer(secured), removeContainer(open)]);
-  });
-
+function registerAccessCases(): void {
   it("answers read access and no write access to an account that may only find", async () => {
     const answer = await checkDatabase("mongodb", urlOf("reader"), TIMEOUT_MS);
     expect(answer).to.include({
@@ -221,7 +130,9 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
     });
     expect(answer).to.not.have.property("user");
   });
+}
 
+function registerUnreachableAndCloseCases(): void {
   it("gives full privileges on an empty database, and on one that holds only a view, of a server without access control", async () => {
     for (const database of ["empty", "viewsonly"]) {
       const answer = await checkDatabase(
@@ -318,4 +229,97 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
       await proxy.close();
     }
   });
+}
+
+suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
+  async function ready(url: string) {
+    await waitFor("MongoDB", async () => {
+      const client = new MongoClient(url, { serverSelectionTimeoutMS: 500 });
+      try {
+        await client.db("admin").command({ ping: 1 });
+        return true;
+      } catch {
+        return false;
+      } finally {
+        await client.close();
+      }
+    });
+  }
+
+  async function seed(client: MongoClient) {
+    const shop = client.db("shop");
+    await shop.collection("orders").insertOne({ total: 1 });
+    await shop.collection("notes").insertOne({ text: "a" });
+    return shop;
+  }
+
+  before(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    [secured, open] = await Promise.all([
+      startContainer("mongo:8", 27017, [
+        "-e",
+        "MONGO_INITDB_ROOT_USERNAME=root",
+        "-e",
+        `MONGO_INITDB_ROOT_PASSWORD=${ROOT_SECRET}`,
+      ]),
+      startContainer("mongo:8", 27017),
+    ]);
+    const rootUrl = `mongodb://root:${ROOT_SECRET}@127.0.0.1:${secured.port}/admin`;
+    await ready(rootUrl);
+    const root = new MongoClient(rootUrl);
+    const shop = await seed(root);
+    for (const user of PLAIN_ROLES) {
+      await shop.command({
+        createUser: user,
+        pwd: secretOf(user),
+        roles: [{ role: user === "reader" ? "read" : "readWrite", db: "shop" }],
+      });
+    }
+    await shop.command({
+      createRole: "listOnly",
+      privileges: [
+        {
+          resource: { db: "shop", collection: "" },
+          actions: ["listCollections"],
+        },
+      ],
+      roles: [],
+    });
+    await shop.command({
+      createRole: "insertOnly",
+      privileges: [
+        {
+          resource: { db: "shop", collection: "orders" },
+          actions: ["insert", "find"],
+        },
+      ],
+      roles: [],
+    });
+    await shop.command({
+      createUser: "lister",
+      pwd: secretOf("lister"),
+      roles: ["listOnly"],
+    });
+    await shop.command({
+      createUser: "inserter",
+      pwd: secretOf("inserter"),
+      roles: ["insertOnly"],
+    });
+    await root.close();
+    await ready(`mongodb://127.0.0.1:${open.port}/shop`);
+    const unsecured = new MongoClient(`mongodb://127.0.0.1:${open.port}/shop`);
+    await seed(unsecured);
+    await unsecured
+      .db("viewsonly")
+      .createCollection("report", { viewOn: "nothing", pipeline: [] });
+    await unsecured.close();
+  });
+
+  after(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    await Promise.all([removeContainer(secured), removeContainer(open)]);
+  });
+
+  registerAccessCases();
+  registerUnreachableAndCloseCases();
 });

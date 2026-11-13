@@ -70,21 +70,23 @@ export function propertyNamed(
     .find((property) => propertyKey(property.getNameNode()) === name);
 }
 
+/** The object literal `node`, written at `key` of the object at `path`, refused when it has a spread. */
 function plainObject(
   node: Node | undefined,
-  name: string,
+  path: string[],
+  key: string,
 ): ObjectLiteralExpression {
   if (
     !Node.isObjectLiteralExpression(node) ||
     node.getProperties().some(Node.isSpreadAssignment)
   ) {
-    refuse(`"${name}" in the configuration is not a plain object literal`);
+    refuseUnreadable(path, key);
   }
   return node;
 }
 
 function rootObject(draft: ConfigDraft): ObjectLiteralExpression {
-  return plainObject(configObject(draft.file), "export default");
+  return plainObject(configObject(draft.file), [], "export default");
 }
 
 /** The object literal at `path` from the configuration's root, or nothing when a key is absent. */
@@ -93,12 +95,12 @@ export function objectAt(
   path: string[],
 ): ObjectLiteralExpression | undefined {
   let current = rootObject(draft);
-  for (const key of path) {
+  for (const [depth, key] of path.entries()) {
     const property = propertyNamed(current, key);
     if (!property) {
       return undefined;
     }
-    current = plainObject(property.getInitializer(), key);
+    current = plainObject(property.getInitializer(), path.slice(0, depth), key);
   }
   return current;
 }
@@ -302,7 +304,7 @@ export function existingOverrides(
 }
 
 export function overrideOf(element: Node): ImportOverrideInput {
-  const entry = plainObject(element, IMPORT_OVERRIDES);
+  const entry = plainObject(element, [], IMPORT_OVERRIDES);
   return {
     interface:
       stringOf(propertyNamed(entry, "interface")?.getInitializer()) ?? "",

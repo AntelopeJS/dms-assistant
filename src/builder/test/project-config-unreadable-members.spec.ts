@@ -140,3 +140,48 @@ describe("writing a key beside a member whose name the builder cannot read", fun
     }
   });
 });
+
+/**
+ * A refusal tells the owner what to fix, so it names where: the module and the key path from its
+ * entry. A refusal that says only that something "in the configuration" is not plain fails these
+ * cases.
+ */
+describe("refusing a value written as a variable", function () {
+  this.timeout(OP_TIMEOUT);
+
+  beforeEach(() => {
+    app = createFixture();
+  });
+
+  after(destroyFixture);
+
+  it("names the module and the key of a config written as a variable", async () => {
+    const before = writeConfig("config: SHARED_CONFIG,");
+    const refused = await ConfigureModule(DMS_DATABASE, REGISTER_ERP);
+    expect(refused.ok).to.equal(false);
+    expect(refusalOf(refused)).to.include(`config of module "${DMS_DATABASE}"`);
+    expect(readConfig()).to.equal(before);
+  });
+
+  it("names the module and the key of an exportPriority written as a variable", async () => {
+    const before = writeConfig("exportPriority: PRIORITIES,");
+    const refused = await ConfigureModule(DMS_DATABASE, {
+      exportPriority: { "@antelopejs/interface-database": 1 },
+    });
+    expect(refusalOf(refused)).to.include(
+      `exportPriority of module "${DMS_DATABASE}"`,
+    );
+    expect(readConfig()).to.equal(before);
+  });
+
+  it("names the module written as a variable", async () => {
+    const before = configWith("").replace(
+      /"dms-database": \{[^]*?\n    \},/,
+      `"${DMS_DATABASE}": DMS_ENTRY,`,
+    );
+    fs.writeFileSync(path.join(app.root, "antelope.config.ts"), before);
+    const refused = await ConfigureModule(DMS_DATABASE, REGISTER_ERP);
+    expect(refusalOf(refused)).to.include(`module "${DMS_DATABASE}"`);
+    expect(readConfig()).to.equal(before);
+  });
+});

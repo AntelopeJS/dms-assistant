@@ -227,6 +227,7 @@
 				"why_held": "Le DMS retient cet appel jusqu'à votre accord.",
 				"why_held_configure": "Modifie la configuration du projet.",
 				"why_held_map": "Mappe les tables et retire les pages {pages}.",
+				"why_held_tool": "Demandé car un autre appel à cet outil attend votre accord.",
 				"type_to_confirm_before": "Saisissez",
 				"type_to_confirm_after": "pour confirmer",
 				"suggest": "Proposer autre chose",

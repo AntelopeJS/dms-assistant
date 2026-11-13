@@ -402,6 +402,17 @@ export const HeldPreviewSchema = z.object({
   details: JsonValueSchema,
 });
 
+/**
+ * Another call to a Builder tool the DMS holds a call of. The chat asks before
+ * it, as the DMS drops the arguments its tool does not know and so may count it
+ * as the held call. `args` are the call's own, not a preview from the DMS.
+ */
+export const HeldToolPreviewSchema = z.object({
+  type: z.literal("held_tool"),
+  operation: z.string(),
+  args: z.record(z.string(), z.unknown()),
+});
+
 export const PermissionPreviewSchema = z.discriminatedUnion("type", [
   DiffPreviewSchema,
   CommandPreviewSchema,
@@ -409,6 +420,7 @@ export const PermissionPreviewSchema = z.discriminatedUnion("type", [
   WebPreviewSchema,
   GenericPreviewSchema,
   HeldPreviewSchema,
+  HeldToolPreviewSchema,
 ]);
 
 /**
@@ -602,6 +614,7 @@ export type DiffPreviewType = z.infer<typeof DiffPreviewSchema>;
 export type CommandPreviewType = z.infer<typeof CommandPreviewSchema>;
 export type DestructivePreviewType = z.infer<typeof DestructivePreviewSchema>;
 export type HeldPreviewType = z.infer<typeof HeldPreviewSchema>;
+export type HeldToolPreviewType = z.infer<typeof HeldToolPreviewSchema>;
 export type ActiveRuleType = z.infer<typeof ActiveRuleSchema>;
 export type ConversationModeType = z.infer<typeof ConversationModeSchema>;
 export type ConversationModeEventType = z.infer<typeof ConversationModeEvent>;

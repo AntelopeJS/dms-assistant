@@ -171,6 +171,7 @@ describe("held calls, once held", () => {
     ).toBeUndefined();
     held.observe(TURN_CONVERSATION_ID, run, { outcome: "done" });
     expect(held.holdOf(TURN_CONVERSATION_ID, heldCall)).toEqual({
+      match: "same_call",
       preview: heldArgs,
     });
     expect(
@@ -178,17 +179,18 @@ describe("held calls, once held", () => {
     ).toBeUndefined();
   });
 
-  it("gives the repeat the DMS's preview, and another call of the tool none (fails a card that shows another call's preview)", () => {
+  it("tells the repeat, with the DMS's preview, from another call of the tool, with none (fails a card that shows another call as the held one)", () => {
     const { held } = heldAfterRefusal();
-    expect(held.holdOf(TURN_CONVERSATION_ID, HELD)).toEqual({ preview: ARGS });
+    expect(held.holdOf(TURN_CONVERSATION_ID, HELD)).toEqual({
+      match: "same_call",
+      preview: ARGS,
+    });
     expect(
       held.holdOf(TURN_CONVERSATION_ID, {
         ...HELD,
         args: { ref: "customers" },
       }),
-    ).toEqual({
-      preview: undefined,
-    });
+    ).toEqual({ match: "same_tool" });
   });
 
   it("keeps a hold to its own conversation: another one neither sees it nor releases it (fails a hold the chat keeps for the whole sidecar)", () => {

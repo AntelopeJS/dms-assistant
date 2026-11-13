@@ -248,4 +248,47 @@ describe("the card of a call the DMS held", () => {
     },
     TEST_TIMEOUT_MS,
   );
+
+  it(
+    "shows another call to the held tool as itself, its arguments not as the DMS's preview (fails a card that claims the DMS holds a call it does not)",
+    async () => {
+      const name = "mcp__dms__builder_map_resources";
+      const heldInput = { module: "shop", connection: "pg", resources: [] };
+      const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+      const refusal = gate.hold(SESSION, "builder_map_resources", {
+        ...heldInput,
+        pagesToRemove: ["orders"],
+      });
+      if (refusal === undefined) throw new Error("the DMS ran a first call");
+      const otherInput = {
+        module: "shop",
+        connection: "pg",
+        resources: [{ relation: "public.items" }],
+      };
+      const events = await runTurn(
+        [
+          {
+            id: "first",
+            name,
+            input: heldInput,
+            answer: { text: joinedText(refusal), isError: true },
+          },
+          { id: "other", name, input: otherInput, answer: RAN },
+        ],
+        PERMISSION_DECISIONS.ALLOW_ONCE,
+      );
+      const cards = events.filter((msg) => msg.type === "permission_request");
+      expect(cards.map((msg) => [msg.callId, msg.preview])).toEqual([
+        [
+          "other",
+          {
+            type: "held_tool",
+            operation: "builder_map_resources",
+            args: otherInput,
+          },
+        ],
+      ]);
+    },
+    TEST_TIMEOUT_MS,
+  );
 });

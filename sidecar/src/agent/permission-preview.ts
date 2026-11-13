@@ -8,6 +8,7 @@ import type {
   DestructivePreviewType,
   DiffPreviewType,
   HeldPreviewType,
+  HeldToolPreviewType,
   PermissionPreviewType,
 } from "../protocol/events.js";
 import { JsonValueSchema } from "../protocol/json.js";
@@ -25,7 +26,7 @@ import {
   ToolArgsSchema,
 } from "./edit-targets.js";
 import { isDependencyFile, isGitHookFile } from "./always-ask-files.js";
-import type { HeldCall } from "./held-calls.js";
+import type { HoldMatch } from "./held-calls.js";
 import { type DiffStats, diffTexts, parseUnifiedDiff } from "./line-diff.js";
 import {
   bareToolName,
@@ -71,8 +72,8 @@ export interface DescribeOptions {
   hostProjectRoot: string;
   alwaysAskDependencies: boolean;
   alwaysAskBlockRemoval: boolean;
-  /** Set when the DMS holds the call until the person confirms it. */
-  held?: HeldCall;
+  /** Set when the DMS holds the call, or another call to its tool. */
+  held?: HoldMatch;
 }
 
 interface ParsedOptions extends Omit<DescribeOptions, "args"> {
@@ -232,10 +233,17 @@ function genericPreview(options: ParsedOptions): PermissionPreviewType {
   return { type: "generic", args: options.args };
 }
 
-function heldPreview(options: ParsedOptions, held: HeldCall): HeldPreviewType {
+function heldPreview(
+  options: ParsedOptions,
+  held: HoldMatch,
+): HeldPreviewType | HeldToolPreviewType {
+  const operation = bareToolName(options.toolName);
+  if (held.match === "same_tool") {
+    return { type: "held_tool", operation, args: options.args };
+  }
   return {
     type: "held",
-    operation: bareToolName(options.toolName),
+    operation,
     details: held.preview ?? JsonValueSchema.catch({}).parse(options.args),
   };
 }

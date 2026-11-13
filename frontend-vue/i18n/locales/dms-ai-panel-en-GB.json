@@ -227,6 +227,7 @@
 				"why_held": "The DMS holds this call until you confirm it.",
 				"why_held_configure": "Changes the project's configuration.",
 				"why_held_map": "Maps the tables and removes the pages {pages}.",
+				"why_held_tool": "Asked because another call to this tool is waiting for your confirmation.",
 				"type_to_confirm_before": "Type",
 				"type_to_confirm_after": "to confirm",
 				"suggest": "Suggest a change",

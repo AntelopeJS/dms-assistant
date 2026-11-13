@@ -19,12 +19,20 @@ export interface ToolCallSubject {
 /**
  * A call the DMS holds: what it showed of the call in its refusal, its
  * arguments with what the builder worked out, such as a configuration diff or
- * the pages a mapping removes. Absent when the refusal shows none, or for
- * another call of a held tool.
+ * the pages a mapping removes. Absent when the refusal shows none.
  */
 export interface HeldCall {
   preview: JsonValue | undefined;
 }
+
+/**
+ * How a call stands to the held calls of its conversation: the same call as
+ * one the DMS holds, with that hold's preview, or another call to a tool the
+ * DMS holds a call of.
+ */
+export type HoldMatch =
+  | ({ match: "same_call" } & HeldCall)
+  | { match: "same_tool" };
 
 /** How a call ended, as the held calls read it: a held one with its preview. */
 export type CallEnd =
@@ -56,11 +64,10 @@ export interface HeldCalls {
    */
   isHeld(conversationId: string, call: ToolCallSubject): boolean;
   /**
-   * The held call this call repeats in the conversation, with the DMS's
-   * preview when the arguments are the same, or `undefined` when its tool has
-   * none held there.
+   * How the call stands to the conversation's held calls, or `undefined` when
+   * its tool has none held there.
    */
-  holdOf(conversationId: string, call: ToolCallSubject): HeldCall | undefined;
+  holdOf(conversationId: string, call: ToolCallSubject): HoldMatch | undefined;
 }
 
 const TextBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
@@ -206,16 +213,18 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
   const holdOf = (
     conversationId: string,
     call: ToolCallSubject,
-  ): HeldCall | undefined => {
+  ): HoldMatch | undefined => {
     if (!isDmsTool(call.toolName)) return undefined;
     dropExpired(now());
     const same = holdByCall.get(callKey(conversationId, call));
-    if (same !== undefined) return { preview: same.preview };
+    if (same !== undefined) {
+      return { match: "same_call", preview: same.preview };
+    }
     const tool = bareToolName(call.toolName);
     const isToolHeld = [...holdByCall.values()].some(
       (h) => h.conversationId === conversationId && h.tool === tool,
     );
-    return isToolHeld ? { preview: undefined } : undefined;
+    return isToolHeld ? { match: "same_tool" } : undefined;
   };
   return {
     observe(conversationId, call, end) {

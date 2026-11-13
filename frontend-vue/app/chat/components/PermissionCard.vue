@@ -44,7 +44,7 @@ const isDestructive = computed(() => preview.value.type === "destructive");
 const argumentRows = computed(() => {
 	if (preview.value.type === "held")
 		return heldPreviewRows(preview.value.details);
-	if (preview.value.type === "generic")
+	if (preview.value.type === "generic" || preview.value.type === "held_tool")
 		return namedArguments(preview.value.args);
 	return isDestructive.value ? namedArguments(props.request.args) : [];
 });

@@ -94,6 +94,13 @@ const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
 		allowLabel: t("dms_ai.panel.approvals.allow"),
 		why: heldWhy(preview, t),
 	}),
+	held_tool: (req, _preview, t) => ({
+		title: verbAndTarget(req, t),
+		sub: "",
+		onceLabel: t("dms_ai.panel.approvals.once_time"),
+		allowLabel: t("dms_ai.panel.approvals.allow"),
+		why: t("dms_ai.panel.approvals.why_held_tool"),
+	}),
 };
 
 const CONFIGURE_PROJECT_TOOL_NAME = "builder_configure_project";

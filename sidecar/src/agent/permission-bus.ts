@@ -21,7 +21,7 @@ import type {
 } from "../protocol/messages.js";
 import { JsonValueSchema } from "../protocol/json.js";
 import { ToolArgsSchema } from "./edit-targets.js";
-import type { HeldCall, HeldCalls } from "./held-calls.js";
+import type { HeldCalls, HoldMatch } from "./held-calls.js";
 import { describeRequest } from "./permission-preview.js";
 import {
   createPermissionRuleStore,
@@ -247,7 +247,7 @@ function scheduleTimeout(
 function heldCallOf(
   state: BusState,
   req: PermissionRequest,
-): HeldCall | undefined {
+): HoldMatch | undefined {
   const args = JsonValueSchema.safeParse(req.args);
   if (!args.success) return undefined;
   return state.heldCalls?.holdOf(req.conversationId, {

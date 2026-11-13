@@ -17,7 +17,12 @@ import {
   CODEX_MODEL_PROVIDER_NAME,
   CODEX_MODEL_PROVIDER_WIRE_API,
 } from "../../constants/codex.js";
-import { MCP_TOOL_TIMEOUT_SEC } from "../../constants/mcp.js";
+import {
+  DMS_MCP_HIDDEN_TOOL_NAMES,
+  DMS_MCP_SERVER_KEY,
+  MCP_TOOL_TIMEOUT_SEC,
+} from "../../constants/mcp.js";
+import { dmsMcpLaunch } from "../../mcp/dms-server.js";
 import { SAFE_MODE_DENIED_MESSAGE } from "../../constants/settings.js";
 import type {
   AppSettings,
@@ -109,6 +114,17 @@ function tomlArray(values: readonly string[]): string {
   return `[${values.map(tomlString).join(", ")}]`;
 }
 
+function buildDmsMcpServerToml(hostProjectRoot: string): string[] {
+  const launch = dmsMcpLaunch(hostProjectRoot);
+  return [
+    `[mcp_servers.${DMS_MCP_SERVER_KEY}]`,
+    `command = ${tomlString(launch.command)}`,
+    `args = ${tomlArray(launch.args)}`,
+    `tool_timeout_sec = ${MCP_TOOL_TIMEOUT_SEC}`,
+    `disabled_tools = ${tomlArray(DMS_MCP_HIDDEN_TOOL_NAMES)}`,
+  ];
+}
+
 /**
  * `config.toml` for the isolated CODEX_HOME. The MCP server has to be declared
  * at process level: placed in `thread/start.config` it is silently ignored.
@@ -123,9 +139,10 @@ function tomlArray(values: readonly string[]): string {
  * Top-level keys come first: in TOML every key after a table header belongs to
  * that table, and --strict-config rejects the misplacement outright. The host
  * project's AGENTS.md is not ours to inject, hence `project_doc_max_bytes = 0`.
- * `tool_timeout_sec` is raised because Codex abandons a tool call after 60 s by
- * default, while ask_user and the Builder deletion gate wait on the user for much
- * longer. The `untrusted` project entry keeps the host project's own .codex
+ * `tool_timeout_sec` is raised on both MCP servers because Codex abandons a tool
+ * call after 60 s by default, while ask_user waits on the user and a builder
+ * mapping runs for much longer. The DMS MCP starts over the stdio launcher the
+ * DMS writes, with the tools the chat serves itself disabled. The `untrusted` project entry keeps the host project's own .codex
  * layers out of the session, mirroring `settingSources: []` on the Claude path.
  */
 export function buildConfigToml(input: CodexConfigInput): string {
@@ -151,6 +168,8 @@ export function buildConfigToml(input: CodexConfigInput): string {
     `url = ${tomlString(input.mcpUrl)}`,
     `bearer_token_env_var = ${tomlString(CODEX_MCP_TOKEN_ENV_VAR)}`,
     `tool_timeout_sec = ${MCP_TOOL_TIMEOUT_SEC}`,
+    "",
+    ...buildDmsMcpServerToml(input.hostProjectRoot),
     "",
     `[projects.${tomlString(path.resolve(input.hostProjectRoot))}]`,
     'trust_level = "untrusted"',

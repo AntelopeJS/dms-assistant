@@ -1,6 +1,7 @@
 /**
- * The human-readable title of every MCP tool dms-ai serves, keyed by its
- * snake_case name. MCP clients show the title; the model calls the name.
+ * The human-readable title of every MCP tool dms-ai serves or once served,
+ * keyed by its snake_case name. MCP clients show the title; the model calls
+ * the name; a transcript that recorded an older name is migrated to these.
  */
 export const MCP_TOOL_TITLES = {
   get_current_page: "Get current page",
@@ -49,10 +50,10 @@ export const MCP_TOOL_TITLES = {
   builder_mapping: "Builder mapping",
 } as const satisfies Readonly<Record<string, string>>;
 
-/** The snake_case name of an MCP tool dms-ai serves. */
+/** The snake_case name of an MCP tool dms-ai serves or once served. */
 export type McpToolName = keyof typeof MCP_TOOL_TITLES;
 
-/** Whether `name` is the name of an MCP tool dms-ai serves. */
+/** Whether `name` is the name of an MCP tool dms-ai serves or once served. */
 export function isMcpToolName(name: string): name is McpToolName {
   return Object.hasOwn(MCP_TOOL_TITLES, name);
 }

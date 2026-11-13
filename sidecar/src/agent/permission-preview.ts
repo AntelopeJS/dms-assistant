@@ -2,10 +2,8 @@ import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 import { z } from "zod";
 import type { PermissionKind } from "../constants/audit.js";
-import { BUILDER_DELETE_RESOURCE_TOOL_NAME } from "../constants/tool-kinds.js";
 import type {
   CommandPreviewType,
-  DestructivePreviewType,
   DiffPreviewType,
   PermissionPreviewType,
 } from "../protocol/events.js";
@@ -26,13 +24,9 @@ import { isDependencyFile, isGitHookFile } from "./always-ask-files.js";
 import { type DiffStats, diffTexts, parseUnifiedDiff } from "./line-diff.js";
 import {
   bareToolName,
-  asksBeforeBuilderCall,
   isBlockRemovalTool,
   isBashTool,
-  isConfigBuilderTool,
   isEditTool,
-  isPageRemovingBuilderTool,
-  pagesToRemoveOf,
   permissionKindOf,
 } from "./tool-kinds.js";
 
@@ -48,13 +42,6 @@ const CODEX_DELETED_KIND = "delete";
 /** Argument keys of a Codex file change, set by its permission handler. */
 export const CODEX_CHANGE_KIND_ARG = "change_kind";
 export const CODEX_CHANGE_DIFF_ARG = "diff";
-/** Argument keys naming the target of a Builder operation, most specific first. */
-const BUILDER_TARGET_KEYS: readonly string[] = [
-  "pageRef",
-  "ref",
-  "path",
-  "query",
-];
 
 /** What the bus needs to know to present, scope and gate one request. */
 export interface RequestDescription {
@@ -192,25 +179,6 @@ function commandPreview(options: ParsedOptions): CommandPreviewType {
   return { ...preview, effect: change.effect, touches: change.touches };
 }
 
-function builderTarget(args: ToolArgs): string {
-  const key = BUILDER_TARGET_KEYS.find((k) => readString(args, k) !== "");
-  return key === undefined ? "" : readString(args, key);
-}
-
-function destructivePreview(options: ParsedOptions): DestructivePreviewType {
-  const operation = bareToolName(options.toolName);
-  const target = builderTarget(options.args);
-  const deletesData = operation === BUILDER_DELETE_RESOURCE_TOOL_NAME;
-  const preview: DestructivePreviewType = {
-    type: "destructive",
-    operation,
-    target,
-    consequence: deletesData ? "deletes_data" : "removes_code",
-    canKeepData: deletesData,
-  };
-  return deletesData ? { ...preview, confirmText: target } : preview;
-}
-
 function webPreview(options: ParsedOptions): PermissionPreviewType {
   const url = readString(options.args, "url");
   const host = hostOf(url);
@@ -230,104 +198,6 @@ export function hostOf(url: string): string | null {
   }
 }
 
-const CONFIG_FILE_PATTERN = /antelope\.config\.m?ts$/;
-const BUILDER_HUNK_HEADER = /^@@ line (\d+) @@$/;
-const UNIFIED_HUNK_HEADER = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/;
-const REMOVED_PREFIX = "- ";
-const ADDED_PREFIX = "+ ";
-
-const PlannedChangeSchema = z
-  .object({
-    path: z.string().optional().catch(undefined),
-    diff: z.string().optional().catch(undefined),
-  })
-  .catch({ path: undefined, diff: undefined });
-
-const PlannedChangeListSchema = z.array(PlannedChangeSchema).catch([]);
-
-interface PlannedTexts {
-  start: number;
-  before: string;
-  after: string;
-}
-
-/** The old and new lines of a Builder change, as its `@@ line N @@` diff spells them. */
-function plannedTexts(diff: string): PlannedTexts {
-  const [header = "", ...lines] = diff.split("\n");
-  const start = Number(BUILDER_HUNK_HEADER.exec(header)?.[1] ?? 1);
-  const pick = (prefix: string): string =>
-    lines
-      .filter((line) => line.startsWith(prefix))
-      .map((line) => line.slice(prefix.length))
-      .join("\n");
-  return { start, before: pick(REMOVED_PREFIX), after: pick(ADDED_PREFIX) };
-}
-
-/** The hunks of a `@@ line N @@` diff, the format of interface-dms-builder 0.2 and earlier. */
-function lineHeaderStats(diff: string): DiffStats {
-  const planned = plannedTexts(diff);
-  const stats = diffTexts(planned.before, planned.after);
-  const offset = planned.start - 1;
-  const hunks = stats.hunks.map((hunk) => ({
-    ...hunk,
-    oldStart: hunk.oldStart + offset,
-    newStart: hunk.newStart + offset,
-    lines: hunk.lines.map((line) => ({
-      ...line,
-      oldLine: line.oldLine === undefined ? undefined : line.oldLine + offset,
-      newLine: line.newLine === undefined ? undefined : line.newLine + offset,
-    })),
-  }));
-  return { ...stats, hunks };
-}
-
-/** A Builder change's hunks, whether its diff is unified or in the `@@ line N @@` format. */
-function plannedStats(diff: string): DiffStats {
-  return UNIFIED_HUNK_HEADER.test(diff)
-    ? parseUnifiedDiff(diff)
-    : lineHeaderStats(diff);
-}
-
-/** The configuration diff a project-config operation's dry run answered, for the card. */
-function plannedConfigPreview(options: ParsedOptions): DiffPreviewType | null {
-  if (!isConfigBuilderTool(options.toolName)) return null;
-  const config = PlannedChangeListSchema.parse(
-    options.args.plannedChanges,
-  ).find(
-    (change) =>
-      change.path !== undefined && CONFIG_FILE_PATTERN.test(change.path),
-  );
-  if (config?.path === undefined || config.diff === undefined) return null;
-  const stats = plannedStats(config.diff);
-  return {
-    type: "diff",
-    path: config.path,
-    relativePath: projectRelative(options.hostProjectRoot, config.path),
-    isNewFile: false,
-    added: stats.added,
-    removed: stats.removed,
-    hunks: stats.hunks,
-  };
-}
-
-const PAGES_REMOVED_TARGET_SEPARATOR = ", ";
-
-/** The pages a mapping's preview found it would remove, as a destructive card. */
-function removedPagesPreview(
-  options: ParsedOptions,
-): DestructivePreviewType | null {
-  if (!isPageRemovingBuilderTool(options.toolName)) return null;
-  const pages = pagesToRemoveOf(options.args);
-  if (pages.length === 0) return null;
-  return {
-    type: "destructive",
-    operation: bareToolName(options.toolName),
-    target: pages.join(PAGES_REMOVED_TARGET_SEPARATOR),
-    consequence: "removes_code",
-    canKeepData: false,
-  };
-}
-
 type PreviewBuilder = (
   options: ParsedOptions,
 ) => Promise<PermissionPreviewType>;
@@ -337,11 +207,8 @@ const PREVIEW_BY_KIND: Record<PermissionKind, PreviewBuilder> = {
     (await diffPreview(options)) ?? genericPreview(options),
   command: async (options) => commandPreview(options),
   web: async (options) => webPreview(options),
-  destructive: async (options) => destructivePreview(options),
-  builder: async (options) =>
-    plannedConfigPreview(options) ??
-    removedPagesPreview(options) ??
-    genericPreview(options),
+  destructive: async (options) => genericPreview(options),
+  builder: async (options) => genericPreview(options),
   other: async (options) => genericPreview(options),
 };
 
@@ -360,13 +227,11 @@ function isDependencyChange(options: ParsedOptions): boolean {
 }
 
 /**
- * Whether a request asks the person in every mode and offers no rule: a
- * deletion or project-config change through the Builder, an edit of a file
- * that makes git run code, and, while their settings are on, a block removal
- * and a dependency change by command or by editing a dependency file.
+ * Whether a request asks the person in every mode and offers no rule: an edit
+ * of a file that makes git run code, and, while their settings are on, a block
+ * removal and a dependency change by command or by editing a dependency file.
  */
 export function isAlwaysAsk(options: ParsedOptions): boolean {
-  if (asksBeforeBuilderCall(options.toolName, options.args)) return true;
   if (options.alwaysAskBlockRemoval && isBlockRemovalTool(options.toolName)) {
     return true;
   }

@@ -295,8 +295,9 @@ function trackTurnId(
 }
 
 /**
- * MCP calls are announced as they start, so a gated Builder handler can name
- * the call it belongs to (see CallLedger).
+ * The chat's own MCP calls are announced as they start, so a handler such as
+ * ask_user can name the call it belongs to (see CallLedger). The DMS MCP's
+ * handlers run in the backend and claim nothing.
  */
 function announceToolCall(ctx: ProviderSessionContext, event: RunnerEvent) {
   if (event.type !== "tool_use") return;

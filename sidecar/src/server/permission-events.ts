@@ -1,5 +1,4 @@
 import {
-  denialMessage,
   type PendingRequest,
   type PermissionBus,
   type PermissionDecisionRecord,
@@ -11,16 +10,8 @@ import type {
   QuestionBus,
   QuestionReply,
 } from "../agent/question-bus.js";
-import {
-  asksBeforeBuilderCall,
-  isBlockRemovalTool,
-} from "../agent/tool-kinds.js";
 import { MS_PER_MINUTE } from "../constants/settings.js";
 import { PERMISSION_SETTLEMENTS } from "../constants/permissions.js";
-import type {
-  BuilderGate,
-  BuilderGateDecision,
-} from "../mcp/tools/builder-gate.js";
 import { EVENT_TYPES } from "../protocol/events.js";
 import type { QuestionAnswerRecord } from "../state/types.js";
 import {
@@ -37,8 +28,6 @@ export interface RequestCancelServices {
   permissionBus: Pick<PermissionBus, "cancelCall" | "cancelConversation">;
   questionBus: Pick<QuestionBus, "cancelCall" | "cancelConversation">;
 }
-
-const ALLOWED: BuilderGateDecision = { isAllowed: true };
 
 export function permissionPolicy(services: SidecarServices): PermissionPolicy {
   const settings = services.settingsStore.get();
@@ -232,41 +221,4 @@ export function onQuestionExpired(
     conversationId: question.conversationId,
     requestId: question.requestId,
   });
-}
-
-function needsUser(
-  services: SidecarServices,
-  toolName: string,
-  args: Parameters<BuilderGate>[1],
-): boolean {
-  if (asksBeforeBuilderCall(toolName, args)) return true;
-  return (
-    services.settingsStore.get().alwaysAskBlockRemoval &&
-    isBlockRemovalTool(toolName)
-  );
-}
-
-/**
- * The Builder gate of one conversation: every mutating operation waits for
- * the turn's checkpoint, and deletions (plus block removals, by setting, and
- * a mapping that removes a page) wait for the user through the permission bus.
- */
-export function buildBuilderGate(
-  services: SidecarServices,
-  conversationId: string,
-): BuilderGate {
-  return async (toolName, args) => {
-    await services.turns.get(conversationId)?.checkpoint.ready();
-    if (!needsUser(services, toolName, args)) return ALLOWED;
-    const outcome = await services.permissionBus.requestPermission({
-      conversationId,
-      toolName,
-      args,
-      callId: services.callLedger.claim(conversationId, toolName, args),
-    });
-    if (!outcome.isAllowed) {
-      return { isAllowed: false, message: denialMessage(outcome) };
-    }
-    return { isAllowed: true, keepData: outcome.keepData };
-  };
 }

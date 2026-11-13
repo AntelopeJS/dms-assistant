@@ -51,6 +51,7 @@ import type {
   ProviderHostRuntime,
   ProviderRuntime,
 } from "../providers/types.js";
+import type { LogsClient } from "../logs/logs-client.js";
 import type { SkillSource } from "../skills/types.js";
 import { createChangeSetStore } from "../state/change-sets.js";
 import type { ConversationStore } from "../state/conversations.js";
@@ -80,7 +81,6 @@ import { createLiveTurnStore } from "./live-turns.js";
 import type { NavigationCompleter } from "./navigation-completer.js";
 import { createPendingQueueStore } from "./pending-queue.js";
 import {
-  buildBuilderGate,
   interruptConversation,
   onPermissionDecided,
   onPermissionPrompt,
@@ -107,6 +107,8 @@ export interface AttachWsServerOptions {
   conversationStore: ConversationStore;
   settingsStore?: SettingsStore;
   mcpDeps: AiMcpServerStaticDeps;
+  /** Reads the backend's log, for the safety net's heal notice. */
+  logsClient: LogsClient;
   /**
    * What the sidecar's own runtime offers every provider. Neutral: the backends
    * are reached through the registry, never by name from here.
@@ -225,14 +227,10 @@ function buildMcpDepsFactory(
     conversationId,
     sendToHost: hostCommandsOf(conversationId),
     requestQuestion: (req) => askUser(services(holder), req),
-    getLastEditedFile: () =>
-      services(holder).editTracker.getLastEditedFile(conversationId),
     showPreview: (preview) =>
       emitBlockPreview(services(holder), conversationId, preview),
     listAttachedImages: () =>
       listAttachedImages(services(holder), conversationId),
-    gateBuilderOp: (toolName, args) =>
-      buildBuilderGate(services(holder), conversationId)(toolName, args),
   });
 }
 
@@ -390,7 +388,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     createMcpServer: buildMcpServerFactory(createMcpDeps),
     questionBus: buildQuestionBus(holder),
     editTracker: parts.editTracker,
-    logsClient: options.mcpDeps.logsClient,
+    logsClient: options.logsClient,
     moduleRoots: options.moduleRoots ?? [],
     hostState: options.hostState,
     hostSocketRegistry: options.hostSocketRegistry,

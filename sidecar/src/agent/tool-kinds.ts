@@ -1,17 +1,13 @@
-import { z } from "zod";
 import type { PermissionKind, ToolSource } from "../constants/audit.js";
 import {
-  BUILDER_TOOL_NAMES,
-  PAGES_TO_REMOVE_ARG,
-} from "../constants/builder.js";
-import { MCP_TOOL_NAME_PREFIX } from "../constants/mcp.js";
+  DMS_MCP_TOOL_NAME_PREFIX,
+  MCP_TOOL_NAME_PREFIX,
+} from "../constants/mcp.js";
 import {
   ASSISTANT_TOOL_NAMES,
   BUILDER_BLOCK_REMOVAL_TOOL_NAMES,
-  BUILDER_CONFIG_TOOL_NAMES,
   BUILDER_DESTRUCTIVE_TOOL_NAMES,
   BUILDER_MUTATING_TOOL_NAMES,
-  BUILDER_PAGE_REMOVING_TOOL_NAMES,
   BUILDER_READ_TOOL_NAMES,
   BUILTIN_READ_TOOL_NAMES,
   BUILTIN_TOOL_REACH,
@@ -21,7 +17,6 @@ import {
   type ToolReach,
   WEB_TOOL_NAMES,
 } from "../constants/tool-kinds.js";
-import type { ToolArgs } from "./edit-targets.js";
 
 const REACH_BY_BUILTIN_TOOL: ReadonlyMap<string, ToolReach> = new Map(
   Object.entries(BUILTIN_TOOL_REACH),
@@ -35,11 +30,18 @@ export function toolReachOf(toolName: string): ToolReach | undefined {
   return REACH_BY_BUILTIN_TOOL.get(toolName);
 }
 
-/** The tool's own name, without the `mcp__dms-ai__` prefix the agent sees. */
+/** The prefixes of the two MCP servers a chat session gets: its own and the DMS MCP. */
+const FIRST_PARTY_MCP_PREFIXES = [
+  MCP_TOOL_NAME_PREFIX,
+  DMS_MCP_TOOL_NAME_PREFIX,
+] as const;
+
+/** The tool's own name, without the `mcp__dms-ai__` or `mcp__dms__` prefix the agent sees. */
 export function bareToolName(toolName: string): string {
-  return toolName.startsWith(MCP_TOOL_NAME_PREFIX)
-    ? toolName.slice(MCP_TOOL_NAME_PREFIX.length)
-    : toolName;
+  const prefix = FIRST_PARTY_MCP_PREFIXES.find((candidate) =>
+    toolName.startsWith(candidate),
+  );
+  return prefix === undefined ? toolName : toolName.slice(prefix.length);
 }
 
 function isIn(names: readonly string[]): (toolName: string) => boolean {
@@ -49,35 +51,24 @@ function isIn(names: readonly string[]): (toolName: string) => boolean {
 export const isEditTool = isIn(EDIT_TOOL_NAMES);
 export const isBashTool = isIn(BASH_TOOL_NAMES);
 export const isWebTool = isIn(WEB_TOOL_NAMES);
-const isBuilderTool = isIn(BUILDER_TOOL_NAMES);
-export const isDestructiveBuilderTool = isIn(BUILDER_DESTRUCTIVE_TOOL_NAMES);
+const isBuilderTool = isIn([
+  ...BUILDER_READ_TOOL_NAMES,
+  ...BUILDER_MUTATING_TOOL_NAMES,
+]);
+const isDestructiveBuilderTool = isIn(BUILDER_DESTRUCTIVE_TOOL_NAMES);
 export const isBlockRemovalTool = isIn(BUILDER_BLOCK_REMOVAL_TOOL_NAMES);
 export const isMutatingBuilderTool = isIn(BUILDER_MUTATING_TOOL_NAMES);
-export const isConfigBuilderTool = isIn(BUILDER_CONFIG_TOOL_NAMES);
-export const isPageRemovingBuilderTool = isIn(BUILDER_PAGE_REMOVING_TOOL_NAMES);
-
-const PagesToRemoveArgsSchema = z.object({
-  [PAGES_TO_REMOVE_ARG]: z.array(z.string()),
-});
-
-/** The pages a mapping's preview found it would remove, as the handler hands them to the gate. */
-export function pagesToRemoveOf(args: ToolArgs): string[] {
-  return PagesToRemoveArgsSchema.safeParse(args).data?.pagesToRemove ?? [];
-}
 
 /**
- * Whether a Builder call waits for the person whatever the mode: deletions, project
- * configuration, and a mapping whose preview found a page to remove.
+ * Whether an auto-allowed MCP call still asks the person: a block removal
+ * while the setting says so. The DMS MCP confirms deletions itself, but not
+ * a block removal.
  */
-export function asksBeforeBuilderCall(
+export function asksBeforeBlockRemoval(
   toolName: string,
-  args: ToolArgs,
+  settings: { alwaysAskBlockRemoval: boolean },
 ): boolean {
-  if (isDestructiveBuilderTool(toolName)) return true;
-  if (isConfigBuilderTool(toolName)) return true;
-  return (
-    isPageRemovingBuilderTool(toolName) && pagesToRemoveOf(args).length > 0
-  );
+  return settings.alwaysAskBlockRemoval && isBlockRemovalTool(toolName);
 }
 
 const READ_ONLY_TOOL_NAMES: readonly string[] = [

@@ -300,7 +300,6 @@ const handlePermissionResponse = on(
       decision: msg.decision,
       rule: msg.rule,
       feedback: msg.feedback,
-      keepData: msg.keepData,
       actor: ctx.actor?.name,
     });
   },

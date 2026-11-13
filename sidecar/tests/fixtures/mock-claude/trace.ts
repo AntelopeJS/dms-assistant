@@ -1,5 +1,9 @@
 import { appendFileSync } from "node:fs";
-import type { Options, PermissionMode } from "@anthropic-ai/claude-agent-sdk";
+import type {
+  McpServerConfig,
+  Options,
+  PermissionMode,
+} from "@anthropic-ai/claude-agent-sdk";
 import { MOCK_TRACE_ENV_VAR } from "./constants.js";
 
 export type DecidingLayer =
@@ -19,7 +23,20 @@ interface TraceEntry {
   permissionMode?: PermissionMode;
   plugins?: Options["plugins"];
   skills?: Options["skills"];
-  mcpServers?: string[];
+  mcpServers?: Record<string, TracedMcpServer>;
+  disallowedTools?: string[];
+}
+
+/** How the session reaches one MCP server: its transport, and the command of a stdio one. */
+interface TracedMcpServer {
+  type: string;
+  command?: string;
+  args?: string[];
+}
+
+function traceServer(config: McpServerConfig): TracedMcpServer {
+  if (!("command" in config)) return { type: config.type };
+  return { type: "stdio", command: config.command, args: config.args };
 }
 
 /**
@@ -42,6 +59,12 @@ export function traceOptions(options: Options | undefined): void {
     permissionMode: options.permissionMode,
     plugins: options.plugins,
     skills: options.skills,
-    mcpServers: Object.keys(options.mcpServers ?? {}),
+    mcpServers: Object.fromEntries(
+      Object.entries(options.mcpServers ?? {}).map(([name, config]) => [
+        name,
+        traceServer(config),
+      ]),
+    ),
+    disallowedTools: options.disallowedTools,
   });
 }

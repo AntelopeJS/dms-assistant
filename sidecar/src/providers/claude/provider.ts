@@ -26,7 +26,10 @@ import {
   isAutoAllowedRead,
   resolveReadRoots,
 } from "../../agent/read-access.js";
-import { isMutatingBuilderTool } from "../../agent/tool-kinds.js";
+import {
+  asksBeforeBlockRemoval,
+  isMutatingBuilderTool,
+} from "../../agent/tool-kinds.js";
 import type { RunnerEvent } from "../../agent/runner-events.js";
 import {
   type AgentSession,
@@ -45,11 +48,15 @@ import {
 import {
   ASK_USER_QUESTION_BUILTIN_TOOL_NAME,
   ASK_USER_QUESTION_REDIRECT_MESSAGE,
+  DMS_MCP_HIDDEN_TOOL_NAMES,
+  DMS_MCP_SERVER_KEY,
+  DMS_MCP_TOOL_NAME_PREFIX,
   MCP_SERVER_KEY,
 } from "../../constants/mcp.js";
 import { STATE_DIR_SEGMENTS } from "../../constants/paths.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import { readProjectInfo } from "../../host/project-info.js";
+import { dmsMcpLaunch } from "../../mcp/dms-server.js";
 import type { AiMcpServer } from "../../mcp/types.js";
 import {
   buildSkillCatalog,
@@ -96,6 +103,7 @@ interface PromptOptions {
   pathToClaudeCodeExecutable?: string;
   canUseTool?: CanUseTool;
   mcpServers?: Record<string, McpServerConfig>;
+  disallowedTools?: string[];
   plugins?: SdkPluginConfig[];
   skills?: string[];
   abortController: AbortController;
@@ -143,9 +151,25 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
   return { ...base, pathToClaudeCodeExecutable: claudeBinary };
 }
 
-function buildMcpServersMap(mcpServer: AiMcpServer) {
-  return { [MCP_SERVER_KEY]: mcpServer };
+/**
+ * The DMS MCP over the stdio launcher the DMS writes, and the chat's own server
+ * when the session has one.
+ */
+function buildMcpServersMap(
+  mcpServer: AiMcpServer | undefined,
+  hostProjectRoot: string,
+): PromptOptions["mcpServers"] {
+  const dms = {
+    type: "stdio" as const,
+    ...dmsMcpLaunch(hostProjectRoot),
+  } satisfies McpServerConfig;
+  if (mcpServer === undefined) return { [DMS_MCP_SERVER_KEY]: dms };
+  return { [DMS_MCP_SERVER_KEY]: dms, [MCP_SERVER_KEY]: mcpServer };
 }
+
+const HIDDEN_DMS_MCP_TOOLS = DMS_MCP_HIDDEN_TOOL_NAMES.map(
+  (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
+);
 
 /**
  * Layers the optional permission callback, MCP server and skill loadout onto
@@ -158,10 +182,11 @@ function buildPromptOptions(input: PromptOptionsInput): PromptOptions {
     input.canUseTool === undefined
       ? base
       : { ...base, canUseTool: input.canUseTool };
-  const withMcp =
-    input.mcpServer === undefined
-      ? withTool
-      : { ...withTool, mcpServers: buildMcpServersMap(input.mcpServer) };
+  const withMcp = {
+    ...withTool,
+    mcpServers: buildMcpServersMap(input.mcpServer, input.hostProjectRoot),
+    disallowedTools: HIDDEN_DMS_MCP_TOOLS,
+  };
   if (input.skillLoadout === undefined) return withMcp;
   return {
     ...withMcp,
@@ -254,6 +279,7 @@ interface CanUseToolDeps {
   bus: PermissionBus;
   ctx: ProviderSessionContext;
   readRoots: string[];
+  getSettings: () => TurnSettings;
 }
 
 function allowAutomatically(
@@ -273,10 +299,11 @@ function allowAutomatically(
  * Builds the permission callback for a session. The SDK's built-in
  * AskUserQuestion cannot render in the chat, so the agent is bounced to our own
  * ask_user MCP tool instead of dead-ending at a permission prompt the host
- * cannot show. The module's own MCP tools (the FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES
- * set) are first-party and driven constantly by the documented workflow, so
- * they are auto-allowed instead of prompting; Builder deletions are gated
- * inside their own handler, which claims the call announced here. Read-only
+ * cannot show. The chat's and the DMS MCP's tools (the
+ * FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES set) are first-party and driven constantly
+ * by the documented workflow, so they are auto-allowed instead of prompting,
+ * except a block removal while its setting asks; the DMS MCP holds its own
+ * risky calls until the agent repeats them after asking. Read-only
  * inspection of in-workspace files (the project and its sibling local modules)
  * is non-mutating and also auto-allowed. Writes, shell and network tools still
  * prompt.
@@ -288,7 +315,10 @@ function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
       return Promise.resolve(buildAskUserRedirectResult());
     }
     const callId = options.toolUseID;
-    if (isFirstPartyMcpTool(toolName)) {
+    if (
+      isFirstPartyMcpTool(toolName) &&
+      !asksBeforeBlockRemoval(toolName, deps.getSettings())
+    ) {
       ctx.onToolAnnounced?.(callId, toolName, input);
       return allowAutomatically(deps, toolName, input, callId);
     }
@@ -314,9 +344,15 @@ function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
 function resolveCanUseTool(
   ctx: ProviderSessionContext,
   readRoots: string[],
+  getSettings: () => TurnSettings,
 ): CanUseTool | undefined {
   if (ctx.permissionBus === undefined) return undefined;
-  return buildCanUseTool({ bus: ctx.permissionBus, ctx, readRoots });
+  return buildCanUseTool({
+    bus: ctx.permissionBus,
+    ctx,
+    readRoots,
+    getSettings,
+  });
 }
 
 interface ProviderConfig {
@@ -454,7 +490,7 @@ async function buildSessionOptions(
       onToolDecision: ctx.onToolDecision,
       beforeMutation: ctx.beforeMutation,
     }),
-    canUseTool: resolveCanUseTool(ctx, readRoots),
+    canUseTool: resolveCanUseTool(ctx, readRoots, () => live.settings),
     mcpServer: ctx.mcpServer,
     settings: ctx.settings,
     abortController,

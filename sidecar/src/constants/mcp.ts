@@ -1,5 +1,9 @@
 import { DATABASE_TOOL_NAMES } from "./database.js";
-import { BUILDER_TOOL_NAMES } from "./builder.js";
+import {
+  BUILDER_TOOL_NAMES,
+  MOCKUP_TOOL_NAMES,
+  PAGE_VERIFY_TOOL_NAME,
+} from "./builder.js";
 import { QUERY_LOGS_TOOL_NAME } from "./logs.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
 import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
@@ -17,6 +21,18 @@ export const MCP_SERVER_TYPE_SDK = "sdk" as const;
  * The SDK exposes MCP tools to the model as mcp__<serverKey>__<toolName>.
  */
 export const MCP_TOOL_NAME_PREFIX = `mcp__${MCP_SERVER_KEY}__`;
+
+/** The DMS MCP server of `@antelopejs/dms`: its key in `.mcp.json`, and so its tools' prefix. */
+export const DMS_MCP_SERVER_KEY = "dms";
+export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
+/** How `.mcp.json` starts it: `node` on the stdio launcher the DMS writes under the project root. */
+export const DMS_MCP_COMMAND = "node";
+export const DMS_MCP_LAUNCHER_PATH = [
+  "node_modules",
+  ".cache",
+  "dms",
+  "mcp-bridge.cjs",
+] as const;
 
 export const GET_CURRENT_PAGE_TOOL_NAME = "get_current_page";
 export const GET_CURRENT_PAGE_TOOL_DESCRIPTION =
@@ -42,8 +58,7 @@ export const NAVIGATE_RESULT_LANDED_PREFIX = ". Host is now displaying ";
 export const NAVIGATE_UNKNOWN_ROUTE_PREFIX = "Did not navigate: ";
 export const NAVIGATE_UNKNOWN_ROUTE_SUFFIX =
   " is not a registered page route. Closest known routes: ";
-export const NAVIGATE_UNKNOWN_ROUTE_HINT =
-  ". Call list_pages for the full list and use a real route.";
+export const NAVIGATE_UNKNOWN_ROUTE_HINT = `. Call ${DMS_MCP_TOOL_NAME_PREFIX}${LIST_PAGES_TOOL_NAME} for the full list and use a real route.`;
 /**
  * Cap the number of suggested routes inlined into the tool result.
  */
@@ -68,27 +83,46 @@ export const ASK_USER_QUESTION_BUILTIN_TOOL_NAME = "AskUserQuestion";
 export const ASK_USER_QUESTION_REDIRECT_MESSAGE = `AskUserQuestion is not available here. Use the ${MCP_TOOL_NAME_PREFIX}${ASK_USER_TOOL_NAME} tool instead to ask the user multiple-choice questions.`;
 
 /**
- * Explicit allowlist of the module's own MCP tools that are safe to auto-allow
- * without a permission prompt: none of them mutate host state (page reads and
- * navigation, listing pages, asking the user, showing a preview, running tsc for a typecheck,
- * querying logs). Keyed by the fully qualified name the SDK presents to the
- * model. Any new dms-ai tool is NOT auto-allowed until it is added here
- * deliberately.
+ * The DMS MCP's tools the chat serves itself, with the tab and the chat they
+ * drive: hidden from the agent so it sees one tool of each name.
  */
-export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set(
-  [
-    GET_CURRENT_PAGE_TOOL_NAME,
-    NAVIGATE_TOOL_NAME,
-    FIND_PAGES_TOOL_NAME,
-    LIST_PAGES_TOOL_NAME,
-    ASK_USER_TOOL_NAME,
-    PREVIEW_BLOCKS_TOOL_NAME,
-    TYPECHECK_TOOL_NAME,
-    QUERY_LOGS_TOOL_NAME,
-    ...DATABASE_TOOL_NAMES,
-    ...BUILDER_TOOL_NAMES,
-  ].map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
-);
+export const DMS_MCP_HIDDEN_TOOL_NAMES: readonly string[] = [
+  NAVIGATE_TOOL_NAME,
+  PREVIEW_BLOCKS_TOOL_NAME,
+];
+
+/** The chat's own tools, served under `mcp__dms-ai__`. */
+const CHAT_TOOL_NAMES: readonly string[] = [
+  ASK_USER_TOOL_NAME,
+  GET_CURRENT_PAGE_TOOL_NAME,
+  FIND_PAGES_TOOL_NAME,
+  NAVIGATE_TOOL_NAME,
+  PREVIEW_BLOCKS_TOOL_NAME,
+];
+
+/** The DMS MCP's tools the chat runs without a prompt, served under `mcp__dms__`. */
+const DMS_MCP_AUTO_ALLOW_TOOL_NAMES: readonly string[] = [
+  ...BUILDER_TOOL_NAMES,
+  ...DATABASE_TOOL_NAMES,
+  TYPECHECK_TOOL_NAME,
+  QUERY_LOGS_TOOL_NAME,
+  LIST_PAGES_TOOL_NAME,
+  ...MOCKUP_TOOL_NAMES,
+  PAGE_VERIFY_TOOL_NAME,
+];
+
+/**
+ * Explicit allowlist of the MCP tools the chat runs without a permission
+ * prompt, by the fully qualified name the agent sees. The DMS MCP itself holds
+ * its risky calls for a repeated confirmation. A tool on neither list, a new
+ * one included, still asks.
+ */
+export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set([
+  ...CHAT_TOOL_NAMES.map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
+  ...DMS_MCP_AUTO_ALLOW_TOOL_NAMES.map(
+    (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
+  ),
+]);
 
 export const MCP_HTTP_PATH = "/mcp";
 /**
@@ -112,8 +146,8 @@ export const MCP_LOOPBACK_HOSTNAMES = [
 const MS_PER_SECOND = 1_000;
 
 /**
- * The longest a dms-ai tool waits on the user: an ask_user question, or a
- * Builder deletion held at the gate for the longest permission timeout.
+ * The longest a tool call can wait on the user: an ask_user question, or a
+ * prompt left open for the longest permission timeout.
  */
 const LONGEST_USER_WAIT_MS = Math.max(
   QUESTION_TIMEOUT_MS,
@@ -122,13 +156,14 @@ const LONGEST_USER_WAIT_MS = Math.max(
 
 /**
  * Room left after that wait for the work the call then does (the turn's
- * checkpoint, the Builder op and its typecheck).
+ * checkpoint, the builder operation and its typecheck).
  */
 const MCP_TOOL_TIMEOUT_GRACE_MS = 5 * MS_PER_MINUTE;
 
 /**
- * How long a provider lets one dms-ai tool call run. It must outlast every wait
- * on the user, or the provider abandons a call whose card is still on screen.
+ * How long a provider lets one MCP tool call run, on both servers. It must
+ * outlast every wait on the user, or the provider abandons a call whose card is
+ * still on screen.
  */
 export const MCP_TOOL_TIMEOUT_MS =
   LONGEST_USER_WAIT_MS + MCP_TOOL_TIMEOUT_GRACE_MS;

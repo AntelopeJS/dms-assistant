@@ -22,8 +22,3 @@ export const TYPECHECK_UNAVAILABLE_MESSAGE =
 export const TYPECHECK_ERRORS_PREFIX = "Type errors found:";
 
 export const TYPECHECK_TOOL_NAME = "typecheck";
-export const TYPECHECK_TOOL_DESCRIPTION =
-  "Runs `tsc --noEmit` on a loaded module to catch type errors BEFORE the host hot-reload rebuilds it. Optional `target` selects a module by name (its directory basename) or by an absolute root path; it must be one of the known module/project roots. Defaults to the module owning your most recently edited file, else the host project. Run this after editing a module's source and fix any errors before considering the page done.";
-export const TYPECHECK_UNKNOWN_TARGET_PREFIX = "Unknown target: ";
-export const TYPECHECK_UNKNOWN_TARGET_SUFFIX =
-  " is not a known module/project root. Known targets: ";

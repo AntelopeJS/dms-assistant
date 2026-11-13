@@ -10,7 +10,6 @@ import {
   GET_CURRENT_PAGE_TOOL_NAME,
   MCP_HTTP_PATH,
 } from "../../src/constants/mcp.js";
-import type { LogsClient } from "../../src/logs/logs-client.js";
 import {
   createMcpHttpRegistry,
   type McpHttpRegistry,
@@ -48,17 +47,11 @@ function buildDeps(
     scan: async () => ({ importersByFile: new Map() }),
     invalidate: () => {},
   };
-  const logsClient: LogsClient = { getLogs: async () => [] };
   return {
     getCurrentPage: () => ({ path: `${UNKNOWN_PAGE_PATH}/${conversationId}` }),
     registry,
     scanner,
     hostProjectRoot: TEST_HOST_ROOT,
-    moduleRoots: [],
-    logsClient,
-    builderClient: { call: async () => null },
-    databaseClient: { get: async () => [], post: async () => ({}) },
-    builderEnabled: false,
     sendToHost: () => {},
     navigationCompleter: createNavigationCompleter(),
     conversationId,
@@ -66,7 +59,6 @@ function buildDeps(
       asked.push({ conversationId: req.conversationId });
       return { answers: [ANSWER], skipped: [] };
     },
-    getLastEditedFile: () => undefined,
     showPreview: () => {},
     listAttachedImages: () => [],
   };

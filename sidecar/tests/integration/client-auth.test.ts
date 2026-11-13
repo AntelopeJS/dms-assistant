@@ -54,15 +54,6 @@ function buildContext(directory: string) {
       invalidate: () => {},
     },
     hostProjectRoot: directory,
-    moduleRoots: [],
-    logsClient: { getLogs: async () => [] },
-    builderClient: {
-      call: async () => {
-        throw new Error("Agent execution is outside this test");
-      },
-    },
-    builderEnabled: false,
-    databaseClient: { get: async () => [], post: async () => ({}) },
     navigationCompleter,
   };
   return {
@@ -75,6 +66,7 @@ function buildContext(directory: string) {
     hostSocketRegistry,
     navigationCompleter,
     mcpDeps,
+    logsClient: { getLogs: async () => [] },
     providerRuntime: {
       stateDir: join(directory, ".state"),
       mcpHttpRegistry: createMcpHttpRegistry(),

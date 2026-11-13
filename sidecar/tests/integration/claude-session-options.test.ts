@@ -10,6 +10,7 @@ import {
 } from "../helpers/provider-fixtures.js";
 import {
   createCollector,
+  HOST_ROOT,
   openChat,
   sendHello,
   sendUserMessage,
@@ -70,6 +71,27 @@ describe("the options a Claude session starts with", () => {
     await collector.next(isTerminal);
     return readClaudeTrace(trace).find((entry) => entry.kind === "session");
   }
+
+  it(
+    "starts the DMS MCP over its launcher beside the chat's own server, with the DMS MCP's navigate_to_page and preview_blocks hidden (fails a session without the DMS MCP, or one that shows two tools of one name)",
+    async () => {
+      const session = await startedSession([]);
+
+      expect(session?.mcpServers).toEqual({
+        dms: {
+          type: "stdio",
+          command: "node",
+          args: [`${HOST_ROOT}/node_modules/.cache/dms/mcp-bridge.cjs`],
+        },
+        "dms-ai": { type: "sdk" },
+      });
+      expect(session?.disallowedTools).toEqual([
+        "mcp__dms__navigate_to_page",
+        "mcp__dms__preview_blocks",
+      ]);
+    },
+    TEST_TIMEOUT_MS,
+  );
 
   it(
     "allows only the first source's copy of a skill two sources name alike (fails a loadout that allows every catalog id)",

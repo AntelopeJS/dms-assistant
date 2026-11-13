@@ -6,6 +6,10 @@ import {
 } from "../../agent/permission-preview.js";
 import type { ToolDecision } from "../../agent/provider.js";
 import {
+  asksBeforeBlockRemoval,
+  isMutatingTool,
+} from "../../agent/tool-kinds.js";
+import {
   CODEX_APPROVAL_DECISIONS,
   CODEX_COMMAND_APPROVAL_METHOD,
   CODEX_FILE_CHANGE_APPROVAL_METHOD,
@@ -99,20 +103,59 @@ function decline(): CodexApprovalDecisionResponse {
   return { decision: CODEX_APPROVAL_DECISIONS.DECLINE };
 }
 
+const ACCEPTED_ELICITATION: CodexElicitationResponse = {
+  action: "accept",
+  content: {},
+  _meta: null,
+};
+
+const DECLINED_ELICITATION: CodexElicitationResponse = {
+  action: "decline",
+  content: null,
+  _meta: null,
+};
+
+/** A first-party call the person must approve first: a block removal while its setting asks. */
+async function askBeforeMcpCall(
+  deps: CodexPermissionDeps,
+  decision: ToolDecision,
+): Promise<CodexElicitationResponse> {
+  if (deps.permissionBus === undefined) return DECLINED_ELICITATION;
+  const call = deps
+    .getPendingMcpCalls()
+    .find((pending) => pending.id === decision.callId);
+  const outcome = await deps.permissionBus.requestPermission({
+    conversationId: deps.conversationId,
+    toolName: decision.toolName,
+    args: call?.arguments,
+    callId: decision.callId,
+  });
+  if (!outcome.isAllowed) return DECLINED_ELICITATION;
+  await deps.beforeMutation?.();
+  return ACCEPTED_ELICITATION;
+}
+
 /**
  * Answers an MCP elicitation, in every mode and scope: Safe and plan modes let
- * dms-ai's own tools run, as on the Claude path.
+ * the chat's and the DMS MCP's tools run, as on the Claude path. A mutating
+ * call waits for the turn's checkpoint first.
  */
-function answerElicitation(
+async function answerElicitation(
   deps: CodexPermissionDeps,
   verdict: ElicitationVerdict,
-): CodexElicitationResponse {
-  if (verdict.decision !== undefined) deps.onToolDecision?.(verdict.decision);
-  if (verdict.action === "accept") {
-    return { action: "accept", content: {}, _meta: null };
+): Promise<CodexElicitationResponse> {
+  if (verdict.action === "decline") {
+    if (verdict.decision !== undefined) deps.onToolDecision?.(verdict.decision);
+    console.warn(`${CODEX_LOG_PREFIX} ${verdict.reason}`);
+    return DECLINED_ELICITATION;
   }
-  console.warn(`${CODEX_LOG_PREFIX} ${verdict.reason}`);
-  return { action: "decline", content: null, _meta: null };
+  const { decision } = verdict;
+  if (asksBeforeBlockRemoval(decision.toolName, deps.getSettings())) {
+    return askBeforeMcpCall(deps, decision);
+  }
+  deps.onToolDecision?.(decision);
+  if (isMutatingTool(decision.toolName)) await deps.beforeMutation?.();
+  return ACCEPTED_ELICITATION;
 }
 
 /**

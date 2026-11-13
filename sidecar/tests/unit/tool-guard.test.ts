@@ -4,7 +4,7 @@ import type { PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ToolArgs } from "../../src/agent/edit-targets.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import { MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
+import { DMS_MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
 import { buildSafeModeHooks } from "../../src/providers/claude/safe-mode.js";
 import type {
   AppSettings,
@@ -51,6 +51,7 @@ const UNKNOWN_TOOLS: Call[] = [
   call("ToolTheCliAddsNext", { command: INSTALL }),
   call("mcp__acme__Frobnicate", { target: "home" }),
   call("mcp__other__builder_delete_page", { target: "home" }),
+  call(`${DMS_MCP_TOOL_NAME_PREFIX}drop_everything`, { target: "home" }),
 ];
 
 const INSTALL_HOOK_FILES: Call[] = [
@@ -125,7 +126,7 @@ const SAFE_SCOPE_CALLS: Call[] = [
   call("ToolSearch", { query: "select:Monitor" }),
   call("Skill", { skill: "dms-ai" }),
   call("AskUserQuestion", { questions: [] }),
-  call(`${MCP_TOOL_NAME_PREFIX}builder_add_block`, {}),
+  call(`${DMS_MCP_TOOL_NAME_PREFIX}builder_add_block`, {}),
   call("Write", { file_path: join(homedir(), ".claude", "plans", "p.md") }),
 ];
 

@@ -134,6 +134,16 @@ describe("config.toml", () => {
     expect(toml).toContain('url = "http://127.0.0.1:4321/mcp"');
   });
 
+  it("starts the DMS MCP over its launcher with the chat's navigate_to_page and preview_blocks hidden (fails a config without the server, or one that shows the agent two tools of one name)", () => {
+    const chat = tableLines(toml, "[mcp_servers.dms-ai]");
+    expect(tableLines(toml, "[mcp_servers.dms]")).toEqual([
+      'command = "node"',
+      'args = ["/srv/app/node_modules/.cache/dms/mcp-bridge.cjs"]',
+      chat.find((line) => line.startsWith("tool_timeout_sec = ")),
+      'disabled_tools = ["navigate_to_page", "preview_blocks"]',
+    ]);
+  });
+
   it("passes the bearer through an env var, never the file", () => {
     expect(toml).toContain('bearer_token_env_var = "DMS_AI_MCP_TOKEN"');
     expect(toml).not.toContain("bearer_token =");
@@ -192,6 +202,15 @@ function isAddressInfo(
 
 const StringListSchema = z.array(z.string());
 const ExecFailureSchema = z.object({ code: z.number(), stderr: z.string() });
+
+/** The lines of one TOML table, from its header to the blank line that ends it. */
+function tableLines(toml: string, header: string): string[] {
+  const lines = toml.split("\n");
+  const start = lines.indexOf(header);
+  if (start === -1) return [];
+  const end = lines.indexOf("", start);
+  return lines.slice(start + 1, end === -1 ? undefined : end);
+}
 
 /** The TOML array is written with JSON string escapes, so it reads back as JSON. */
 function authCommandArgs(toml: string): string[] {

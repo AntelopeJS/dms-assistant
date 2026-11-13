@@ -4,8 +4,6 @@ import os from "node:os";
 import { z } from "zod";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDatabaseClient } from "./database/database-client.js";
-import { createBuilderClient } from "./builder/builder-client.js";
 import { setBuilderAvailable } from "./builder/capability.js";
 import { SIDECAR_BUILDER_FLAG } from "./constants/builder.js";
 import { STANDALONE_BACKEND_BASE_URL } from "./constants/cli.js";
@@ -371,14 +369,6 @@ function buildWsStack({
     backendBaseUrl: args.backendUrl,
     token: backendToken,
   });
-  const builderClient = createBuilderClient({
-    backendBaseUrl: args.backendUrl,
-    token: backendToken,
-  });
-  const databaseClient = createDatabaseClient({
-    backendBaseUrl: args.backendUrl,
-    token: backendToken,
-  });
   const scanner = createImportsScanner();
   const hostSocketRegistry = createHostSocketRegistry();
   const navigationCompleter = createNavigationCompleter();
@@ -394,13 +384,9 @@ function buildWsStack({
       registry,
       scanner,
       hostProjectRoot: args.root,
-      moduleRoots: args.moduleRoots,
-      logsClient,
-      builderClient,
-      builderEnabled: args.builderEnabled,
-      databaseClient,
       navigationCompleter,
     },
+    logsClient,
     hostState,
     hostSocketRegistry,
     navigationCompleter,

@@ -201,8 +201,7 @@ export const PermissionRuleSchema = z.object({
 
 /**
  * Chat -> server: the answer to a permission request. `rule` is required with
- * allow_rule and must be one of the request's ruleOptions. `keepData` applies
- * to allow_once on builder_delete_resource: delete the code, keep the data.
+ * allow_rule and must be one of the request's ruleOptions.
  */
 export const PermissionResponseMsg = z.object({
   type: z.literal(MESSAGE_TYPES.PERMISSION_RESPONSE),
@@ -211,7 +210,6 @@ export const PermissionResponseMsg = z.object({
   decision: z.enum(PERMISSION_DECISION_VALUES),
   rule: PermissionRuleSchema.optional(),
   feedback: z.string().max(MAX_DENIAL_FEEDBACK_CHARS).optional(),
-  keepData: z.boolean().optional(),
 });
 
 export const RevokeRuleMsg = z.object({

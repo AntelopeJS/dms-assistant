@@ -219,6 +219,17 @@ const TRACED_CLAUDE_ENTRY = z.object({
   kind: z.string(),
   plugins: z.array(z.looseObject({ path: z.string() })).optional(),
   skills: z.array(z.string()).optional(),
+  mcpServers: z
+    .record(
+      z.string(),
+      z.object({
+        type: z.string(),
+        command: z.string().optional(),
+        args: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
+  disallowedTools: z.array(z.string()).optional(),
   permissionMode: z.string().optional(),
   name: z.string().optional(),
   decidedBy: z.string().optional(),

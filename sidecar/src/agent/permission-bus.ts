@@ -41,7 +41,6 @@ export interface PermissionOutcome {
   isAllowed: boolean;
   allowedBy: AllowedBy;
   feedback?: string;
-  keepData?: boolean;
   /** deny_all: the turn is to be stopped as well. */
   shouldInterrupt?: boolean;
 }
@@ -83,7 +82,6 @@ export interface PermissionAnswer {
   decision: PermissionDecisionValue;
   rule?: PermissionRuleType;
   feedback?: string;
-  keepData?: boolean;
   actor?: string;
 }
 
@@ -200,7 +198,7 @@ const ANSWER_HANDLERS: Record<PermissionDecisionValue, AnswerHandler> = {
     settle(
       state,
       pending,
-      { isAllowed: true, allowedBy: "approved", keepData: answer.keepData },
+      { isAllowed: true, allowedBy: "approved" },
       { settledAs: answer.decision, decidedBy: answer.actor },
     ),
   allow_rule: (state, pending, answer) => {

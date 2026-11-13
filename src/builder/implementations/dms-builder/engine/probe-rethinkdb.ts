@@ -102,18 +102,18 @@ async function accessOfTables(
 /**
  * Checks a RethinkDB connection with `rethinkdb-ts`, on the database the URL's path names: it
  * signs in, times a first query, and asks the server what the account may do to each table.
- * The write check deletes a key no row has, so it changes nothing.
+ * The write check deletes a key no row has, so it changes nothing. The client's `timeout` bounds
+ * only the connecting, so the check closes the connection, whatever the server stops answering.
  */
-export const probeRethinkdb: Probe = async (url, timeoutMs) => {
+export const probeRethinkdb: Probe = async (url, timeoutMs, connections) => {
   const rethinkdb = loadClient("rethinkdb-ts");
   if (!rethinkdb) {
     return missingClient("rethinkdb-ts", "RethinkDB");
   }
   const { r } = rethinkdb;
-  let connection: RethinkdbConnection | undefined;
   try {
     const target = parseUrl(url);
-    connection = await r.connect({
+    const connection = await r.connect({
       host: target.host,
       port: target.port,
       user: target.user,
@@ -121,6 +121,7 @@ export const probeRethinkdb: Probe = async (url, timeoutMs) => {
       timeout: timeoutMs / MS_PER_SECOND,
       silent: true,
     });
+    connections.add(() => connection.close());
     connection.on("error", () => undefined);
     const started = performance.now();
     await r.expr(1).run(connection);
@@ -154,7 +155,5 @@ export const probeRethinkdb: Probe = async (url, timeoutMs) => {
       return refusedBy(WRONG_ACCOUNT);
     }
     return unanswered(noAnswerReason(failureMessage(error), url));
-  } finally {
-    await connection?.close().catch(() => undefined);
   }
 };

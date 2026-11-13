@@ -2,11 +2,14 @@ import { expect } from "chai";
 import { MongoClient } from "mongodb";
 import { checkDatabase } from "../implementations/dms-builder/engine/database-check";
 import {
+  CLOSE_SETTLE_MS,
   closedPort,
   type Container,
   dockerAvailable,
   LIVE_SUITE_NOTE,
+  relay,
   removeContainer,
+  type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
@@ -20,6 +23,12 @@ const WRONG_SECRET = secretOf("wrong");
 const PLAIN_ROLES = ["reader", "writer"];
 
 const suite = dockerAvailable ? describe : describe.skip;
+
+/** The server never sees the command that reads the account: the handshake is through and nothing more is answered. */
+function stallsAtAccountCommand(): Stall {
+  return (chunk, fromClient) =>
+    fromClient && chunk.includes("connectionStatus");
+}
 
 suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
   let secured: Container | undefined;
@@ -252,6 +261,36 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer.reason).to.equal("The database did not answer in time.");
     } finally {
       await silent.close();
+    }
+  });
+
+  it("closes its connections once it has answered", async () => {
+    const proxy = await relay(open?.port ?? 0);
+    try {
+      const answer = await checkDatabase(
+        "mongodb",
+        `mongodb://127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({ reachable: true });
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
+    }
+  });
+
+  it("closes its connections once the server stops answering after the sign-in", async () => {
+    const proxy = await relay(open?.port ?? 0, stallsAtAccountCommand);
+    try {
+      const answer = await checkDatabase(
+        "mongodb",
+        `mongodb://127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer.reason).to.equal("The database did not answer in time.");
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
     }
   });
 });

@@ -119,6 +119,82 @@ export async function silentServer(): Promise<{
   };
 }
 
+/**
+ * What a relay asks of each chunk of one connection, from the client or from the server: `true`
+ * once the connection has gone quiet, from this chunk on.
+ */
+export type Stall = (chunk: Buffer, fromClient: boolean) => boolean;
+
+/** A relay in front of a database server, and the sockets clients hold open to it. */
+export interface Relay {
+  port: number;
+  /** The sockets still open to the relay once none has closed for a moment, or after `settleMs`. */
+  openAfter: (settleMs: number) => Promise<number>;
+  close: () => Promise<void>;
+}
+
+const SETTLE_POLL_MS = 20;
+
+/** How long a test lets a relay settle before it counts the sockets still open. */
+export const CLOSE_SETTLE_MS = 1000;
+
+/**
+ * Forwards each connection to the server on `targetPort`. A connection whose `Stall` answers
+ * `true` forwards nothing more in either direction and closes nothing, as a server does when it
+ * hangs after signing a client in.
+ */
+export async function relay(
+  targetPort: number,
+  newStall?: () => Stall,
+): Promise<Relay> {
+  const clients = new Set<net.Socket>();
+  const upstreams = new Set<net.Socket>();
+  const server = net.createServer((client) => {
+    const upstream = net.connect(targetPort, "127.0.0.1");
+    const stall = newStall?.();
+    let stalled = false;
+    const forward = (chunk: Buffer, fromClient: boolean) => {
+      stalled = stalled || (stall?.(chunk, fromClient) ?? false);
+      if (!stalled) {
+        (fromClient ? upstream : client).write(chunk);
+      }
+    };
+    clients.add(client);
+    upstreams.add(upstream);
+    client.on("data", (chunk) => forward(chunk, true));
+    upstream.on("data", (chunk) => forward(chunk, false));
+    client.on("close", () => {
+      clients.delete(client);
+      upstream.destroy();
+    });
+    upstream.on("close", () => {
+      upstreams.delete(upstream);
+      if (!stalled) {
+        client.destroy();
+      }
+    });
+    client.on("error", () => undefined);
+    upstream.on("error", () => undefined);
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  return {
+    port: portOf(server),
+    openAfter: async (settleMs) => {
+      const until = Date.now() + settleMs;
+      while (clients.size > 0 && Date.now() < until) {
+        await new Promise((resolve) => setTimeout(resolve, SETTLE_POLL_MS));
+      }
+      return clients.size;
+    },
+    close: async () => {
+      for (const socket of [...clients, ...upstreams]) {
+        socket.destroy();
+      }
+      await new Promise((resolve) => server.close(resolve));
+    },
+  };
+}
+
 const RUN_SECRET = randomBytes(6).toString("hex");
 
 /** A throwaway secret for `name`, random for each test run, so no credential sits in the source. */

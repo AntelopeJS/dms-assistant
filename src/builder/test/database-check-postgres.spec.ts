@@ -2,11 +2,14 @@ import { expect } from "chai";
 import { Client } from "pg";
 import { checkDatabase } from "../implementations/dms-builder/engine/database-check";
 import {
+  CLOSE_SETTLE_MS,
   closedPort,
   type Container,
   dockerAvailable,
   LIVE_SUITE_NOTE,
+  relay,
   removeContainer,
+  type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
@@ -17,6 +20,9 @@ import {
 const TIMEOUT_MS = 1000;
 const ADMIN_SECRET = secretOf("admin");
 const WRONG_SECRET = secretOf("wrong");
+
+/** The first byte of a simple query message, PostgreSQL's Query. */
+const QUERY_MESSAGE = 0x51;
 const ROLES = ["reader", "writer", "inserter", "updater", "deleter", "blind"];
 
 const SETUP = [
@@ -34,6 +40,11 @@ const SETUP = [
 ];
 
 const suite = dockerAvailable ? describe : describe.skip;
+
+/** The server never sees the first query: the sign-in is through and nothing more is answered. */
+function stallsAtFirstQuery(): Stall {
+  return (chunk, fromClient) => fromClient && chunk[0] === QUERY_MESSAGE;
+}
 
 suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
   let server: Container | undefined;
@@ -186,6 +197,36 @@ suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer.reason).to.equal("The database did not answer in time.");
     } finally {
       await silent.close();
+    }
+  });
+
+  it("closes its connections once it has answered", async () => {
+    const proxy = await relay(server?.port ?? 0);
+    try {
+      const answer = await checkDatabase(
+        "postgres",
+        `postgres://postgres:${ADMIN_SECRET}@127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({ reachable: true });
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
+    }
+  });
+
+  it("closes its connections once the server stops answering after the sign-in", async () => {
+    const proxy = await relay(server?.port ?? 0, stallsAtFirstQuery);
+    try {
+      const answer = await checkDatabase(
+        "postgres",
+        `postgres://postgres:${ADMIN_SECRET}@127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer.reason).to.equal("The database did not answer in time.");
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
     }
   });
 });

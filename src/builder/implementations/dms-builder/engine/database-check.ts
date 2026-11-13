@@ -6,6 +6,7 @@ import {
   type Probe,
   unanswered,
 } from "./database-access";
+import { ProbeConnections } from "./probe-connections";
 import { probeMongodb } from "./probe-mongodb";
 import { probePostgres } from "./probe-postgres";
 import { probeRethinkdb } from "./probe-rethinkdb";
@@ -27,25 +28,30 @@ const PROBES: Record<DatabaseEngine, Probe> = {
  * Tests a customer's database live: whether a server answers at `url`, who it signs in, and
  * whether that account can read and write. The driver module of the engine is not configured
  * when this runs, so the check opens the database itself with the engine's client library. It
- * writes nothing to the project and answers, never rejects.
+ * writes nothing to the project and answers, never rejects. Every connection the probe opened is
+ * closed when it answers, and when the deadline passes without waiting for them: no socket
+ * outlives the answer, whatever the server is doing.
  */
 export async function checkDatabase(
   engine: DatabaseEngine,
   url: string,
   timeoutMs: number = CONNECT_TIMEOUT_MS,
 ): Promise<DatabaseAccess> {
+  const connections = new ProbeConnections();
   let timer: NodeJS.Timeout | undefined;
   const deadline = new Promise<DatabaseAccess>((resolve) => {
-    timer = setTimeout(
-      () => resolve(unanswered(TOO_SLOW)),
-      timeoutMs * DEADLINE_IN_TIMEOUTS,
-    );
+    timer = setTimeout(() => {
+      void connections.closeAll();
+      resolve(unanswered(TOO_SLOW));
+    }, timeoutMs * DEADLINE_IN_TIMEOUTS);
   });
   try {
     return await Promise.race([
-      PROBES[engine](url, timeoutMs).catch((error: unknown) =>
-        unanswered(noAnswerReason(failureMessage(error), url)),
-      ),
+      PROBES[engine](url, timeoutMs, connections)
+        .catch((error: unknown) =>
+          unanswered(noAnswerReason(failureMessage(error), url)),
+        )
+        .finally(() => connections.closeAll()),
       deadline,
     ]);
   } finally {

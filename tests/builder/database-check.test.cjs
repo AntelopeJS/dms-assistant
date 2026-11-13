@@ -19,7 +19,8 @@ const ENCODED = encodeURIComponent(SAMPLE_SECRET);
 const URL = `postgres://${["app", ENCODED].join(":")}@db.example.com:5432/shop`;
 
 /**
- * @typedef {(url: string, timeoutMs: number) => Promise<unknown>} Probe
+ * @typedef {{ add: (close: () => unknown) => void }} Connections
+ * @typedef {(url: string, timeoutMs: number, connections: Connections) => Promise<unknown>} Probe
  * @typedef {{ reachable: boolean, reason?: string }} Answer
  * @typedef {(engine: string, url: string, timeoutMs: number) => Promise<Answer>} Check
  */
@@ -166,6 +167,99 @@ void test(
     assert.ok(performance.now() - started < 1000);
   },
 );
+
+/** Fails on an implementation that leaves a connection open when the deadline passes, or answers before it has started closing it. */
+void test("the deadline closes what the probe opened, before it answers", async () => {
+  /** @type {string[]} */
+  const events = [];
+  /** @type {Probe} */
+  const stalled = (_url, _timeoutMs, connections) => {
+    connections.add(async () => {
+      events.push("closed");
+    });
+    return new Promise(() => undefined);
+  };
+  const checkDatabase = loadCheck({
+    postgres: stalled,
+    mongodb: stalled,
+    rethinkdb: stalled,
+  });
+  const answer = await checkDatabase("rethinkdb", URL, 40);
+  events.push("answered");
+  assert.equal(answer.reason, "The database did not answer in time.");
+  assert.deepEqual(events, ["closed", "answered"]);
+});
+
+/** Fails on an implementation that closes a connection only at the deadline, or answers before the close has finished. */
+void test("an answer closes what the probe opened, once, and waits for it", async () => {
+  /** @type {string[]} */
+  const events = [];
+  /** @type {Probe} */
+  const answering = async (_url, _timeoutMs, connections) => {
+    connections.add(async () => {
+      events.push("closing");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      events.push("closed");
+    });
+    return { reachable: true };
+  };
+  const checkDatabase = loadCheck({
+    postgres: answering,
+    mongodb: answering,
+    rethinkdb: answering,
+  });
+  const answer = await checkDatabase("mongodb", URL, 100);
+  events.push("answered");
+  assert.deepEqual(answer, { reachable: true });
+  assert.deepEqual(events, ["closing", "closed", "answered"]);
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  assert.deepEqual(events, ["closing", "closed", "answered"]);
+});
+
+/** Fails on an implementation that closes only what was open when the deadline passed, so a late connection stays open. */
+void test("a connection opened after the deadline is closed at once", async () => {
+  /** @type {string[]} */
+  const closed = [];
+  /** @type {Probe} */
+  const late = async (_url, _timeoutMs, connections) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    connections.add(async () => {
+      closed.push("late");
+    });
+    return { reachable: true };
+  };
+  const checkDatabase = loadCheck({
+    postgres: late,
+    mongodb: late,
+    rethinkdb: late,
+  });
+  const answer = await checkDatabase("postgres", URL, 40);
+  assert.equal(answer.reason, "The database did not answer in time.");
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.deepEqual(closed, ["late"]);
+});
+
+/** Fails on an implementation that lets a connection that fails to close, or throws when asked, take the answer with it. */
+void test("a connection that cannot be closed does not change the answer", async () => {
+  /** @type {Probe} */
+  const stubborn = async (_url, _timeoutMs, connections) => {
+    connections.add(async () => {
+      throw new Error("close failed");
+    });
+    connections.add(() => {
+      throw new Error("close threw");
+    });
+    return { reachable: true };
+  };
+  const checkDatabase = loadCheck({
+    postgres: stubborn,
+    mongodb: stubborn,
+    rethinkdb: stubborn,
+  });
+  assert.deepEqual(await checkDatabase("postgres", URL, 40), {
+    reachable: true,
+  });
+});
 
 /** Fails on an implementation that lets a probe's error out, or that answers its message with the password in it. */
 void test("a probe that throws is answered, without the password", async () => {

@@ -1,4 +1,4 @@
-import type { Db, MongoClient } from "mongodb";
+import type { Db } from "mongodb";
 import { z } from "zod";
 import {
   mongoAccess,
@@ -72,20 +72,21 @@ async function listRelations(db: Db): Promise<MongoRelation[] | undefined> {
 /**
  * Checks a MongoDB connection with `mongodb`, on the database the URL's path names: it signs in,
  * reads the account and its privileges with `connectionStatus`, and lists the collections as the
- * catalog of `@antelopejs/mongodb` does, then closes. It runs no command that writes.
+ * catalog of `@antelopejs/mongodb` does, and leaves the client for the check to close. It runs no
+ * command that writes.
  */
-export const probeMongodb: Probe = async (url, timeoutMs) => {
+export const probeMongodb: Probe = async (url, timeoutMs, connections) => {
   const mongodb = loadClient("mongodb");
   if (!mongodb) {
     return missingClient("mongodb", "MongoDB");
   }
-  let client: MongoClient | undefined;
   try {
-    client = new mongodb.MongoClient(url, {
+    const client = new mongodb.MongoClient(url, {
       serverSelectionTimeoutMS: timeoutMs,
       connectTimeoutMS: timeoutMs,
       socketTimeoutMS: timeoutMs,
     });
+    connections.add(() => client.close());
     await client.connect();
     const db = client.db();
     const started = performance.now();
@@ -127,7 +128,5 @@ export const probeMongodb: Probe = async (url, timeoutMs) => {
         : refusedBy(serverRefusal(error.message, url));
     }
     return unanswered(noAnswerReason(failureMessage(error), url));
-  } finally {
-    await client?.close().catch(() => undefined);
   }
 };

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProbeConnections } from "./probe-connections";
 
 /**
  * The engines of the *Connect a database* form, by the name the form sends.
@@ -33,8 +34,15 @@ export interface RelationAccess {
   writable: boolean;
 }
 
-/** Checks one connection, with `timeoutMs` to connect, and never rejects with the URL in it. */
-export type Probe = (url: string, timeoutMs: number) => Promise<DatabaseAccess>;
+/**
+ * Checks one connection, with `timeoutMs` to connect, and never rejects with the URL in it. Each
+ * client it opens is registered with `connections` at once: the check closes them, not the probe.
+ */
+export type Probe = (
+  url: string,
+  timeoutMs: number,
+  connections: ProbeConnections,
+) => Promise<DatabaseAccess>;
 
 const NO_READ = "This account cannot read this database.";
 const NOT_CHECKED = "Could not check the database";

@@ -1,11 +1,14 @@
 import { expect } from "chai";
 import { checkDatabase } from "../implementations/dms-builder/engine/database-check";
 import {
+  CLOSE_SETTLE_MS,
   closedPort,
   type Container,
   dockerAvailable,
   LIVE_SUITE_NOTE,
+  relay,
   removeContainer,
+  type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
@@ -17,6 +20,19 @@ import { answersAdmin, countRows, setUpShop } from "./helpers/rethinkdb-admin";
 const TIMEOUT_MS = 1000;
 const ADMIN_SECRET = secretOf("admin");
 const WRONG_SECRET = secretOf("wrong");
+const HANDSHAKE_MESSAGES = 3;
+
+/** The server goes quiet once the three NUL-ended messages of the sign-in are through. */
+function stallsAfterSignIn(): Stall {
+  let ended = 0;
+  return (chunk, fromClient) => {
+    const signedIn = ended >= HANDSHAKE_MESSAGES;
+    if (!fromClient) {
+      ended += chunk.filter((byte) => byte === 0).length;
+    }
+    return signedIn;
+  };
+}
 
 const suite = dockerAvailable ? describe : describe.skip;
 
@@ -183,6 +199,36 @@ suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer.reason).to.equal("The database did not answer in time.");
     } finally {
       await silent.close();
+    }
+  });
+
+  it("closes its connections once it has answered", async () => {
+    const proxy = await relay(server?.port ?? 0);
+    try {
+      const answer = await checkDatabase(
+        "rethinkdb",
+        urlOf("admin", ADMIN_SECRET, "shop", proxy.port),
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({ reachable: true });
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
+    }
+  });
+
+  it("closes its connections once the server stops answering after the sign-in", async () => {
+    const proxy = await relay(server?.port ?? 0, stallsAfterSignIn);
+    try {
+      const answer = await checkDatabase(
+        "rethinkdb",
+        urlOf("admin", ADMIN_SECRET, "shop", proxy.port),
+        TIMEOUT_MS,
+      );
+      expect(answer.reason).to.equal("The database did not answer in time.");
+      expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      await proxy.close();
     }
   });
 });

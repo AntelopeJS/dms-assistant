@@ -59,9 +59,10 @@ function refusal(
 
 /**
  * Checks a PostgreSQL connection with `pg`: it signs in, reads the account the server reports and
- * its privileges over the relations it sees, then closes. It runs no statement that writes.
+ * its privileges over the relations it sees, and leaves the client for the check to close. It runs
+ * no statement that writes.
  */
-export const probePostgres: Probe = async (url, timeoutMs) => {
+export const probePostgres: Probe = async (url, timeoutMs, connections) => {
   const pg = loadClient("pg");
   if (!pg) {
     return missingClient("pg", "PostgreSQL");
@@ -73,6 +74,7 @@ export const probePostgres: Probe = async (url, timeoutMs) => {
     statement_timeout: timeoutMs,
   });
   client.on("error", () => undefined);
+  connections.add(() => client.end());
   try {
     await client.connect();
     const started = performance.now();
@@ -89,7 +91,5 @@ export const probePostgres: Probe = async (url, timeoutMs) => {
       return refusal(error.code, error.message, url);
     }
     return unanswered(noAnswerReason(failureMessage(error), url));
-  } finally {
-    await client.end().catch(() => undefined);
   }
 };

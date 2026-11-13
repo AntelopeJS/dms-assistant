@@ -90,16 +90,27 @@ describe('the wiring of a database', () => {
 		])
 	})
 
-	it('pins the DMS module to the project\'s own database when the builder says it needs it', () => {
+	it('pins each module the builder says needs the project\'s own database, one step each', () => {
 		const steps = connectSteps(form(), {
-			modules: ['dms', 'mongodb', 'dms-builder'],
-			databasePin: { module: 'dms', provider: 'mongodb' },
+			modules: ['dms', 'app', 'mongodb', 'dms-builder'],
+			ownDatabase: 'mongodb',
+			databasePins: [
+				{ module: 'dms', provider: 'mongodb' },
+				{ module: 'app', provider: 'mongodb' },
+			],
 		})
-		expect(steps.at(-1)).toEqual({
-			op: 'ConfigureModule',
-			id: 'dms',
-			entry: { importOverrides: [{ interface: '@antelopejs/interface-database', source: 'mongodb' }] },
-		})
+		expect(steps.slice(3)).toEqual([
+			{
+				op: 'ConfigureModule',
+				id: 'dms',
+				entry: { importOverrides: [{ interface: '@antelopejs/interface-database', source: 'mongodb' }] },
+			},
+			{
+				op: 'ConfigureModule',
+				id: 'app',
+				entry: { importOverrides: [{ interface: '@antelopejs/interface-database', source: 'mongodb' }] },
+			},
+		])
 	})
 
 	it('never carries the connection details into the configuration', () => {

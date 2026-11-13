@@ -2,39 +2,49 @@ import type { InterfaceConnection } from "@antelopejs/interface-core";
 import type { ImportOverrideInput } from "@antelopejs/interface-dms-builder";
 import { Node, type ObjectLiteralExpression, SyntaxKind } from "ts-morph";
 import { findConfigFile, propertyNamed } from "./modules";
-import { ownConnections } from "./own-connections";
+import { moduleConnections, ownModuleId } from "./own-connections";
 import { DATABASE_INTERFACE } from "./interface-ids";
 import {
+  type ConfigDraft,
   existingOverrides,
   overrideOf,
   MODULES,
+  moduleEntries,
   objectAt,
   openDraft,
   StepRefusal,
 } from "./project-config";
 import { hides, overridesWrittenAsLiterals } from "./literal-overrides";
 
-const DMS_INTERFACE = "@antelopejs/interface-dms";
 const DEFAULT_PRIORITY = 0;
 const EXPORT_PRIORITY = "exportPriority";
 const IMPORT_OVERRIDES = "importOverrides";
 
 /**
- * The `interface-database` pin the DMS module needs once a module that uses it pins another
- * database: core passes that pin on to the DMS, which would then be reached with two bindings.
+ * The `interface-database` pin a module needs once a module that uses it pins another database:
+ * core passes that pin on to the modules that import it, which would then be reached with two
+ * bindings.
  */
 export interface DatabasePin {
   module: string;
   provider: string;
 }
 
-type ConnectionLookup = (interfaceId: string) => InterfaceConnection[];
-
-function providerOf(connections: InterfaceConnection[]): string | undefined {
-  const connection =
-    connections.find((candidate) => candidate.selected) ?? connections[0];
-  return connection?.provider;
+/**
+ * The project's own database, and the modules that must be pinned to it before a second
+ * `interface-database` provider joins the project.
+ */
+export interface DatabasePins {
+  /** Core's default `interface-database` provider; nothing when the project has none. */
+  ownDatabase?: string;
+  /** Each configured module that imports `interface-database` without providing or pinning it. */
+  pins: DatabasePin[];
 }
+
+type ConnectionLookup = (
+  moduleId: string,
+  interfaceId: string,
+) => InterfaceConnection[];
 
 /** A priority written as a number, signed or not; nothing for anything core would have to evaluate. */
 function priorityValue(node: Node | undefined): number | undefined {
@@ -86,9 +96,9 @@ export function databasePriority(entry: Node | undefined): number | undefined {
   return priority === undefined ? DEFAULT_PRIORITY : priorityValue(priority);
 }
 
-function unreadable(dms: string): never {
+function unreadable(): never {
   throw new StepRefusal(
-    `the DMS module "${dms}" needs an ${DATABASE_INTERFACE} pin, and the configuration does not say plainly which database the project uses by default: pin ${DATABASE_INTERFACE} on "${dms}" first`,
+    `the configuration does not say plainly which database the project uses by default, so the modules that import ${DATABASE_INTERFACE} cannot be pinned to it: pin ${DATABASE_INTERFACE} on each of them first`,
   );
 }
 
@@ -116,28 +126,27 @@ export function defaultDatabaseProvider(
 }
 
 /**
- * Whether the DMS pins `interface-database`, by an override written as literals. When it does not,
- * a pin has to be written there, which is refused when its entry or overrides are not written with
- * literals only: the builder can neither tell they hold no pin nor write them again whole.
+ * Whether a module pins `interface-database` itself, by an override without an id written as
+ * literals: a named connection is not a pin. When it does not, a pin has to be written there, which
+ * is refused when its overrides are not written with literals only: the builder can neither tell
+ * they hold no pin nor write them again whole.
  */
-function pinsDatabase(dms: string, entry: Node): boolean {
-  const overrides = Node.isObjectLiteralExpression(entry)
-    ? propertyNamed(entry, IMPORT_OVERRIDES)
-    : undefined;
+function pinsDatabase(id: string, entry: ObjectLiteralExpression): boolean {
+  const overrides = propertyNamed(entry, IMPORT_OVERRIDES);
   if (
     readableOverrides(overrides).some(
-      (override) => override.interface === DATABASE_INTERFACE,
+      (override) =>
+        override.interface === DATABASE_INTERFACE && override.id === undefined,
     )
   ) {
     return true;
   }
   if (
-    !Node.isObjectLiteralExpression(entry) ||
     hides(entry, IMPORT_OVERRIDES) ||
     !overridesWrittenAsLiterals(overrides)
   ) {
     throw new StepRefusal(
-      `the entry of the DMS module "${dms}" or its importOverrides are not written with literals, so the builder cannot tell whether it pins ${DATABASE_INTERFACE}, nor add the pin without losing a part: pin it on "${dms}" first`,
+      `the entry of module "${id}" or its importOverrides are not written with literals, so the builder cannot tell whether it pins ${DATABASE_INTERFACE}, nor add the pin without losing a part: pin it on "${id}" first`,
     );
   }
   return false;
@@ -169,13 +178,14 @@ function environmentPriorities(modules: ObjectLiteralExpression): boolean {
   return environments?.getText().includes("exportPriority") ?? false;
 }
 
-function configModules(): ObjectLiteralExpression | undefined {
+/** The configuration opened for reading; nothing when the project has none or it is not a literal. */
+function readableConfig(): ConfigDraft | undefined {
   const configPath = findConfigFile();
   if (!configPath) {
     return undefined;
   }
   try {
-    return objectAt(openDraft(configPath), [MODULES]);
+    return openDraft(configPath);
   } catch (error) {
     if (error instanceof StepRefusal) {
       return undefined;
@@ -184,37 +194,76 @@ function configModules(): ObjectLiteralExpression | undefined {
   }
 }
 
-/**
- * The DMS module's pin to the project's default database, when it needs one: nothing when the
- * DMS already pins `interface-database`, provides it, or the project has no database of its own.
- * Refused when the configuration does not say plainly which database that is, or how the DMS binds
- * it, so a connection is never written with a pin to the wrong one, or without the one it needs.
- */
-export function dmsDatabasePin(
-  lookup: ConnectionLookup = ownConnections,
-): DatabasePin | undefined {
-  const dms = providerOf(lookup(DMS_INTERFACE));
-  const modules = configModules();
-  const entry = dms && modules && propertyNamed(modules, dms);
-  if (!dms || !modules || !entry) {
-    return undefined;
-  }
-  const providers = lookup(DATABASE_INTERFACE)
-    .map((connection) => connection.provider)
-    .filter((provider): provider is string => provider !== undefined);
-  if (
-    providers.includes(dms) ||
-    providers.length === 0 ||
-    pinsDatabase(dms, entry)
-  ) {
-    return undefined;
+/** The distinct providers among `connections`. */
+function providersOf(connections: InterfaceConnection[]): string[] {
+  return [
+    ...new Set(
+      connections.flatMap((connection) =>
+        connection.provider === undefined ? [] : [connection.provider],
+      ),
+    ),
+  ];
+}
+
+/** The default among `providers`, ranked by the priorities the configuration writes; refused when it cannot tell. */
+function defaultAmong(
+  modules: ObjectLiteralExpression,
+  providers: string[],
+): string {
+  if (providers.length === 1) {
+    return providers[0];
   }
   if (environmentPriorities(modules)) {
-    unreadable(dms);
+    unreadable();
   }
-  const provider =
-    defaultDatabaseProvider([...new Set(providers)], (id) =>
+  return (
+    defaultDatabaseProvider(providers, (id) =>
       databasePriority(propertyNamed(modules, id)),
-    ) ?? unreadable(dms);
-  return { module: dms, provider };
+    ) ?? unreadable()
+  );
+}
+
+/**
+ * Whether a module needs the pin: it imports `interface-database` and neither provides it nor
+ * pins it. Refused when its entry cannot be read, so that a pin is never written without the others.
+ */
+function needsPin(
+  lookup: ConnectionLookup,
+  id: string,
+  entry: ObjectLiteralExpression,
+): boolean {
+  const connections = lookup(id, DATABASE_INTERFACE);
+  if (
+    connections.length === 0 ||
+    connections.some((connection) => connection.provider === id)
+  ) {
+    return false;
+  }
+  return !pinsDatabase(id, entry);
+}
+
+/**
+ * The project's own database and the pins to it that connecting another one needs: each configured
+ * module that imports `interface-database`, does not provide it and has no plain pin for it. Core
+ * passes a module's pin on to the modules it imports, so one left unpinned would be reached with two
+ * bindings once a second provider exists. Nothing is pinned when the project has no database of its
+ * own. Refused when the configuration does not say plainly which database that is, or how a module
+ * binds it, so a connection is never written with a pin to the wrong one, or without the one it needs.
+ */
+export function databasePins(
+  lookup: ConnectionLookup = moduleConnections,
+): DatabasePins {
+  const draft = readableConfig();
+  const modules = draft && objectAt(draft, [MODULES]);
+  const providers = providersOf(lookup(ownModuleId(), DATABASE_INTERFACE));
+  if (!draft || !modules || providers.length === 0) {
+    return { pins: [] };
+  }
+  const ownDatabase = defaultAmong(modules, providers);
+  return {
+    ownDatabase,
+    pins: moduleEntries(draft)
+      .filter(([id, entry]) => needsPin(lookup, id, entry))
+      .map(([module]) => ({ module, provider: ownDatabase })),
+  };
 }

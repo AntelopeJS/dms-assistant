@@ -20,6 +20,16 @@ export function ownModuleId(): string {
   return OWN_MODULE ?? DEFAULT_MODULE_ID;
 }
 
+/** The connections core wires from the module `moduleId` to the providers of an interface. */
+export function moduleConnections(
+  moduleId: string,
+  interfaceId: string,
+): InterfaceConnection[] {
+  return RunWithResponsibleModule(moduleId, () =>
+    GetInterfaceInstances(interfaceId),
+  );
+}
+
 /** The builder's own connections to an interface it declares. */
 export function ownConnections(interfaceId: string): InterfaceConnection[] {
   const lookup = () => GetInterfaceInstances(interfaceId);

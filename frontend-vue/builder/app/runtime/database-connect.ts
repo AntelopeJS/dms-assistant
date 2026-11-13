@@ -324,7 +324,8 @@ export function detailsFields(details: ConnectionDetails): ConnectionFields {
 /**
  * The `ConfigureProject` batch that wires the database into the project: its driver, the module
  * for its tables, a catalog connection for dms-assistant (the builder and the assistant read the
- * same one), and the DMS module's pin to the project's own database when it needs one.
+ * same one), and a pin to the project's own database for each module that imports
+ * `interface-database` without one.
  */
 export function connectSteps(form: ConnectForm, project: ProjectModules): ProjectConfigStep[] {
 	const id = connectionId(form.name)
@@ -334,8 +335,7 @@ export function connectSteps(form: ConnectForm, project: ProjectModules): Projec
 		tablesStep(id, names),
 		{ op: 'ConfigureModule', id: project.self ?? DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
 	]
-	if (project.databasePin) {
-		const { module, provider } = project.databasePin
+	for (const { module, provider } of project.databasePins ?? []) {
 		steps.push({
 			op: 'ConfigureModule',
 			id: module,

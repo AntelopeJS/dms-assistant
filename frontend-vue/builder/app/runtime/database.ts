@@ -22,7 +22,6 @@ import { answerFieldType } from './field-type-answer'
 import { t } from './i18n'
 
 const DRAFT_PREFIX = 'dms-builder:database:'
-const MAPPED_PREFIX = 'dms-builder:database-mapped:'
 /** How long a mapping draft nobody came back to is kept. */
 export const KEEP_MAPPING_DRAFT_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -256,13 +255,6 @@ export function settledInput(
 			.map((resource) => mappedResource(draft, resource, mappedTableViews)),
 		excluded: [...excluded].map(([relation, reason]) => ({ relation, reason })),
 	}
-}
-
-/** How far the analysis is, as the screen says it while it runs. */
-export function progressText(progress: AnalysisState['progress']): string {
-	return progress.timeouts
-		? t('database.proposal.progress_timeouts', { ...progress })
-		: t('database.proposal.progress', { ...progress })
 }
 
 /** What a relation becomes, as the summary of Apply words it. */
@@ -528,84 +520,6 @@ export function remapInput(
 	}
 }
 
-/** A mapped relation's change not applied yet, with the relation as read when it was made. */
-export interface KeptDraft {
-	draft: ResourceDraft
-	read: string
-}
-
-interface StoredMapped {
-	drafts: Record<string, KeptDraft>
-	at: number
-}
-
-function mappedKey(connection: string, module: string): string {
-	return `${MAPPED_PREFIX}${connection}:${module}`
-}
-
-/** A change to keep: the draft, and the relation as read when it was made. */
-export function keptDraft(draft: ResourceDraft, read: ResourceDraft | undefined): KeptDraft {
-	return { draft: JSON.parse(JSON.stringify(draft)) as ResourceDraft, read: JSON.stringify(read) }
-}
-
-/**
- * Keeps the changed drafts of mapped relations in the browser, so leaving the panel, the workspace
- * or the builder before applying them loses nothing; none kept, nothing stored.
- */
-export function storeMappedDrafts(
-	connection: string,
-	module: string,
-	drafts: Record<string, KeptDraft>,
-	now = Date.now(),
-): void {
-	try {
-		if (Object.keys(drafts).length === 0) {
-			storage()?.removeItem(mappedKey(connection, module))
-			return
-		}
-		const value: StoredMapped = { drafts, at: now }
-		storage()?.setItem(mappedKey(connection, module), JSON.stringify(value))
-	} catch {
-		return
-	}
-}
-
-/** The changed drafts of mapped relations kept for a connection and module, unless they are too old. */
-export function storedMappedDrafts(
-	connection: string,
-	module: string,
-	now = Date.now(),
-): Record<string, KeptDraft> {
-	try {
-		const raw = storage()?.getItem(mappedKey(connection, module))
-		const value = raw ? (JSON.parse(raw) as StoredMapped) : undefined
-		if (!value?.drafts || now - value.at > KEEP_MAPPING_DRAFT_MS) {
-			return {}
-		}
-		return value.drafts
-	} catch {
-		return {}
-	}
-}
-
-/**
- * The drafts once the mapping is read again: what was read, with the kept changes of relations
- * still read as they were when the change was made. A change made to a relation that changed since,
- * remapped elsewhere or altered in the database, is dropped rather than written over it.
- */
-export function keptMappedDrafts(
-	read: Record<string, ResourceDraft>,
-	kept: Record<string, KeptDraft>,
-): Record<string, ResourceDraft> {
-	return Object.fromEntries(
-		Object.entries(read).map(([relation, draft]) => {
-			const change = kept[relation]
-			const current = change && change.read === JSON.stringify(draft) ? change.draft : draft
-			return [relation, JSON.parse(JSON.stringify(current)) as ResourceDraft]
-		}),
-	)
-}
-
 /** The drafts of mapped relations changed since they were read, by relation. */
 export function unsavedRelations(
 	drafts: Record<string, ResourceDraft>,
@@ -613,14 +527,5 @@ export function unsavedRelations(
 ): string[] {
 	return Object.keys(drafts).filter(
 		(relation) => JSON.stringify(drafts[relation]) !== JSON.stringify(read[relation]),
-	)
-}
-
-/** The relations the module maps as TableViews, which relation columns may point at. */
-export function mappedTableViewsOf(mapped: MappedRelation[]): Set<string> {
-	return new Set(
-		mapped
-			.filter((entry) => entry.resource.tableView.value)
-			.map((entry) => entry.resource.relation),
 	)
 }

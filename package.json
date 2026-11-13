@@ -65,7 +65,6 @@
     "test:node": "([ -n \"$DMS_PREBUILT\" ] || pnpm run build) && node --test \"tests/!(sidecar-build).test.cjs\" \"tests/builder/*.test.cjs\"",
     "test:specs": "([ -n \"$DMS_PREBUILT\" ] || pnpm run build) && mocha \"dist/builder/test/**/*.spec.js\"",
     "test:frontend": "pnpm --dir frontend-vue test",
-    "test:components": "pnpm --dir frontend-vue test:components",
     "test:sidecar-smoke": "pnpm run build:sidecar && node --test tests/sidecar-build.test.cjs",
     "test:frontend-registration": "pnpm run build && node --test tests/frontend-registration.test.cjs",
     "test:channels": "pnpm run build && node --test tests/channels.test.cjs tests/channel-limits.test.cjs",

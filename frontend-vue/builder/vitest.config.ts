@@ -12,16 +12,6 @@ export default defineConfig({
       '#dms/frontend-module': fileURLToPath(
         new URL('./tests/stubs/frontend-module.ts', import.meta.url),
       ),
-      // The DMS core layer's own sources, which a module imports by this alias.
-      '#dms-core': fileURLToPath(
-        new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-core', import.meta.url),
-      ),
-      '#dms-ui': fileURLToPath(
-        new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui', import.meta.url),
-      ),
-      '#dms-onboarding': fileURLToPath(
-        new URL('../node_modules/@antelopejs/dms/frontend-vue/layers/dms-onboarding', import.meta.url),
-      ),
     },
   },
   test: {

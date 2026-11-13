@@ -17,8 +17,6 @@ const LOSSY_READINGS: ReadonlyArray<readonly [reason: string, key: string]> = [
 
 const TIMESTAMP_PREFIX = 'a timestamp without time zone is read as UTC; '
 
-const TRAITS: ReadonlySet<string> = new Set(['identifier-like', 'enum-like', 'measure', 'time-axis', 'label-candidate'])
-
 /** The schemas question counts the tables its options stand for, as `schema (count)` titles. */
 function tablesBehind(item: OpenItem): number {
 	return item.options.reduce((total, option) => total + Number(/\((\d+)\)$/.exec(option.title)?.[1] ?? 0), 0)
@@ -47,9 +45,4 @@ export function lossyText(reason: string): string {
 		return t('database.server.lossy.timestamp', { rest: lossyText(reason.slice(TIMESTAMP_PREFIX.length)) })
 	}
 	return reason
-}
-
-/** A column trait the analysis measured, in the active locale when it is a known one. */
-export function traitText(trait: string): string {
-	return TRAITS.has(trait) ? t(`database.server.trait.${trait}`) : trait
 }

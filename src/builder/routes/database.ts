@@ -16,6 +16,7 @@ import type {
   ProjectConfigStep,
 } from "@antelopejs/interface-dms-builder";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
+import { type ConnectionCheckBody, runConnectionCheck } from "./database-check";
 import * as engine from "../implementations/dms-builder";
 import {
   catalogOf,
@@ -135,6 +136,15 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @JSONBody() body: RepairConnectionsBody | undefined,
   ) {
     return repairDatabaseConnections({ dryRun: body?.dryRun });
+  }
+
+  /** Tests a database live, before the connection is written: owner only, and in development only. */
+  @Post(ROUTES.databaseConnectionsCheck)
+  async checkConnection(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: ConnectionCheckBody,
+  ) {
+    return runConnectionCheck(body);
   }
 
   @Post(ROUTES.databaseAnalyse)

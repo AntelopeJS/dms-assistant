@@ -7,7 +7,10 @@ import { antelopeKnipConfig } from "@antelopejs/tooling-configs/knip";
  * dependencies are ignored here: knip assigns their imports to the sidecar
  * workspace, which is checked separately. Nested package dependencies are
  * checked from their own manifests, so `frontend-vue` and `sidecar` stay
- * separate workspaces with their own development manifests.
+ * separate workspaces with their own development manifests. `rethinkdb-ts` is
+ * an optional peer that the database check requires by name when it checks a
+ * RethinkDB connection, and no file imports it because its declarations do not
+ * compile with this module's `lib`.
  */
 export default {
   workspaces: {
@@ -16,6 +19,7 @@ export default {
         "@anthropic-ai/claude-code",
         "@anthropic-ai/claude-agent-sdk",
         "@modelcontextprotocol/sdk",
+        "rethinkdb-ts",
         "zod",
       ],
       ignore: ["frontend-vue/**", "sidecar/tests/**"],

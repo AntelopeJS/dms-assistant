@@ -271,6 +271,7 @@ void test("a request the backend cannot answer gets a JSON-RPC error naming the 
   await publish(root);
   const configPath = path.join(root, ...CACHE, "mcp.json");
   const config = await readBridgeConfig(root);
+  assert.match(config.url, /\/ai\/mcp$/);
   await writeFile(
     configPath,
     JSON.stringify({ ...config, url: "http://127.0.0.1:1/ai/mcp" }),
@@ -298,7 +299,6 @@ void posixModeTest(
     await publish(root);
     const { mode } = await stat(path.join(root, ...CACHE, "mcp.json"));
     assert.equal(mode & 0o777, 0o600);
-    assert.match((await readBridgeConfig(root)).url, /\/ai\/mcp$/);
     await rm(root, { recursive: true, force: true });
   },
 );

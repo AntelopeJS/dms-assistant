@@ -8,6 +8,7 @@ import {
 } from "../../builder/app/runtime/database-build";
 import {
 	type ConnectForm,
+	type ConnectionAccess,
 	connectSteps,
 	connectVariables,
 	connectionId,
@@ -19,18 +20,31 @@ import {
 	parseConnectionUrl,
 	refusalText,
 } from "../../builder/app/runtime/database-connect";
+import type {
+	DatabaseAccess,
+	ProjectModules,
+} from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
-import { checkDatabaseAccess, type DatabaseAccess } from "./database-access";
-import { type ConnectCheck, connectChecks } from "./database-checks";
+import {
+	canConnect,
+	type ConnectCheck,
+	connectChecks,
+} from "./database-checks";
 
 type BuilderApi = ReturnType<typeof useBuilderApi>;
 
 const POLL_MS = 1_000;
 
-/** Where "Connect and analyse" stands: the form, the checks running, or the analysis ready. */
+/**
+ * Where "Connect and analyse" stands: the form, the live check (which a failed check ends in),
+ * the access to give a database the account can write to, then the connection written and
+ * analysed.
+ */
 export type ConnectPhase =
 	| { kind: "form" }
-	| { kind: "checking"; connection: string; module: string }
+	| { kind: "checking" }
+	| { kind: "choosing" }
+	| { kind: "analysing"; connection: string; module: string }
 	| { kind: "analysed"; connection: string; module: string };
 
 /**
@@ -49,11 +63,24 @@ export interface DatabaseConnect {
 	/** The refusal of the write, in the module's words. */
 	refusal: Readonly<Ref<string | null>>;
 	/**
-	 * Writes the connection into the project, then follows it until its analysis is ready or a
-	 * check fails. It resolves in either case; called again after a failure, it follows the written
-	 * connection again instead of writing it twice.
+	 * Checks the URL live, writing nothing. A database the account cannot read stops there. A new
+	 * connection whose account can write waits in `choosing` for `choose`; any other is written
+	 * read-only, or keeps the access an earlier visit wrote, then followed until its analysis is
+	 * ready or a check fails. It resolves in every case; called again after a failure, it follows
+	 * the written connection again instead of writing it twice.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
+	/** Writes the connection checked in `choosing` with this access, then follows it. */
+	choose: (access: ConnectionAccess) => Promise<void>;
+	/** Back to the form, from `choosing` or a failed check. */
+	reset: () => void;
+}
+
+interface Checked {
+	form: ConnectForm;
+	connection: string;
+	module: string;
+	project: ProjectModules | undefined;
 }
 
 /**
@@ -92,9 +119,10 @@ export function connectForm(
 }
 
 /**
- * "Connect and analyse" over the builder's connect engine: the `ConfigureProject` batch the
- * builder's form writes, then the builder's build answers polled each second through the project's
- * reload, the access check, and the analysis, its schemas picked as the builder pre-checks them.
+ * "Connect and analyse" over the builder's live check and connect engine: the check of the URL
+ * before anything is written, the `ConfigureProject` batch the builder's form writes with the
+ * access chosen, then the builder's build answers polled each second through the project's reload
+ * and the analysis, its schemas picked as the builder pre-checks them.
  */
 export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	const phase = ref<ConnectPhase>({ kind: "form" });
@@ -102,6 +130,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	const access = ref<DatabaseAccess | null>(null);
 	const refusal = ref<string | null>(null);
 	const failure = ref<string | null>(null);
+	let checked: Checked | undefined;
 	let reloadingSince: number | undefined;
 	let analysing = false;
 	let answeredSchemas: string | undefined;
@@ -109,6 +138,26 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	let generation = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
+
+	function current(loop: number): boolean {
+		return !disposed && loop === generation;
+	}
+
+	async function checkAccess(
+		engine: DatabaseEngine,
+		url: string,
+	): Promise<DatabaseAccess> {
+		try {
+			return await api.checkConnection(engine, url);
+		} catch (error) {
+			return {
+				reachable: false,
+				canRead: false,
+				canWrite: false,
+				reason: api.failure(error).detail,
+			};
+		}
+	}
 
 	async function analyse(
 		connection: string,
@@ -140,13 +189,6 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			reloadingSince === undefined ? 0 : Date.now() - reloadingSince,
 		);
 		view.value = next;
-		const listed = !next.reloading && next.connectionError === undefined;
-		if (listed && access.value === null) {
-			access.value = await checkDatabaseAccess(
-				api.databaseConnections,
-				connection,
-			).catch(() => null);
-		}
 		if (next.schemas && !analysing && next.job !== answeredSchemas) {
 			answeredSchemas = next.job;
 			await analyse(connection, module, preferredSchemas(next.schemas));
@@ -165,12 +207,10 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		try {
 			next = await followBuild(connection, module);
 		} catch (error) {
-			if (!disposed && loop === generation) {
-				failure.value = api.failure(error).detail;
-			}
+			if (current(loop)) failure.value = api.failure(error).detail;
 			return;
 		}
-		if (disposed || loop !== generation) return;
+		if (!current(loop)) return;
 		if (next.fork && next.job) {
 			phase.value = { kind: "analysed", connection, module };
 			return;
@@ -187,19 +227,18 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	}
 
 	async function write(
-		form: ConnectForm,
-		connection: string,
+		{ form, connection, project }: Checked,
+		choice: ConnectionAccess,
 	): Promise<boolean> {
-		if (written === connection) return true;
+		if (written === connection || project === undefined) return true;
 		try {
-			const project = await api.projectModules();
 			const result = project.modules.includes(managedNames(form).driverModule)
 				? await api.setConnectionUrl(
 						connection,
 						connectionUrl(form.engine, form.fields),
 					)
 				: await api.configureProject(
-						connectSteps(form, project),
+						connectSteps({ ...form, access: choice }, project),
 						false,
 						connectVariables(form),
 					);
@@ -215,17 +254,24 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		return true;
 	}
 
-	async function connect(
-		engine: DatabaseEngine,
-		url: string,
-	): Promise<UrlProblem | null> {
-		const form = connectForm(engine, url);
-		if ("kind" in form) return form;
-		const connection = connectionId(form.name);
-		const module = managedNames(form).tablesModule;
+	async function proceed(
+		target: Checked,
+		choice: ConnectionAccess,
+		loop: number,
+	): Promise<void> {
+		const { connection, module } = target;
+		phase.value = { kind: "analysing", connection, module };
+		if (!(await write(target, choice))) {
+			if (current(loop)) phase.value = { kind: "form" };
+			return;
+		}
+		if (current(loop)) await poll(connection, module, loop);
+	}
+
+	function stop(): number {
 		if (timer !== undefined) clearTimeout(timer);
 		generation += 1;
-		const loop = generation;
+		checked = undefined;
 		refusal.value = null;
 		failure.value = null;
 		view.value = null;
@@ -233,13 +279,61 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		reloadingSince = undefined;
 		analysing = false;
 		answeredSchemas = undefined;
-		phase.value = { kind: "checking", connection, module };
-		if (!(await write(form, connection))) {
-			phase.value = { kind: "form" };
-			return null;
+		return generation;
+	}
+
+	async function connect(
+		engine: DatabaseEngine,
+		url: string,
+	): Promise<UrlProblem | null> {
+		const form = connectForm(engine, url);
+		if ("kind" in form) return form;
+		const loop = stop();
+		phase.value = { kind: "checking" };
+		const answer = await checkAccess(engine, url);
+		if (!current(loop)) return null;
+		access.value = answer;
+		if (!canConnect(answer)) return null;
+		const connection = connectionId(form.name);
+		const target: Checked = {
+			form,
+			connection,
+			module: managedNames(form).tablesModule,
+			project: undefined,
+		};
+		if (written !== connection) {
+			try {
+				target.project = await api.projectModules();
+			} catch (error) {
+				if (!current(loop)) return null;
+				refusal.value = api.failure(error).detail;
+				phase.value = { kind: "form" };
+				return null;
+			}
+			if (!current(loop)) return null;
+			const fresh = !target.project.modules.includes(
+				managedNames(form).driverModule,
+			);
+			if (fresh && answer.canWrite) {
+				checked = target;
+				phase.value = { kind: "choosing" };
+				return null;
+			}
 		}
-		await poll(connection, module, loop);
+		await proceed(target, "read", loop);
 		return null;
+	}
+
+	async function choose(choice: ConnectionAccess): Promise<void> {
+		const target = checked;
+		if (target === undefined || phase.value.kind !== "choosing") return;
+		checked = undefined;
+		await proceed(target, choice, generation);
+	}
+
+	function reset(): void {
+		stop();
+		phase.value = { kind: "form" };
 	}
 
 	onBeforeUnmount(() => {
@@ -252,9 +346,18 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		checks: computed(() =>
 			phase.value.kind === "form"
 				? []
-				: connectChecks(view.value, access.value, failure.value),
+				: connectChecks({
+						access: access.value,
+						connecting:
+							phase.value.kind === "analysing" ||
+							phase.value.kind === "analysed",
+						view: view.value,
+						failure: failure.value,
+					}),
 		),
 		refusal,
 		connect,
+		choose,
+		reset,
 	};
 }

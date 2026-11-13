@@ -7,6 +7,7 @@ import {
 	type DatabaseConnect,
 	useDatabaseConnect,
 } from "../app/onboarding/connect-database";
+import type { ProjectConfigStep } from "../builder/app/runtime/database-types";
 
 vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
@@ -23,6 +24,16 @@ const LISTED = {
 	database: "shop",
 	role: "reader",
 };
+
+const READER = {
+	reachable: true,
+	latencyMs: 4,
+	user: "reader",
+	canRead: true,
+	canWrite: false,
+};
+
+const WRITER = { ...READER, user: "owner", canWrite: true };
 
 const SCHEMAS_QUESTION = {
 	id: "schemas:shop",
@@ -59,9 +70,22 @@ function fakeBuilder(overrides: Record<string, unknown> = {}) {
 			data: {},
 		}),
 	);
-	const configureProject = vi.fn(async () => ({ ok: true }));
+	const configureProject = vi.fn(
+		async (
+			_steps: ProjectConfigStep[],
+			_dryRun: boolean,
+			_variables?: unknown,
+		) => ({
+			ok: true,
+		}),
+	);
 	const api = {
-		projectModules: async () => ({ modules: [] as string[] }),
+		checkConnection: vi.fn(async () => READER),
+		projectModules: async () => ({
+			modules: [] as string[],
+			dmsDatabase: "dms-database",
+			ownDatabase: "mongodb",
+		}),
 		configureProject,
 		failure: (error: unknown) => ({
 			detail: error instanceof Error ? error.message : String(error),
@@ -101,6 +125,11 @@ function mountConnect(api: unknown): DatabaseConnect {
 
 function schemaCheck(connect: DatabaseConnect) {
 	return connect.checks.value.find((check) => check.key === "schema");
+}
+
+function dmsDatabaseConfig(fake: ReturnType<typeof fakeBuilder>) {
+	const steps = fake.configureProject.mock.calls[0]?.[0] ?? [];
+	return steps.find((step) => step.id === "dms-database")?.entry?.config;
 }
 
 afterEach(() => {
@@ -173,9 +202,140 @@ describe("the popup's connect form", () => {
 		);
 		expect(connect.refusal.value).toBeNull();
 		expect(connect.phase.value).toMatchObject({
-			kind: "checking",
+			kind: "analysing",
 			connection: "shop",
 		});
+	});
+});
+
+describe("the live check before anything is written", () => {
+	it.each([
+		[
+			"no server answers",
+			{
+				reachable: false,
+				canRead: false,
+				canWrite: false,
+				reason: "Nothing is listening at this host and port.",
+			},
+			"reachable",
+		],
+		[
+			"the server refuses the sign-in",
+			{
+				reachable: true,
+				canRead: false,
+				canWrite: false,
+				reason: "password authentication failed",
+			},
+			"signed-in",
+		],
+		[
+			"the account cannot read",
+			{
+				reachable: true,
+				latencyMs: 3,
+				user: "nobody",
+				canRead: false,
+				canWrite: false,
+				reason: "This account cannot read this database.",
+			},
+			"read",
+		],
+	])(
+		"writes nothing when %s, and fails that check with the reason",
+		async (_, answer, key) => {
+			const fake = fakeBuilder({ checkConnection: vi.fn(async () => answer) });
+			const connect = mountConnect(fake.api);
+			await connect.connect("postgres", URL);
+			expect(fake.api.checkConnection).toHaveBeenCalledWith("postgres", URL);
+			expect(fake.configureProject).not.toHaveBeenCalled();
+			expect(fake.analyseDatabase).not.toHaveBeenCalled();
+			expect(connect.checks.value.find((check) => check.key === key)).toEqual(
+				expect.objectContaining({ status: "failed", error: answer.reason }),
+			);
+			expect(schemaCheck(connect)?.status).toBe("pending");
+		},
+	);
+
+	it("fails the server check with the module's refusal when the check request itself is refused", async () => {
+		const fake = fakeBuilder({
+			checkConnection: vi.fn(async () => {
+				throw new Error("Databases are checked in development only.");
+			}),
+		});
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(fake.configureProject).not.toHaveBeenCalled();
+		expect(connect.checks.value[0]).toEqual({
+			key: "reachable",
+			status: "failed",
+			error: "Databases are checked in development only.",
+		});
+	});
+
+	it("names the signed-in account and the latency it measured", async () => {
+		const fake = fakeBuilder();
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(connect.checks.value.slice(0, 3)).toEqual([
+			{ key: "reachable", status: "done", latencyMs: 4 },
+			{ key: "signed-in", status: "done", user: "reader" },
+			{ key: "read", status: "done", canWrite: false },
+		]);
+	});
+});
+
+describe("the access written for the connection", () => {
+	it("writes a read-only account's connection as read without asking", async () => {
+		const fake = fakeBuilder();
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(connect.phase.value.kind).not.toBe("choosing");
+		expect(dmsDatabaseConfig(fake)).toEqual({
+			externalConnections: { shop: { access: "read" } },
+		});
+	});
+
+	it("waits for a choice when the account can write, then writes the access chosen", async () => {
+		const fake = fakeBuilder({ checkConnection: vi.fn(async () => WRITER) });
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(connect.phase.value).toEqual({ kind: "choosing" });
+		expect(fake.configureProject).not.toHaveBeenCalled();
+
+		await connect.choose("read-write");
+		expect(dmsDatabaseConfig(fake)).toEqual({
+			externalConnections: { shop: { access: "read-write" } },
+		});
+		expect(connect.phase.value).toMatchObject({ kind: "analysing" });
+	});
+
+	it("goes back to the form without writing when the choice is dropped", async () => {
+		const fake = fakeBuilder({ checkConnection: vi.fn(async () => WRITER) });
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		connect.reset();
+		await connect.choose("read-write");
+		expect(connect.phase.value).toEqual({ kind: "form" });
+		expect(fake.configureProject).not.toHaveBeenCalled();
+	});
+
+	it("offers no choice for a connection an earlier visit wrote, whose access it cannot raise", async () => {
+		const setConnectionUrl = vi.fn(async () => ({
+			ok: true,
+			data: { variable: "SHOP_URL" },
+		}));
+		const fake = fakeBuilder({
+			checkConnection: vi.fn(async () => WRITER),
+			projectModules: async () => ({ modules: ["builder-db-shop"] }),
+			setConnectionUrl,
+		});
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		expect(connect.phase.value).toMatchObject({ kind: "analysing" });
+		expect(setConnectionUrl).toHaveBeenCalledTimes(1);
+		expect(fake.configureProject).not.toHaveBeenCalled();
 	});
 });
 

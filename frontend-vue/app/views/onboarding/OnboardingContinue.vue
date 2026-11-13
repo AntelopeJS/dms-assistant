@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useChatI18n } from "../../chat/composables/useChatI18n";
-import type { Mockup } from "../../onboarding/mockups";
+import type { Mockup, MockupSource } from "../../onboarding/mockups";
 import { useOnboarding } from "../../onboarding/runtime";
+import { MOCKUP_PATH } from "../../runtime/constants";
 import OnboardingDontShow from "./OnboardingDontShow.vue";
 import OnboardingFrame from "./OnboardingFrame.vue";
 import { relativeTime } from "./when";
@@ -15,6 +16,12 @@ const ENGINE_ICONS: Record<string, string> = {
 	postgresql: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
 	rethinkdb: "i-ph-circles-three",
+};
+
+const SOURCE_KEYS: Record<MockupSource, string> = {
+	chat: "dms_ai.views.onboarding.continue.sources.chat",
+	"claude-code": "dms_ai.views.onboarding.continue.sources.claude_code",
+	codex: "dms_ai.views.onboarding.continue.sources.codex",
 };
 
 const onboarding = useOnboarding();
@@ -33,7 +40,9 @@ function mockupDetail(mockup: Mockup): string {
 		),
 		mockup.source === undefined
 			? undefined
-			: t("dms_ai.views.onboarding.continue.from", { source: mockup.source }),
+			: t("dms_ai.views.onboarding.continue.from", {
+					source: t(SOURCE_KEYS[mockup.source]),
+				}),
 		mockup.openComments
 			? t(
 					"dms_ai.views.onboarding.continue.comments",
@@ -44,6 +53,10 @@ function mockupDetail(mockup: Mockup): string {
 	]
 		.filter((part) => part !== undefined)
 		.join(" · ");
+}
+
+function openMockup(mockup: Mockup): void {
+	onboarding.navigate(`${MOCKUP_PATH}?name=${encodeURIComponent(mockup.name)}`);
 }
 </script>
 
@@ -93,39 +106,47 @@ function mockupDetail(mockup: Mockup): string {
 				{{ t("dms_ai.views.onboarding.continue.mockups") }}
 			</h3>
 			<ul class="flex flex-col gap-2">
-				<li
-					v-for="mockup in mockups"
-					:key="mockup.id"
-					class="border-default flex items-center gap-3 rounded-xl border px-3 py-2.5"
-				>
-					<span
-						class="bg-elevated text-secondary grid size-8 shrink-0 place-items-center rounded-lg"
-						aria-hidden="true"
+				<li v-for="mockup in mockups" :key="mockup.name">
+					<button
+						type="button"
+						class="border-default hover:bg-elevated/60 focus-visible:ring-primary flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2"
+						:data-mockup="mockup.name"
+						@click="openMockup(mockup)"
 					>
-						<UIcon name="i-ph-frame-corners" class="size-4" />
-					</span>
-					<div class="min-w-0 flex-1">
-						<p class="text-highlighted truncate text-[13px] font-semibold">
-							{{ mockup.title }}
-						</p>
-						<p class="text-muted truncate text-xs">
-							{{ mockupDetail(mockup) }}
-						</p>
-					</div>
-					<UBadge
-						v-if="mockup.status === 'built'"
-						color="success"
-						variant="soft"
-						size="sm"
-						:label="t('dms_ai.views.onboarding.continue.built')"
-					/>
-					<UBadge
-						v-else
-						color="neutral"
-						variant="soft"
-						size="sm"
-						:label="t('dms_ai.views.onboarding.continue.draft')"
-					/>
+						<span
+							class="bg-elevated text-secondary grid size-8 shrink-0 place-items-center rounded-lg"
+							aria-hidden="true"
+						>
+							<UIcon name="i-ph-frame-corners" class="size-4" />
+						</span>
+						<div class="min-w-0 flex-1">
+							<p class="text-highlighted truncate text-[13px] font-semibold">
+								{{ mockup.title }}
+							</p>
+							<p class="text-muted truncate text-xs">
+								{{ mockupDetail(mockup) }}
+							</p>
+						</div>
+						<UBadge
+							v-if="mockup.status === 'built'"
+							color="success"
+							variant="soft"
+							size="sm"
+							:label="t('dms_ai.views.onboarding.continue.built')"
+						/>
+						<UBadge
+							v-else
+							color="neutral"
+							variant="soft"
+							size="sm"
+							:label="t('dms_ai.views.onboarding.continue.draft')"
+						/>
+						<UIcon
+							name="i-ph-caret-right"
+							class="text-dimmed size-3.5 shrink-0"
+							aria-hidden="true"
+						/>
+					</button>
 				</li>
 			</ul>
 		</section>

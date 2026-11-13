@@ -1,5 +1,5 @@
 import type { BuildView } from "../../builder/app/runtime/database-build";
-import type { DatabaseAccess } from "./database-access";
+import type { DatabaseAccess } from "../../builder/app/runtime/database-types";
 
 export type CheckStatus = "pending" | "running" | "done" | "failed";
 
@@ -11,8 +11,8 @@ export type ConnectCheck =
 			latencyMs?: number;
 			error?: string;
 	  }
-	| { key: "signed-in"; status: CheckStatus; user?: string }
-	| { key: "read"; status: CheckStatus }
+	| { key: "signed-in"; status: CheckStatus; user?: string; error?: string }
+	| { key: "read"; status: CheckStatus; canWrite?: boolean; error?: string }
 	| {
 			key: "schema";
 			status: CheckStatus;
@@ -20,11 +20,90 @@ export type ConnectCheck =
 			error?: string;
 	  };
 
+/** What the checks are drawn from. */
+export interface CheckSources {
+	/** The answer of the live check, `null` while it runs. */
+	access: DatabaseAccess | null;
+	/** Whether the connection is being written or was written into the project. */
+	connecting: boolean;
+	/** The builder's answers once the connection is written, `null` before. */
+	view: BuildView | null;
+	/** The refusal of the analysis itself, or a request that threw while following it. */
+	failure: string | null;
+}
+
+/** Whether the live check found a database the DMS can read, so the connection may be written. */
+export function canConnect(access: DatabaseAccess): boolean {
+	return access.reachable && access.canRead;
+}
+
 function failedRead(view: BuildView): string {
 	return view.steps.find((step) => step.key === "read")?.detail ?? "";
 }
 
-function schemaCheck(view: BuildView): ConnectCheck {
+function accessChecks(access: DatabaseAccess | null): ConnectCheck[] {
+	if (access === null) {
+		return [
+			{ key: "reachable", status: "running" },
+			{ key: "signed-in", status: "pending" },
+			{ key: "read", status: "pending" },
+		];
+	}
+	if (!access.reachable) {
+		return [
+			{ key: "reachable", status: "failed", error: access.reason },
+			{ key: "signed-in", status: "pending" },
+			{ key: "read", status: "pending" },
+		];
+	}
+	const reachable: ConnectCheck = {
+		key: "reachable",
+		status: "done",
+		latencyMs: access.latencyMs,
+	};
+	if (access.latencyMs === undefined) {
+		return [
+			reachable,
+			{ key: "signed-in", status: "failed", error: access.reason },
+			{ key: "read", status: "pending" },
+		];
+	}
+	return [
+		reachable,
+		{ key: "signed-in", status: "done", user: access.user },
+		access.canRead
+			? { key: "read", status: "done", canWrite: access.canWrite }
+			: { key: "read", status: "failed", error: access.reason },
+	];
+}
+
+function schemaCheck({
+	view,
+	connecting,
+	failure,
+}: CheckSources): ConnectCheck {
+	if (view?.gaveUp) {
+		return { key: "schema", status: "failed", problem: "gave-up" };
+	}
+	if (view?.connectionError !== undefined) {
+		return {
+			key: "schema",
+			status: "failed",
+			problem: "failed",
+			error: view.connectionError,
+		};
+	}
+	if (failure !== null) {
+		return {
+			key: "schema",
+			status: "failed",
+			problem: "failed",
+			error: failure,
+		};
+	}
+	if (view === null || view.reloading) {
+		return { key: "schema", status: connecting ? "running" : "pending" };
+	}
 	if (view.analysisFailed) {
 		return {
 			key: "schema",
@@ -38,61 +117,16 @@ function schemaCheck(view: BuildView): ConnectCheck {
 }
 
 /**
- * The checks as the builder's answers and the access check stand: the server is reached once the
- * project lists the connection, then the access check names the user and its read access, then
- * the analysis reads the schema. `view` is `null` while the connection is being written. A
- * `failure` of the analysis itself, refused by the builder or lost to a request that threw, fails
- * the schema check with its text.
+ * The checks as the live check and the builder's answers stand: the live check reaches the
+ * server, signs in and reads, all before anything is written; then the connection is written and
+ * the analysis reads the schema. The schema check waits while the database cannot be read.
  */
-export function connectChecks(
-	view: BuildView | null,
-	access: DatabaseAccess | null,
-	failure: string | null = null,
-): ConnectCheck[] {
-	const checks = stateOfChecks(view, access);
-	if (failure === null || view?.gaveUp || view?.connectionError !== undefined) {
-		return checks;
-	}
-	return checks.map((check) =>
-		check.key === "schema"
-			? { key: "schema", status: "failed", problem: "failed", error: failure }
-			: check,
-	);
-}
-
-function stateOfChecks(
-	view: BuildView | null,
-	access: DatabaseAccess | null,
-): ConnectCheck[] {
-	const waiting: ConnectCheck[] = [
-		{ key: "signed-in", status: "pending" },
-		{ key: "read", status: "pending" },
-		{ key: "schema", status: "pending" },
-	];
-	if (view?.gaveUp) {
-		return [
-			{ key: "reachable", status: "failed" },
-			{ key: "signed-in", status: "pending" },
-			{ key: "read", status: "pending" },
-			{ key: "schema", status: "failed", problem: "gave-up" },
-		];
-	}
-	if (view?.connectionError !== undefined) {
-		return [
-			{ key: "reachable", status: "failed", error: view.connectionError },
-			...waiting,
-		];
-	}
-	if (view === null || view.reloading || access === null) {
-		return [{ key: "reachable", status: "running" }, ...waiting];
-	}
-	if (!access.reachable) {
-		return [{ key: "reachable", status: "failed" }, ...waiting];
-	}
+export function connectChecks(sources: CheckSources): ConnectCheck[] {
+	const { access } = sources;
 	return [
-		{ key: "reachable", status: "done", latencyMs: access.latencyMs },
-		{ key: "signed-in", status: "done", user: access.user },
-		{ key: "read", status: access.canRead ? "done" : "failed" },
-		access.canRead ? schemaCheck(view) : { key: "schema", status: "pending" },
+		...accessChecks(access),
+		access !== null && canConnect(access)
+			? schemaCheck(sources)
+			: { key: "schema", status: "pending" },
 	];
 }

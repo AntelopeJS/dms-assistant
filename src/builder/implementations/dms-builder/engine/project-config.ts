@@ -334,6 +334,24 @@ function describeBinding(entry: ImportOverrideInput): string {
   return entry.id ? `${entry.interface} (${entry.id})` : entry.interface;
 }
 
+/**
+ * Where an override goes: an entry without an id ahead of the first entry of its interface that
+ * has one, so an interface's plain binding precedes its named connections; any other at the end.
+ */
+function insertionIndex(
+  merged: ImportOverrideInput[],
+  entry: ImportOverrideInput,
+): number {
+  if (entry.id !== undefined) {
+    return merged.length;
+  }
+  const named = merged.findIndex(
+    (candidate) =>
+      candidate.interface === entry.interface && candidate.id !== undefined,
+  );
+  return named === -1 ? merged.length : named;
+}
+
 /** The overrides after adding `added`, refusing a pin or connection that contradicts one. */
 function mergedOverrides(
   module: string,
@@ -352,7 +370,7 @@ function mergedOverrides(
       );
     }
     if (!existing) {
-      merged.push(entry);
+      merged.splice(insertionIndex(merged, entry), 0, entry);
     }
   }
   return merged;

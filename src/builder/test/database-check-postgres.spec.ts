@@ -8,12 +8,14 @@ import {
   dockerAvailable,
   LIVE_SUITE_NOTE,
   relay,
+  relayIgnoringGoodbye,
   removeContainer,
   type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
   waitFor,
+  watchClientSockets,
   secretOf,
 } from "./helpers/database-servers";
 
@@ -23,6 +25,12 @@ const WRONG_SECRET = secretOf("wrong");
 
 /** The first byte of a simple query message, PostgreSQL's Query. */
 const QUERY_MESSAGE = 0x51;
+/** The first byte of the message a client sends before it closes, PostgreSQL's Terminate. */
+const TERMINATE_MESSAGE = 0x58;
+
+function saysGoodbye(chunk: Buffer, fromClient: boolean): boolean {
+  return fromClient && chunk[0] === TERMINATE_MESSAGE;
+}
 const ROLES = ["reader", "writer", "inserter", "updater", "deleter", "blind"];
 
 const SETUP = [
@@ -211,6 +219,33 @@ suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer).to.include({ reachable: true });
       expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
     } finally {
+      await proxy.close();
+    }
+  });
+
+  /**
+   * A client library says goodbye and waits for the server to close, so a server that ignores it
+   * keeps the socket open for good. A check that closes through the library alone fails this: its
+   * answer is replaced by the deadline's, and its socket stays open.
+   */
+  it("answers what the database said, and shuts its socket, when the server ignores the goodbye", async () => {
+    const proxy = await relayIgnoringGoodbye(server?.port ?? 0, saysGoodbye);
+    const sockets = watchClientSockets(proxy.port);
+    try {
+      const answer = await checkDatabase(
+        "postgres",
+        `postgres://postgres:${ADMIN_SECRET}@127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({
+        reachable: true,
+        user: "postgres",
+        canRead: true,
+        canWrite: true,
+      });
+      expect(await sockets.leftOpenAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      sockets.stop();
       await proxy.close();
     }
   });

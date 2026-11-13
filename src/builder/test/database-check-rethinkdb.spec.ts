@@ -7,12 +7,14 @@ import {
   dockerAvailable,
   LIVE_SUITE_NOTE,
   relay,
+  relayIgnoringGoodbye,
   removeContainer,
   type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
   waitFor,
+  watchClientSockets,
   secretOf,
 } from "./helpers/database-servers";
 import { answersAdmin, countRows, setUpShop } from "./helpers/rethinkdb-admin";
@@ -230,6 +232,23 @@ suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer).to.include({ reachable: true });
       expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
     } finally {
+      await proxy.close();
+    }
+  });
+
+  it("answers what the database said, and shuts its socket, when the server ignores the goodbye", async () => {
+    const proxy = await relayIgnoringGoodbye(server?.port ?? 0);
+    const sockets = watchClientSockets(proxy.port);
+    try {
+      const answer = await checkDatabase(
+        "rethinkdb",
+        urlOf("admin", ADMIN_SECRET, "shop", proxy.port),
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({ reachable: true });
+      expect(await sockets.leftOpenAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      sockets.stop();
       await proxy.close();
     }
   });

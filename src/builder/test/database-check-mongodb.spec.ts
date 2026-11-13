@@ -8,12 +8,14 @@ import {
   dockerAvailable,
   LIVE_SUITE_NOTE,
   relay,
+  relayIgnoringGoodbye,
   removeContainer,
   type Stall,
   silentServer,
   START_TIMEOUT_MS,
   startContainer,
   waitFor,
+  watchClientSockets,
   secretOf,
 } from "./helpers/database-servers";
 
@@ -281,6 +283,23 @@ suite(`checking a MongoDB database live${LIVE_SUITE_NOTE}`, function () {
       expect(answer).to.include({ reachable: true });
       expect(await proxy.openAfter(CLOSE_SETTLE_MS)).to.equal(0);
     } finally {
+      await proxy.close();
+    }
+  });
+
+  it("answers what the database said, and shuts its sockets, when the server ignores the goodbye", async () => {
+    const proxy = await relayIgnoringGoodbye(open?.port ?? 0);
+    const sockets = watchClientSockets(proxy.port);
+    try {
+      const answer = await checkDatabase(
+        "mongodb",
+        `mongodb://127.0.0.1:${proxy.port}/shop`,
+        TIMEOUT_MS,
+      );
+      expect(answer).to.include({ reachable: true });
+      expect(await sockets.leftOpenAfter(CLOSE_SETTLE_MS)).to.equal(0);
+    } finally {
+      sockets.stop();
       await proxy.close();
     }
   });

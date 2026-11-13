@@ -1,3 +1,4 @@
+import net from "node:net";
 import { postgresAccess, type PostgresRelationRow } from "./access-postgres";
 import {
   type DatabaseAccess,
@@ -60,21 +61,35 @@ function refusal(
 /**
  * Checks a PostgreSQL connection with `pg`: it signs in, reads the account the server reports and
  * its privileges over the relations it sees, and leaves the client for the check to close. It runs
- * no statement that writes.
+ * no statement that writes. `pg` ends a client by saying goodbye and waiting for the server to
+ * close, so the probe keeps the client's socket to shut it when the server does not.
  */
 export const probePostgres: Probe = async (url, timeoutMs, connections) => {
   const pg = loadClient("pg");
   if (!pg) {
     return missingClient("pg", "PostgreSQL");
   }
+  const sockets: net.Socket[] = [];
   const client = new pg.Client({
     connectionString: url,
     connectionTimeoutMillis: timeoutMs,
     query_timeout: timeoutMs,
     statement_timeout: timeoutMs,
+    stream: () => {
+      const socket = new net.Socket();
+      sockets.push(socket);
+      return socket;
+    },
   });
   client.on("error", () => undefined);
-  connections.add(() => client.end());
+  connections.add(
+    () => client.end(),
+    () => {
+      for (const socket of sockets) {
+        socket.destroy();
+      }
+    },
+  );
   try {
     await client.connect();
     const started = performance.now();

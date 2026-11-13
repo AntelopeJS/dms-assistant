@@ -1,8 +1,31 @@
-type Closer = () => Promise<void>;
+/** How long a connection may take to close before the check shuts its socket. */
+export const CLOSE_GRACE_MS = 250;
 
-async function closeQuietly(close: Closer): Promise<void> {
+type Closer = () => Promise<void>;
+type Destroyer = () => void;
+
+interface Connection {
+  close: Closer;
+  destroy?: Destroyer;
+}
+
+function destroyQuietly(destroy: Destroyer): void {
+  try {
+    destroy();
+  } catch {
+    return;
+  }
+}
+
+async function closeWithinGrace({ close, destroy }: Connection): Promise<void> {
+  const timer =
+    destroy === undefined
+      ? undefined
+      : setTimeout(() => destroyQuietly(destroy), CLOSE_GRACE_MS);
+  timer?.unref();
   try {
     await close();
+    clearTimeout(timer);
   } catch {
     return;
   }
@@ -14,21 +37,31 @@ async function closeQuietly(close: Closer): Promise<void> {
  * it, so no socket outlives the answer because a client library bounds only its connecting.
  */
 export class ProbeConnections {
-  private closers: Closer[] = [];
+  private connections: Connection[] = [];
   private closed = false;
 
-  /** Registers `close`; it is called at once when the check has closed its connections already. */
-  add(close: Closer): void {
+  /**
+   * Registers a connection: `close` says goodbye the way its client library does, and is called at
+   * once when the check has closed its connections already. `destroy` shuts its socket, and is
+   * called when `close` has not finished after the grace or has failed; a library whose `close`
+   * shuts the socket itself, without waiting for the server, needs none.
+   */
+  add(close: Closer, destroy?: Destroyer): void {
     if (this.closed) {
-      void closeQuietly(close);
+      void closeWithinGrace({ close, destroy });
       return;
     }
-    this.closers.push(close);
+    this.connections.push({ close, destroy });
   }
 
-  /** Calls each registered closer once, and settles when all have; a closer that fails is ignored. */
-  async closeAll(): Promise<void> {
+  /**
+   * Starts closing each registered connection and returns at once: an answer never waits for a
+   * server to close its end. A connection that fails to close, or whose `destroy` throws, is ignored.
+   */
+  closeAll(): void {
     this.closed = true;
-    await Promise.all(this.closers.splice(0).map(closeQuietly));
+    for (const connection of this.connections.splice(0)) {
+      void closeWithinGrace(connection);
+    }
   }
 }

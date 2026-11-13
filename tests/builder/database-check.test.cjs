@@ -8,6 +8,9 @@ const {
   serverRefusal,
   signedIn,
 } = require("../../dist/builder/implementations/dms-builder/engine/database-access.js");
+const {
+  CLOSE_GRACE_MS,
+} = require("../../dist/builder/implementations/dms-builder/engine/probe-connections.js");
 const { loadModule } = require("./helpers/load-module.cjs");
 
 const CHECK_FILE = path.resolve(
@@ -20,7 +23,7 @@ const ENCODED = encodeURIComponent(SAMPLE_SECRET);
 const URL = `postgres://${["app", ENCODED].join(":")}@db.example.com:5432/shop`;
 
 /**
- * @typedef {{ add: (close: () => unknown) => void }} Connections
+ * @typedef {{ add: (close: () => unknown, destroy?: () => void) => void }} Connections
  * @typedef {(url: string, timeoutMs: number, connections: Connections) => Promise<unknown>} Probe
  * @typedef {{ reachable: boolean, reason?: string }} Answer
  * @typedef {(engine: string, url: string, timeoutMs: number) => Promise<Answer>} Check
@@ -191,8 +194,8 @@ void test("the deadline closes what the probe opened, before it answers", async 
   assert.deepEqual(events, ["closed", "answered"]);
 });
 
-/** Fails on an implementation that closes a connection only at the deadline, or answers before the close has finished. */
-void test("an answer closes what the probe opened, once, and waits for it", async () => {
+/** Fails on an implementation that closes a connection only at the deadline, or makes the answer wait for the close to finish. */
+void test("an answer starts closing what the probe opened, once, and does not wait for it", async () => {
   /** @type {string[]} */
   const events = [];
   /** @type {Probe} */
@@ -212,9 +215,75 @@ void test("an answer closes what the probe opened, once, and waits for it", asyn
   const answer = await checkDatabase("mongodb", URL, 100);
   events.push("answered");
   assert.deepEqual(answer, { reachable: true });
-  assert.deepEqual(events, ["closing", "closed", "answered"]);
+  assert.deepEqual(events, ["closing", "answered"]);
   await new Promise((resolve) => setTimeout(resolve, 400));
-  assert.deepEqual(events, ["closing", "closed", "answered"]);
+  assert.deepEqual(events, ["closing", "answered", "closed"]);
+});
+
+/** Fails on an implementation that waits for a close before it answers: a close that never ends lets the deadline replace the probe's answer. */
+void test(
+  "the answer is the probe's own when a connection never finishes closing",
+  {
+    timeout: 3000,
+  },
+  async () => {
+    /** @type {Probe} */
+    const stuck = async (_url, _timeoutMs, connections) => {
+      connections.add(() => new Promise(() => undefined));
+      return { reachable: true };
+    };
+    const checkDatabase = loadCheck({
+      postgres: stuck,
+      mongodb: stuck,
+      rethinkdb: stuck,
+    });
+    assert.deepEqual(await checkDatabase("postgres", URL, 40), {
+      reachable: true,
+    });
+  },
+);
+
+/** Fails on an implementation that never shuts a socket its library leaves open, that shuts it before the grace, or that shuts one that closed. */
+void test("a connection still open after the grace is shut, and one that closed is left alone", async () => {
+  /** @type {string[]} */
+  const shut = [];
+  /** @type {Probe} */
+  const probe = async (_url, _timeoutMs, connections) => {
+    const never = () => new Promise(() => undefined);
+    connections.add(never, () => {
+      shut.push("hung");
+    });
+    connections.add(
+      async () => undefined,
+      () => {
+        shut.push("closed");
+      },
+    );
+    connections.add(
+      () => {
+        throw new Error("close threw");
+      },
+      () => {
+        shut.push("failed");
+      },
+    );
+    connections.add(never, () => {
+      throw new Error("destroy threw");
+    });
+    return { reachable: true };
+  };
+  const checkDatabase = loadCheck({
+    postgres: probe,
+    mongodb: probe,
+    rethinkdb: probe,
+  });
+  assert.deepEqual(await checkDatabase("postgres", URL, 40), {
+    reachable: true,
+  });
+  assert.deepEqual(shut, [], "nothing is shut before the grace");
+  await new Promise((resolve) => setTimeout(resolve, CLOSE_GRACE_MS + 200));
+  assert.equal(shut.length, 2);
+  assert.deepEqual(new Set(shut), new Set(["failed", "hung"]));
 });
 
 /** Fails on an implementation that closes only what was open when the deadline passed, so a late connection stays open. */

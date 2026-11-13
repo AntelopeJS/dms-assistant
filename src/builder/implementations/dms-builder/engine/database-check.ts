@@ -29,8 +29,9 @@ const PROBES: Record<DatabaseEngine, Probe> = {
  * whether that account can read and write. The driver module of the engine is not configured
  * when this runs, so the check opens the database itself with the engine's client library. It
  * writes nothing to the project and answers, never rejects. Every connection the probe opened is
- * closed when it answers, and when the deadline passes without waiting for them: no socket
- * outlives the answer, whatever the server is doing.
+ * closed when it answers and when the deadline passes, and the answer never waits for the close: a
+ * server that ignores the goodbye cannot delay it or replace it with the deadline's, and a socket
+ * still open a short grace after the close began is shut, whatever the server is doing.
  */
 export async function checkDatabase(
   engine: DatabaseEngine,
@@ -40,21 +41,20 @@ export async function checkDatabase(
   const connections = new ProbeConnections();
   let timer: NodeJS.Timeout | undefined;
   const deadline = new Promise<DatabaseAccess>((resolve) => {
-    timer = setTimeout(() => {
-      void connections.closeAll();
-      resolve(unanswered(TOO_SLOW));
-    }, timeoutMs * DEADLINE_IN_TIMEOUTS);
+    timer = setTimeout(
+      () => resolve(unanswered(TOO_SLOW)),
+      timeoutMs * DEADLINE_IN_TIMEOUTS,
+    );
   });
   try {
     return await Promise.race([
-      PROBES[engine](url, timeoutMs, connections)
-        .catch((error: unknown) =>
-          unanswered(noAnswerReason(failureMessage(error), url)),
-        )
-        .finally(() => connections.closeAll()),
+      PROBES[engine](url, timeoutMs, connections).catch((error: unknown) =>
+        unanswered(noAnswerReason(failureMessage(error), url)),
+      ),
       deadline,
     ]);
   } finally {
     clearTimeout(timer);
+    connections.closeAll();
   }
 }

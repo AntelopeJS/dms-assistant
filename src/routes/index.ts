@@ -12,5 +12,4 @@ export * from "./onboarding";
 export * from "./pages-registry";
 export * from "./settings";
 export * from "./sidecar-info";
-export * from "./skills";
 export * from "./status";

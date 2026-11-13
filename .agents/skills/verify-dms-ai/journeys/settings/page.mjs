@@ -23,7 +23,7 @@ export const pageJourneys = [
       await tab.click({ role: "switch", name: "Machine-local skills" });
       await tab.click({ role: "combobox", name: "Deny after" });
       await tab.click({ role: "option", name: "15 minutes" });
-      await tab.click({ role: "combobox", name: "Checkpoints" });
+      await tab.click({ role: "combobox", name: "Undo history" });
       await tab.click({ role: "option", name: "Keep 90 days" });
       const saved = await until(async () => {
         const body = await settings(ctx, "read");
@@ -52,13 +52,13 @@ export const pageJourneys = [
         selected(tab, { role: "switch", name: "Notify me in the DMS" }, false),
         selected(tab, { role: "switch", name: "Machine-local skills" }, true),
         shownBy(tab, { role: "combobox", name: "Deny after" }, "15 minutes"),
-        shownBy(tab, { role: "combobox", name: "Checkpoints" }, "Keep 90 days"),
+        shownBy(tab, { role: "combobox", name: "Undo history" }, "Keep 90 days"),
       ]);
     },
   },
   {
     id: "the-page-disables-what-this-machine-cannot-do",
-    title: "Codex, Full auto and Safe mode are disabled with their reason, and the deletions switch is locked on",
+    title: "Codex, Full auto and the Safe mode switch are disabled with their reason, and the deletions switch is locked on",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -68,12 +68,11 @@ export const pageJourneys = [
       await ctx.verify("the disabled options", [
         tab.enabled({ role: "radio", name: "Codex" }, { disabled: true }),
         tab.enabled({ role: "radio", name: "Full auto" }, { disabled: true }),
-        tab.enabled({ role: "radio", name: "Safe mode · recommended" }, { disabled: true }),
-        tab.enabled({ role: "radio", name: "Code mode" }),
+        tab.enabled({ role: "switch", name: "Safe mode" }, { disabled: true }),
         tab.enabled({ role: "radio", name: "Claude Code" }),
         pageHas(tab, "Codex says why", /Sign in with ChatGPT in Assistant › Settings to run Codex on your ChatGPT plan\./),
         pageHas(tab, "Full auto is not a default", /Not available as a default\. Turn it on per chat, for a limited time\./),
-        pageHas(tab, "Safe mode needs the Builder", /Needs the dms-builder module, which isn't loaded\./),
+        pageHas(tab, "Safe mode needs the Builder", /Needs the builder, which isn't running\./),
         pageHas(tab, "deletions are locked", /Deleting pages, tables, fields or queries · locked/),
         tab.count({ role: "switch", name: "Deleting pages, tables, fields or queries" }, 0),
         selected(tab, { role: "radio", name: "Claude Code" }, true),
@@ -85,7 +84,7 @@ export const pageJourneys = [
   },
   {
     id: "the-menus-and-choices-offer-exactly-the-documented-options",
-    title: "Deny after offers 5, 15 and 30 minutes and Checkpoints Keep 7, 30 and 90 days, nothing else; Thinking has four choices, the agent two, the approval mode four and the scope two",
+    title: "Deny after offers 5, 15 and 30 minutes and Undo history Keep 7, 30 and 90 days, nothing else; Thinking has four choices, the agent two and the approval mode four",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -100,16 +99,15 @@ export const pageJourneys = [
       };
       await ctx.verify("the menus", [
         same("Deny after: 5, 15 and 30 minutes", await options("Deny after"), ["5 minutes", "15 minutes", "30 minutes"]),
-        same("Checkpoints: 7, 30 and 90 days", await options("Checkpoints"), ["Keep 7 days", "Keep 30 days", "Keep 90 days"]),
+        same("Undo history: 7, 30 and 90 days", await options("Undo history"), ["Keep 7 days", "Keep 30 days", "Keep 90 days"]),
       ]);
       const names = async (/** @type {string[]} */ list) => list;
       await ctx.verify("the choices", [
-        check("12 radio buttons in all", (await tab.page.getByRole("radio").count()) === 12, await tab.page.getByRole("radio").count()),
+        check("10 radio buttons in all", (await tab.page.getByRole("radio").count()) === 10, await tab.page.getByRole("radio").count()),
         same("Thinking", await names(await Promise.all(["Off", "Low", "Medium", "High"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : ""))), ["Off", "Low", "Medium", "High"]),
         same("the agent", await Promise.all(["Claude Code", "Codex"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : ""))  , ["Claude Code", "Codex"]),
         same("the approval mode", await Promise.all(["Ask first", "Accept edits", "Plan only", "Full auto"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : "")), ["Ask first", "Accept edits", "Plan only", "Full auto"]),
-        same("the scope", await Promise.all(["Safe mode · recommended", "Code mode"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : "")), ["Safe mode · recommended", "Code mode"]),
-        check("four switches", (await tab.page.getByRole("switch").count()) === 4, await tab.page.getByRole("switch").count()),
+        check("five switches: Safe mode and four more", (await tab.page.getByRole("switch").count()) === 5, await tab.page.getByRole("switch").count()),
       ]);
     },
   },
@@ -126,22 +124,21 @@ export const pageJourneys = [
       await ctx.verify("the page, top to bottom", [
         pageHas(tab, "the title and its subtitle", /Settings\s*Defaults for new conversations\. Changes save as you go/),
         pageHas(tab, "the banner", inOrder(["Saved instantly", "Run Codex on your ChatGPT plan", "Sign in with ChatGPT", "Paste the return address"])),
-        pageHas(tab, "the sections", inOrder(["Agent", "Approvals", "Scope", "Skills", "History", "Usage"])),
-        pageHas(tab, "the agent settings", inOrder(["Coding agent", "Claude Code", "Codex", "Thinking", "Off", "Low", "Medium", "High", "Claude model"])),
-        pageHas(tab, "the approval settings", inOrder(["Approval mode", "Ask first", "Accept edits", "Plan only", "Full auto", "Always ask for", "Deleting pages, tables, fields or queries", "Adding or removing dependencies", "Removing or moving Builder blocks", "Unanswered requests", "Deny after", "Notify me in the DMS"])),
-        pageHas(tab, "the scope settings", inOrder(["Scope", "Safe mode · recommended", "Code mode"])),
-        pageHas(tab, "the skills and history settings", inOrder(["Machine-local skills", "Use machine-local skills", "Checkpoints", "Keep 30 days"])),
+        pageHas(tab, "the sections, AI then Builder then Usage", inOrder(["AI", "Builder", "Usage"])),
+        pageHas(tab, "the AI section", inOrder(["Coding agent", "Claude Code", "Codex", "Claude model", "Thinking", "Off", "Low", "Medium", "High", "Unanswered requests", "Deny after", "Notify me in the DMS", "Machine-local skills", "Use machine-local skills"])),
+        pageHas(tab, "the approval settings", inOrder(["Approval mode", "Ask first", "Accept edits", "Plan only", "Full auto", "Unanswered requests"])),
+        pageHas(tab, "the Builder section", inOrder(["Builder", "Applies in development only.", "Safe mode", "Only page and data edits through the DMS tools", "Always ask for", "Deleting pages, tables, fields or queries", "Adding or removing dependencies", "Removing or moving Builder blocks", "Undo history", "Keep 30 days"])),
         pageHas(tab, "the usage section", inOrder(["Usage", "Tokens · last 14 days", "Last 14 days", "Tokens", "Conversations"])),
         pageHas(tab, "the hints", /Applies to new turns\. Open chats lose the agent's memory; transcripts stay\./),
         pageHas(tab, "the thinking hint", /Applies from the next message/),
         pageHas(tab, "the approvals hint", /Applies to new conversations/),
-        pageHas(tab, "the Always ask for hint", /These ask in every mode, including Full auto\./),
+        pageHas(tab, "the Always ask for hint", /These ask in every mode\./),
         pageHas(tab, "the dependencies hint", /Package installs and removals run by a command\./),
         pageHas(tab, "the Builder blocks hint", /Even when other Builder operations run automatically\./),
         pageHas(tab, "the unanswered hint", /What happens to a request nobody answers\./),
         pageHas(tab, "the notify hint", /Shows a toast when a request arrives while the assistant panel is closed\./),
         pageHas(tab, "the local skills hint", /Adds skills from ~\/\.claude\/skills on this machine\. Not shared with teammates or other environments\./),
-        pageHas(tab, "the checkpoints hint", /Change sets older than this can no longer be undone\./),
+        pageHas(tab, "the undo history hint", /Change sets older than this can no longer be undone\./),
         pageHas(tab, "the usage hint", /Counted per conversation\. Your provider bills them\./),
       ]);
     },

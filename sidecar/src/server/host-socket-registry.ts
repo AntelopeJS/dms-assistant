@@ -5,6 +5,9 @@ import type { AnyServerEventType } from "../protocol/events.js";
 /** The part of a socket the registries use: they only ever send to it. */
 export type SocketSender = Pick<WebSocket, "send">;
 
+/** The event one socket of a broadcast receives. */
+export type EventForSocket = (socket: SocketSender) => AnyServerEventType;
+
 export interface HostSocketRegistry {
   set: (socket: SocketSender) => void;
   clear: (socket: SocketSender) => void;
@@ -12,6 +15,11 @@ export interface HostSocketRegistry {
   /** Every host, each once, except the sockets `isServed` already answers for. */
   broadcast: (
     event: AnyServerEventType,
+    isServed?: (socket: SocketSender) => boolean,
+  ) => void;
+  /** `broadcast` with an event built for each socket. */
+  broadcastEach: (
+    eventFor: EventForSocket,
     isServed?: (socket: SocketSender) => boolean,
   ) => void;
   has: () => boolean;
@@ -62,13 +70,13 @@ function buildSend(state: RegistryState) {
   };
 }
 
-function buildBroadcast(state: RegistryState) {
+function buildBroadcastEach(state: RegistryState) {
   return (
-    event: AnyServerEventType,
+    eventFor: EventForSocket,
     isServed: (socket: SocketSender) => boolean = () => false,
   ): void => {
     for (const socket of state.sockets) {
-      if (!isServed(socket)) trySend(socket, event);
+      if (!isServed(socket)) trySend(socket, eventFor(socket));
     }
   };
 }
@@ -79,11 +87,13 @@ function buildBroadcast(state: RegistryState) {
  */
 export function createHostSocketRegistry(): HostSocketRegistry {
   const state: RegistryState = { sockets: [] };
+  const broadcastEach = buildBroadcastEach(state);
   return {
     set: buildSet(state),
     clear: (socket) => removeSocket(state, socket),
     send: buildSend(state),
-    broadcast: buildBroadcast(state),
+    broadcast: (event, isServed) => broadcastEach(() => event, isServed),
+    broadcastEach,
     has: () => state.sockets.length > 0,
   };
 }

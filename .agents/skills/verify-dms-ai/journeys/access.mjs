@@ -11,11 +11,11 @@ const FORWARDED = { "x-forwarded-for": "203.0.113.9" };
 
 /** Every route the module serves to the owner, with the method and a path that exists. */
 const OWNER_ROUTES = [
-  ["GET", "/status"], ["POST", "/sidecar/restart"], ["GET", "/status/facts"], ["GET", "/status/banner"], ["GET", "/sidecar-info"],
-  ["GET", "/metrics/kpi/actions"], ["GET", "/metrics/series"], ["GET", "/metrics/allowed"], ["GET", "/metrics/top-tools"], ["GET", "/metrics/usage"], ["GET", "/metrics/usage/summary"],
+  ["GET", "/status"], ["POST", "/sidecar/restart"], ["GET", "/status/banner"], ["GET", "/sidecar-info"],
+  ["GET", "/metrics/usage"], ["GET", "/metrics/usage/summary"],
   ["GET", "/activity"], ["GET", "/activity/x"], ["GET", "/activity/export.csv"],
-  ["GET", "/changes"], ["GET", "/recent-changes"], ["GET", "/changes/x"], ["GET", "/changes/x/undo-preview"], ["GET", "/changes/x/undo-confirm"], ["POST", "/changes/x/undo"], ["POST", "/changes/x/redo"],
-  ["GET", "/skills/catalog"], ["GET", "/skills/conflicts"], ["GET", "/settings"], ["PUT", "/settings"],
+  ["GET", "/changes"], ["GET", "/changes/x"], ["GET", "/changes/x/undo-preview"], ["GET", "/changes/x/undo-confirm"], ["POST", "/changes/x/undo"], ["POST", "/changes/x/redo"],
+  ["GET", "/settings"], ["PUT", "/settings"],
   ["GET", "/codex/account/banner"], ["POST", "/codex/callback"], ["POST", "/codex/logout"],
   ["GET", "/channel/events"], ["POST", "/channel/x/messages"],
 ];
@@ -172,7 +172,7 @@ export const journeys = guarded([
       const health = await raw(ctx, "health through the dashboard", { origin: "web", path: `${AI}/health` });
       const tab = await ctx.tab();
       await tab.signIn("admin");
-      await tab.goto("/modules/ai/overview");
+      await tab.goto("/modules/ai/settings");
       const read = (/** @type {string} */ path) => tab.page.evaluate(async (url) => { const response = await fetch(url, { credentials: "include" }); return { status: response.status, text: await response.text() }; }, path);
       const owner = await read(`${AI}/status`);
       const settings = await read(`${AI}/settings`);

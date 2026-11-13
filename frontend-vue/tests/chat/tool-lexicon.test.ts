@@ -79,6 +79,16 @@ describe("the tool lexicon names a call by what it does", () => {
 			expect(describeTool(`mcp__dms-ai__${name}`, {}).verbKey).not.toBeNull();
 	});
 
+	it("names the DMS page check, whatever server serves it (fails when page_verify shows its raw name)", () => {
+		const description = describeTool("mcp__dms__page_verify", {
+			page: "/rentals",
+		});
+		expect(toolVerb(description, (key) => key)).toBe(
+			"dms_ai.tools.verify_page",
+		);
+		expect(description.target).toBe("/rentals");
+	});
+
 	it("falls back to a readable form of a tool it does not know", () => {
 		const description = describeTool("mcp__other__FetchInvoiceTotals", {
 			name: "Q3",

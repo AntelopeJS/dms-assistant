@@ -121,6 +121,7 @@ export const StoredConversationSchema: z.ZodType<StoredConversation> =
       .optional(),
     mode: z.enum(CHAT_MODES).optional(),
     generationMode: z.enum(GENERATION_MODES).optional(),
+    ownerId: z.string().optional(),
   });
 
 /** A change set as `change-sets.json` holds it; keys it does not name are kept. */

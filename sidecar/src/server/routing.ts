@@ -10,6 +10,7 @@ import {
   type ServerEchoReplyMsgType,
   type SettingsPatchType,
 } from "../protocol/messages.js";
+import { isVisibleTo } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import type { AgentRunner } from "../agent/runner.js";
@@ -126,17 +127,46 @@ function sendConversationState(
   }
 }
 
+/** The `userId` the connection's actor frame named; null until there is one. */
+function viewerOf(ctx: ConnectionContext): string | null {
+  return ctx.actor?.userId ?? null;
+}
+
+const FOREIGN_CONVERSATION_ERROR = "This conversation belongs to someone else.";
+
+/** Whether the conversation is stored and owned by someone other than the connection's actor. */
+function isForeign(ctx: ConnectionContext, conversationId: string): boolean {
+  const stored = ctx.conversationStore.get(conversationId);
+  return stored !== null && !isVisibleTo(stored, viewerOf(ctx));
+}
+
+/** Refuses a request on another person's conversation; true when it may go on. */
+function admit(
+  socket: WebSocket,
+  ctx: ConnectionContext,
+  conversationId: string,
+): boolean {
+  if (!isForeign(ctx, conversationId)) return true;
+  send(socket, {
+    type: EVENT_TYPES.RUN_ERROR,
+    conversationId,
+    error: FOREIGN_CONVERSATION_ERROR,
+  });
+  return false;
+}
+
 function sendSnapshotIfKnown(
   socket: WebSocket,
   ctx: ConnectionContext,
   msg: ClientHelloMsgType,
 ): void {
   if (msg.role === ROLE.HOST) {
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     return;
   }
   send(socket, buildSettingsUpdateEvent(ctx));
   if (msg.conversationId === undefined) return;
+  if (isForeign(ctx, msg.conversationId)) return;
   sendConversationState(socket, ctx, msg.conversationId);
 }
 
@@ -149,7 +179,7 @@ function registerSocket(
     ctx.hostSocketRegistry.set(socket);
     return;
   }
-  if (msg.conversationId === undefined) {
+  if (msg.conversationId === undefined || isForeign(ctx, msg.conversationId)) {
     ctx.chatSocketRegistry.addChat(socket);
     return;
   }
@@ -175,13 +205,19 @@ const handleEcho = on(MESSAGE_TYPES.ECHO, (socket, msg) => {
   socket.send(JSON.stringify(reply));
 });
 
-const handleActor = on(MESSAGE_TYPES.ACTOR, (_socket, msg, ctx) => {
+const handleActor = on(MESSAGE_TYPES.ACTOR, (socket, msg, ctx) => {
   ctx.actor = { userId: msg.userId, name: msg.name };
+  ctx.viewers.set(socket, msg.userId);
 });
 
+/**
+ * Records who asked, and makes them the conversation's owner when it has none:
+ * the first request a conversation receives from a named actor.
+ */
 function noteAsker(ctx: ConnectionContext, conversationId: string): void {
   if (ctx.actor === null) return;
   ctx.askers.set(conversationId, ctx.actor.name);
+  ctx.conversationStore.claim(conversationId, ctx.actor.userId);
 }
 
 /**
@@ -190,39 +226,51 @@ function noteAsker(ctx: ConnectionContext, conversationId: string): void {
  * so the one active drain runs it — preserving ordering and the single-writer
  * invariant.
  */
-const runUserMessage = on(MESSAGE_TYPES.USER_MESSAGE, async (_s, msg, ctx) => {
-  noteAsker(ctx, msg.conversationId);
-  if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) {
-    enqueueUserMessage(ctx, msg);
-    void ensureDraining(ctx, msg.conversationId);
-    return;
-  }
-  await runExclusive(ctx, msg.conversationId, async () => {
-    persistUserMessage(ctx, msg.conversationId, msg);
-    await runUserTurn(ctx, msg.conversationId, msg);
-  });
-});
+const runUserMessage = on(
+  MESSAGE_TYPES.USER_MESSAGE,
+  async (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
+    noteAsker(ctx, msg.conversationId);
+    if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) {
+      enqueueUserMessage(ctx, msg);
+      void ensureDraining(ctx, msg.conversationId);
+      return;
+    }
+    await runExclusive(ctx, msg.conversationId, async () => {
+      persistUserMessage(ctx, msg.conversationId, msg);
+      await runUserTurn(ctx, msg.conversationId, msg);
+    });
+  },
+);
 
 /**
  * Re-runs the last request as it was typed; its attachments are not kept, so
  * a retry carries the text alone.
  */
-const handleRetryTurn = on(MESSAGE_TYPES.RETRY_TURN, async (_s, msg, ctx) => {
-  const last = lastUserMessage(ctx, msg.conversationId);
-  if (last === undefined) return;
-  if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) return;
-  noteAsker(ctx, msg.conversationId);
-  await runExclusive(ctx, msg.conversationId, () =>
-    runUserTurn(ctx, msg.conversationId, { content: last.content }),
-  );
-});
+const handleRetryTurn = on(
+  MESSAGE_TYPES.RETRY_TURN,
+  async (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
+    const last = lastUserMessage(ctx, msg.conversationId);
+    if (last === undefined) return;
+    if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) return;
+    noteAsker(ctx, msg.conversationId);
+    await runExclusive(ctx, msg.conversationId, () =>
+      runUserTurn(ctx, msg.conversationId, { content: last.content }),
+    );
+  },
+);
 
-const handleQueueEnqueue = on(MESSAGE_TYPES.QUEUE_ENQUEUE, (_s, msg, ctx) => {
-  noteAsker(ctx, msg.conversationId);
-  ctx.pendingQueue.enqueue(msg.conversationId, msg.item);
-  broadcastQueueState(ctx, msg.conversationId);
-  void ensureDraining(ctx, msg.conversationId);
-});
+const handleQueueEnqueue = on(
+  MESSAGE_TYPES.QUEUE_ENQUEUE,
+  (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
+    noteAsker(ctx, msg.conversationId);
+    ctx.pendingQueue.enqueue(msg.conversationId, msg.item);
+    broadcastQueueState(ctx, msg.conversationId);
+    void ensureDraining(ctx, msg.conversationId);
+  },
+);
 
 const handleQueueCancel = on(MESSAGE_TYPES.QUEUE_CANCEL, (_s, msg, ctx) => {
   ctx.pendingQueue.cancel(msg.conversationId, msg.id);
@@ -332,7 +380,7 @@ const handleHostPageBlocks = on(
 const handleListConversations = on(
   MESSAGE_TYPES.LIST_CONVERSATIONS,
   (socket, _msg, ctx) => {
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
   },
 );
 
@@ -353,8 +401,9 @@ function forgetConversation(ctx: SidecarServices, conversationId: string) {
 const handleDeleteConversation = on(
   MESSAGE_TYPES.DELETE_CONVERSATION,
   (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
     forgetConversation(ctx, msg.conversationId);
-    send(socket, buildConversationListEvent(ctx));
+    send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     broadcastConversationList(ctx);
   },
 );

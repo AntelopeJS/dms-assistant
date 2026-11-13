@@ -96,8 +96,8 @@
 				}
 			},
 			"tool": {
-				"using": "Using tools",
-				"used": "Used {count} tool | Used {count} tools",
+				"using": "Working",
+				"used": "{count} step | {count} steps",
 				"earlier": "▴ {count} earlier",
 				"raw_json": "Raw JSON",
 				"named_args": "Named arguments",
@@ -113,7 +113,7 @@
 				}
 			},
 			"change": {
-				"applied": "Applied · checkpoint {number}",
+				"applied": "Change applied · #{number}",
 				"undone": "Undone · checkpoint {number} restored",
 				"files": "{count} file changed | {count} files changed",
 				"builder_ops": "{count} Builder operation | {count} Builder operations",
@@ -314,7 +314,8 @@
 				"hint_history": "history",
 				"usage": "{count} tokens · this chat",
 				"usage_new": "new chat",
-				"usage_offline": "offline"
+				"usage_offline": "offline",
+				"remove_block": "Remove the block"
 			},
 			"drawer": {
 				"title": "Conversations",
@@ -387,6 +388,24 @@
 				"sketch_badge": "Custom sketch",
 				"with_sketch": "custom sketch",
 				"sketch_frame": "Static sketch of a custom component: {caption}"
+			},
+			"fold": {
+				"open": "Open the assistant"
+			},
+			"build": {
+				"message": "Build the mockup “{mockup}” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains.",
+				"title": "Building “{mockup}”",
+				"title_done": "Built “{mockup}”",
+				"description": "The assistant turns the mockup into real pages, then compares them with it.",
+				"steps": "Build steps",
+				"starting": "Starting the build…",
+				"background": "Run in background",
+				"close": "Close",
+				"open_pages": "Open the pages",
+				"title_failed": "“{mockup}” did not build",
+				"title_stopped": "Build of “{mockup}” stopped",
+				"message_into": "Build mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one.",
+				"failures": "Checks that did not pass"
 			}
 		},
 		"tools": {
@@ -450,7 +469,8 @@
 			"configure_query": "Configure query",
 			"remove_query": "Remove query",
 			"search_tools": "Load tools",
-			"show_preview": "Show a preview"
+			"show_preview": "Show a preview",
+			"verify_page": "Verifying the page"
 		}
 	}
 }

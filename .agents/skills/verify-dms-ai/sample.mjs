@@ -40,17 +40,6 @@ const CALLS = [
   ["Glob", { pattern: '=SUM(1,2),"q"' }, "read_auto", "done", false, ""],
 ];
 
-/** The ways the sample's calls were allowed, in the Overview's order. */
-export const SAMPLE_ALLOWED = [
-  ["read_auto", 10], ["builder_auto", 2], ["approved", 4], ["rule", 3], ["full_auto", 1], ["blocked", 1], ["denied", 2], ["expired", 1],
-];
-
-/** Calls per tool, most used first. */
-export const SAMPLE_TOOLS = [["Bash", 6], ["Skill", 5], ["Edit", 4], ["Read", 3], ["builder_add_block", 2]];
-
-/** How many calls the sample holds in the last seven days. */
-export const SAMPLE_CALLS = CALLS.length;
-
 /**
  * Adds two token entries at the edge of the 14 days the Usage section counts: one in its first day (300 tokens), one
  * a day before it (700 tokens, left out).
@@ -152,7 +141,7 @@ export function sampleConversations(now, sets) {
 /**
  * Five real change sets over files of the project: the first adds `a.txt` and `f.txt`, the second edits `b.txt` and adds
  * `e.txt` (two files), the third edits `a.txt` and `f.txt` again (so undoing the first has a later set sharing two
- * files), the fourth deletes `g.txt`, and the fifth adds `d.txt` and edits `f.txt` (two files, one of them shared with the first set): five sets, one more than the four the Overview lists.
+ * files), the fourth deletes `g.txt`, and the fifth adds `d.txt` and edits `f.txt` (two files, one of them shared with the first set): five sets.
  *
  * @param {Ctx} ctx The journey
  * @param {number} now The time the sample is relative to

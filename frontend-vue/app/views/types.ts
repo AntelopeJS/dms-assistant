@@ -8,7 +8,6 @@ export type TypecheckOutcome = "passed" | "failed" | "skipped";
 export type ChangeSetState = "applied" | "undone";
 export type ChangeFileStatus = "added" | "modified" | "deleted";
 export type DiffLineKind = "context" | "add" | "remove";
-export type SkillSource = "module" | "local";
 
 export type AllowedBy =
 	| "read_auto"
@@ -153,23 +152,6 @@ export interface AssistantStatus {
 	version?: string;
 	lastError?: string;
 	checkpointsAvailable: boolean;
-}
-
-export interface SkillRow {
-	_id: string;
-	name: string;
-	description: string;
-	source: SkillSource;
-	origin: string;
-	tags: string[];
-	uses30d: number;
-	lastUsedAtMs?: number;
-	lastConversationId?: string;
-	isShadowed: boolean;
-	shadowedBy?: string;
-	body: string;
-	qualifiedName: string;
-	icon?: string;
 }
 
 /** One fact of a change set, a row of a DmsKeyValueList. */

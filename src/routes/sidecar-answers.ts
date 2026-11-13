@@ -4,7 +4,6 @@ import type {
   ActivityRow,
   ChangeSetSummary,
   SidecarList,
-  SidecarSkillCatalog,
   UndoPreview,
 } from "../types";
 
@@ -86,29 +85,6 @@ export const UNDO_PREVIEW_ANSWER: z.ZodType<UndoPreview> = z.looseObject({
     }),
   ),
 });
-
-export const SKILL_CATALOG_ANSWER: z.ZodType<SidecarSkillCatalog> =
-  z.looseObject({
-    items: z.array(
-      z.looseObject({
-        id: z.string(),
-        name: z.string(),
-        description: z.string(),
-        icon: z.string().optional(),
-        category: z.string().optional(),
-        tags: z.array(z.string()),
-        provenance: z.string(),
-        body: z.string(),
-        source: z.string().optional(),
-        origin: z.string().optional(),
-        uses30d: z.number().optional(),
-        lastUsedAtMs: z.number().optional(),
-        lastConversationId: z.string().optional(),
-        isShadowed: z.boolean().optional(),
-        shadowedBy: z.string().optional(),
-      }),
-    ),
-  });
 
 export const SETTINGS_ANSWER: z.ZodType<Record<string, JsonBody>> = z.record(
   z.string(),

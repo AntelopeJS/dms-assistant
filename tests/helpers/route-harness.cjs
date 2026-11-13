@@ -134,7 +134,6 @@ function loadControllers() {
       ...require("../../dist/routes/metrics.js"),
       ...require("../../dist/routes/onboarding.js"),
       ...require("../../dist/routes/settings.js"),
-      ...require("../../dist/routes/skills.js"),
       ...require("../../dist/routes/status.js"),
       ...require("../../dist/pages/settings/availability.js"),
     };

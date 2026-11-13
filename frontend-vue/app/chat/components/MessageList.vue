@@ -162,10 +162,6 @@ async function copyAnswer(content: string): Promise<void> {
 				{{ dayLabel(item.dayMs) }}
 			</li>
 
-			<li v-else-if="item.kind === 'who'" class="cb-who">
-				✦ {{ t("dms_ai.panel.assistant") }}
-			</li>
-
 			<li
 				v-else-if="item.kind === 'tools'"
 				class="message-item"
@@ -404,14 +400,6 @@ async function copyAnswer(content: string): Promise<void> {
 	background: var(--ui-border);
 }
 
-.cb-who {
-	margin-bottom: -6px;
-	font: 600 10px var(--ai-font-mono);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--ai);
-}
-
 .cb-user {
 	align-self: flex-end;
 	justify-items: end;
@@ -507,6 +495,19 @@ async function copyAnswer(content: string): Promise<void> {
 	gap: 2px;
 	margin-top: -4px;
 	color: var(--ui-text-dimmed);
+	opacity: 0;
+	transition: opacity 120ms;
+}
+
+.message-item:hover .cb-ai__actions,
+.cb-ai__actions:focus-within {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.cb-ai__actions {
+		opacity: 1;
+	}
 }
 
 .cb-thinking {

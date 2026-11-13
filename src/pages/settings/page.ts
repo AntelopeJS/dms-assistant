@@ -20,17 +20,17 @@ const settingsForm = Form({
   fetchUrl: PAGE_ROUTES.SETTINGS,
   submitUrl: PAGE_ROUTES.SETTINGS,
   saveMode: "instant",
-  sectionNav: "side",
+  sectionNav: "none",
   sections: SETTINGS_SECTIONS,
 })
   .meta(blockMeta("settings.form", "i-ph-sliders"))
   .onFilter(applySidecarSettings);
 
 /**
- * AI Settings — the ChatGPT account Codex runs on; the defaults of new conversations (agent, approval mode,
- * scope), what always asks, local skills and checkpoint retention, in one
- * form saving each change on its own to `/ai/settings`; then the tokens the
- * conversations used.
+ * AI Settings, the module's landing page: what needs the owner (the assistant
+ * offline with Restart, a failed turn, requests waiting), the ChatGPT account
+ * Codex runs on, the AI and Builder defaults in one form saving each change on
+ * its own to `/ai/settings`, then the tokens the conversations used.
  */
 @RegisterPage()
 export class AISettingsPage extends PageController(
@@ -38,6 +38,10 @@ export class AISettingsPage extends PageController(
   pageMenu(PAGE_IDS.SETTINGS, "i-ph-gear-six", PAGE_ORDER.SETTINGS),
   FormPageLayout(),
 ) {
+  static attention = Banner({ fetchUrl: PAGE_ROUTES.STATUS_BANNER }).meta(
+    blockMeta("settings.status_banner", "i-ph-bell-ringing"),
+  );
+
   static chatgpt = Banner({ fetchUrl: PAGE_ROUTES.CODEX_ACCOUNT_BANNER }).meta(
     blockMeta("settings.chatgpt", "i-ph-open-ai-logo"),
   );

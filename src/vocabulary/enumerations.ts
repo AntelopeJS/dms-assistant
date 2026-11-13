@@ -38,30 +38,3 @@ export const AGENTS: Vocabulary = {
   claude: { icon: "i-ph-robot", tone: "neutral" },
   codex: { icon: "i-ph-robot", tone: "neutral" },
 };
-
-/** The groups tools belong to. */
-export const TOOL_SOURCES: Vocabulary = {
-  builder: { icon: "i-ph-hammer", tone: "secondary" },
-  project: { icon: "i-ph-folder", tone: "neutral" },
-  code: { icon: "i-ph-code", tone: "neutral" },
-  web: { icon: "i-ph-globe", tone: "info" },
-  assistant: { icon: "i-ph-sparkle", tone: "secondary" },
-};
-
-/** The scope a change set was made in. */
-export const CHANGE_SCOPES: Vocabulary = {
-  safe: { icon: "i-ph-shield-check", tone: "success" },
-  vibe: { icon: "i-ph-code", tone: "secondary" },
-};
-
-/** Whether a change set is still applied. */
-export const CHANGE_STATES: Vocabulary = {
-  applied: { icon: "i-ph-check", tone: "success" },
-  undone: { icon: "i-ph-arrow-counter-clockwise", tone: "neutral" },
-};
-
-/** Where a skill comes from. */
-export const SKILL_SOURCES: Vocabulary = {
-  module: { icon: "i-ph-package", tone: "secondary" },
-  local: { icon: "i-ph-desktop", tone: "warning" },
-};

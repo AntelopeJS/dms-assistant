@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { ai, check, list, parseJson, pick, same, text } from "../ai.mjs";
+import { check, list, parseJson, pick, same, text } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
@@ -36,18 +36,15 @@ export const journeys = guarded([
   },
   {
     id: "the-docs-name-every-skill-the-module-ships",
-    title: "the Skills page and the README name each skill folder the package ships and the catalog lists under the module",
-    entryPoint: "skills/, README.md, docs/4.usage/5.skills.md, GET /ai/skills/catalog",
+    title: "the README and the extending guide name each skill folder the package ships",
+    entryPoint: "skills/, README.md, docs/5.extending.md",
     async run(/** @type {Ctx} */ ctx) {
       const folders = execFileSync("ls", [join(ctx.state.repo, "skills")], { encoding: "utf8" }).split("\n").filter(Boolean).sort();
-      const rows = list((await ai(ctx, "catalog", "GET", "/skills/catalog")).body, "results");
-      const listed = rows.filter((row) => text(row, "origin") === "dms-ai").map((row) => text(row, "name")).sort();
       const readme = read(ctx, "README.md");
-      const page = read(ctx, "docs/4.usage/5.skills.md");
+      const guide = read(ctx, "docs/5.extending.md");
       await ctx.verify("the skills", [
-        same("the catalog lists the folders", listed, folders),
         same("the README names each folder", folders.filter((name) => !readme.includes(`\`${name}\``)), []),
-        same("the Skills page names each folder", folders.filter((name) => !page.includes(`\`${name}\``)), []),
+        same("the extending guide names each folder", folders.filter((name) => !guide.includes(`\`${name}\``)), []),
       ]);
     },
   },

@@ -2,13 +2,9 @@
 	"dms_ai": {
 		"module": {
 			"title": "Assistant",
-			"description": "The AI assistant: what it did, what you can undo, its skills and its settings"
+			"description": "The AI assistant: its settings, what you can undo and what it did"
 		},
 		"pages": {
-			"overview": {
-				"title": "Overview",
-				"description": "What the assistant did, how each action was allowed, and what you can still undo"
-			},
 			"changes": {
 				"title": "Changes",
 				"description": "Every turn that touched the project, saved as a change set you can review and undo"
@@ -17,119 +13,12 @@
 				"title": "Activity",
 				"description": "Audit log of every tool the assistant used, who allowed it and what came out"
 			},
-			"skills": {
-				"title": "Skills",
-				"description": "Instructions the assistant loads for specific jobs, shipped by modules or this machine"
-			},
 			"settings": {
 				"title": "Settings",
 				"description": "Defaults for new conversations. Changes save as you go"
 			}
 		},
 		"blocks": {
-			"overview": {
-				"toolbar": {
-					"name": "Toolbar",
-					"description": "When the Overview last read its figures, a refresh, and the period"
-				},
-				"period": {
-					"name": "Period",
-					"description": "Picks the period the Overview's figures cover"
-				},
-				"status": {
-					"name": "Assistant status",
-					"description": "The assistant's state, agent, default scope, approval mode, Builder and sidecar",
-					"title": "Assistant",
-					"settings": "Settings"
-				},
-				"kpis": {
-					"name": "Key figures",
-					"description": "Actions, change sets, approvals and undos over the period"
-				},
-				"kpis_row": {
-					"name": "Key figures row",
-					"description": "The row holding the four key figures"
-				},
-				"kpi_actions": {
-					"name": "Actions",
-					"description": "Tool calls the assistant made over the period",
-					"title": "Actions",
-					"caption": "Tool calls, Builder operations included"
-				},
-				"kpi_change_sets": {
-					"name": "Change sets",
-					"description": "Turns that changed the project over the period",
-					"title": "Change sets",
-					"caption": "Turns that changed files, undone too"
-				},
-				"kpi_approved": {
-					"name": "Approved by you",
-					"description": "Requests you allowed over the period",
-					"title": "Approved by you",
-					"caption": "Requests you allowed when asked"
-				},
-				"kpi_undone": {
-					"name": "Undone",
-					"description": "Change sets rolled back over the period",
-					"title": "Undone",
-					"caption": "Change sets rolled back"
-				},
-				"activity": {
-					"name": "Activity",
-					"description": "The activity chart and how its actions were allowed"
-				},
-				"activity_row": {
-					"name": "Activity row",
-					"description": "The row holding the activity chart and its breakdown"
-				},
-				"activity_chart": {
-					"name": "Activity chart",
-					"description": "Actions per day, against the chosen comparison",
-					"title": "Activity",
-					"caption": "Actions over the selected period",
-					"primary": "Actions",
-					"comparison": "Comparison"
-				},
-				"allowed": {
-					"name": "How actions were allowed",
-					"description": "Actions by the way they were allowed: automatically, by you, by a rule",
-					"title": "How actions were allowed",
-					"caption": "Deletions always ask, in every mode",
-					"empty": "No action over this period"
-				},
-				"changes": {
-					"name": "Changes",
-					"description": "The latest change sets and the tools used most"
-				},
-				"changes_row": {
-					"name": "Changes row",
-					"description": "The row holding the recent change sets and the top tools"
-				},
-				"recent_changes": {
-					"name": "Recent change sets",
-					"description": "The latest change sets, each with Undo or Redo",
-					"title": "Recent change sets"
-				},
-				"top_tools": {
-					"name": "Top tools",
-					"description": "The tools the assistant ran most over the period",
-					"title": "Top tools",
-					"caption": "Runs over the selected period",
-					"empty": "No tool ran over this period"
-				},
-				"activity_chart_series": {
-					"name": "Activity chart series",
-					"description": "The area chart drawn inside the activity card"
-				},
-				"status_banner": {
-					"name": "Assistant notice",
-					"description": "Says when the assistant is offline, its last turn failed or requests wait for you"
-				},
-				"status_facts": {
-					"name": "Assistant facts",
-					"description": "One row per fact of the assistant's status"
-				}
-			},
 			"changes": {
 				"view": {
 					"name": "Change sets",
@@ -154,24 +43,6 @@
 					"description": "One tool call: its arguments, decision trail and diff"
 				}
 			},
-			"skills": {
-				"conflicts": {
-					"name": "Duplicate skills",
-					"description": "Warns when two skills share a name and one is ignored"
-				},
-				"catalog": {
-					"name": "Skill catalog",
-					"description": "The skills loaded into the assistant"
-				},
-				"card": {
-					"name": "Skill card",
-					"description": "One skill in the catalog's cards"
-				},
-				"detail": {
-					"name": "Skill detail",
-					"description": "One skill: where it comes from, its use and its SKILL.md"
-				}
-			},
 			"settings": {
 				"chatgpt": {
 					"name": "ChatGPT account",
@@ -179,7 +50,7 @@
 				},
 				"form": {
 					"name": "Assistant settings",
-					"description": "Agent, approvals, scope, skills and history defaults"
+					"description": "AI and Builder defaults"
 				},
 				"usage": {
 					"name": "Usage",
@@ -201,6 +72,10 @@
 				"usage_chart_series": {
 					"name": "Tokens chart series",
 					"description": "The column chart drawn inside the tokens card"
+				},
+				"status_banner": {
+					"name": "Assistant notice",
+					"description": "Says when the assistant is offline, its last turn failed or requests wait for you"
 				}
 			}
 		},
@@ -269,10 +144,6 @@
 				"denied": "Denied by you",
 				"expired": "Expired"
 			},
-			"allowed_metric": {
-				"deletions_asked": "Deletions asked",
-				"deletions_note": "Deletions always ask, in every mode"
-			},
 			"result": {
 				"done": "Done",
 				"pending": "Pending",
@@ -281,13 +152,6 @@
 				"blocked": "Blocked",
 				"stopped": "Stopped",
 				"expired": "Expired"
-			},
-			"tool_source": {
-				"builder": "Builder",
-				"project": "Project",
-				"code": "Code mode",
-				"web": "Web",
-				"assistant": "Assistant"
 			},
 			"tools": {
 				"Read": "Read file",
@@ -347,40 +211,6 @@
 			}
 		},
 		"changes_table": {
-			"columns": {
-				"number": "#",
-				"title": "Change",
-				"scope": "Scope",
-				"files": "Files",
-				"when": "When",
-				"state": "State"
-			},
-			"scope": {
-				"safe": "Safe",
-				"vibe": "Code"
-			},
-			"state": {
-				"applied": "Applied",
-				"undone": "Undone"
-			},
-			"actions": {
-				"open": "Review diff",
-				"undo": "Undo",
-				"redo": "Redo",
-				"all_changes": "All changes"
-			},
-			"toasts": {
-				"undone": "Change set undone",
-				"redone": "Change set reapplied"
-			},
-			"empty": {
-				"title": "No changes yet",
-				"description": "When the assistant edits a page or a file, the change set lands here with an undo."
-			},
-			"offline": {
-				"title": "Can't reach the assistant",
-				"description": "Change sets come from the assistant, which isn't running."
-			},
 			"undo_confirm": {
 				"title": "Undo change set #{number}?",
 				"description": "Restores the file to how it was before this change set, then reloads the page. | Restores {count} files to how they were before this change set, then reloads the page.",
@@ -398,25 +228,13 @@
 				"new_conversations": "Applies to new conversations"
 			},
 			"sections": {
-				"agent": {
-					"label": "Agent",
-					"description": "Which agent answers, and how long it thinks."
+				"ai": {
+					"label": "AI",
+					"description": "Which agent answers, how it thinks, and what it may do without asking."
 				},
-				"approvals": {
-					"label": "Approvals",
-					"description": "Default for new chats. Each chat can change it from the composer."
-				},
-				"scope": {
-					"label": "Scope",
-					"description": "Default for new chats. Each chat can change it from the composer."
-				},
-				"skills": {
-					"label": "Skills",
-					"description": "Where the assistant's skills come from."
-				},
-				"history": {
-					"label": "History",
-					"description": "How long change sets can be undone."
+				"builder": {
+					"label": "Builder",
+					"description": "Applies in development only."
 				}
 			},
 			"provider": {
@@ -532,26 +350,13 @@
 				"label": "Notify me in the DMS",
 				"description": "Shows a toast when a request arrives while the assistant panel is closed."
 			},
-			"generation_mode": {
-				"label": "Scope",
-				"description": "What the assistant may change in the project.",
-				"builder_missing": "Needs the builder, which isn't running.",
-				"safe": {
-					"label": "Safe mode · recommended",
-					"description": "Changes pages, tables and queries through the Builder only. Every change typechecks before it's written; raw file edits and commands are blocked."
-				},
-				"vibe": {
-					"label": "Code mode",
-					"description": "Can also edit any project file and run commands, following the approval mode. For custom logic the Builder can't express."
-				}
-			},
 			"allow_local_skills": {
 				"title": "Machine-local skills",
 				"label": "Use machine-local skills",
 				"description": "Adds skills from ~/.claude/skills on this machine. Not shared with teammates or other environments."
 			},
 			"checkpoint_retention": {
-				"label": "Checkpoints",
+				"label": "Undo history",
 				"description": "Change sets older than this can no longer be undone.",
 				"options": {
 					"7": "Keep 7 days",
@@ -565,84 +370,14 @@
 				"conversations": "Conversations",
 				"top_conversation": "Biggest conversation",
 				"top_tokens": "{count} token | {count} tokens"
-			}
-		},
-		"skills": {
-			"search": "Search name, module or tag",
-			"count": "{count} skill | {count} skills",
-			"settings_link": "Skill settings",
-			"never_used": "Never used",
-			"columns": {
-				"name": "Name",
-				"description": "Description",
-				"source": "Source",
-				"uses": "Uses · 30 days",
-				"last_used": "Last used"
 			},
-			"source": {
-				"module": "Module",
-				"local": "Local"
-			},
-			"tabs": {
-				"all": "All",
-				"module": "Modules",
-				"local": "Local"
-			},
-			"detail": {
-				"open": "Details",
-				"title": "Skill detail",
-				"position": "Skill {index} of {total}"
-			},
-			"empty": {
-				"title": "No skills loaded",
-				"description": "Modules that ship skills list them here. You can also add your machine's skills.",
-				"action": "Use machine-local skills"
-			},
-			"offline": {
-				"title": "Can't reach the assistant",
-				"description": "Skills come from the assistant, which isn't running. This isn't an empty list."
-			},
-			"conflicts": {
-				"title": "{count} skill name is shared by several skills | {count} skill names are shared by several skills",
-				"description": "{names}: only one copy of the name is used, the other is marked Shadowed. Rename a copy to use both. | {names}: only one copy of each name is used, the others are marked Shadowed. Rename a copy to use them all.",
-				"action": "Skill sources"
+			"safe_mode": {
+				"label": "Safe mode",
+				"description": "Only page and data edits through the DMS tools",
+				"builder_missing": "Needs the builder, which isn't running."
 			}
 		},
 		"status": {
-			"state": {
-				"ready": "Ready",
-				"working": "Working",
-				"waiting": "Waiting for you",
-				"offline": "Offline"
-			},
-			"agent": {
-				"claude": "Claude Code",
-				"codex": "Codex"
-			},
-			"scope": {
-				"safe": "Safe mode",
-				"vibe": "Code mode"
-			},
-			"mode": {
-				"normal": "Ask first",
-				"acceptEdits": "Accept edits",
-				"plan": "Plan only",
-				"auto": "Auto review"
-			},
-			"facts": {
-				"state": "Status",
-				"agent": "Agent",
-				"default_scope": "Default scope",
-				"scope_safe_needs_builder": "Safe needs Builder",
-				"approvals": "Approvals",
-				"builder": "Builder",
-				"builder_connected": "Connected",
-				"builder_missing": "Not installed",
-				"sidecar": "Sidecar",
-				"sidecar_stopped": "Not running",
-				"working_count": "{count} conversation working | {count} conversations working",
-				"waiting_count": "{count} waiting for you | {count} waiting for you"
-			},
 			"banner": {
 				"offline": {
 					"title": "The assistant is offline",

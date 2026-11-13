@@ -9,7 +9,6 @@ covers:
   - src/routes/content-json.ts
   - src/routes/sidecar-results.ts
   - src/types/status.ts
-  - src/pages/overview/status.ts
   - sidecar/src/index.ts
   - sidecar/src/server/idle-shutdown.ts
   - sidecar/src/server/routing.ts
@@ -33,7 +32,7 @@ The backend starts the sidecar as a child process, reports its status, restarts 
 
 - `the-status-reads-ready-and-names-the-sidecar`: the status, its rows and its banner describe a ready assistant, the probe says the sidecar runs, and the health route answers without a session.
 - `a-restart-gives-a-new-sidecar-and-keeps-what-you-set`: Restart assistant stops the sidecar and starts another on a new port, and the settings stay.
-- `a-sidecar-that-keeps-dying-gives-up-and-the-banner-offers-a-restart`: a killed sidecar is restarted until the budget is spent, then the Overview says it is offline with Restart assistant.
+- `a-sidecar-that-keeps-dying-gives-up-and-the-banner-offers-a-restart`: a killed sidecar is restarted until the budget is spent, then the Settings banner says it is offline with Restart assistant.
 - `the-sidecar-listens-on-loopback-only`: the socket is bound to 127.0.0.1 and the machine's network address is refused.
 - `an-openai-api-key-is-ignored-with-one-warning-per-start`: the documented warning, once per start, absent without the variable.
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it`: with `DMS_AI_IDLE_SHUTDOWN_MS` at 20 seconds, a sidecar only the backend talks to exits one timeout after it started (the start arms the timer); the next probe starts another, and a direct `/health` made a third of the timeout in postpones its exit by a whole timeout (the health check touches the timer).
@@ -42,7 +41,7 @@ The backend starts the sidecar as a child process, reports its status, restarts 
 
 ## How to get to it (user POV)
 
-- Modules › Assistant › Overview, the banner; `DMS_AI=0` before `ajs project start`.
+- Modules › Assistant › Settings, the banner; `DMS_AI=0` before `ajs project start`.
 
 ## Driving it with dms-control
 

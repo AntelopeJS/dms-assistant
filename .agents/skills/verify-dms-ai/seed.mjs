@@ -105,7 +105,7 @@ function initShadow(ctx) {
   git(ctx, ["init", "--quiet"]);
   for (const [key, value] of [["gc.auto", "0"], ["core.autocrlf", "false"], ["core.quotepath", "false"]]) git(ctx, ["config", key, value]);
   mkdirSync(join(gitDir, "info"), { recursive: true });
-  writeFileSync(join(gitDir, "info", "exclude"), ["node_modules/", "dist/", ".antelope/", ".git/", "generated-skills/", ""].join("\n"));
+  writeFileSync(join(gitDir, "info", "exclude"), ["node_modules/", "dist/", ".antelope/", ".git/", ""].join("\n"));
 }
 
 /**

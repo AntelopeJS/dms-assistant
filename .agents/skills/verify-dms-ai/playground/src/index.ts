@@ -1,9 +1,6 @@
 import "./fixture";
 import "./pages";
-import { writeFixtureSkills } from "./skills";
 
-export function construct(): void {
-  writeFixtureSkills();
-}
+export function construct(): void {}
 
 export function start(): void {}

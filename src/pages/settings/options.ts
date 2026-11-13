@@ -40,7 +40,6 @@ function labels(field: string, values: readonly string[]): VocabularyOption[] {
 }
 
 export const CODEX_PROVIDER = "codex";
-export const SAFE_SCOPE = "safe";
 
 export const PROVIDER_OPTIONS = choices("provider", [
   { value: "claude", icon: "i-ph-robot" },
@@ -82,11 +81,6 @@ export const CODEX_MODE_OPTIONS = choices("mode", [
   NORMAL_MODE,
   { ...ACCEPT_EDITS_MODE, descriptionKey: "description_codex" },
   PLAN_MODE,
-]);
-
-export const SCOPE_OPTIONS = choices("generation_mode", [
-  { value: SAFE_SCOPE, icon: "i-ph-shield-check" },
-  { value: "vibe", icon: "i-ph-code" },
 ]);
 
 /** Numeric settings travel as strings: a select's values are text. */

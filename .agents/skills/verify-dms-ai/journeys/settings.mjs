@@ -47,6 +47,27 @@ export const journeys = guarded([
     },
   },
   {
+    id: "the-safe-mode-switch-saves-the-stored-scope",
+    title: "the Safe mode switch of the form is the stored scope: on reads safe, off reads vibe, each save writes the scope and not the switch, and a value that is not a boolean is refused",
+    entryPoint: "GET /ai/settings, PUT /ai/settings",
+    async run(/** @type {Ctx} */ ctx) {
+      await freshSidecar(ctx);
+      const initial = await settings(ctx, "read the default");
+      const off = await ai(ctx, "switch Safe mode off", "PUT", "/settings", { body: { safeMode: false } });
+      const stored = await settings(ctx, "read after off");
+      const on = await ai(ctx, "switch Safe mode on", "PUT", "/settings", { body: { safeMode: true } });
+      const refused = await ai(ctx, "a switch that is not a boolean", "PUT", "/settings", { body: { safeMode: "yes" } });
+      await ctx.verify("the switch and the scope", [
+        same("on by default, beside the scope", [pick(initial, "safeMode"), pick(initial, "generationMode")], [true, "safe"]),
+        same("off answers vibe", [pick(off.body, "safeMode"), pick(off.body, "generationMode")], [false, "vibe"]),
+        same("a read agrees", [pick(stored, "safeMode"), pick(stored, "generationMode")], [false, "vibe"]),
+        same("on answers safe", [pick(on.body, "safeMode"), pick(on.body, "generationMode")], [true, "safe"]),
+        same("a text switch is 400", refused.status, 400),
+        same("and changes nothing", pick(await settings(ctx, "read after the refusal"), "generationMode"), "safe"),
+      ]);
+    },
+  },
+  {
     id: "a-stored-settings-file-is-read-back-by-the-next-start",
     title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, and a value or a key the file should not hold is ignored while the default stays",
     entryPoint: "<project>/node_modules/.cache/dms-ai/settings.json, GET /ai/settings",

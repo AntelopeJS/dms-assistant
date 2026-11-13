@@ -12,6 +12,8 @@ export const JSON_INDENT = 2;
 /** Mirror of the sidecar's reference URL rules (sidecar/src/constants/preview.ts). */
 export const SAME_ORIGIN_PATH = /^\/(?![/\\])/;
 export const REMOTE_URL = /^https?:\/\//i;
+/** The DMS's own mockup viewer: an HTML page, drawn in a frame rather than as an image. */
+export const MOCKUP_VIEWER_PATH = /^\/mockup(?:[/?#]|$)/;
 
 /** Width the card's live thumbnail is laid out at before it is scaled down. */
 export const THUMBNAIL_CANVAS_WIDTH_PX = 560;

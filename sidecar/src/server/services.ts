@@ -13,7 +13,10 @@ import type { ConversationStore } from "../state/conversations.js";
 import type { HostState } from "../state/host-state.js";
 import type { SettingsStore } from "../state/settings-store.js";
 import type { ChatSocketRegistry } from "./chat-socket-registry.js";
-import type { HostSocketRegistry } from "./host-socket-registry.js";
+import type {
+  HostSocketRegistry,
+  SocketSender,
+} from "./host-socket-registry.js";
 import type { IdleShutdownController } from "./idle-shutdown.js";
 import type { LiveTurnStore } from "./live-turns.js";
 import type { NavigationCompleter } from "./navigation-completer.js";
@@ -51,6 +54,11 @@ export interface SidecarServices {
   turns: TurnRegistry;
   /** Who asked for each conversation's latest request (from the actor frame). */
   askers: Map<string, string>;
+  /**
+   * The `userId` each socket's actor frame named, which a broadcast reads to
+   * send each socket the conversations it may see.
+   */
+  viewers: WeakMap<SocketSender, string>;
 }
 
 export interface RoutingConfig extends SidecarServices {

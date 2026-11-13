@@ -70,7 +70,7 @@ describe("tool rows and change sets", () => {
 		expect(rows[0].text()).toContain("Read file");
 		expect(rows[0].text()).toContain("customer.form.ts");
 		expect(rows[2].text()).toContain("1 of 1 · below");
-		expect(panel.find(".cb-tools__head").text()).toContain("Used 3 tools");
+		expect(panel.find(".cb-tools__head").text()).toContain("3 steps");
 	});
 
 	it("shows the raw JSON of a call on demand", async () => {
@@ -105,7 +105,7 @@ describe("tool rows and change sets", () => {
 		deliver(harness, { type: "run_done" });
 		await nextTick();
 		const card = panel.find(".cb-change");
-		expect(card.text()).toContain("Applied · checkpoint 14");
+		expect(card.text()).toContain("Change applied · #14");
 		expect(card.text()).toContain("2 files changed · 2 Builder operations");
 		expect(card.text()).toContain("new");
 		await buttonWithText(card, "Review diff").trigger("click");

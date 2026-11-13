@@ -15,17 +15,15 @@ const IDLE_EARLY_MS = 2000;
 export const journeys = guarded([
   {
     id: "the-status-reads-ready-and-names-the-sidecar",
-    title: "the status, its rows and its banner describe a ready assistant, the probe says the sidecar runs, and the health route answers without a session",
-    entryPoint: "GET /ai/status, /ai/status/facts, /ai/status/banner, /ai/sidecar-info, /ai/health",
+    title: "the status and its banner describe a ready assistant, the probe says the sidecar runs, and the health route answers without a session",
+    entryPoint: "GET /ai/status, /ai/status/banner, /ai/sidecar-info, /ai/health",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const lock = sidecarLock(ctx);
       const status = await ai(ctx, "status", "GET", "/status");
-      const facts = await ai(ctx, "facts", "GET", "/status/facts");
       const banner = await ai(ctx, "banner", "GET", "/status/banner");
       const info = await ai(ctx, "sidecar info", "GET", "/sidecar-info");
       const health = await raw(ctx, "health without a session", { path: `${AI}/health` });
-      const rows = list(facts.body, "items");
       await ctx.verify("a ready assistant", [
         same("the status", text(status.body, "status"), "ready"),
         same("the agent is Claude Code", text(status.body, "provider"), "claude"),
@@ -33,8 +31,6 @@ export const journeys = guarded([
         same("the process state", [pick(status.body, "isRunning"), pick(status.body, "hasGivenUp"), pick(status.body, "disabled")], [true, false, false]),
         same("nothing waits", [pick(status.body, "pendingApprovals"), pick(status.body, "workingConversations")], [0, 0]),
         same("the status says it is never cached", status.status, 200),
-        same("six rows, in order", rows.map((row) => text(row, "id")), ["state", "agent", "scope", "mode", "builder", "sidecar"]),
-        same("the sidecar row shows localhost and the port, copyable", [text(rows[5], "value"), pick(rows[5], "copy")], [`localhost:${lock?.port}`, true]),
         same("no banner when all is well", banner.status, 204),
         same("the probe", [pick(info.body, "isRunning"), pick(info.body, "hasGivenUp"), pick(info.body, "disabled")], [true, false, false]),
         same("the probe leaks neither the port nor a credential", Object.keys(info.body ?? {}).sort(), ["disabled", "hasGivenUp", "isRunning"]),
@@ -45,7 +41,7 @@ export const journeys = guarded([
   {
     id: "a-restart-gives-a-new-sidecar-and-keeps-what-you-set",
     title: "Restart assistant stops the sidecar and starts another on a new port, and the settings and the transcripts stay",
-    entryPoint: "POST /ai/sidecar/restart, the Overview banner button",
+    entryPoint: "POST /ai/sidecar/restart, the Settings banner button",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const before = sidecarLock(ctx);
@@ -69,8 +65,8 @@ export const journeys = guarded([
   },
   {
     id: "a-sidecar-that-keeps-dying-gives-up-and-the-banner-offers-a-restart",
-    title: "a sidecar killed again and again is restarted until the budget is spent, then the Overview says it is offline with Restart assistant, and the restart brings it back",
-    entryPoint: "GET /ai/status/banner, the Overview banner, POST /ai/sidecar/restart",
+    title: "a sidecar killed again and again is restarted until the budget is spent, then the Settings banner says it is offline with Restart assistant, and the restart brings it back",
+    entryPoint: "GET /ai/status/banner, the Settings banner, POST /ai/sidecar/restart",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const first = sidecarLock(ctx);
@@ -101,12 +97,10 @@ export const journeys = guarded([
       ]);
       const tab = await ctx.tab();
       await tab.signIn("admin");
-      await tab.goto("/modules/ai/overview");
-      await ctx.verify("the Overview says so", [
+      await tab.goto("/modules/ai/settings");
+      await ctx.verify("the Settings page says so", [
         pageHas(tab, "the banner", /The assistant is offline/),
         pageHas(tab, "its explanation", /Its sidecar isn't running\. Restart it to use the assistant again\./),
-        pageHas(tab, "the status row", /Status\s*Offline/),
-        pageHas(tab, "the sidecar row", /Sidecar\s*Not running/),
       ]);
       await tab.click({ role: "button", name: "Restart assistant" });
       const back = await statusIs(ctx, READY, 120_000);
@@ -150,7 +144,7 @@ export const journeys = guarded([
       await withEnv(ctx, { OPENAI_API_KEY: "sk-verify-not-a-key" }, async () => {
         await statusIs(ctx, (status) => text(status, "status") === "ready", 90_000);
         await ai(ctx, "a few requests", "GET", "/settings");
-        await ai(ctx, "and another", "GET", "/skills/catalog");
+        await ai(ctx, "and another", "GET", "/metrics/usage");
         await pause(1500);
         const log = readFileSync(sidecarPath(ctx, "sidecar.log"), "utf8");
         await ctx.verify("with the variable", [
@@ -201,7 +195,7 @@ export const journeys = guarded([
   {
     id: "dms-ai-0-starts-the-backend-without-a-sidecar",
     title: "DMS_AI=0 starts the backend with no sidecar: the status is offline and disabled, the banner has no restart button, and every route that needs the sidecar answers 503 or empty figures",
-    entryPoint: "DMS_AI=0, GET /ai/status, /ai/status/banner, /ai/settings, /ai/metrics/*, the Overview",
+    entryPoint: "DMS_AI=0, GET /ai/status, /ai/status/banner, /ai/settings, /ai/metrics/usage, the Settings page",
     async run(/** @type {Ctx} */ ctx) {
       await withEnv(ctx, { DMS_AI: "0" }, async () => {
         const status = await ai(ctx, "status", "GET", "/status");
@@ -209,8 +203,7 @@ export const journeys = guarded([
         const info = await ai(ctx, "sidecar info", "GET", "/sidecar-info");
         const settings = await ai(ctx, "settings", "GET", "/settings");
         const put = await ai(ctx, "settings write", "PUT", "/settings", { body: { thinking: "low" } });
-        const skills = await ai(ctx, "skills", "GET", "/skills/catalog");
-        const kpi = await ai(ctx, "a figure", "GET", "/metrics/kpi/actions");
+        const usage = await ai(ctx, "a figure", "GET", "/metrics/usage");
         const lock = sidecarLock(ctx);
         await ctx.verify("no sidecar", [
           same("offline", text(status.body, "status"), "offline"),
@@ -221,13 +214,12 @@ export const journeys = guarded([
           same("the banner carries no restart action", list(banner.body, "actions").length, 0),
           same("settings are unavailable", settings.status, 503),
           same("a write is unavailable too", put.status, 503),
-          same("the skills table is unavailable", skills.status, 503),
-          same("a figure answers empty, not an error", kpi.status, 200),
+          same("a figure answers empty, not an error", usage.status, 200),
         ]);
         const tab = await ctx.tab();
         await tab.signIn("admin");
-        await tab.goto("/modules/ai/overview");
-        await ctx.verify("the Overview", [
+        await tab.goto("/modules/ai/settings");
+        await ctx.verify("the Settings page", [
           pageHas(tab, "says it is turned off", /Its sidecar is turned off in this module's configuration\./),
           pageHas(tab, "has no Restart assistant button", /Restart assistant/, false),
         ]);

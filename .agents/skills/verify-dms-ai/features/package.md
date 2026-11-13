@@ -18,7 +18,7 @@ What a project installs: the module with its build, dashboard layer, sidecar and
 ## Sub-features
 
 - `the-tarball-holds-what-the-manifest-names`: the packed files, the declared entry points, the skills and the Codex pin.
-- `the-docs-name-every-skill-the-module-ships`: the README and the Skills page name every skill folder the package ships.
+- `the-docs-name-every-skill-the-module-ships`: the README and the extending guide name every skill folder the package ships.
 
 ## How to get to it (user POV)
 

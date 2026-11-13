@@ -98,7 +98,10 @@ const hint = computed<string>(() => {
 		<div class="cb-change__head">
 			<div class="cb-change__titles">
 				<span class="cb-change__eyebrow">
-					<template v-if="!isUndone">✦</template>
+					<UIcon
+						:name="isUndone ? 'i-ph-arrow-counter-clockwise' : 'i-ph-git-diff'"
+						class="cb-change__eyebrow-icon"
+					/>
 					{{ eyebrow }}
 				</span>
 				<div class="cb-change__title">{{ title }}</div>
@@ -163,8 +166,9 @@ const hint = computed<string>(() => {
 				/>
 				<UButton
 					size="xs"
-					color="secondary"
-					icon="i-ph-git-diff"
+					color="neutral"
+					variant="ghost"
+					icon="i-ph-arrow-square-out"
 					:label="t('dms_ai.panel.change.review')"
 					@click="emit('review')"
 				/>
@@ -175,11 +179,9 @@ const hint = computed<string>(() => {
 
 <style scoped>
 .cb-change {
-	border: 1px solid var(--ai-line);
+	border: 1px solid var(--ui-border);
 	border-radius: var(--ai-radius-md);
-	background:
-		linear-gradient(180deg, var(--ai-tint), transparent 70%),
-		var(--dms-surface-card);
+	background: var(--dms-surface-card);
 	overflow: hidden;
 }
 
@@ -196,10 +198,18 @@ const hint = computed<string>(() => {
 }
 
 .cb-change__eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
 	font: 600 10px var(--ai-font-mono);
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--ai);
+	color: var(--ui-text-dimmed);
+}
+
+.cb-change__eyebrow-icon {
+	width: 13px;
+	height: 13px;
 }
 
 .cb-change__title {

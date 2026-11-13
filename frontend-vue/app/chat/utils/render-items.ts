@@ -23,12 +23,6 @@ interface SeparatorItem {
 	dayMs: number;
 }
 
-/** The "✦ Assistant" line that opens the agent's side of a turn. */
-interface WhoItem {
-	kind: "who";
-	key: string;
-}
-
 interface MessageItem {
 	kind:
 		| "user"
@@ -61,12 +55,7 @@ interface PlanItem {
 	tool: ToolCallMessage;
 }
 
-export type RenderItem =
-	| SeparatorItem
-	| WhoItem
-	| MessageItem
-	| ToolsItem
-	| PlanItem;
+export type RenderItem = SeparatorItem | MessageItem | ToolsItem | PlanItem;
 
 const KIND_BY_ROLE: Record<string, MessageItem["kind"]> = {
 	[MESSAGE_ROLES.USER]: "user",
@@ -77,14 +66,6 @@ const KIND_BY_ROLE: Record<string, MessageItem["kind"]> = {
 	[MESSAGE_ROLES.QUESTION_ANSWER]: "answers",
 	[MESSAGE_ROLES.BLOCK_PREVIEW]: "preview",
 };
-
-/** Roles drawn on the agent's side, under one "✦ Assistant" line per turn. */
-const AGENT_ROLES: ReadonlySet<string> = new Set([
-	MESSAGE_ROLES.ASSISTANT,
-	MESSAGE_ROLES.TOOL,
-	MESSAGE_ROLES.CHANGE_SET,
-	MESSAGE_ROLES.BLOCK_PREVIEW,
-]);
 
 function startOfDay(ms: number): number {
 	const date = new Date(ms);
@@ -103,7 +84,6 @@ interface Builder {
 	out: RenderItem[];
 	tools: ToolCallMessage[];
 	dayMs: number | null;
-	isAgentTurnOpen: boolean;
 }
 
 function flushTools(builder: Builder): void {
@@ -118,16 +98,6 @@ function markDay(builder: Builder, message: ConversationMessage): void {
 	if (builder.dayMs === day) return;
 	builder.dayMs = day;
 	builder.out.push({ kind: "separator", key: `day-${day}`, dayMs: day });
-}
-
-function openAgentTurn(builder: Builder, message: ConversationMessage): void {
-	if (message.role === MESSAGE_ROLES.USER) {
-		builder.isAgentTurnOpen = false;
-		return;
-	}
-	if (builder.isAgentTurnOpen || !AGENT_ROLES.has(message.role)) return;
-	builder.isAgentTurnOpen = true;
-	builder.out.push({ kind: "who", key: `who-${message.id}` });
 }
 
 function place(builder: Builder, message: ConversationMessage): void {
@@ -149,8 +119,7 @@ function place(builder: Builder, message: ConversationMessage): void {
 }
 
 /**
- * The stream as drawn: day separators, one "✦ Assistant" line per agent turn,
- * consecutive tool calls in one cluster, plans as cards, steps left to the
+ * The stream as drawn: day separators, consecutive tool calls in one cluster, plans as cards, steps left to the
  * dock.
  */
 export function buildRenderItems(
@@ -160,14 +129,12 @@ export function buildRenderItems(
 		out: [],
 		tools: [],
 		dayMs: null,
-		isAgentTurnOpen: false,
 	};
 	for (const message of messages) {
 		if (message.role === MESSAGE_ROLES.USER) {
 			flushTools(builder);
 			markDay(builder, message);
 		}
-		openAgentTurn(builder, message);
 		place(builder, message);
 	}
 	flushTools(builder);

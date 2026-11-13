@@ -89,6 +89,15 @@ watch(open, (isOpen) => {
 								:alt="mockupLabel"
 								class="bp-pane__image"
 							/>
+							<iframe
+								v-else-if="reference.kind === 'page'"
+								:src="reference.src"
+								:title="mockupLabel"
+								sandbox="allow-scripts allow-same-origin"
+								referrerpolicy="same-origin"
+								loading="lazy"
+								class="bp-pane__frame"
+							/>
 							<div v-else-if="reference.kind === 'link'" class="bp-pane__note">
 								<UIcon name="i-ph-image-broken" class="bp-pane__note-icon" />
 								<p>{{ t("dms_ai.panel.preview.mockup_external") }}</p>
@@ -183,6 +192,15 @@ watch(open, (isOpen) => {
 .bp-modal__panes.is-split {
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 	align-items: start;
+}
+
+.bp-pane__frame {
+	display: block;
+	width: 100%;
+	height: 100%;
+	min-height: 360px;
+	border: 0;
+	background: var(--ui-bg);
 }
 
 .bp-pane {

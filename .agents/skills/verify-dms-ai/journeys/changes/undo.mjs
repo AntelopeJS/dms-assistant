@@ -1,5 +1,4 @@
 import { ai, check, clickUntil, fixture, list, pageHas, pick, same, text, until } from "../../ai.mjs";
-import { MS_DAY } from "../../seed.mjs";
 import { seedSample, fileText, stateOf } from "./helpers.mjs";
 
 /** @typedef {import("../../ai.mjs").Ctx} Ctx */
@@ -10,7 +9,7 @@ export const undoJourneys = [
     title: "Undo change set opens a dialog titled Undo change set #3? that says how many files it restores; Undo puts the file back as it was before, the set reads Undone with the name of the person, Redo returns the file as the assistant left it, and the audit log and the Undone figure follow",
     entryPoint: "/modules/ai/changes, POST /ai/changes/:id/undo and /redo",
     async run(/** @type {Ctx} */ ctx) {
-      const now = await seedSample(ctx);
+      await seedSample(ctx);
       const before = fileText(ctx, "b.txt");
       const tab = await ctx.tab();
       await tab.signIn("admin");
@@ -37,10 +36,8 @@ export const undoJourneys = [
       const again = await ai(ctx, "undo it again", "POST", "/changes/cs-two/undo", { body: {} });
       await ctx.verify("a second Undo", [same("is refused 4xx", again.status !== null && again.status >= 400 && again.status < 500, true), same("with the reason", text(again.body, "message"), "Change set #2 is already undone.")]);
       const log = list((await ai(ctx, "the log", "GET", "/activity?search=Reword")).body, "results");
-      const overview = await ai(ctx, "undone figure", "GET", `/metrics/kpi/undone?from=${new Date(now - 7 * MS_DAY).toISOString()}&to=${new Date(Date.now() + 1000).toISOString()}`);
-      await ctx.verify("the audit log and the figure", [
+      await ctx.verify("the audit log", [
         same("one Undo row naming the set and the person", log.map((row) => [text(row, "tool"), text(row, "target"), text(row, "resultDetail")]), [["UndoChangeSet", "#2 Reword the second note", "Verify Admin"]]),
-        same("the Undone figure counts it", pick(overview.body, "value"), 1),
       ]);
       await tab.click({ role: "button", name: "Redo" });
       const redone = await until(async () => (await stateOf(ctx, "cs-two")).state === "applied", { timeoutMs: 20_000, everyMs: 1500 });

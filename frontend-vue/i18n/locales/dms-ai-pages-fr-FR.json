@@ -2,13 +2,9 @@
 	"dms_ai": {
 		"module": {
 			"title": "Assistant",
-			"description": "L'assistant IA : ce qu'il a fait, ce que vous pouvez annuler, ses skills et ses réglages"
+			"description": "L'assistant IA : ses réglages, ce que vous pouvez annuler et ce qu'il a fait"
 		},
 		"pages": {
-			"overview": {
-				"title": "Vue d'ensemble",
-				"description": "Ce que l'assistant a fait, comment chaque action a été autorisée et ce que vous pouvez encore annuler"
-			},
 			"changes": {
 				"title": "Modifications",
 				"description": "Chaque tour qui a touché le projet, enregistré comme un lot de modifications à relire et annuler"
@@ -17,119 +13,12 @@
 				"title": "Activité",
 				"description": "Journal d'audit de chaque outil utilisé par l'assistant, de qui l'a autorisé et de son résultat"
 			},
-			"skills": {
-				"title": "Skills",
-				"description": "Les instructions que l'assistant charge pour des tâches précises, fournies par les modules ou cette machine"
-			},
 			"settings": {
 				"title": "Réglages",
 				"description": "Valeurs par défaut des nouvelles conversations. Les changements s'enregistrent au fur et à mesure"
 			}
 		},
 		"blocks": {
-			"overview": {
-				"toolbar": {
-					"name": "Barre d'outils",
-					"description": "Quand la vue d'ensemble a lu ses chiffres, un rafraîchissement et la période"
-				},
-				"period": {
-					"name": "Période",
-					"description": "Choisit la période couverte par les chiffres de la vue d'ensemble"
-				},
-				"status": {
-					"name": "État de l'assistant",
-					"description": "L'état de l'assistant, son agent, sa portée par défaut, son mode de validation, le Builder et le sidecar",
-					"title": "Assistant",
-					"settings": "Réglages"
-				},
-				"kpis": {
-					"name": "Chiffres clés",
-					"description": "Actions, lots de modifications, validations et annulations sur la période"
-				},
-				"kpis_row": {
-					"name": "Ligne des chiffres clés",
-					"description": "La ligne qui contient les quatre chiffres clés"
-				},
-				"kpi_actions": {
-					"name": "Actions",
-					"description": "Appels d'outils faits par l'assistant sur la période",
-					"title": "Actions",
-					"caption": "Appels d'outils, opérations du Builder comprises"
-				},
-				"kpi_change_sets": {
-					"name": "Lots de modifications",
-					"description": "Tours qui ont modifié le projet sur la période",
-					"title": "Lots de modifications",
-					"caption": "Tours ayant modifié des fichiers, annulés compris"
-				},
-				"kpi_approved": {
-					"name": "Autorisées par vous",
-					"description": "Demandes que vous avez autorisées sur la période",
-					"title": "Autorisées par vous",
-					"caption": "Demandes autorisées quand on vous les a posées"
-				},
-				"kpi_undone": {
-					"name": "Annulés",
-					"description": "Lots de modifications annulés sur la période",
-					"title": "Annulés",
-					"caption": "Lots de modifications annulés"
-				},
-				"activity": {
-					"name": "Activité",
-					"description": "Le graphique d'activité et la façon dont ses actions ont été autorisées"
-				},
-				"activity_row": {
-					"name": "Ligne d'activité",
-					"description": "La ligne qui contient le graphique d'activité et sa répartition"
-				},
-				"activity_chart": {
-					"name": "Graphique d'activité",
-					"description": "Actions par jour, face à la comparaison choisie",
-					"title": "Activité",
-					"caption": "Actions sur la période choisie",
-					"primary": "Actions",
-					"comparison": "Comparaison"
-				},
-				"allowed": {
-					"name": "Comment les actions ont été autorisées",
-					"description": "Les actions selon leur autorisation : automatique, par vous, par une règle",
-					"title": "Comment les actions ont été autorisées",
-					"caption": "Les suppressions demandent toujours, dans tous les modes",
-					"empty": "Aucune action sur cette période"
-				},
-				"changes": {
-					"name": "Modifications",
-					"description": "Les derniers lots de modifications et les outils les plus utilisés"
-				},
-				"changes_row": {
-					"name": "Ligne des modifications",
-					"description": "La ligne qui contient les lots récents et les outils les plus utilisés"
-				},
-				"recent_changes": {
-					"name": "Lots récents",
-					"description": "Les derniers lots de modifications, chacun avec Annuler ou Rétablir",
-					"title": "Lots récents"
-				},
-				"top_tools": {
-					"name": "Outils les plus utilisés",
-					"description": "Les outils que l'assistant a le plus lancés sur la période",
-					"title": "Outils les plus utilisés",
-					"caption": "Exécutions sur la période choisie",
-					"empty": "Aucun outil lancé sur cette période"
-				},
-				"activity_chart_series": {
-					"name": "Courbe du graphique d'activité",
-					"description": "Le graphique en aires dessiné dans la carte d'activité"
-				},
-				"status_banner": {
-					"name": "Alerte de l'assistant",
-					"description": "Signale l'assistant hors ligne, l'échec de son dernier tour ou des demandes qui vous attendent"
-				},
-				"status_facts": {
-					"name": "Informations de l'assistant",
-					"description": "Une ligne par information sur l'état de l'assistant"
-				}
-			},
 			"changes": {
 				"view": {
 					"name": "Lots de modifications",
@@ -154,24 +43,6 @@
 					"description": "Un appel d'outil : ses arguments, ses décisions et son diff"
 				}
 			},
-			"skills": {
-				"conflicts": {
-					"name": "Skills en double",
-					"description": "Prévient quand deux skills portent le même nom et que l'une est ignorée"
-				},
-				"catalog": {
-					"name": "Catalogue des skills",
-					"description": "Les skills chargées dans l'assistant"
-				},
-				"card": {
-					"name": "Carte d'une skill",
-					"description": "Une skill dans les cartes du catalogue"
-				},
-				"detail": {
-					"name": "Détail d'une skill",
-					"description": "Une skill : sa provenance, son utilisation et son SKILL.md"
-				}
-			},
 			"settings": {
 				"chatgpt": {
 					"name": "Compte ChatGPT",
@@ -179,7 +50,7 @@
 				},
 				"form": {
 					"name": "Réglages de l'assistant",
-					"description": "Valeurs par défaut de l'agent, des validations, de la portée, des skills et de l'historique"
+					"description": "Valeurs par défaut de l'IA et du Builder"
 				},
 				"usage": {
 					"name": "Consommation",
@@ -201,6 +72,10 @@
 				"usage_chart_series": {
 					"name": "Barres du graphique des tokens",
 					"description": "Le graphique en colonnes dessiné dans la carte des tokens"
+				},
+				"status_banner": {
+					"name": "Alerte de l'assistant",
+					"description": "Signale l'assistant hors ligne, l'échec de son dernier tour ou des demandes qui vous attendent"
 				}
 			}
 		},
@@ -269,10 +144,6 @@
 				"denied": "Refusée par vous",
 				"expired": "Expirée"
 			},
-			"allowed_metric": {
-				"deletions_asked": "Suppressions demandées",
-				"deletions_note": "Les suppressions demandent toujours, dans tous les modes"
-			},
 			"result": {
 				"done": "Terminée",
 				"pending": "En attente",
@@ -281,13 +152,6 @@
 				"blocked": "Bloquée",
 				"stopped": "Arrêtée",
 				"expired": "Expirée"
-			},
-			"tool_source": {
-				"builder": "Builder",
-				"project": "Projet",
-				"code": "Mode code",
-				"web": "Web",
-				"assistant": "Assistant"
 			},
 			"tools": {
 				"Read": "Lire un fichier",
@@ -347,40 +211,6 @@
 			}
 		},
 		"changes_table": {
-			"columns": {
-				"number": "N°",
-				"title": "Modification",
-				"scope": "Portée",
-				"files": "Fichiers",
-				"when": "Quand",
-				"state": "État"
-			},
-			"scope": {
-				"safe": "Sûr",
-				"vibe": "Code"
-			},
-			"state": {
-				"applied": "Appliqué",
-				"undone": "Annulé"
-			},
-			"actions": {
-				"open": "Voir le diff",
-				"undo": "Annuler",
-				"redo": "Rétablir",
-				"all_changes": "Toutes les modifications"
-			},
-			"toasts": {
-				"undone": "Lot de modifications annulé",
-				"redone": "Lot de modifications rétabli"
-			},
-			"empty": {
-				"title": "Aucune modification pour l'instant",
-				"description": "Quand l'assistant modifie une page ou un fichier, le lot de modifications arrive ici avec une annulation."
-			},
-			"offline": {
-				"title": "Impossible de joindre l'assistant",
-				"description": "Les lots de modifications viennent de l'assistant, qui ne tourne pas."
-			},
 			"undo_confirm": {
 				"title": "Annuler le lot n°{number} ?",
 				"description": "Remet le fichier dans l'état d'avant ce lot, puis recharge la page. | Remet {count} fichiers dans l'état d'avant ce lot, puis recharge la page.",
@@ -398,25 +228,13 @@
 				"new_conversations": "S'applique aux nouvelles conversations"
 			},
 			"sections": {
-				"agent": {
-					"label": "Agent",
-					"description": "Quel agent répond, et combien de temps il réfléchit."
+				"ai": {
+					"label": "IA",
+					"description": "Quel agent répond, comment il réfléchit et ce qu'il peut faire sans demander."
 				},
-				"approvals": {
-					"label": "Validations",
-					"description": "Par défaut pour les nouvelles conversations. Chaque conversation peut le changer depuis la zone de saisie."
-				},
-				"scope": {
-					"label": "Portée",
-					"description": "Par défaut pour les nouvelles conversations. Chaque conversation peut la changer depuis la zone de saisie."
-				},
-				"skills": {
-					"label": "Skills",
-					"description": "D'où viennent les skills de l'assistant."
-				},
-				"history": {
-					"label": "Historique",
-					"description": "Combien de temps les lots de modifications restent annulables."
+				"builder": {
+					"label": "Builder",
+					"description": "S'applique uniquement en développement."
 				}
 			},
 			"provider": {
@@ -532,26 +350,13 @@
 				"label": "Me prévenir dans le DMS",
 				"description": "Affiche une notification quand une demande arrive alors que le panneau de l'assistant est fermé."
 			},
-			"generation_mode": {
-				"label": "Portée",
-				"description": "Ce que l'assistant peut modifier dans le projet.",
-				"builder_missing": "Nécessite le builder, qui n'est pas lancé.",
-				"safe": {
-					"label": "Mode sûr · recommandé",
-					"description": "Modifie les pages, tables et requêtes uniquement via le Builder. Chaque modification est vérifiée avant d'être écrite ; les modifications de fichiers et les commandes sont bloquées."
-				},
-				"vibe": {
-					"label": "Mode code",
-					"description": "Peut aussi modifier n'importe quel fichier du projet et lancer des commandes, selon le mode de validation. Pour la logique sur mesure que le Builder ne sait pas exprimer."
-				}
-			},
 			"allow_local_skills": {
 				"title": "Skills de la machine",
 				"label": "Utiliser les skills de la machine",
 				"description": "Ajoute les skills de ~/.claude/skills sur cette machine. Elles ne sont partagées ni avec l'équipe ni avec les autres environnements."
 			},
 			"checkpoint_retention": {
-				"label": "Points de restauration",
+				"label": "Historique des annulations",
 				"description": "Au-delà, les lots de modifications ne peuvent plus être annulés.",
 				"options": {
 					"7": "Garder 7 jours",
@@ -565,84 +370,14 @@
 				"conversations": "Conversations",
 				"top_conversation": "Conversation la plus gourmande",
 				"top_tokens": "{count} token | {count} tokens"
-			}
-		},
-		"skills": {
-			"search": "Rechercher un nom, un module ou un tag",
-			"count": "{count} skill | {count} skills",
-			"settings_link": "Réglages des skills",
-			"never_used": "Jamais utilisée",
-			"columns": {
-				"name": "Nom",
-				"description": "Description",
-				"source": "Provenance",
-				"uses": "Utilisations · 30 jours",
-				"last_used": "Dernière utilisation"
 			},
-			"source": {
-				"module": "Module",
-				"local": "Locale"
-			},
-			"tabs": {
-				"all": "Toutes",
-				"module": "Modules",
-				"local": "Locales"
-			},
-			"detail": {
-				"open": "Détails",
-				"title": "Détail de la skill",
-				"position": "Skill {index} sur {total}"
-			},
-			"empty": {
-				"title": "Aucune skill chargée",
-				"description": "Les modules qui fournissent des skills les listent ici. Vous pouvez aussi ajouter celles de votre machine.",
-				"action": "Utiliser les skills de la machine"
-			},
-			"offline": {
-				"title": "Impossible de joindre l'assistant",
-				"description": "Les skills viennent de l'assistant, qui ne tourne pas. Ce n'est pas une liste vide."
-			},
-			"conflicts": {
-				"title": "{count} nom de skill est porté par plusieurs skills | {count} noms de skills sont portés par plusieurs skills",
-				"description": "{names} : une seule copie du nom est utilisée, l'autre est marquée Masquée. Renommez une copie pour utiliser les deux. | {names} : une seule copie de chaque nom est utilisée, les autres sont marquées Masquées. Renommez une copie pour toutes les utiliser.",
-				"action": "Sources des skills"
+			"safe_mode": {
+				"label": "Mode sûr",
+				"description": "Uniquement des modifications de pages et de données, via les outils du DMS",
+				"builder_missing": "Nécessite le builder, qui n'est pas lancé."
 			}
 		},
 		"status": {
-			"state": {
-				"ready": "Prêt",
-				"working": "Au travail",
-				"waiting": "En attente de vous",
-				"offline": "Hors ligne"
-			},
-			"agent": {
-				"claude": "Claude Code",
-				"codex": "Codex"
-			},
-			"scope": {
-				"safe": "Mode sûr",
-				"vibe": "Mode code"
-			},
-			"mode": {
-				"normal": "Demander d'abord",
-				"acceptEdits": "Accepter les modifications",
-				"plan": "Plan seulement",
-				"auto": "Revue automatique"
-			},
-			"facts": {
-				"state": "État",
-				"agent": "Agent",
-				"default_scope": "Portée par défaut",
-				"scope_safe_needs_builder": "Le mode sûr nécessite Builder",
-				"approvals": "Validations",
-				"builder": "Builder",
-				"builder_connected": "Connecté",
-				"builder_missing": "Non installé",
-				"sidecar": "Sidecar",
-				"sidecar_stopped": "Arrêté",
-				"working_count": "{count} conversation en cours | {count} conversations en cours",
-				"waiting_count": "{count} demande en attente de vous | {count} demandes en attente de vous"
-			},
 			"banner": {
 				"offline": {
 					"title": "L'assistant est hors ligne",

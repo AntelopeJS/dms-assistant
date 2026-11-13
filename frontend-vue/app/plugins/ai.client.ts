@@ -5,6 +5,7 @@ import {
 	useDmsRouter,
 } from "#dms/frontend-module";
 import {
+	type App,
 	computed,
 	type Ref,
 	readonly,
@@ -70,6 +71,9 @@ import {
 	buildCurrentPageUpdate,
 	installCurrentPageTracker,
 } from "../runtime/current-page";
+import { installAssistantPromptListener } from "../runtime/assistant-prompt";
+import { isEmbedded } from "../runtime/embedding";
+import { mountFoldBar } from "../runtime/fold-bar";
 import { createFrameRouter } from "../runtime/frame-router";
 import {
 	createHostCommandDispatcher,
@@ -80,6 +84,7 @@ import {
 	type LauncherStateHandle,
 } from "../runtime/launcher-state";
 import { installNavigationCompleteEmitter } from "../runtime/navigation-complete";
+import { createMockupFold } from "../runtime/mockup-fold";
 import { createPanelIntents } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
 import { installToggleShortcut } from "../runtime/shortcuts";
@@ -302,6 +307,34 @@ function createSession(parts: SessionParts): AssistantSession {
 	};
 }
 
+function installFold(app: App, session: AssistantSession): () => void {
+	const router = useDmsRouter();
+	const fold = createMockupFold({
+		path: computed(() => router.currentRoute.value.path),
+		panel: session.panel,
+	});
+	const unmountBar = mountFoldBar(app, fold, session.launcherState);
+	const stopPrompts = installAssistantPromptListener((prompt) => {
+		session.intents.push(
+			prompt.source === "build"
+				? {
+						kind: "build",
+						mockup: prompt.prompt,
+						...(prompt.target === undefined
+							? {}
+							: { pageRef: prompt.target.pageRef }),
+					}
+				: { kind: "prompt", prompt: prompt.prompt, block: prompt.block },
+		);
+		fold.unfold();
+	});
+	return () => {
+		stopPrompts();
+		unmountBar();
+		fold.stop();
+	};
+}
+
 function registerDashboardEntries(
 	session: AssistantSession,
 	i18n: ChatI18n,
@@ -380,7 +413,12 @@ function registerOnceMounted(
 	void appMounted.then(() => {
 		if (!isActive) return;
 		context.runWithContext(() => {
-			stop = registerDashboardEntries(session, i18n);
+			const stopEntries = registerDashboardEntries(session, i18n);
+			const stopFold = installFold(context.vueApp, session);
+			stop = () => {
+				stopEntries();
+				stopFold();
+			};
 		});
 	});
 	return () => {
@@ -552,7 +590,9 @@ async function startAssistant(
  * probe that finds no dms-ai backend, or a disabled sidecar, leaves no trace.
  * The session and the onboarding are provided at once, empty until that probe
  * answers, so the panel the server rendered open and the workspace pages
- * follow them, and another module's layer finds the public onboarding.
+ * follow them, and another module's layer finds the public onboarding. A
+ * dashboard drawn in a frame (the mockup beside a build's comparison) runs no
+ * assistant of its own: it would open a second stream of the same chats.
  */
 export function assistantPlugin(features: AssistantFeatures) {
 	return defineDmsPlugin((context) => {
@@ -573,6 +613,10 @@ export function assistantPlugin(features: AssistantFeatures) {
 			publicOnboarding(provided.onboarding),
 		);
 		context.vueApp.provide(CHAT_I18N_KEY, provided.i18n);
+		if (isEmbedded(globalThis)) {
+			context.runWithContext(() => unregisterSidePanel(SIDE_PANEL_ID));
+			return;
+		}
 		const appMounted = new Promise<void>((resolve) =>
 			context.hook("app:mounted", resolve),
 		);

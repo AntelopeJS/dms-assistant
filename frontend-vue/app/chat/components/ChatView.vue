@@ -27,6 +27,7 @@ import {
 import { useConversationList } from "../composables/useConversationList";
 import { useConversationMode } from "../composables/useConversationMode";
 import { useFollowScroll } from "../composables/useFollowScroll";
+import { useMockupIntents } from "../composables/useMockupIntents";
 import { usePermissionQueue } from "../composables/usePermissionQueue";
 import { useQuestionQueue } from "../composables/useQuestionQueue";
 import { useQueueActions } from "../composables/useQueueActions";
@@ -45,6 +46,7 @@ import type { ConversationSummary, CurrentPage } from "../types/conversation";
 import type { ExpiredRequest } from "../types/permission";
 import type { QuestionReply } from "../types/question";
 import type { PendingAttachment } from "../utils/attachments";
+import { changingBlock } from "../utils/block-target";
 import { formatTokens } from "../utils/format";
 import { newUuid } from "../utils/ids";
 import { isRunStalled, runElapsedMs } from "../utils/run-status";
@@ -52,6 +54,8 @@ import { describeStatus } from "../utils/status-label";
 import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
 import ApprovalDock from "./ApprovalDock.vue";
+import BlockOutline from "./BlockOutline.vue";
+import BuildDialog from "./BuildDialog.vue";
 import ChatEmpty from "./ChatEmpty.vue";
 import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
@@ -158,6 +162,31 @@ const isStalled = computed(
 		isRunStalled(conversation.lastEventAtMs.value, nowMs.value),
 );
 const todos = computed(() => latestTodos(conversation.messages.value));
+const mockup = useMockupIntents({
+	activeId,
+	messages: conversation.messages,
+	isRunning,
+	newConversation,
+	setDraft,
+	whenConnected,
+	requestBuild: (target) =>
+		sendUserMessage(
+			target.pageRef === undefined
+				? t("dms_ai.panel.build.message", { mockup: target.mockup })
+				: t("dms_ai.panel.build.message_into", {
+						mockup: target.mockup,
+						page: target.pageRef,
+					}),
+		),
+	navigate,
+});
+const outlinedBlock = computed(() =>
+	changingBlock(
+		conversation.messages.value,
+		isRunning.value,
+		props.page?.path ?? null,
+	),
+);
 const agentName = computed(() =>
 	t(`dms_ai.common.agent.${settings.value.provider}`),
 );
@@ -268,11 +297,10 @@ function submit(
 	attachments: PendingAttachment[],
 	includePage: boolean,
 ): void {
-	sendUserMessage(
-		content,
-		attachments,
-		includePage ? {} : { includePageContext: false },
-	);
+	sendUserMessage(content, attachments, {
+		...(includePage ? {} : { includePageContext: false }),
+		...mockup.takeFocusBlock(),
+	});
 }
 
 function answerQuestions(requestId: string, replies: QuestionReply[]): void {
@@ -353,6 +381,12 @@ const INTENT_HANDLERS: Record<
 	},
 	start: (intent) => {
 		if (intent.kind === "start") startConversation(intent);
+	},
+	prompt: (intent) => {
+		if (intent.kind === "prompt") mockup.takePrompt(intent);
+	},
+	build: (intent) => {
+		if (intent.kind === "build") mockup.startBuild(intent);
 	},
 	focus: () => void nextTick(() => composerRef.value?.focus()),
 	approvals: () => {
@@ -523,9 +557,11 @@ onBeforeUnmount(() => {
 				:provider="settings.provider"
 				:builder-available="settings.builderAvailable"
 				:page="page"
+				:block="mockup.focusBlock.value"
 				:usage-label="usageLabel"
 				:placeholder="placeholder"
 				@submit="submit"
+				@remove-block="mockup.focusBlock.value = null"
 				@stop="stopTurn"
 				@set-scope="mode.setScope"
 				@set-mode="mode.setMode"
@@ -566,6 +602,15 @@ onBeforeUnmount(() => {
 			:pending="changeSetActions.pendingUndo.value"
 			@confirm="changeSetActions.confirmUndo"
 			@cancel="changeSetActions.cancelUndo"
+		/>
+
+		<BlockOutline :path="outlinedBlock" />
+
+		<BuildDialog
+			v-if="mockup.build.value"
+			:view="mockup.build.value"
+			@background="mockup.closeBuild"
+			@open-pages="mockup.openBuiltPages"
 		/>
 	</main>
 </template>

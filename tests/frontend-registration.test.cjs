@@ -20,7 +20,7 @@ const {
  */
 
 const I18N_KEY = /\$dms_ai\.[A-Za-z0-9_.-]+/g;
-const MODULE_PAGES = ["overview", "changes", "activity", "skills", "settings"];
+const MODULE_PAGES = ["settings", "changes", "activity"];
 
 /**
  * @param {{ [key: string]: LocaleNode }} locale - A page locale.
@@ -164,11 +164,11 @@ function collectKeys(value, keys) {
 
 const OrderSchema = z.number();
 
-void test("registers the five AI pages, in order, with translated menu entries", () => {
+void test("registers the three AI pages, in order, with translated menu entries", () => {
   const { modules, pages } = loadPages();
   assert.equal(modules.length, 1);
   assert.equal(modules[0].id, "ai");
-  assert.equal(modules[0].landingPage, "overview");
+  assert.equal(modules[0].landingPage, "settings");
   const sorted = [...pages].sort(
     (a, b) => OrderSchema.parse(a.menu.order) - OrderSchema.parse(b.menu.order),
   );
@@ -233,13 +233,8 @@ const COMPONENTS_DIR = path.resolve(
   __dirname,
   "../frontend-vue/app/components",
 );
-/** What no DMS block draws: the Changes view, the row drawers, the skill card. */
-const PAGE_CUSTOM_COMPONENTS = [
-  "DmsAiActivityDetail",
-  "DmsAiChangesView",
-  "DmsAiSkillCard",
-  "DmsAiSkillDetail",
-];
+/** What no DMS block draws: the Changes view and the Activity row drawer. */
+const PAGE_CUSTOM_COMPONENTS = ["DmsAiActivityDetail", "DmsAiChangesView"];
 
 void test("names only the custom components the frontend registers, where no DMS block fits", async () => {
   const { pages } = loadPages();
@@ -263,115 +258,6 @@ void test("names only the custom components the frontend registers, where no DMS
       require("node:fs").existsSync(path.join(COMPONENTS_DIR, file)),
       `${name} is registered from ${file}`,
     );
-  }
-});
-
-/** The skill drawer is a reading panel: 768 px, the SKILL.md at a readable measure. */
-const SKILL_DRAWER_SIZE = "3xl";
-
-const DrawerSchema = z.looseObject({
-  type: z.literal("drawer"),
-  size: z.unknown().optional(),
-  direction: z.unknown().optional(),
-  rowTitle: z.unknown().optional(),
-  rowHeader: z.unknown().optional(),
-  positionLabel: z.unknown().optional(),
-});
-
-/** @typedef {z.infer<typeof DrawerSchema>} Drawer */
-
-/**
- * @param {unknown} value - A node of a serialized tree.
- * @param {Drawer[]} drawers - Receives each drawer found.
- * @returns {Drawer[]} The drawers.
- */
-function findDrawers(value, drawers) {
-  const container = ContainerSchema.safeParse(value);
-  if (!container.success) return drawers;
-  const drawer = DrawerSchema.safeParse(value);
-  if (drawer.success) drawers.push(drawer.data);
-  for (const entry of Object.values(container.data)) {
-    findDrawers(entry, drawers);
-  }
-  return drawers;
-}
-
-void test("opens the skill detail as a 3xl reading panel on the right", async () => {
-  const { pages } = loadPages();
-  const skills = findPage(pages, "skills");
-  /** @type {Drawer[]} */
-  const drawers = [];
-  for (const [, component] of staticComponents(skills)) {
-    findDrawers(await component.serialize(), drawers);
-  }
-  const detail = drawers.filter((drawer) =>
-    JSON.stringify(drawer).includes('"DmsAiSkillDetail"'),
-  );
-  assert.equal(detail.length, 1);
-  assert.equal(detail[0].size, SKILL_DRAWER_SIZE);
-  assert.equal(detail[0].direction, "right");
-});
-
-void test("titles the skill drawer with the DMS row header", async () => {
-  const { pages } = loadPages();
-  const skills = findPage(pages, "skills");
-  /** @type {Drawer[]} */
-  const drawers = [];
-  for (const [, component] of staticComponents(skills)) {
-    findDrawers(await component.serialize(), drawers);
-  }
-  const [detail] = drawers.filter((drawer) =>
-    JSON.stringify(drawer).includes('"DmsAiSkillDetail"'),
-  );
-  assert.ok(detail, "the skills page serves the skill detail drawer");
-  assert.equal(detail.rowTitle, "{name}");
-  assert.notEqual(detail.rowHeader, false);
-  for (const file of PAGE_LOCALES) {
-    const position = TextSchema.safeParse(
-      translate(readLocale(file), TextSchema.parse(detail.positionLabel)),
-    );
-    assert.ok(position.success, file);
-    assert.match(position.data, /\{index\}.*\{total\}/, file);
-  }
-});
-
-/** The height of a real skill card, held by its placeholders while the cards load. */
-const CARD_SKELETON_HEIGHT = "250px";
-
-const CardHolderSchema = z.looseObject({
-  card: z.looseObject({ skeletonHeight: z.unknown().optional() }),
-});
-
-/** @typedef {z.infer<typeof CardHolderSchema>["card"]} Card */
-
-/**
- * @param {unknown} value - A node of a serialized tree.
- * @param {Card[]} cards - Receives each card found.
- * @returns {Card[]} The cards.
- */
-function findCards(value, cards) {
-  const container = ContainerSchema.safeParse(value);
-  if (!container.success) return cards;
-  const holder = CardHolderSchema.safeParse(value);
-  if (holder.success) cards.push(holder.data.card);
-  for (const entry of Object.values(container.data)) findCards(entry, cards);
-  return cards;
-}
-
-void test("holds the skill card placeholders at the height of a real card", async () => {
-  const { pages } = loadPages();
-  const skills = findPage(pages, "skills");
-  /** @type {Card[]} */
-  const cards = [];
-  for (const [, component] of staticComponents(skills)) {
-    findCards(await component.serialize(), cards);
-  }
-  const skillCards = cards.filter((card) =>
-    JSON.stringify(card).includes('"DmsAiSkillCard"'),
-  );
-  assert.ok(skillCards.length > 0);
-  for (const card of skillCards) {
-    assert.equal(card.skeletonHeight, CARD_SKELETON_HEIGHT);
   }
 });
 
@@ -420,38 +306,17 @@ function findPage(pages, id) {
   return page;
 }
 
-void test("opens the Overview and Activity with the DMS page toolbar, its period only", async () => {
+void test("opens the Activity page with the DMS page toolbar, its period only", async () => {
   const { pages } = loadPages();
-  for (const id of ["overview", "activity"]) {
-    const { firstKey, toolbar, childIds, period } = await toolbarPeriod(
-      findPage(pages, id),
-    );
-    assert.equal(firstKey, "toolbar", id);
-    assert.equal(toolbar.componentName, "dms-page-toolbar-block", id);
-    assert.deepEqual(childIds, ["period"], id);
-    assert.equal(period.options.rememberKey, "ai", id);
-    assert.equal(period.options.rangeLabel, "relative", id);
-    assert.equal(period.options.variant, "segmented", id);
-  }
-});
-
-void test("offers the Overview's comparisons in a menu, the period before by default", async () => {
-  const { pages } = loadPages();
-  const { period } = await toolbarPeriod(findPage(pages, "overview"));
-  assert.equal(period.options.id, "ai-overview");
-  assert.deepEqual(period.options.presets, [
-    "last-24h",
-    "last-7-days",
-    "last-30-days",
-  ]);
-  assert.equal(period.options.defaultPreset, "last-7-days");
-  assert.deepEqual(period.options.comparisons, [
-    "previous-period",
-    "previous-year",
-    "none",
-  ]);
-  assert.equal(period.options.defaultComparison, "previous-period");
-  assert.equal(period.options.comparisonControl, "menu");
+  const { firstKey, toolbar, childIds, period } = await toolbarPeriod(
+    findPage(pages, "activity"),
+  );
+  assert.equal(firstKey, "toolbar");
+  assert.equal(toolbar.componentName, "dms-page-toolbar-block");
+  assert.deepEqual(childIds, ["period"]);
+  assert.equal(period.options.rememberKey, "ai");
+  assert.equal(period.options.rangeLabel, "relative");
+  assert.equal(period.options.variant, "segmented");
 });
 
 void test("scopes the audit log to the Activity period, the whole log by default", async () => {

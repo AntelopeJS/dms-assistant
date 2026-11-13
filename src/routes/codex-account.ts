@@ -143,8 +143,9 @@ interface PastedCallbackBody {
 
 /**
  * Settings' ChatGPT account: the banner offering to sign in or out, the
- * pasted return address that completes a remote sign-in, and the sign-out. No banner while the sidecar does not answer: the Overview
- * already says it is down.
+ * pasted return address that completes a remote sign-in, and the sign-out. No
+ * banner while the sidecar does not answer: the Settings page already says it
+ * is down.
  */
 @AuthOwnerOnly()
 export class AICodexAccountController extends Controller(ROUTE_PREFIX) {

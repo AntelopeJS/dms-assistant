@@ -4,6 +4,7 @@ import {
 	BLOCK_PREVIEW_MAIN_TAB,
 	BLOCK_PREVIEW_VARIANT_TAB_PREFIX,
 	JSON_INDENT,
+	MOCKUP_VIEWER_PATH,
 	REMOTE_URL,
 	SAME_ORIGIN_PATH,
 } from "../constants/block-preview";
@@ -24,11 +25,21 @@ export interface BlockPreviewTab extends PreviewView {
 
 /**
  * How the mockup is drawn: an image the page may load (an attachment of this
- * session, or a same-origin path), a link for an external URL — loading it
- * could send what the agent read to its address — or a note when the
- * attachment is gone (only its name survives a reload).
+ * session, or a same-origin path), the DMS's own mockup viewer in a frame, a
+ * link for an external URL — loading it could send what the agent read to its
+ * address — or a note when the attachment is gone (only its name survives a
+ * reload).
  */
-export type ReferenceView = ImageReference | LinkReference | MissingReference;
+export type ReferenceView =
+	| ImageReference
+	| PageReference
+	| LinkReference
+	| MissingReference;
+
+interface PageReference {
+	kind: "page";
+	src: string;
+}
 
 interface ImageReference {
 	kind: "image";
@@ -124,6 +135,7 @@ function findAttachedImage(
 }
 
 function viewOfUrl(url: string): ReferenceView | null {
+	if (MOCKUP_VIEWER_PATH.test(url)) return { kind: "page", src: url };
 	if (SAME_ORIGIN_PATH.test(url)) return { kind: "image", src: url, name: url };
 	if (REMOTE_URL.test(url)) return { kind: "link", href: url };
 	return null;

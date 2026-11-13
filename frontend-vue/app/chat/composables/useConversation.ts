@@ -149,11 +149,12 @@ function queueFollowUp(
 	state: ConversationState,
 	content: string,
 	attachments: PendingAttachment[],
+	extra: Record<string, unknown>,
 ): void {
 	const isQueued = state.options.send({
 		type: CLIENT_MESSAGE_TYPES.QUEUE_ENQUEUE,
 		conversationId: state.options.activeId.value,
-		item: { id: newUuid(), content, ...withWire(attachments) },
+		item: { id: newUuid(), content, ...withWire(attachments), ...extra },
 	});
 	if (!isQueued) appendLocalError(state, LOCAL_ERROR_KEYS.NOT_SENT);
 }
@@ -195,7 +196,7 @@ function sendUserMessage(
 	const trimmed = content.trim();
 	if (trimmed.length === 0 && attachments.length === 0) return;
 	if (state.isRunning.value) {
-		queueFollowUp(state, trimmed, attachments);
+		queueFollowUp(state, trimmed, attachments, extra);
 		return;
 	}
 	startTurn(state, trimmed, attachments, extra);

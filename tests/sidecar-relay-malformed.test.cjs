@@ -44,17 +44,7 @@ void test("a change-set answer of the wrong shape is refused with 502 (AntelopeJ
   const changes = new harness.routes.AIChangesController();
 
   assertRefused(await changes.list(context("")));
-  assertRefused(await changes.recent(context("")));
   assertRefused(await changes.undoConfirm("set-1"));
-});
-
-void test("a skills catalog answer of the wrong shape is refused with 502 (AntelopeJS/dms-ai#111)", async () => {
-  reset();
-  answer("GET", "/skills", 200, { items: 5 });
-
-  assertRefused(
-    await new harness.routes.AISkillsController().catalog(context("")),
-  );
 });
 
 void test("a settings answer that is not an object is refused with 502 (AntelopeJS/dms-ai#111)", async () => {

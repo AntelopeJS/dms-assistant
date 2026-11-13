@@ -4,7 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "dependencies": {
-    "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
+    "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz",
     "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
@@ -35,7 +35,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
+      "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz",
       "@antelopejs/dms>@antelopejs/interface-api": "0.3.0",
       "@antelopejs/dms>@antelopejs/interface-api-util": "0.3.0",
       "@antelopejs/dms>@antelopejs/interface-core": "0.4.0",

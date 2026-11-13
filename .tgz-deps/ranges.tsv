@@ -56,3 +56,4 @@
 @antelopejs/interface-dms	frontend-vue/package.json	pnpm.overrides	
 @antelopejs/interface-dms	playground/package.json	pnpm.overrides	
 @antelopejs/interface-dms	package.json	pnpm.overrides	
+@antelopejs/dms	frontend-vue/package.json	devDependencies	

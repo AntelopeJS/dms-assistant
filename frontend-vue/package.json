@@ -29,7 +29,7 @@
 	},
 	"devDependencies": {
 		"@antelopejs/core": "1.21.0",
-		"@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
+		"@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-a652040.tgz",
 		"@antelopejs/dms-frontend": ">=0.10.4 <1.0.0",
 		"@antelopejs/interface-api": ">=0.3.0 <1.0.0",
 		"@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
@@ -55,7 +55,7 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
+			"@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-a652040.tgz",
 			"@antelopejs/dms>@antelopejs/interface-api": "0.3.2",
 			"@antelopejs/dms>@antelopejs/interface-api-util": "0.3.2",
 			"@antelopejs/dms>@antelopejs/interface-data-api": "0.6.3",

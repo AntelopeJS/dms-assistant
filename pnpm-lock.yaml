@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@antelopejs/interface-dms-builder': file:.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz
-  '@antelopejs/dms': file:.tgz-deps/antelopejs-dms-41d2eb4.tgz
+  '@antelopejs/dms': file:.tgz-deps/antelopejs-dms-a652040.tgz
   '@antelopejs/dms>@antelopejs/interface-api': 0.3.0
   '@antelopejs/dms>@antelopejs/interface-api-util': 0.3.0
   '@antelopejs/dms>@antelopejs/interface-core': 0.4.0
@@ -67,8 +67,8 @@ importers:
         specifier: ^1.21.0
         version: 1.21.3
       '@antelopejs/dms':
-        specifier: file:.tgz-deps/antelopejs-dms-41d2eb4.tgz
-        version: file:.tgz-deps/antelopejs-dms-41d2eb4.tgz(@antelopejs/core@1.21.3)
+        specifier: file:.tgz-deps/antelopejs-dms-a652040.tgz
+        version: file:.tgz-deps/antelopejs-dms-a652040.tgz(@antelopejs/core@1.21.3)
       '@antelopejs/interface-api-util':
         specifier: '>=0.3.0 <1.0.0'
         version: 0.3.0(@antelopejs/interface-api@0.3.0(@antelopejs/interface-core@0.4.0))(@antelopejs/interface-core@0.4.0)
@@ -170,8 +170,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-41d2eb4.tgz':
-    resolution: {integrity: sha512-65ESGpdKdlhHJvGADuwFHcyXSubPz2dKqpjKF24Megqjh/mQOsxe+xsshC7UPYWwn432tw0mSuGwk74QZ9zYXw==, tarball: file:.tgz-deps/antelopejs-dms-41d2eb4.tgz}
+  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-a652040.tgz':
+    resolution: {integrity: sha512-3ZOm3fMNVOe3J3jqKqsx52NmRvaoRVaCYhcFuuE9Xw7WK3jszLGI8MxhogjhwC3EGX/A/Pzz4SO67HfEe+j71g==, tarball: file:.tgz-deps/antelopejs-dms-a652040.tgz}
     version: 0.19.6
     hasBin: true
     peerDependencies:
@@ -3870,7 +3870,7 @@ snapshots:
       semver: 7.8.5
       typescript: 5.9.3
 
-  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-41d2eb4.tgz(@antelopejs/core@1.21.3)':
+  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-a652040.tgz(@antelopejs/core@1.21.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.0(@antelopejs/interface-core@0.4.0)

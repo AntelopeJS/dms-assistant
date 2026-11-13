@@ -148,7 +148,7 @@ export const BUILTIN_READ_TOOL_NAMES: readonly string[] = [
 
 type BuilderToolKind = "read" | "change" | "deletion" | "blockRemoval";
 
-/** The DMS MCP's tools that change pages, resources, the theme or mockups, by what they do. */
+/** The DMS MCP's builder and mockup tools, by what they do. */
 const BUILDER_TOOL_KINDS = {
   builder_catalog: "read",
   builder_list_pages: "read",

@@ -83,8 +83,8 @@ export const ASK_USER_QUESTION_BUILTIN_TOOL_NAME = "AskUserQuestion";
 export const ASK_USER_QUESTION_REDIRECT_MESSAGE = `AskUserQuestion is not available here. Use the ${MCP_TOOL_NAME_PREFIX}${ASK_USER_TOOL_NAME} tool instead to ask the user multiple-choice questions.`;
 
 /**
- * The DMS MCP's tools the chat serves itself, with the tab and the chat they
- * drive: hidden from the agent so it sees one tool of each name.
+ * The DMS MCP's tools that the chat serves itself, since only the chat's own
+ * drive the user's tab and the chat. Hidden, so the agent sees one of each.
  */
 export const DMS_MCP_HIDDEN_TOOL_NAMES: readonly string[] = [
   NAVIGATE_TOOL_NAME,

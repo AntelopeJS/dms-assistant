@@ -228,4 +228,62 @@ describe("the database pins of the modules that import interface-database", () =
       { module: "dms-database", provider: "mongodb" },
     ]);
   });
+
+  describe("a module whose entry the builder cannot write a pin into", () => {
+    const wiringWith = (module: string) =>
+      connections(
+        new Map([
+          [ownModuleId(), BOTH],
+          ["dms", BOTH],
+          [module, BOTH],
+          ["mongodb", ["mongodb"]],
+          ["builder-db-erp", ["builder-db-erp"]],
+        ]),
+      );
+
+    it("is refused by name when it is written as a version string and imports interface-database", () => {
+      writeConfig(
+        config(DMS_SOURCE, "-1", `    "@antelopejs/some-app": "^1.0.0",`),
+      );
+      expect(() => databasePins(wiringWith("@antelopejs/some-app"))).to.throw(
+        /module "@antelopejs\/some-app".*as an object with the pin/,
+      );
+    });
+
+    it("is refused by name when it is written with a spread and imports interface-database", () => {
+      writeConfig(
+        config(
+          DMS_SOURCE,
+          "-1",
+          `    reports: { ...SHARED, source: { type: "local", path: "../reports" } },`,
+        ),
+      );
+      expect(() => databasePins(wiringWith("reports"))).to.throw(
+        /module "reports".*as an object with the pin/,
+      );
+    });
+
+    it("is left alone when it imports no interface-database, or provides it itself", () => {
+      writeConfig(
+        config(
+          DMS_SOURCE,
+          "-1",
+          `    "@antelopejs/some-app": "^1.0.0",
+    reports: { ...SHARED, source: { type: "local", path: "../reports" } },`,
+        ),
+      );
+      const providing = connections(
+        new Map([
+          [ownModuleId(), BOTH],
+          ["dms", BOTH],
+          ["reports", ["reports"]],
+          ["mongodb", ["mongodb"]],
+          ["builder-db-erp", ["builder-db-erp"]],
+        ]),
+      );
+      expect(databasePins(providing).pins).to.deep.equal([
+        { module: "dms", provider: "mongodb" },
+      ]);
+    });
+  });
 });

@@ -11,6 +11,7 @@ import {
   type Fixture,
 } from "./harness";
 import { projectFile } from "./helpers/project-files";
+import { refusalOf } from "./helpers/refusal";
 
 const OP_TIMEOUT = 120_000;
 const DATABASE = "@antelopejs/interface-database";
@@ -27,15 +28,18 @@ const wiring = new Map([
   ["builder-db-erp", ["builder-db-erp"]],
 ]);
 
-function lookup(moduleId: string, interfaceId: string): InterfaceConnection[] {
-  return interfaceId !== DATABASE
-    ? []
-    : (wiring.get(moduleId) ?? []).map((provider, index) => ({
-        path: `${provider}.js`,
-        provider,
-        selected: index === 0,
-      }));
+function lookupOf(modules: Map<string, string[]>) {
+  return (moduleId: string, interfaceId: string): InterfaceConnection[] =>
+    interfaceId !== DATABASE
+      ? []
+      : (modules.get(moduleId) ?? []).map((provider, index) => ({
+          path: `${provider}.js`,
+          provider,
+          selected: index === 0,
+        }));
 }
+
+const lookup = lookupOf(wiring);
 
 function entry(interfaceId: string, source: string, id?: string): string {
   const named = id === undefined ? "" : `\n          id: "${id}",`;
@@ -202,6 +206,39 @@ describe("the repair of the dms-database entries of connections made before", fu
         archive,
       ),
     );
+  });
+
+  it("refuses a dms-database written as a version string, naming it, instead of reporting nothing to do", () => {
+    const written = project({
+      app: APP_BEFORE,
+      own: own(ERP_CATALOG),
+      dmsDatabase: `    "@antelopejs/dms-database": "^0.3.0",`,
+    });
+    fs.writeFileSync(configPath(), written);
+    const result = repairDatabaseConnections({}, lookup);
+    expect(result.ok).to.equal(false);
+    expect(refusalOf(result)).to.include(
+      'module "@antelopejs/dms-database" is not written as an object literal',
+    );
+    expect(readConfig()).to.equal(written);
+  });
+
+  it("refuses when a module written as a version string imports interface-database, and writes no pin", () => {
+    const written = project({
+      app: `${APP_BEFORE}\n    "@antelopejs/some-app": "^1.0.0",`,
+      own: own(ERP_CATALOG),
+      dmsDatabase: DMS_DATABASE_BEFORE,
+    });
+    fs.writeFileSync(configPath(), written);
+    const result = repairDatabaseConnections(
+      {},
+      lookupOf(new Map([...wiring, ["@antelopejs/some-app", BOTH]])),
+    );
+    expect(result.ok).to.equal(false);
+    expect(refusalOf(result)).to.include(
+      'module "@antelopejs/some-app" is not written as an object literal',
+    );
+    expect(readConfig()).to.equal(written);
   });
 
   it("pins the modules alone when the project has no dms-database", () => {

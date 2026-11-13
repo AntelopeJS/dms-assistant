@@ -1,19 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Node, type ObjectLiteralExpression } from "ts-morph";
+import { isPlainObjectLiteral } from "./literal-overrides";
 import { resolveProjectRoot } from "./project";
 import {
   type ConfigDraft,
   moduleEntries,
   propertyNamed,
+  refuse,
   stringOf,
 } from "./project-config";
-import { readableConfig } from "./project-config-readers";
+import { readableConfig, writtenModules } from "./project-config-readers";
 import { isString } from "./scalar-guards";
 import { isPlainObject } from "./value";
 
 const DMS_DATABASE_ID = "dms-database";
 const DMS_DATABASE_PACKAGE = "@antelopejs/dms-database";
+const DMS_DATABASE_KEYS: ReadonlySet<string> = new Set([
+  DMS_DATABASE_ID,
+  DMS_DATABASE_PACKAGE,
+]);
 
 function propertyText(
   owner: ObjectLiteralExpression,
@@ -58,12 +64,26 @@ function isDmsDatabaseSource(entry: ObjectLiteralExpression): boolean {
  * The id of the entry that is dms-database in a configuration: the module with that id, else the one
  * whose source is its package, or a local folder whose `package.json` names it. A project that adds
  * modules with `ajs project modules add` keys them by package name, so the id alone does not tell.
- * An entry not written as a plain literal is not found: the builder cannot write to it.
+ * Refused when the only entry keyed as dms-database or as its package is not written as a plain
+ * object literal, a version string for one: the builder cannot write to it, and a connection must
+ * not go unregistered without saying so.
  */
 export function dmsDatabaseIn(draft: ConfigDraft): string | undefined {
   const entries = moduleEntries(draft);
-  return (entries.find(([id]) => id === DMS_DATABASE_ID) ??
+  const literal = (entries.find(([id]) => id === DMS_DATABASE_ID) ??
     entries.find(([, entry]) => isDmsDatabaseSource(entry)))?.[0];
+  if (literal !== undefined) {
+    return literal;
+  }
+  const unreadable = writtenModules(draft).find(
+    ([id, entry]) => DMS_DATABASE_KEYS.has(id) && !isPlainObjectLiteral(entry),
+  );
+  if (unreadable) {
+    refuse(
+      `module "${unreadable[0]}" is not written as an object literal, so the builder cannot register a connection with dms-database there: write its entry as an object, then try again`,
+    );
+  }
+  return undefined;
 }
 
 /** The id of the entry that is dms-database in the project's configuration; nothing when it has none. */

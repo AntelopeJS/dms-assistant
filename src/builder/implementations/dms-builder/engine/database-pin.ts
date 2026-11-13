@@ -8,12 +8,15 @@ import {
   existingOverrides,
   overrideOf,
   MODULES,
-  moduleEntries,
   objectAt,
   StepRefusal,
 } from "./project-config";
-import { readableConfig } from "./project-config-readers";
-import { hides, overridesWrittenAsLiterals } from "./literal-overrides";
+import { readableConfig, writtenModules } from "./project-config-readers";
+import {
+  hides,
+  isPlainObjectLiteral,
+  overridesWrittenAsLiterals,
+} from "./literal-overrides";
 
 const DEFAULT_PRIORITY = 0;
 const EXPORT_PRIORITY = "exportPriority";
@@ -208,12 +211,15 @@ function defaultAmong(
 
 /**
  * Whether a module needs the pin: it imports `interface-database` and neither provides it nor
- * pins it. Refused when its entry cannot be read, so that a pin is never written without the others.
+ * pins it. Refused when its entry is not an object literal with no spread, a version string or a
+ * constant for one, or when its overrides cannot be read, so that a pin is never written without
+ * the others.
  */
 function needsPin(
   lookup: ConnectionLookup,
   id: string,
-  entry: ObjectLiteralExpression,
+  entry: Node | undefined,
+  ownDatabase: string,
 ): boolean {
   const connections = lookup(id, DATABASE_INTERFACE);
   if (
@@ -221,6 +227,11 @@ function needsPin(
     connections.some((connection) => connection.provider === id)
   ) {
     return false;
+  }
+  if (!isPlainObjectLiteral(entry)) {
+    throw new StepRefusal(
+      `module "${id}" is not written as an object literal and imports ${DATABASE_INTERFACE}, so the builder cannot pin it to "${ownDatabase}": write its entry as an object with the pin, importOverrides: { "${DATABASE_INTERFACE}": "${ownDatabase}" }, then try again`,
+    );
   }
   return !pinsDatabase(id, entry);
 }
@@ -231,7 +242,8 @@ function needsPin(
  * passes a module's pin on to the modules it imports, so one left unpinned would be reached with two
  * bindings once a second provider exists. Nothing is pinned when the project has no database of its
  * own. Refused when the configuration does not say plainly which database that is, or how a module
- * binds it, so a connection is never written with a pin to the wrong one, or without the one it needs.
+ * binds it, or when a module that needs the pin is not written as an object literal, so a
+ * connection is never written with a pin to the wrong one, or without the one it needs.
  */
 export function databasePins(
   lookup: ConnectionLookup = moduleConnections,
@@ -245,8 +257,8 @@ export function databasePins(
   const ownDatabase = defaultAmong(modules, providers);
   return {
     ownDatabase,
-    pins: moduleEntries(draft)
-      .filter(([id, entry]) => needsPin(lookup, id, entry))
+    pins: writtenModules(draft)
+      .filter(([id, entry]) => needsPin(lookup, id, entry, ownDatabase))
       .map(([module]) => ({ module, provider: ownDatabase })),
   };
 }

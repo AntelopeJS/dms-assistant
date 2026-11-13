@@ -10,6 +10,7 @@ import {
   type Fixture,
 } from "./harness";
 import { projectFile } from "./helpers/project-files";
+import { refusalOf } from "./helpers/refusal";
 
 const OP_TIMEOUT = 120_000;
 const REGISTER_ERP: ModuleEntryInput = {
@@ -43,15 +44,6 @@ function writeConfig(config: string): string {
 
 function readConfig(): string {
   return projectFile(app.root, "antelope.config.ts");
-}
-
-function refusalOf(
-  result: Awaited<ReturnType<typeof ConfigureModule>>,
-): string {
-  if (result.ok || result.error.code !== "invalid_config") {
-    return "";
-  }
-  return result.error.issues.map(({ message }) => message).join("\n");
 }
 
 /**

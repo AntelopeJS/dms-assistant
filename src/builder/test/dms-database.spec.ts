@@ -4,6 +4,7 @@ import path from "node:path";
 import { expect } from "chai";
 import { setModuleConfig } from "../config";
 import { dmsDatabaseId } from "../implementations/dms-builder/engine/dms-database";
+import { StepRefusal } from "../implementations/dms-builder/engine/project-config";
 
 const DMS_DATABASE_PACKAGE = "@antelopejs/dms-database";
 
@@ -92,8 +93,34 @@ describe("the entry that is dms-database", () => {
     expect(dmsDatabaseId()).to.equal(undefined);
   });
 
-  it("is not an entry the builder cannot read as a literal", () => {
-    writeConfig(`    "dms-database": DMS_DATABASE_ENTRY,`);
+  it("is refused by name when it is written as a version string, a constant or with a spread", () => {
+    for (const [key, written] of [
+      ["@antelopejs/dms-database", '"^0.3.0"'],
+      ["dms-database", '"^0.3.0"'],
+      ["dms-database", "DMS_DATABASE_ENTRY"],
+      [
+        "dms-database",
+        '{ ...DEFAULTS, source: { type: "package", package: "x", version: "*" } }',
+      ],
+    ]) {
+      writeConfig(`    "${key}": ${written},`);
+      expect(() => dmsDatabaseId(), `${key}: ${written}`).to.throw(
+        StepRefusal,
+        new RegExp(`module "${key}" is not written as an object literal`),
+      );
+    }
+  });
+
+  it("is not refused for another module written as a version string", () => {
+    writeConfig(`    "@antelopejs/some-app": "^1.0.0",`);
     expect(dmsDatabaseId()).to.equal(undefined);
+  });
+
+  it("is the entry written as a literal, whatever another key of it holds", () => {
+    writeConfig(
+      `    "dms-database": { source: { type: "package", package: "x", version: "*" } },
+    "@antelopejs/dms-database": "^0.3.0",`,
+    );
+    expect(dmsDatabaseId()).to.equal("dms-database");
   });
 });

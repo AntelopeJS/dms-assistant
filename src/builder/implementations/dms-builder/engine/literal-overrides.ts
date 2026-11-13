@@ -17,6 +17,17 @@ export function hasUnreadableMember(owner: ObjectLiteralExpression): boolean {
   return owner.getProperties().some(hidesItsName);
 }
 
+/**
+ * The members of an object literal written after its last member with an unreadable name. A later
+ * key wins over an earlier one, so these alone decide what the object holds for the keys they name.
+ */
+export function readableTail(
+  owner: ObjectLiteralExpression,
+): ObjectLiteralElementLike[] {
+  const members = owner.getProperties();
+  return members.slice(members.findLastIndex(hidesItsName) + 1);
+}
+
 /** Whether `node` is an object literal whose every member the builder reads by its name, as written. */
 export function isPlainObjectLiteral(
   node: Node | undefined,

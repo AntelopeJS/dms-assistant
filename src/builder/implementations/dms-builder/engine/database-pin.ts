@@ -1,7 +1,7 @@
 import type { InterfaceConnection } from "@antelopejs/interface-core";
 import type { ImportOverrideInput } from "@antelopejs/interface-dms-builder";
 import { Node, type ObjectLiteralExpression, SyntaxKind } from "ts-morph";
-import { propertyNamed } from "./modules";
+import { propertyKey, propertyNamed } from "./modules";
 import { moduleConnections, ownModuleId } from "./own-connections";
 import { DATABASE_INTERFACE } from "./interface-ids";
 import {
@@ -17,6 +17,7 @@ import {
   hides,
   isPlainObjectLiteral,
   overridesWrittenAsLiterals,
+  readableTail,
 } from "./literal-overrides";
 
 const DEFAULT_PRIORITY = 0;
@@ -128,6 +129,32 @@ export function defaultDatabaseProvider(
   return ranked[0]?.id;
 }
 
+/** Whether `overrides` holds a plain pin of `interface-database`, written as a literal override without an id. */
+function pinsIn(overrides: Node | undefined): boolean {
+  return readableOverrides(overrides).some(
+    (override) =>
+      override.interface === DATABASE_INTERFACE && override.id === undefined,
+  );
+}
+
+/**
+ * Whether an entry the builder cannot read in full pins `interface-database` all the same: a plain
+ * pin in `importOverrides` written after the entry's last member with an unreadable name is what the
+ * module runs with, whatever a spread before it holds.
+ */
+function pinsAfterUnreadable(entry: Node | undefined): boolean {
+  if (!Node.isObjectLiteralExpression(entry)) {
+    return false;
+  }
+  const overrides = readableTail(entry)
+    .filter(Node.isPropertyAssignment)
+    .find(
+      (property) => propertyKey(property.getNameNode()) === IMPORT_OVERRIDES,
+    )
+    ?.getInitializer();
+  return pinsIn(overrides);
+}
+
 /**
  * Whether a module pins `interface-database` itself, by an override without an id written as
  * literals: a named connection is not a pin. When it does not, a pin has to be written there, which
@@ -136,12 +163,7 @@ export function defaultDatabaseProvider(
  */
 function pinsDatabase(id: string, entry: ObjectLiteralExpression): boolean {
   const overrides = propertyNamed(entry, IMPORT_OVERRIDES);
-  if (
-    readableOverrides(overrides).some(
-      (override) =>
-        override.interface === DATABASE_INTERFACE && override.id === undefined,
-    )
-  ) {
+  if (pinsIn(overrides)) {
     return true;
   }
   if (
@@ -213,8 +235,8 @@ function defaultAmong(
 /**
  * Whether a module needs the pin: it imports `interface-database` and neither provides it nor
  * pins it. Refused when its entry is not an object literal with no spread, a version string or a
- * constant for one, or when its overrides cannot be read, so that a pin is never written without
- * the others.
+ * constant for one, unless a plain pin is written after its last spread; or when its overrides
+ * cannot be read, so that a pin is never written without the others.
  */
 function needsPin(
   lookup: ConnectionLookup,
@@ -230,6 +252,9 @@ function needsPin(
     return false;
   }
   if (!isPlainObjectLiteral(entry)) {
+    if (pinsAfterUnreadable(entry)) {
+      return false;
+    }
     throw new StepRefusal(
       `module "${id}" is not written as an object literal and imports ${DATABASE_INTERFACE}, so the builder cannot pin it to "${ownDatabase}": write its entry as an object with the pin, importOverrides: { "${DATABASE_INTERFACE}": "${ownDatabase}" }, then try again`,
     );

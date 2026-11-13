@@ -173,9 +173,27 @@ function signal(pids, name) {
   }
 }
 
+/**
+ * Stops the sidecar that holds the lock with a graceful exit, which its owner
+ * does not respawn, and waits until it has exited.
+ */
+async function shutDownLockHolder() {
+  const lock = readLock();
+  if (lock === null) return;
+  try {
+    await fetch(`http://127.0.0.1:${lock.port}/shutdown`);
+  } catch {
+    return;
+  }
+  await waitFor(() => !isRunning(lock.pid), "the lock holder to exit").catch(
+    () => undefined,
+  );
+}
+
 afterEach(async () => {
   const pids = [...startedPids];
   startedPids.clear();
+  await shutDownLockHolder();
   signal(pids, "SIGTERM");
   await waitFor(
     () => !pids.some(isRunning),
@@ -188,7 +206,7 @@ afterEach(async () => {
 
 after(() => {
   process.chdir(os.tmpdir());
-  fs.rmSync(root, { recursive: true, force: true, maxRetries: 10 });
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 void test("a hot reload of the module keeps the running sidecar", async () => {

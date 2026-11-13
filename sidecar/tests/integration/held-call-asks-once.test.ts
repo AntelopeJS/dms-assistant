@@ -43,57 +43,53 @@ const REFUSED_FIRST: ScriptedCall = {
   answer: { text: coreRefusalText(), isError: true },
 };
 
-describe("a deletion the DMS holds, in a chat turn", () => {
-  let harness: WsHarness | undefined;
-  let dir: string | undefined;
+let harness: WsHarness | undefined;
+let dir: string | undefined;
 
-  afterEach(async () => {
-    CLAUDE_FIXTURE.reset();
-    await harness?.close();
-    harness = undefined;
-    if (dir !== undefined) await rm(dir, { recursive: true, force: true });
-    dir = undefined;
+afterEach(async () => {
+  CLAUDE_FIXTURE.reset();
+  await harness?.close();
+  harness = undefined;
+  if (dir !== undefined) await rm(dir, { recursive: true, force: true });
+  dir = undefined;
+});
+
+async function runTurn(
+  calls: readonly ScriptedCall[],
+  decision: string,
+): Promise<WireMessage[]> {
+  dir = await mkdtemp(join(tmpdir(), "dms-ai-held-call-"));
+  CLAUDE_FIXTURE.use("plain");
+  process.env.MOCK_CLAUDE_SCRIPT = await writeClaudeScript(dir, "held", calls);
+  harness = await startWsHarness({ provider: "claude" });
+  const client = await openChat(harness.port);
+  const collected = collectUntil(client, {
+    timeoutMs: RUN_TIMEOUT_MS,
+    until: (msg) => msg.type === "run_done",
+    onMessage: (msg, socket) => {
+      if (msg.type === "permission_request") {
+        answerPermission(socket, msg, decision);
+      }
+    },
   });
+  sendHello(client, CONVERSATION_ID);
+  sendUserMessage(client, CONVERSATION_ID, "delete the orders table");
+  const events = await collected;
+  client.close();
+  return events;
+}
 
-  async function runTurn(
-    calls: readonly ScriptedCall[],
-    decision: string,
-  ): Promise<WireMessage[]> {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-held-call-"));
-    CLAUDE_FIXTURE.use("plain");
-    process.env.MOCK_CLAUDE_SCRIPT = await writeClaudeScript(
-      dir,
-      "held",
-      calls,
-    );
-    harness = await startWsHarness({ provider: "claude" });
-    const client = await openChat(harness.port);
-    const collected = collectUntil(client, {
-      timeoutMs: RUN_TIMEOUT_MS,
-      until: (msg) => msg.type === "run_done",
-      onMessage: (msg, socket) => {
-        if (msg.type === "permission_request") {
-          answerPermission(socket, msg, decision);
-        }
-      },
-    });
-    sendHello(client, CONVERSATION_ID);
-    sendUserMessage(client, CONVERSATION_ID, "delete the orders table");
-    const events = await collected;
-    client.close();
-    return events;
-  }
+async function cardsOf(
+  calls: readonly ScriptedCall[],
+  decision: string,
+): Promise<unknown[][]> {
+  const events = await runTurn(calls, decision);
+  return events
+    .filter((msg) => msg.type === "permission_request")
+    .map((msg) => [msg.callId, msg.kind]);
+}
 
-  async function cardsOf(
-    calls: readonly ScriptedCall[],
-    decision: string,
-  ): Promise<unknown[][]> {
-    const events = await runTurn(calls, decision);
-    return events
-      .filter((msg) => msg.type === "permission_request")
-      .map((msg) => [msg.callId, msg.kind]);
-  }
-
+describe("a deletion the DMS holds, in a chat turn", () => {
   it.each([PERMISSION_DECISIONS.ALLOW_ONCE, PERMISSION_DECISIONS.DENY])(
     "lets the first call through and asks the person once, on its repeat, answered %s (fails a chat that never asks or asks twice)",
     async (decision) => {
@@ -129,6 +125,37 @@ describe("a deletion the DMS holds, in a chat turn", () => {
     TEST_TIMEOUT_MS,
   );
 
+  it(
+    "asks once per held call when the approved repeat runs and fails, then the agent retries (fails a hold kept after a run that failed)",
+    async () => {
+      const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+      const call = (id: string, failure?: string): ScriptedCall => {
+        const refusal = gate.hold("builder_delete_resource", ARGS)?.content[0];
+        const answer =
+          refusal === undefined
+            ? { text: failure ?? RAN.text, isError: failure !== undefined }
+            : { text: refusal.text, isError: true };
+        return { id, name: DELETE, input: ARGS, answer };
+      };
+      const cards = await cardsOf(
+        [
+          call("first"),
+          call("repeat-fails", '{"ok":false,"error":{"code":"in_use"}}'),
+          call("retry"),
+          call("retry-repeat"),
+        ],
+        PERMISSION_DECISIONS.ALLOW_ONCE,
+      );
+      expect(cards.map(([callId]) => callId)).toEqual([
+        "repeat-fails",
+        "retry-repeat",
+      ]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+});
+
+describe("the step and the audit of a call the DMS held", () => {
   it(
     "shows the refused first call as held, and audits one deletion, the asked one (fails a held call reported or audited as a failure)",
     async () => {

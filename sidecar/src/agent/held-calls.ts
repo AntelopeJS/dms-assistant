@@ -26,7 +26,7 @@ interface Hold {
  * whole sidecar, as the DMS keeps them for every session.
  */
 export interface HeldCalls {
-  /** A call is held by its `held` outcome and released once it ran. */
+  /** A call is held by its `held` outcome and released once it ran, success or failure. */
   observe(call: ToolCallSubject, outcome: ToolOutcome): void;
   /**
    * Whether the call's tool has a held call pending, whatever the call's
@@ -91,12 +91,25 @@ export function isHoldRefusal(
 }
 
 /**
+ * What a call's end does to its hold. The DMS consumes its hold once the call
+ * ran, whether it then succeeded or failed. A call that never reached the
+ * DMS, declined by the person, blocked or stopped first, leaves it held, as
+ * the DMS still runs the next identical call.
+ */
+const HOLD_BY_OUTCOME: Record<ToolOutcome, "hold" | "release" | "keep"> = {
+  held: "hold",
+  done: "release",
+  failed: "release",
+  denied: "keep",
+  blocked: "keep",
+  stopped: "keep",
+};
+
+/**
  * A refused call stays held for the DMS's whole window, counted from when its
- * refusal arrived, so never for less time than the DMS holds it. Any other
- * failure, a refusal by the person included, leaves it held: the DMS still
- * runs the next identical call. Only a run with the same arguments releases
- * it, so a run the chat cannot match to it costs one more question, never a
- * missing one.
+ * refusal arrived, so never for less time than the DMS holds it. Only a run
+ * with the same arguments releases it, so a run the chat cannot match to it
+ * costs one more question, never a missing one.
  */
 export function createHeldCalls(now: () => number = Date.now): HeldCalls {
   const holdByCall = new Map<string, Hold>();
@@ -110,12 +123,13 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
       if (!isDmsTool(call.toolName)) return;
       const at = now();
       dropExpired(at);
-      if (outcome === "held") {
+      const effect = HOLD_BY_OUTCOME[outcome];
+      if (effect === "hold") {
         holdByCall.set(callKey(call), {
           tool: bareToolName(call.toolName),
           expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
         });
-      } else if (outcome === "done") {
+      } else if (effect === "release") {
         holdByCall.delete(callKey(call));
       }
     },

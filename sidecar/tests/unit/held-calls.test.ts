@@ -104,17 +104,23 @@ describe("held calls", () => {
     ).toBe(false);
   });
 
-  it("releases the call once it ran (fails a hold that makes the next identical call ask twice)", () => {
-    const { held } = heldAfterRefusal();
-    held.observe(HELD, "done");
-    expect(held.isHeld(HELD)).toBe(false);
-  });
+  it.each(["done", "failed"] as const)(
+    "releases the call once it ran and ended %s, as the DMS consumed its hold (fails a hold kept after a run that failed)",
+    (outcome) => {
+      const { held } = heldAfterRefusal();
+      held.observe(HELD, outcome);
+      expect(held.isHeld(HELD)).toBe(false);
+    },
+  );
 
-  it("keeps the call held after the person declined it (fails a release that lets the next identical call run unasked)", () => {
-    const { held } = heldAfterRefusal();
-    held.observe(HELD, "denied");
-    expect(held.isHeld(HELD)).toBe(true);
-  });
+  it.each(["denied", "blocked", "stopped"] as const)(
+    "keeps the call held after it ended %s without reaching the DMS (fails a release that lets the next identical call run unasked)",
+    (outcome) => {
+      const { held } = heldAfterRefusal();
+      held.observe(HELD, outcome);
+      expect(held.isHeld(HELD)).toBe(true);
+    },
+  );
 
   it("keeps the call held for as long as the DMS runs its repeat (fails a window shorter than the DMS's)", () => {
     let nowMs = 0;

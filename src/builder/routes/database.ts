@@ -16,6 +16,7 @@ import type {
   ProjectConfigStep,
 } from "@antelopejs/interface-dms-builder";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
+import { type ConnectionCheckBody, runConnectionCheck } from "./database-check";
 import * as engine from "../implementations/dms-builder";
 import {
   catalogOf,
@@ -23,8 +24,9 @@ import {
 } from "../implementations/dms-builder/engine/catalog-connection";
 import {
   type DatabasePin,
-  dmsDatabasePin,
+  databasePins,
 } from "../implementations/dms-builder/engine/database-pin";
+import { dmsDatabaseId } from "../implementations/dms-builder/engine/dms-database";
 import { configuredModuleIds } from "../implementations/dms-builder/engine/modules";
 import { ownModuleId } from "../implementations/dms-builder/engine/own-connections";
 import {
@@ -34,6 +36,7 @@ import {
   setConnectionUrl,
 } from "../implementations/dms-builder/engine/database-connection";
 import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
+import { repairDatabaseConnections } from "../implementations/dms-builder/engine/database-repair";
 import { latestAnalysis } from "../implementations/dms-builder/engine/analysis-job";
 import {
   configureProjectWithVariables,
@@ -45,6 +48,10 @@ const HTTP_REFUSED = 422;
 
 interface RemoveConnectionBody {
   connection: string;
+  dryRun?: boolean;
+}
+
+interface RepairConnectionsBody {
   dryRun?: boolean;
 }
 
@@ -65,12 +72,17 @@ interface ProjectBody {
   variables?: ProjectVariable[];
 }
 
-/** The modules the project's configuration lists, by id, and the pin connecting a database needs. */
+/** The modules the project's configuration lists, by id, and the pins connecting a database needs. */
 interface ProjectModules {
   modules: string[];
   /** This module's id in `antelope.config.ts`, where a catalog connection is declared. */
   self: string;
-  databasePin?: DatabasePin;
+  /** The project's own `interface-database` provider, when it has one. */
+  ownDatabase?: string;
+  /** The modules to pin to the own database before another one is connected. */
+  databasePins: DatabasePin[];
+  /** The id `antelope.config.ts` gives dms-database, when the project has it. */
+  dmsDatabase?: string;
 }
 
 /** One of the builder's catalog connections, with what its provider answers about it. */
@@ -112,6 +124,27 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
       entries.push(await connectionEntry(id));
     }
     return entries;
+  }
+
+  /**
+   * Repairs the connections made before the connect flow registered them with dms-database: adds
+   * what the configuration is missing, and answers an empty success when nothing is.
+   */
+  @Post(ROUTES.databaseConnectionsRepair)
+  async repairConnections(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: RepairConnectionsBody | undefined,
+  ) {
+    return repairDatabaseConnections({ dryRun: body?.dryRun });
+  }
+
+  /** Tests a database live, before the connection is written: owner only, and in development only. */
+  @Post(ROUTES.databaseConnectionsCheck)
+  async checkConnection(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: ConnectionCheckBody,
+  ) {
+    return runConnectionCheck(body);
   }
 
   @Post(ROUTES.databaseAnalyse)
@@ -161,10 +194,13 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
   ): Promise<ProjectModules | HTTPResult> {
     try {
+      const { ownDatabase, pins } = databasePins();
       return {
         modules: configuredModuleIds(),
         self: ownModuleId(),
-        databasePin: dmsDatabasePin(),
+        ownDatabase,
+        databasePins: pins,
+        dmsDatabase: dmsDatabaseId(),
       };
     } catch (error) {
       if (isConnectionRefusal(error)) {

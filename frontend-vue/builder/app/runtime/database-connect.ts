@@ -104,12 +104,19 @@ export interface ManagedNames {
 	version: string
 }
 
+/** What dms-database may do with a connection: read it, or write to it as well. */
+export type ConnectionAccess = 'read' | 'read-write'
+
+const DEFAULT_ACCESS: ConnectionAccess = 'read'
+
 export interface ConnectForm {
 	name: string
 	engine: DatabaseEngine
 	fields: ConnectionFields
 	/** The managed names the integrator changed; the others follow the name. */
 	overrides: Partial<ManagedNames>
+	/** What dms-database may do with the connection; `read` when not chosen. */
+	access?: ConnectionAccess
 }
 
 export function emptyFields(engine: DatabaseEngine): ConnectionFields {
@@ -322,9 +329,36 @@ export function detailsFields(details: ConnectionDetails): ConnectionFields {
 }
 
 /**
+ * What registers the connection with dms-database, so its console can list and browse it: the
+ * project's own database first, which a plain import of `interface-database` reaches, then the
+ * connection on `interface-database` and on the catalog under the same id, and the access it is
+ * given.
+ */
+function dmsDatabaseStep(
+	dmsDatabase: string,
+	ownDatabase: string,
+	connection: { id: string; driverModule: string; access: ConnectionAccess },
+): ProjectConfigStep {
+	const { id, driverModule, access } = connection
+	return {
+		op: 'ConfigureModule',
+		id: dmsDatabase,
+		entry: {
+			importOverrides: [
+				{ interface: DATABASE_INTERFACE, source: ownDatabase },
+				{ interface: DATABASE_INTERFACE, source: driverModule, id },
+				{ interface: CATALOG_INTERFACE, source: driverModule, id },
+			],
+			config: { externalConnections: { [id]: { access } } },
+		},
+	}
+}
+
+/**
  * The `ConfigureProject` batch that wires the database into the project: its driver, the module
  * for its tables, a catalog connection for dms-assistant (the builder and the assistant read the
- * same one), and the DMS module's pin to the project's own database when it needs one.
+ * same one), its registration with dms-database when the project has it and an own database, and a
+ * pin to the project's own database for each module that imports `interface-database` without one.
  */
 export function connectSteps(form: ConnectForm, project: ProjectModules): ProjectConfigStep[] {
 	const id = connectionId(form.name)
@@ -334,8 +368,16 @@ export function connectSteps(form: ConnectForm, project: ProjectModules): Projec
 		tablesStep(id, names),
 		{ op: 'ConfigureModule', id: project.self ?? DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
 	]
-	if (project.databasePin) {
-		const { module, provider } = project.databasePin
+	if (project.dmsDatabase && project.ownDatabase) {
+		steps.push(
+			dmsDatabaseStep(project.dmsDatabase, project.ownDatabase, {
+				id,
+				driverModule: names.driverModule,
+				access: form.access ?? DEFAULT_ACCESS,
+			}),
+		)
+	}
+	for (const { module, provider } of project.databasePins ?? []) {
 		steps.push({
 			op: 'ConfigureModule',
 			id: module,

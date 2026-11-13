@@ -213,20 +213,25 @@ export type ProjectConfigStep =
 	| { op: 'CreateLocalModule'; id: string; path: string; entry?: ModuleEntryInput; connection?: string }
 
 /**
- * The `interface-database` pin the DMS module needs so the tables module's own pin to the new
- * database leaves the DMS on the project's default one.
+ * The `interface-database` pin a module needs so the tables module's own pin to the new database
+ * leaves it on the project's default one.
  */
 export interface DatabasePin {
 	module: string
 	provider: string
 }
 
-/** The modules the project's configuration lists, and the pin connecting a database needs, if any. */
+/** The modules the project's configuration lists, and what connecting a database needs of them. */
 export interface ProjectModules {
 	modules: string[]
 	/** The id `antelope.config.ts` gives dms-assistant, which holds the catalog connections. */
 	self?: string
-	databasePin?: DatabasePin
+	/** The project's own `interface-database` provider, when it has one. */
+	ownDatabase?: string
+	/** The modules to pin to the own database, each one importing `interface-database` without a pin. */
+	databasePins?: DatabasePin[]
+	/** The id `antelope.config.ts` gives dms-database, whose console lists the connections registered with it. */
+	dmsDatabase?: string
 }
 
 /** A variable's development value, sent with the batch that maps it and written into `.env` first. */

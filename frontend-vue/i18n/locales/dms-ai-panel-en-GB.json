@@ -403,7 +403,9 @@
 				"close": "Close",
 				"open_pages": "Open the pages",
 				"title_failed": "“{mockup}” did not build",
-				"title_stopped": "Build of “{mockup}” stopped"
+				"title_stopped": "Build of “{mockup}” stopped",
+				"message_into": "Build mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one.",
+				"failures": "Checks that did not pass"
 			}
 		},
 		"tools": {
@@ -467,7 +469,8 @@
 			"configure_query": "Configure query",
 			"remove_query": "Remove query",
 			"search_tools": "Load tools",
-			"show_preview": "Show a preview"
+			"show_preview": "Show a preview",
+			"verify_page": "Verifying the page"
 		}
 	}
 }

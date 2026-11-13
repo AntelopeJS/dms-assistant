@@ -92,6 +92,18 @@ function onOpenChange(isOpen: boolean): void {
 						</span>
 					</li>
 				</ol>
+				<section
+					v-if="view.failures.length > 0"
+					class="cb-build__failures"
+					:aria-label="t('dms_ai.panel.build.failures')"
+				>
+					<b>{{ t("dms_ai.panel.build.failures") }}</b>
+					<ul>
+						<li v-for="failure in view.failures" :key="failure">
+							{{ failure }}
+						</li>
+					</ul>
+				</section>
 				<BlockPreviewCard
 					v-if="view.comparison"
 					:preview="view.comparison.preview"
@@ -174,6 +186,29 @@ function onOpenChange(isOpen: boolean): void {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.cb-build__failures {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 10px;
+	border: 1px solid var(--ui-border);
+	border-radius: var(--ai-radius-sm);
+	background: var(--dms-bg-muted);
+	font-size: 12.5px;
+	color: var(--ui-text-toned);
+}
+
+.cb-build__failures b {
+	color: var(--ui-error);
+	font-weight: 600;
+}
+
+.cb-build__failures ul {
+	margin: 0;
+	padding-left: 16px;
+	font: 450 11.5px var(--ai-font-mono);
 }
 
 .cb-build__foot {

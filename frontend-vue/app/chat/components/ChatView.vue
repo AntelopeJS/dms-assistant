@@ -169,8 +169,15 @@ const mockup = useMockupIntents({
 	newConversation,
 	setDraft,
 	whenConnected,
-	requestBuild: (name) =>
-		sendUserMessage(t("dms_ai.panel.build.message", { mockup: name })),
+	requestBuild: (target) =>
+		sendUserMessage(
+			target.pageRef === undefined
+				? t("dms_ai.panel.build.message", { mockup: target.mockup })
+				: t("dms_ai.panel.build.message_into", {
+						mockup: target.mockup,
+						page: target.pageRef,
+					}),
+		),
 	navigate,
 });
 const outlinedBlock = computed(() =>

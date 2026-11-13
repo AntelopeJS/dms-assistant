@@ -403,7 +403,9 @@
 				"close": "Fermer",
 				"open_pages": "Ouvrir les pages",
 				"title_failed": "« {mockup} » n’a pas pu être construite",
-				"title_stopped": "Construction de « {mockup} » arrêtée"
+				"title_stopped": "Construction de « {mockup} » arrêtée",
+				"message_into": "Construis la maquette {mockup} dans la page existante {page} avec le skill dms-mockup-build. Mets cette page à jour ; n’en crée pas de nouvelle.",
+				"failures": "Vérifications en échec"
 			}
 		},
 		"tools": {
@@ -467,7 +469,8 @@
 			"configure_query": "Configurer la requête",
 			"remove_query": "Retirer la requête",
 			"search_tools": "Charger des outils",
-			"show_preview": "Montrer un aperçu"
+			"show_preview": "Montrer un aperçu",
+			"verify_page": "Vérification de la page"
 		}
 	}
 }

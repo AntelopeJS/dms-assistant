@@ -172,8 +172,14 @@ describe("block preview helpers", () => {
 		});
 	});
 
-	it("loads a same-origin path, links an external URL, ignores the rest", () => {
+	it("loads a same-origin path, frames the mockup viewer, links an external URL, ignores the rest (fails when the mockup viewer is drawn as a broken image)", () => {
 		expect(referenceView({ url: "/media/a.png" }, [])?.kind).toBe("image");
+		expect(referenceView({ url: "/mockup?name=bikes&page=home" }, [])).toEqual({
+			kind: "page",
+			src: "/mockup?name=bikes&page=home",
+		});
+		expect(referenceView({ url: "/mockup/bikes" }, [])?.kind).toBe("page");
+		expect(referenceView({ url: "/mockups/a.png" }, [])?.kind).toBe("image");
 		expect(referenceView({ url: "https://x.example/a.png" }, [])?.kind).toBe(
 			"link",
 		);

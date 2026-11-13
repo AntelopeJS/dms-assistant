@@ -5,7 +5,11 @@ import type {
 	MockupPromptIntent,
 } from "../../runtime/panel-intents";
 import type { ConversationMessage } from "../types/conversation";
-import { type BuildView, buildView } from "../utils/build-view";
+import {
+	type BuildTarget,
+	type BuildView,
+	buildView,
+} from "../utils/build-view";
 
 export interface MockupIntentsDeps {
 	activeId: Readonly<Ref<string>>;
@@ -14,13 +18,13 @@ export interface MockupIntentsDeps {
 	newConversation: () => void;
 	setDraft: (text: string) => void;
 	whenConnected: (run: () => void) => void;
-	/** Sends the message that asks the agent to build `mockup`. */
-	requestBuild: (mockup: string) => void;
+	/** Sends the message that asks the agent to build `target`. */
+	requestBuild: (target: BuildTarget) => void;
 	navigate: (path: string) => void;
 }
 
 interface Building {
-	mockup: string;
+	target: BuildTarget;
 	conversationId: string;
 }
 
@@ -45,7 +49,7 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		const current = building.value;
 		if (current === null || current.conversationId !== deps.activeId.value)
 			return null;
-		return buildView(current.mockup, deps.messages.value, deps.isRunning.value);
+		return buildView(current.target, deps.messages.value, deps.isRunning.value);
 	});
 
 	function takePrompt(intent: MockupPromptIntent): void {
@@ -56,11 +60,12 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 
 	function startBuild(intent: BuildMockupIntent): void {
 		deps.newConversation();
-		building.value = {
-			mockup: intent.mockup,
-			conversationId: deps.activeId.value,
-		};
-		deps.whenConnected(() => deps.requestBuild(intent.mockup));
+		const target: BuildTarget =
+			intent.pageRef === undefined
+				? { mockup: intent.mockup }
+				: { mockup: intent.mockup, pageRef: intent.pageRef };
+		building.value = { target, conversationId: deps.activeId.value };
+		deps.whenConnected(() => deps.requestBuild(target));
 	}
 
 	/** The block of the message being sent, as its extra fields; the chip goes with it. */

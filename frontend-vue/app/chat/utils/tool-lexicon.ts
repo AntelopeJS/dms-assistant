@@ -503,10 +503,21 @@ const BUILDER_TOOLS: Record<string, ToolLexiconEntry> = {
 	},
 };
 
+/** Tools of the DMS's own development MCP server. */
+const DMS_TOOLS: Record<string, ToolLexiconEntry> = {
+	page_verify: {
+		verb: "verify_page",
+		icon: ICONS.CHECK,
+		target: firstOf("page"),
+		isReadOnly: true,
+	},
+};
+
 const LEXICON: Record<string, ToolLexiconEntry> = {
 	...CLAUDE_TOOLS,
 	...ASSISTANT_TOOLS,
 	...BUILDER_TOOLS,
+	...DMS_TOOLS,
 };
 
 /** Every verb key the lexicon uses, so the locale files can be checked. */

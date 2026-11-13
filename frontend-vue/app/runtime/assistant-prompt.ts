@@ -30,10 +30,15 @@ const BlockPromptSchema = z.object({
 	source: PromptSourceSchema,
 });
 
-/** "Build it": `prompt` is the name of the mockup to build, and no block is sent. */
+/**
+ * "Build it": `prompt` is the name of the mockup to build, and no block is
+ * sent. `target.pageRef` names an existing page to build into ("Edit as
+ * mockup"), which the build updates instead of creating a page.
+ */
 const BuildPromptSchema = z.object({
 	prompt: NameSchema,
 	source: z.literal("build"),
+	target: z.optional(z.object({ pageRef: NameSchema })),
 });
 
 /** The `detail` of {@link MOCKUP_ASSISTANT_PROMPT_EVENT}. Mirrors `MockupAssistantPrompt` of dms. */

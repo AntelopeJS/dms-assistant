@@ -39,10 +39,14 @@ export interface MockupPromptIntent {
 	block?: MockupBlock;
 }
 
-/** Builds a mockup into real pages through a turn, followed in the build dialog. */
+/**
+ * Builds a mockup into real pages through a turn, followed in the build
+ * dialog; into the existing page `pageRef` when given, rather than a new one.
+ */
 export interface BuildMockupIntent {
 	kind: "build";
 	mockup: string;
+	pageRef?: string;
 }
 
 export type PanelIntent =

@@ -5,6 +5,7 @@ import type {
 	ToolCallMessage,
 } from "../types/conversation";
 import { type ReferenceView, referenceView } from "./block-preview";
+import { lastPageVerify } from "./page-verify-report";
 import { latestTodos, type TodoItem } from "./todos";
 import {
 	bareToolName,
@@ -20,8 +21,8 @@ export type BuildStepState =
 	| "stopped";
 
 /**
- * Where the build stands: still running, built, ended on an error or a failed
- * last step, or stopped before it finished.
+ * Where the build stands: still running, built, failed (it ended on an error,
+ * or its last page check did not pass), or stopped before it finished.
  */
 export type BuildOutcome = "running" | "built" | "failed" | "stopped";
 
@@ -39,7 +40,9 @@ export interface BuildView {
 	/** The mockup that comparison is drawn against. */
 	reference: ReferenceView | null;
 	outcome: BuildOutcome;
-	/** The last dashboard page the build worked on, to open once it is done. */
+	/** The failed checks of the build's last page check, by page. */
+	failures: string[];
+	/** The page to open once built: the page built into, else the last one the build worked on. */
 	pagePath: string | null;
 }
 
@@ -84,6 +87,7 @@ function toolState(tool: ToolCallMessage, isRunning: boolean): BuildStepState {
 function outcomeOf(
 	turn: readonly ConversationMessage[],
 	isRunning: boolean,
+	isVerified: boolean,
 ): BuildOutcome {
 	if (isRunning || turn.length === 0) return "running";
 	if (turn.some((message) => message.role === MESSAGE_ROLES.ERROR))
@@ -91,10 +95,7 @@ function outcomeOf(
 	const calls = turn.filter(isToolCall);
 	if (calls.some((tool) => toolState(tool, false) === "stopped"))
 		return "stopped";
-	const last = calls.at(-1);
-	return last !== undefined && toolState(last, false) === "failed"
-		? "failed"
-		: "built";
+	return isVerified ? "built" : "failed";
 }
 
 function stepsOf(
@@ -131,13 +132,20 @@ function pageOf(tool: ToolCallMessage): string | null {
 	return null;
 }
 
-/** The build dialog's view of the turn that builds `mockup`. */
+/** The build of one mockup: its name, and the existing page it is built into, if any. */
+export interface BuildTarget {
+	mockup: string;
+	pageRef?: string;
+}
+
+/** The build dialog's view of the turn that builds `target`. */
 export function buildView(
-	mockup: string,
+	target: BuildTarget,
 	messages: readonly ConversationMessage[],
 	isRunning: boolean,
 ): BuildView {
 	const turn = sinceLastRequest(messages);
+	const check = lastPageVerify(turn.filter(isToolCall));
 	const previews = turn.filter(
 		(message): message is BlockPreviewMessage =>
 			message.role === MESSAGE_ROLES.BLOCK_PREVIEW,
@@ -148,14 +156,18 @@ export function buildView(
 		.filter((page) => page !== null);
 	const comparison = previews.at(-1) ?? null;
 	return {
-		mockup,
+		mockup: target.mockup,
 		steps: stepsOf(turn, isRunning),
 		comparison,
 		reference:
 			comparison === null
 				? null
 				: referenceView(comparison.preview.reference, messages),
-		outcome: outcomeOf(turn, isRunning),
-		pagePath: pages.at(-1) ?? null,
+		outcome: outcomeOf(turn, isRunning, check?.ok ?? true),
+		failures: check?.failures ?? [],
+		pagePath:
+			target.pageRef?.startsWith(PAGE_PATH_PREFIX) === true
+				? target.pageRef
+				: (pages.at(-1) ?? null),
 	};
 }

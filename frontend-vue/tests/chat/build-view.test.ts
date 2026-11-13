@@ -5,6 +5,19 @@ import type {
 } from "../../app/chat/types/conversation";
 import { buildView } from "../../app/chat/utils/build-view";
 
+const BIKES = { mockup: "bikes" };
+
+function report(ok: boolean, failures: string[]) {
+	return { ok, pages: [{ page: "/rentals", ok, failures }] };
+}
+
+function verify(ok: boolean, failures: string[]): ToolCallMessage {
+	return {
+		...tool(`v-${String(ok)}`, "mcp__dms__page_verify", { page: "/rentals" }),
+		result: [{ type: "text", text: JSON.stringify(report(ok, failures)) }],
+	};
+}
+
 const request: ConversationMessage = {
 	id: "u1",
 	role: "user",
@@ -48,7 +61,7 @@ describe("the build dialog's view of a build turn", () => {
 		const call = tool("c1", "mcp__dms-ai__builder_page_structure", {
 			page: "/rentals",
 		});
-		const withTodos = buildView("bikes", [request, call, todos], true);
+		const withTodos = buildView(BIKES, [request, call, todos], true);
 		expect(
 			withTodos.steps.map((step) =>
 				step.kind === "todo" ? [step.text, step.state] : null,
@@ -57,20 +70,20 @@ describe("the build dialog's view of a build turn", () => {
 			["Create the pages", "done"],
 			["Comparing with the mockup", "running"],
 		]);
-		const withCalls = buildView("bikes", [request, call], true);
+		const withCalls = buildView(BIKES, [request, call], true);
 		expect(withCalls.steps.map((step) => step.kind)).toEqual(["tool"]);
 	});
 
 	it("only counts the turn since the build request (fails when an earlier turn's calls show)", () => {
 		const earlier = tool("c0", "Read", { file_path: "/a.ts" });
-		const view = buildView("bikes", [earlier, request], true);
+		const view = buildView(BIKES, [earlier, request], true);
 		expect(view.steps).toEqual([]);
 		expect(view.outcome).toBe("running");
 	});
 
 	it("opens the last page the build worked on, once done (fails when a non-Builder path or the block part is kept)", () => {
 		const view = buildView(
-			"bikes",
+			BIKES,
 			[
 				request,
 				tool("c1", "mcp__dms-ai__builder_add_block", { page: "/rentals#grid" }),
@@ -84,7 +97,7 @@ describe("the build dialog's view of a build turn", () => {
 
 	it("shows a failed call as failed, and a call left open by the end of the turn as stopped (fails when a stopped call reads as done)", () => {
 		const view = buildView(
-			"bikes",
+			BIKES,
 			[
 				request,
 				tool("c1", "Bash", { command: "tsc" }, "error"),
@@ -104,31 +117,51 @@ describe("the build dialog's view of a build turn", () => {
 			isRetryable: true,
 			timestampMs: 0,
 		};
-		expect(buildView("bikes", [request, error], false).outcome).toBe("failed");
-		const lastFailed = buildView(
-			"bikes",
-			[
-				request,
-				tool("c1", "mcp__dms-ai__builder_create_page", { page: "/rentals" }),
-				tool("c2", "Bash", { command: "tsc" }, "error"),
-			],
-			false,
-		);
-		expect(lastFailed.outcome).toBe("failed");
+		expect(buildView(BIKES, [request, error], false).outcome).toBe("failed");
 	});
 
-	it("reads a build whose failed check was fixed later as built (fails when one failed step marks the whole build failed)", () => {
-		const view = buildView(
-			"bikes",
+	it("reads the outcome from the last page check, not the last call (fails when a failed check after a clean call reads as built)", () => {
+		const failing = verify(false, ["the table drew no rows"]);
+		const failed = buildView(
+			BIKES,
+			[request, failing, tool("c9", "mcp__dms-ai__builder_refresh", {})],
+			false,
+		);
+		expect(failed.outcome).toBe("failed");
+		expect(failed.failures).toEqual(["/rentals: the table drew no rows"]);
+		const fixed = buildView(
+			BIKES,
 			[
 				request,
-				tool("c1", "Bash", { command: "tsc" }, "error"),
-				tool("c2", "mcp__dms-ai__builder_configure_block", {
-					path: "/rentals#grid",
-				}),
+				failing,
+				tool("c2", "Bash", { command: "tsc" }, "error"),
+				verify(true, []),
 			],
 			false,
 		);
-		expect(view.outcome).toBe("built");
+		expect(fixed.outcome).toBe("built");
+		expect(fixed.failures).toEqual([]);
+	});
+
+	it("reads a report stored as text the way a reloaded chat keeps it (fails when only live content blocks are read)", () => {
+		const stored = {
+			...verify(false, ["blank page"]),
+			result: JSON.stringify(report(false, ["blank page"])),
+		};
+		expect(buildView(BIKES, [request, stored], false).failures).toEqual([
+			"/rentals: blank page",
+		]);
+	});
+
+	it("opens the page built into when the build has one (fails when the dialog opens the last page touched instead)", () => {
+		const view = buildView(
+			{ mockup: "bikes", pageRef: "/shop/board" },
+			[
+				request,
+				tool("c1", "mcp__dms-ai__builder_add_block", { page: "/rentals#grid" }),
+			],
+			false,
+		);
+		expect(view.pagePath).toBe("/shop/board");
 	});
 });

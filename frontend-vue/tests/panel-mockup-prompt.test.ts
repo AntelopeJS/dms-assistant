@@ -123,6 +123,43 @@ describe("a prompt handed to the panel", () => {
 	});
 });
 
+describe("building into an existing page", () => {
+	it("takes the page to build into from the event (fails when the target is dropped or a bad one is accepted)", () => {
+		const onPrompt = vi.fn();
+		const stop = installAssistantPromptListener(onPrompt);
+		const event = dispatch({
+			prompt: "bikes",
+			source: "build",
+			target: { pageRef: "/shop/board" },
+		});
+		const bad = dispatch({ prompt: "bikes", source: "build", target: {} });
+		stop();
+		expect(event.defaultPrevented).toBe(true);
+		expect(bad.defaultPrevented).toBe(false);
+		expect(onPrompt).toHaveBeenCalledOnce();
+		expect(onPrompt).toHaveBeenCalledWith({
+			prompt: "bikes",
+			source: "build",
+			target: { pageRef: "/shop/board" },
+		});
+	});
+
+	it("asks the agent to update that page rather than create one (fails when the request reads as a new build)", async () => {
+		const harness = createHarness();
+		await openPanel(harness);
+		harness.session.intents.push({
+			kind: "build",
+			mockup: "bikes",
+			pageRef: "/shop/board",
+		});
+		await flushPromises();
+		const [request] = sentOfType(harness, "user_message");
+		expect(request.content).toBe(
+			"Build mockup bikes into the existing page /shop/board with the dms-mockup-build skill. Update that page; do not create a new one.",
+		);
+	});
+});
+
 describe("a block sent while a turn runs", () => {
 	it("goes with the queued follow-up (fails when queueing drops the block the chip promised)", async () => {
 		const harness = createHarness();

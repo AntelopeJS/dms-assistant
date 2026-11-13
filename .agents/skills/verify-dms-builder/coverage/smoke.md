@@ -1,8 +1,9 @@
 # Coverage: smoke
 
-Docs: `1.introduction.md`. Journeys: `journeys/smoke.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `journeys/smoke.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |
-| dms-builder/docs/1.introduction.md:11 | Retitling a card rewrites its `title` in the page's `PageController` file, and the reloaded page shows it | smoke | POST /page/blocks answers ok with a new version; the card title is in page.ts; GetPageStructure reads it; the rebuilt page shows it |
-| dms-builder/docs/1.introduction.md:15 | The builder keeps no database of pages: it reads the sources | smoke | status projectRoot is the run copy; the other blocks are still in the file |
+| docs/8.database-connection.md:54 | `GET /api/builder/database/connections` answers the catalog connections of the project, `[]` before you connect one | smoke | 200 and an empty array for the owner |
+| docs/8.database-connection.md:69 | `GET /database/project` answers the configured modules and `self` | smoke | 200, the playground among the modules, `self` is `dms-assistant` |
+| docs/8.database-connection.md:9 | Every route requires an authenticated tenant owner | smoke | an anonymous read answers 401 |

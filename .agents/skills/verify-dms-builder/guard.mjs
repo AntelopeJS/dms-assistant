@@ -1,6 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, rmSync } from "node:fs";
-import { join } from "node:path";
 
 /** @typedef {import("./builder.mjs").Ctx} Ctx */
 /** @typedef {import("./builder.mjs").Tab} Tab */
@@ -106,31 +104,6 @@ function silenceOnboardingOnce(tab) {
   }, ONBOARDING);
 }
 
-const PRISTINE = ["src", "dist"];
-
-/**
- * Keeps the playground's sources as they were when the run started: the builder rewrites them, and a journey must
- * not see what an earlier one wrote. The first journey copies `src` and `dist` aside; every journey puts them back
- * when it ends.
- *
- * @param {Ctx} ctx The journey
- * @param {"keep" | "restore"} action Copy them aside once, or put them back
- */
-function pristine(ctx, action) {
-  const root = ctx.state.runPlayground;
-  if (!root) return;
-  const aside = join(ctx.state.dir, "pristine");
-  for (const name of PRISTINE) {
-    const live = join(root, name);
-    const kept = join(aside, name);
-    if (action === "keep" && !existsSync(kept) && existsSync(live)) cpSync(live, kept, { recursive: true });
-    if (action === "restore" && existsSync(kept)) {
-      rmSync(live, { recursive: true, force: true });
-      cpSync(kept, live, { recursive: true });
-    }
-  }
-}
-
 /**
  * Makes a check that fails because the environment went away NOT VERIFIED: before a step with a failing check is
  * recorded, the backend and the dashboard are probed, and when one is gone the journey ends with an error and no
@@ -171,12 +144,7 @@ export function guarded(journeys) {
         }
         return verify(label, results, options);
       };
-      pristine(ctx, "keep");
-      try {
-        await journey.run(ctx);
-      } finally {
-        pristine(ctx, "restore");
-      }
+      await journey.run(ctx);
     },
   }));
 }

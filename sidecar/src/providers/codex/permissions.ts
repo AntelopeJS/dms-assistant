@@ -124,10 +124,6 @@ function pendingMcpCall(
   return deps.getPendingMcpCalls().find((pending) => pending.id === callId);
 }
 
-/**
- * Whether an auto-allowed MCP call still asks the person: a block removal
- * while the setting says so, and the repeat of a call the DMS MCP holds.
- */
 function asksPerson(
   deps: CodexPermissionDeps,
   decision: ToolDecision,

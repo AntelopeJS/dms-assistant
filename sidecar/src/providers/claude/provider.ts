@@ -292,10 +292,6 @@ function allowAutomatically(
   return Promise.resolve(buildAllowResult(input));
 }
 
-/**
- * Whether a first-party MCP call still asks the person: a block removal while
- * the setting says so, and the repeat of a call the DMS MCP holds.
- */
 function asksPerson(
   deps: CanUseToolDeps,
   toolName: string,

@@ -44,14 +44,12 @@ const CODEX_DELETED_KIND = "delete";
 /** Argument keys of a Codex file change, set by its permission handler. */
 export const CODEX_CHANGE_KIND_ARG = "change_kind";
 export const CODEX_CHANGE_DIFF_ARG = "diff";
-/** Argument keys naming what a DMS MCP deletion deletes, most specific first. */
 const DELETION_TARGET_KEYS: readonly string[] = [
   "pageRef",
   "ref",
   "path",
   "query",
 ];
-/** The deletion that also clears the stored rows, unless its `keepData` is true. */
 const DATA_DELETING_TOOL_NAME: (typeof BUILDER_TOOL_NAMES)[number] =
   "builder_delete_resource";
 const KEEP_DATA_ARG = "keepData";
@@ -192,11 +190,6 @@ function commandPreview(options: ParsedOptions): CommandPreviewType {
   return { ...preview, effect: change.effect, touches: change.touches };
 }
 
-/**
- * What a deletion deletes, as the call's own arguments say: a table's rows go
- * with it unless the call keeps them, and only then does the card ask to type
- * its name.
- */
 function destructivePreview(options: ParsedOptions): DestructivePreviewType {
   const operation = bareToolName(options.toolName);
   const key = DELETION_TARGET_KEYS.find(

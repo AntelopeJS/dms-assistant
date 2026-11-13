@@ -17,11 +17,6 @@ interface PlayedTurn {
   heldCalls: HeldCalls;
 }
 
-/**
- * Runs a provider's events through the server's turn handling, with the turn
- * registry, edit tracker and held calls it really uses, and answers what the
- * turn and the held calls recorded.
- */
 export function playTurn(
   events: readonly RunnerEvent[],
   heldCalls: HeldCalls = createHeldCalls(),

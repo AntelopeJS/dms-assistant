@@ -10,8 +10,8 @@ import {
   MCP_JSON_INDENT,
   MCP_JSON_PRINT_WIDTH,
   PROJECT_MCP_JSON_FILE_NAME,
-  STALE_MCP_LAUNCHER,
-  STALE_MCP_SERVER_KEY,
+  PREVIOUS_VERSION_MCP_LAUNCHER,
+  PREVIOUS_VERSION_MCP_SERVER_KEY,
 } from "../constants/project-mcp";
 import {
   MODULE_ROOTS_TIMEOUT_MS,
@@ -22,7 +22,6 @@ const JsonObjectSchema = z.record(z.string(), z.json());
 type JsonObject = z.infer<typeof JsonObjectSchema>;
 type JsonValue = JsonObject[string];
 
-/** What the project's `.mcp.json` holds, as far as this module edits it. */
 type McpJsonState =
   | { kind: "missing" }
   | { kind: "unusable" }
@@ -111,11 +110,6 @@ async function readDmsWritesMcpJson(): Promise<boolean> {
   return false;
 }
 
-/**
- * Whether `@antelopejs/dms` adds its server to `.mcp.json` in development:
- * its MCP server is on and its `mcp.mcpJson` is not false. False when its
- * configuration cannot be read in time.
- */
 function dmsWritesMcpJson(): Promise<boolean> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(false), MODULE_ROOTS_TIMEOUT_MS);
@@ -153,13 +147,13 @@ async function readMcpJson(filePath: string): Promise<McpJsonState> {
   }
 }
 
-function isStaleEntry(
+function isPreviousVersionEntry(
   key: string,
   entry: JsonValue,
   projectRoot: string,
 ): boolean {
-  if (key !== STALE_MCP_SERVER_KEY) return false;
-  const launcher = path.resolve(projectRoot, STALE_MCP_LAUNCHER);
+  if (key !== PREVIOUS_VERSION_MCP_SERVER_KEY) return false;
+  const launcher = path.resolve(projectRoot, PREVIOUS_VERSION_MCP_LAUNCHER);
   const args = LauncherArgsSchema.safeParse(entry).data?.args ?? [];
   return args.some((arg) => {
     const text = z.string().safeParse(arg);
@@ -169,7 +163,7 @@ function isStaleEntry(
 
 interface ServerChanges {
   servers: JsonObject;
-  removedStale: boolean;
+  removedPreviousVersion: boolean;
   addedDms: boolean;
 }
 
@@ -180,7 +174,7 @@ function changeServers(
 ): ServerChanges {
   const entries = Object.entries(servers);
   const kept = entries.filter(
-    ([key, entry]) => !isStaleEntry(key, entry, projectRoot),
+    ([key, entry]) => !isPreviousVersionEntry(key, entry, projectRoot),
   );
   const addedDms = addsDms && !Object.hasOwn(servers, DMS_MCP_SERVER_KEY);
   const next: [string, JsonValue][] = addedDms
@@ -188,15 +182,15 @@ function changeServers(
     : kept;
   return {
     servers: Object.fromEntries(next),
-    removedStale: kept.length < entries.length,
+    removedPreviousVersion: kept.length < entries.length,
     addedDms,
   };
 }
 
 function changeNotice(changes: ServerChanges): string {
   const parts = [
-    changes.removedStale
-      ? `removed the ${STALE_MCP_SERVER_KEY} server, whose launcher loads a bridge this version no longer ships`
+    changes.removedPreviousVersion
+      ? `removed the ${PREVIOUS_VERSION_MCP_SERVER_KEY} server, whose launcher loads a bridge this version no longer ships`
       : "",
     changes.addedDms ? `added the ${DMS_MCP_SERVER_KEY} server` : "",
   ].filter((part) => part !== "");
@@ -215,7 +209,7 @@ async function syncFile(projectRoot: string, addsDms: boolean): Promise<void> {
   const file = state.kind === "present" ? state.file : {};
   const servers = state.kind === "present" ? state.servers : {};
   const changes = changeServers(servers, projectRoot, addsDms);
-  if (!changes.removedStale && !changes.addedDms) return;
+  if (!changes.removedPreviousVersion && !changes.addedDms) return;
   const next = { ...file, mcpServers: changes.servers };
   await writeFile(filePath, `${formatMcpJson(next)}\n`);
   Logging.Info(changeNotice(changes));

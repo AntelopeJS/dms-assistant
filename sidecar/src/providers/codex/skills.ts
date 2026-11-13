@@ -58,39 +58,32 @@ function isUnderRoot(target: string, root: string): boolean {
   return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
-/** The position of the extra root a skill comes from, or -1 for a skill Codex found itself. */
 function sourceIndex(
   skill: ListedSkill,
   extraRoots: readonly string[],
-): number {
+): number | undefined {
   const resolved = path.resolve(skill.path);
-  return extraRoots.findIndex((root) =>
+  const index = extraRoots.findIndex((root) =>
     isUnderRoot(resolved, path.resolve(root)),
   );
+  return index === -1 ? undefined : index;
 }
 
 function isForeign(
   skill: ListedSkill,
   input: SkillNeutralizationInput,
 ): boolean {
-  if (sourceIndex(skill, input.extraRoots) !== -1) return false;
+  if (sourceIndex(skill, input.extraRoots) !== undefined) return false;
   if (CODEX_OWNED_SKILL_SCOPES.includes(skill.scope)) return true;
   return !input.allowLocalSkills;
 }
 
-/**
- * The listed skills in source order: ours in the order of the extra roots,
- * as the Claude path loads them, then the skills Codex found itself, in the
- * order it listed them.
- */
 function inSourceOrder(
   skills: readonly ListedSkill[],
   extraRoots: readonly string[],
 ): ListedSkill[] {
-  const rankOf = (skill: ListedSkill): number => {
-    const index = sourceIndex(skill, extraRoots);
-    return index === -1 ? extraRoots.length : index;
-  };
+  const rankOf = (skill: ListedSkill): number =>
+    sourceIndex(skill, extraRoots) ?? extraRoots.length;
   return skills
     .map((skill, position) => ({ skill, position, rank: rankOf(skill) }))
     .sort((a, b) => a.rank - b.rank || a.position - b.position)

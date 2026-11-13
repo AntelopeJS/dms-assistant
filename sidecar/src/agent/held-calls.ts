@@ -8,13 +8,11 @@ import { type JsonValue, JsonValueSchema } from "../protocol/json.js";
 import type { RunnerToolResult } from "./runner-events.js";
 import { bareToolName } from "./tool-kinds.js";
 
-/** One call as the agent made it: the tool and its arguments. */
 export interface ToolCallSubject {
   toolName: string;
   args: JsonValue;
 }
 
-/** What a call answered, as the provider reported it. */
 type CallAnswer = Pick<RunnerToolResult, "result" | "isError">;
 
 /**
@@ -26,7 +24,6 @@ type CallAnswer = Pick<RunnerToolResult, "result" | "isError">;
 export interface HeldCalls {
   /** A held call is recorded by the DMS's refusal and released once it ran. */
   observe(call: ToolCallSubject, answer: CallAnswer): void;
-  /** Whether a call repeats one the DMS holds, so it runs once it is called. */
   isHeld(call: ToolCallSubject): boolean;
 }
 
@@ -53,7 +50,6 @@ const AnswerTextSchema = z.union([
 
 const JsonObjectSchema = z.record(z.string(), JsonValueSchema);
 
-/** The value with every object's keys in order, so key order never tells two calls apart. */
 function withSortedKeys(value: JsonValue): JsonValue {
   if (Array.isArray(value)) return value.map(withSortedKeys);
   const object = JsonObjectSchema.safeParse(value);

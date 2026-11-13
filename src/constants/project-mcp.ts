@@ -1,12 +1,7 @@
-/** The project file Claude Code reads its project-scoped MCP servers from. */
 export const PROJECT_MCP_JSON_FILE_NAME = ".mcp.json";
-/**
- * The server the previous version of this module added to `.mcp.json`, and
- * the launcher it pointed at, which needs a bridge this version no longer
- * ships.
- */
-export const STALE_MCP_SERVER_KEY = "dms-ai";
-export const STALE_MCP_LAUNCHER = "node_modules/.cache/dms-ai/mcp-bridge.cjs";
+export const PREVIOUS_VERSION_MCP_SERVER_KEY = "dms-ai";
+export const PREVIOUS_VERSION_MCP_LAUNCHER =
+  "node_modules/.cache/dms-ai/mcp-bridge.cjs";
 /** The server `@antelopejs/dms` adds to `.mcp.json`, as it writes it. */
 export const DMS_MCP_SERVER_KEY = "dms";
 export const DMS_MCP_SERVER_ENTRY = {

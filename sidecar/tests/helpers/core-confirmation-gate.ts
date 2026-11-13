@@ -33,7 +33,6 @@ const CoreGateModuleSchema = z.object({
   }),
 });
 
-/** Core's repeat-confirmation gate and its window, as the DMS MCP runs them. */
 export const coreConfirmationGate = CoreGateModuleSchema.parse(
   createRequire(import.meta.url)(CORE_GATE_PATH),
 );

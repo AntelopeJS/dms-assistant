@@ -33,36 +33,32 @@ type Outcome<Result> = (
   reject: (error: Error) => void,
 ) => void;
 
-function awaitable<Result>(outcome: Outcome<Result>): PromiseLike<Result> {
-  return {
-    then: (onfulfilled, onrejected) =>
-      new Promise<Result>(outcome).then(onfulfilled, onrejected),
-  };
+function pointsSettling(groups: Outcome<QueryPoint[]>): PlanPoints {
+  const grouped: PlanPoints = Object.assign(new Promise<QueryPoint[]>(groups), {
+    orderBy: () => grouped,
+    slice: () => grouped,
+  });
+  return grouped;
 }
 
 /**
  * A table without a database. Every call the plan makes returns the same handle,
  * a measure over it settles as `total` decided and the groups it makes settle as
- * `groups` decided.
+ * `groups` decided, each from the moment the plan asks for it.
  */
 function tableSettling(
   total: Outcome<number>,
   groups: Outcome<QueryPoint[]>,
 ): PlanStream {
-  const grouped: PlanPoints = {
-    ...awaitable(groups),
-    orderBy: () => grouped,
-    slice: () => grouped,
-  };
   const handle: PlanStream = {
     filter: () => handle,
     map: () => handle,
-    group: () => grouped,
-    count: () => awaitable(total),
-    sum: () => awaitable(total),
-    avg: () => awaitable(total),
-    min: () => awaitable(total),
-    max: () => awaitable(total),
+    group: () => pointsSettling(groups),
+    count: () => new Promise<number>(total),
+    sum: () => new Promise<number>(total),
+    avg: () => new Promise<number>(total),
+    min: () => new Promise<number>(total),
+    max: () => new Promise<number>(total),
   };
   return handle;
 }
@@ -100,17 +96,62 @@ const MONTHLY = {
   params: { op: "sum", field: "amount", groupBy: "createdAt", bucket: "month" },
 };
 
+/** The comparison case, run after the response-name cases. */
+function registerPeriodBeforeCases(): void {
+  it("answers the period before too, when the card compares against it", async () => {
+    const rows = [
+      { x: 202601, y: 150 },
+      { x: 202602, y: 30 },
+    ];
+    const compared = {
+      ...MONTHLY_CARD,
+      params: {
+        ...MONTHLY.params,
+        where: [
+          { field: "createdAt", op: "ge", value: { $param: { name: "from" } } },
+          { field: "createdAt", op: "le", value: { $param: { name: "to" } } },
+        ],
+      },
+      compare: true,
+    };
+    const bounds = { from: "2026-02-01", to: "2026-02-28" };
+    const preceding = { compareFrom: "2026-01-01", compareTo: "2026-01-31" };
+
+    const result = await runPlanPreview(
+      tableAnswering(rows),
+      { query: compared, args: { ...bounds, ...preceding } },
+      FIELDS,
+    );
+    expect(result.ok).to.equal(true);
+    if (result.ok) {
+      expect(
+        result.data.body,
+        "the preceding period's headline, as the route would answer it",
+      ).to.have.property("previousValue", 180);
+      expect(result.data.body)
+        .to.have.property("comparisonSeries")
+        .that.is.an("array");
+    }
+
+    const alone = await runPlanPreview(
+      tableAnswering(rows),
+      { query: compared, args: bounds },
+      FIELDS,
+    );
+    expect(alone.ok).to.equal(true);
+    if (alone.ok) {
+      expect(
+        alone.data.body,
+        "no comparison bounds, no period before to read",
+      ).to.not.have.property("previousValue");
+    }
+  });
+}
+
 /** The same source, arranged for the card that reads it. */
 const MONTHLY_CARD = { ...MONTHLY, response: "card" as const };
 
-/**
- * What a block is shown for a source that has not been written. The calculation
- * itself is covered elsewhere; this is about what the preview says back — its
- * shape, where it stops, and how it refuses.
- */
-describe("previewing a query", () => {
-  before(() => registerBuiltinQueryTemplates());
-
+function registerPreviewAnswerCases(): void {
   it("answers a number for a scalar query", async () => {
     const result = await runPlanPreview(
       tableAnswering(42),
@@ -171,94 +212,9 @@ describe("previewing a query", () => {
         .that.does.not.deep.equal(rows);
     }
   });
+}
 
-  for (const response of [
-    "constructor",
-    "toString",
-    "hasOwnProperty",
-    "bogus",
-  ]) {
-    it(`reads a response named ${response} as the default series arrangement`, async () => {
-      const rows = [
-        { x: 202601, y: 150 },
-        { x: 202602, y: 30 },
-      ];
-      const request = previewRequestFromSearch(
-        new URLSearchParams({
-          query: JSON.stringify({ ...MONTHLY, response }),
-        }),
-        "query",
-        undefined,
-      );
-      expect(request.ok).to.equal(true);
-      if (!request.ok) {
-        return;
-      }
-      const result = await runPlanPreview(
-        tableAnswering(rows),
-        request.data,
-        FIELDS,
-      );
-
-      expect(result.ok).to.equal(true);
-      if (result.ok) {
-        expect(result.data.response, "nothing arranged them").to.equal(
-          undefined,
-        );
-        expect(result.data.body).to.deep.equal({ series: rows });
-      }
-    });
-  }
-
-  it("answers the period before too, when the card compares against it", async () => {
-    const rows = [
-      { x: 202601, y: 150 },
-      { x: 202602, y: 30 },
-    ];
-    const compared = {
-      ...MONTHLY_CARD,
-      params: {
-        ...MONTHLY.params,
-        where: [
-          { field: "createdAt", op: "ge", value: { $param: { name: "from" } } },
-          { field: "createdAt", op: "le", value: { $param: { name: "to" } } },
-        ],
-      },
-      compare: true,
-    };
-    const bounds = { from: "2026-02-01", to: "2026-02-28" };
-    const preceding = { compareFrom: "2026-01-01", compareTo: "2026-01-31" };
-
-    const result = await runPlanPreview(
-      tableAnswering(rows),
-      { query: compared, args: { ...bounds, ...preceding } },
-      FIELDS,
-    );
-    expect(result.ok).to.equal(true);
-    if (result.ok) {
-      expect(
-        result.data.body,
-        "the preceding period's headline, as the route would answer it",
-      ).to.have.property("previousValue", 180);
-      expect(result.data.body)
-        .to.have.property("comparisonSeries")
-        .that.is.an("array");
-    }
-
-    const alone = await runPlanPreview(
-      tableAnswering(rows),
-      { query: compared, args: bounds },
-      FIELDS,
-    );
-    expect(alone.ok).to.equal(true);
-    if (alone.ok) {
-      expect(
-        alone.data.body,
-        "no comparison bounds, no period before to read",
-      ).to.not.have.property("previousValue");
-    }
-  });
-
+function registerPreviewRefusalCases(): void {
   it("stops reading rather than answering a million points, and says so", async () => {
     const rows = Array.from({ length: 900 }, (_, index) => ({
       x: index,
@@ -346,6 +302,58 @@ describe("previewing a query", () => {
       undefined,
     );
   });
+}
+
+/**
+ * What a block is shown for a source that has not been written. The calculation
+ * itself is covered elsewhere; this is about what the preview says back — its
+ * shape, where it stops, and how it refuses.
+ */
+describe("previewing a query", () => {
+  before(() => registerBuiltinQueryTemplates());
+
+  registerPreviewAnswerCases();
+
+  for (const response of [
+    "constructor",
+    "toString",
+    "hasOwnProperty",
+    "bogus",
+  ]) {
+    it(`reads a response named ${response} as the default series arrangement`, async () => {
+      const rows = [
+        { x: 202601, y: 150 },
+        { x: 202602, y: 30 },
+      ];
+      const request = previewRequestFromSearch(
+        new URLSearchParams({
+          query: JSON.stringify({ ...MONTHLY, response }),
+        }),
+        "query",
+        undefined,
+      );
+      expect(request.ok).to.equal(true);
+      if (!request.ok) {
+        return;
+      }
+      const result = await runPlanPreview(
+        tableAnswering(rows),
+        request.data,
+        FIELDS,
+      );
+
+      expect(result.ok).to.equal(true);
+      if (result.ok) {
+        expect(result.data.response, "nothing arranged them").to.equal(
+          undefined,
+        );
+        expect(result.data.body).to.deep.equal({ series: rows });
+      }
+    });
+  }
+  registerPeriodBeforeCases();
+
+  registerPreviewRefusalCases();
 });
 
 /**

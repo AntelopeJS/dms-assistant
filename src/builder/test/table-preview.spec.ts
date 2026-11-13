@@ -77,45 +77,7 @@ async function previewOf(block: Omit<BlockDraft, "name">) {
   };
 }
 
-/**
- * A block over a table is built from the table's DataAPI class, which only the
- * running app holds. The preview reads it off what the app already loaded, and
- * only for a block whose factory leaves that class as it found it.
- */
-describe("previewing a block over a table", () => {
-  before(async function () {
-    this.timeout(120_000);
-    app = createFixture();
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    expectOk(
-      await CreatePage({
-        name: "board",
-        displayName: "Board",
-        category: "pages.shop",
-      }),
-      "CreatePage",
-    );
-    expectOk(
-      await CreateResource({
-        name: "ticket",
-        fields: [{ name: "title", dataType: { $dataType: "string" } }],
-      }),
-      "CreateResource",
-    );
-    loadedFile = path.join(app.root, "dist", "ticket", "data-api.js");
-    Object.assign(require.cache, {
-      [loadedFile]: { exports: { ticketDataAPI } },
-    });
-  });
-
-  after(() => {
-    delete require.cache[loadedFile];
-    destroyFixture();
-  });
-
+function registerTablePreviewCases(): void {
   it("names the table a block still has to be given", async function () {
     this.timeout(60_000);
     const { degraded, component } = await previewOf({
@@ -167,7 +129,9 @@ describe("previewing a block over a table", () => {
       label: "Table — needs the running page",
     });
   });
+}
 
+function registerRelationPreviewCases(): void {
   it("waits on the running page for a relation to a table it has not loaded", async function () {
     this.timeout(60_000);
     const { degraded, component } = await previewOf({
@@ -216,6 +180,49 @@ describe("previewing a block over a table", () => {
       { $ref: { resource: "ticket" } },
     );
   });
+}
+
+/**
+ * A block over a table is built from the table's DataAPI class, which only the
+ * running app holds. The preview reads it off what the app already loaded, and
+ * only for a block whose factory leaves that class as it found it.
+ */
+describe("previewing a block over a table", () => {
+  before(async function () {
+    this.timeout(120_000);
+    app = createFixture();
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    expectOk(
+      await CreatePage({
+        name: "board",
+        displayName: "Board",
+        category: "pages.shop",
+      }),
+      "CreatePage",
+    );
+    expectOk(
+      await CreateResource({
+        name: "ticket",
+        fields: [{ name: "title", dataType: { $dataType: "string" } }],
+      }),
+      "CreateResource",
+    );
+    loadedFile = path.join(app.root, "dist", "ticket", "data-api.js");
+    Object.assign(require.cache, {
+      [loadedFile]: { exports: { ticketDataAPI } },
+    });
+  });
+
+  after(() => {
+    delete require.cache[loadedFile];
+    destroyFixture();
+  });
+
+  registerTablePreviewCases();
+  registerRelationPreviewCases();
 });
 
 /** A form field over another table, as the panel writes one. */

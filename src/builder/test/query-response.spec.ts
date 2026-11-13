@@ -49,52 +49,8 @@ async function queryNamed(name: string) {
   return structure.queries.find((query) => query.name === name);
 }
 
-/**
- * One calculation, arranged for whichever block reads it.
- *
- * A chart wants the points, a card wants a figure above them, a ranked list
- * wants entries — and the route stays one expression in every case, which is what
- * keeps it readable back into the parameters that produced it.
- */
-describe("how a query's answer is arranged", () => {
-  before(async function () {
-    this.timeout(120_000);
-    app = createFixture();
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    expectOk(
-      await CreateResource({
-        name: "order",
-        displayName: "Order",
-        fields: [
-          {
-            name: "amount",
-            label: "Amount",
-            dataType: { $dataType: "number" },
-          },
-          {
-            name: "createdAt",
-            label: "Created",
-            dataType: { $dataType: "date" },
-          },
-        ],
-      }),
-      "CreateResource",
-    );
-    expectOk(
-      await CreatePage({
-        name: "board",
-        displayName: "Board",
-        category: "pages.shop",
-      }),
-      "CreatePage",
-    );
-  });
-
-  after(() => destroyFixture());
-
+/** The default arrangement, run before the response-name cases. */
+function registerDefaultPointsCases(): void {
   it("answers the points themselves by default", async function () {
     this.timeout(OP_TIMEOUT);
     expectOk(await AddQuery(PAGE, MONTHLY), "AddQuery");
@@ -102,36 +58,9 @@ describe("how a query's answer is arranged", () => {
       "return { series: await model.revenue() };",
     );
   });
+}
 
-  for (const response of ["constructor", "toString", "hasOwnProperty"]) {
-    it(`writes a route for a response named ${response} as the default series`, () => {
-      const spec: CompiledQuery = {
-        name: "revenue",
-        endpoint: "/revenue",
-        template: "series",
-        params: {},
-        chain: { body: "{ return []; }", parameters: [] },
-        naming: { measure: "sum", label: "Amount" },
-        response,
-      };
-      const route = queryRouteMethodText(
-        spec,
-        "Order",
-        "main",
-        "revenue",
-        "BoardPage",
-      );
-
-      expect(route.text).to.contain(
-        "return { series: await model.revenue() };",
-      );
-      expect(
-        route.symbols.map((symbol) => symbol.name),
-        "no helper is imported for it",
-      ).to.not.include(response);
-    });
-  }
-
+function registerPointsAndCardCases(): void {
   it("builds a card's headline figure from the same points", async function () {
     this.timeout(OP_TIMEOUT);
     expectOk(
@@ -196,7 +125,9 @@ describe("how a query's answer is arranged", () => {
     ).to.equal("card");
     expect(card?.params).to.include({ op: "sum" });
   });
+}
 
+function registerPeriodComparisonCases(): void {
   describe("comparing against the period before", () => {
     it("asks the same calculation twice, with the bounds the route received", async function () {
       this.timeout(OP_TIMEOUT);
@@ -290,4 +221,85 @@ describe("how a query's answer is arranged", () => {
       );
     });
   });
+}
+
+/**
+ * One calculation, arranged for whichever block reads it.
+ *
+ * A chart wants the points, a card wants a figure above them, a ranked list
+ * wants entries — and the route stays one expression in every case, which is what
+ * keeps it readable back into the parameters that produced it.
+ */
+describe("how a query's answer is arranged", () => {
+  before(async function () {
+    this.timeout(120_000);
+    app = createFixture();
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    expectOk(
+      await CreateResource({
+        name: "order",
+        displayName: "Order",
+        fields: [
+          {
+            name: "amount",
+            label: "Amount",
+            dataType: { $dataType: "number" },
+          },
+          {
+            name: "createdAt",
+            label: "Created",
+            dataType: { $dataType: "date" },
+          },
+        ],
+      }),
+      "CreateResource",
+    );
+    expectOk(
+      await CreatePage({
+        name: "board",
+        displayName: "Board",
+        category: "pages.shop",
+      }),
+      "CreatePage",
+    );
+  });
+
+  after(() => destroyFixture());
+
+  registerDefaultPointsCases();
+
+  for (const response of ["constructor", "toString", "hasOwnProperty"]) {
+    it(`writes a route for a response named ${response} as the default series`, () => {
+      const spec: CompiledQuery = {
+        name: "revenue",
+        endpoint: "/revenue",
+        template: "series",
+        params: {},
+        chain: { body: "{ return []; }", parameters: [] },
+        naming: { measure: "sum", label: "Amount" },
+        response,
+      };
+      const route = queryRouteMethodText(
+        spec,
+        "Order",
+        "main",
+        "revenue",
+        "BoardPage",
+      );
+
+      expect(route.text).to.contain(
+        "return { series: await model.revenue() };",
+      );
+      expect(
+        route.symbols.map((symbol) => symbol.name),
+        "no helper is imported for it",
+      ).to.not.include(response);
+    });
+  }
+
+  registerPointsAndCardCases();
+  registerPeriodComparisonCases();
 });

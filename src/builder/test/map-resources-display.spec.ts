@@ -80,33 +80,7 @@ async function ordersMapped(): Promise<MappedRelation> {
   return found!;
 }
 
-/** The orders mapped with tabs, then the page's tabs replaced the way a person editing the page would. */
-describe("mapping columns with a display and a TableView with tabs", function () {
-  this.timeout(OP_TIMEOUT);
-
-  before(() => {
-    app = createFixture({ modules: [MODULE] });
-    setCatalogConnectionsForTests({
-      shop: {
-        async ListRelations() {
-          return SHOP;
-        },
-        async DescribeRelations(relations: string[]) {
-          return SHOP.filter((description) =>
-            relations.includes(`${description.schema}.${description.name}`),
-          );
-        },
-      },
-    });
-    setModuleReloadForTests(reloadedAtOnce);
-  });
-
-  after(() => {
-    setCatalogConnectionsForTests();
-    setModuleReloadForTests();
-    destroyFixture();
-  });
-
+function registerDisplayWriteCases(): void {
   it("writes a badge as a select of toned items, a price as the price DataType, and the relation under its label", async () => {
     expectOk(await MapResources(ordersInput()), "MapResources");
     const orders = moduleFile("shop/orders/data-api.ts");
@@ -167,7 +141,9 @@ describe("mapping columns with a display and a TableView with tabs", function ()
       page.indexOf("status-pending"),
     );
   });
+}
 
+function registerDisplayReadBackCases(): void {
   it("reads the display and the tabs back, and a remap that sends them back changes nothing", async () => {
     expectOk(await MapResources(ordersInput()), "MapResources");
     const read = await ordersMapped();
@@ -234,4 +210,35 @@ describe("mapping columns with a display and a TableView with tabs", function ()
     expect(orders).to.not.include("PriceType");
     expect(await pageText()).to.include('label: "Everything"');
   });
+}
+
+/** The orders mapped with tabs, then the page's tabs replaced the way a person editing the page would. */
+describe("mapping columns with a display and a TableView with tabs", function () {
+  this.timeout(OP_TIMEOUT);
+
+  before(() => {
+    app = createFixture({ modules: [MODULE] });
+    setCatalogConnectionsForTests({
+      shop: {
+        async ListRelations() {
+          return SHOP;
+        },
+        async DescribeRelations(relations: string[]) {
+          return SHOP.filter((description) =>
+            relations.includes(`${description.schema}.${description.name}`),
+          );
+        },
+      },
+    });
+    setModuleReloadForTests(reloadedAtOnce);
+  });
+
+  after(() => {
+    setCatalogConnectionsForTests();
+    setModuleReloadForTests();
+    destroyFixture();
+  });
+
+  registerDisplayWriteCases();
+  registerDisplayReadBackCases();
 });

@@ -38,48 +38,18 @@ function stallsAfterSignIn(): Stall {
 
 const suite = dockerAvailable ? describe : describe.skip;
 
-suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
-  let server: Container | undefined;
+let server: Container | undefined;
 
-  function urlOf(
-    user: string,
-    password = secretOf(user),
-    database = "shop",
-    port = server?.port,
-  ) {
-    return `rethinkdb://${user}:${password}@127.0.0.1:${port}/${database}`;
-  }
+function urlOf(
+  user: string,
+  password = secretOf(user),
+  database = "shop",
+  port = server?.port,
+) {
+  return `rethinkdb://${user}:${password}@127.0.0.1:${port}/${database}`;
+}
 
-  before(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    server = await startContainer(
-      "rethinkdb:2.4",
-      28015,
-      [],
-      ["rethinkdb", "--bind", "all", "--initial-password", ADMIN_SECRET],
-    );
-    const port = server.port;
-    await waitFor("RethinkDB", () => answersAdmin(port, ADMIN_SECRET));
-    await setUpShop(port, ADMIN_SECRET, [
-      {
-        name: "reader",
-        password: secretOf("reader"),
-        database: { read: true },
-      },
-      {
-        name: "writer",
-        password: secretOf("writer"),
-        database: { read: true, write: true },
-      },
-      { name: "blind", password: secretOf("blind") },
-    ]);
-  });
-
-  after(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    await removeContainer(server);
-  });
-
+function registerAccessCases(): void {
   it("answers read access and no write access to an account that may only read", async () => {
     const answer = await checkDatabase(
       "rethinkdb",
@@ -171,7 +141,9 @@ suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
       expect(JSON.stringify(answer), url).to.not.include("r.db(");
     }
   });
+}
 
+function registerUnreachableAndCloseCases(): void {
   it("answers a refused password as a server that answered, without the password", async () => {
     const answer = await checkDatabase(
       "rethinkdb",
@@ -267,4 +239,39 @@ suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
       await proxy.close();
     }
   });
+}
+
+suite(`checking a RethinkDB database live${LIVE_SUITE_NOTE}`, function () {
+  before(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    server = await startContainer(
+      "rethinkdb:2.4",
+      28015,
+      [],
+      ["rethinkdb", "--bind", "all", "--initial-password", ADMIN_SECRET],
+    );
+    const port = server.port;
+    await waitFor("RethinkDB", () => answersAdmin(port, ADMIN_SECRET));
+    await setUpShop(port, ADMIN_SECRET, [
+      {
+        name: "reader",
+        password: secretOf("reader"),
+        database: { read: true },
+      },
+      {
+        name: "writer",
+        password: secretOf("writer"),
+        database: { read: true, write: true },
+      },
+      { name: "blind", password: secretOf("blind") },
+    ]);
+  });
+
+  after(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    await removeContainer(server);
+  });
+
+  registerAccessCases();
+  registerUnreachableAndCloseCases();
 });

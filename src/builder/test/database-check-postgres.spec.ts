@@ -54,50 +54,13 @@ function stallsAtFirstQuery(): Stall {
   return (chunk, fromClient) => fromClient && chunk[0] === QUERY_MESSAGE;
 }
 
-suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
-  let server: Container | undefined;
+let server: Container | undefined;
 
-  function urlOf(user: string, password = secretOf(user), database = "shop") {
-    return `postgres://${user}:${password}@127.0.0.1:${server?.port}/${database}`;
-  }
+function urlOf(user: string, password = secretOf(user), database = "shop") {
+  return `postgres://${user}:${password}@127.0.0.1:${server?.port}/${database}`;
+}
 
-  async function connectAs(user: string, database: string) {
-    const client = new Client({
-      connectionString: `postgres://${user}:${ADMIN_SECRET}@127.0.0.1:${server?.port}/${database}`,
-    });
-    await client.connect();
-    return client;
-  }
-
-  before(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    server = await startContainer("postgres:18", 5432, [
-      "-e",
-      `POSTGRES_PASSWORD=${ADMIN_SECRET}`,
-    ]);
-    await waitFor("PostgreSQL", async () => {
-      try {
-        await (await connectAs("postgres", "postgres")).end();
-        return true;
-      } catch {
-        return false;
-      }
-    });
-    const admin = await connectAs("postgres", "postgres");
-    await admin.query("CREATE DATABASE shop");
-    await admin.end();
-    const owner = await connectAs("postgres", "shop");
-    for (const statement of SETUP) {
-      await owner.query(statement);
-    }
-    await owner.end();
-  });
-
-  after(async function () {
-    this.timeout(START_TIMEOUT_MS);
-    await removeContainer(server);
-  });
-
+function registerAccessCases(): void {
   it("answers read access and no write access to a role that may only SELECT", async () => {
     const answer = await checkDatabase("postgres", urlOf("reader"), TIMEOUT_MS);
     expect(answer).to.include({
@@ -173,7 +136,9 @@ suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
       "The server has no database with this name.",
     );
   });
+}
 
+function registerUnreachableAndCloseCases(): void {
   it("answers a port nothing listens on as unreachable, within the timeout", async () => {
     const port = await closedPort();
     const started = performance.now();
@@ -264,4 +229,46 @@ suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
       await proxy.close();
     }
   });
+}
+
+suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
+  async function connectAs(user: string, database: string) {
+    const client = new Client({
+      connectionString: `postgres://${user}:${ADMIN_SECRET}@127.0.0.1:${server?.port}/${database}`,
+    });
+    await client.connect();
+    return client;
+  }
+
+  before(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    server = await startContainer("postgres:18", 5432, [
+      "-e",
+      `POSTGRES_PASSWORD=${ADMIN_SECRET}`,
+    ]);
+    await waitFor("PostgreSQL", async () => {
+      try {
+        await (await connectAs("postgres", "postgres")).end();
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    const admin = await connectAs("postgres", "postgres");
+    await admin.query("CREATE DATABASE shop");
+    await admin.end();
+    const owner = await connectAs("postgres", "shop");
+    for (const statement of SETUP) {
+      await owner.query(statement);
+    }
+    await owner.end();
+  });
+
+  after(async function () {
+    this.timeout(START_TIMEOUT_MS);
+    await removeContainer(server);
+  });
+
+  registerAccessCases();
+  registerUnreachableAndCloseCases();
 });

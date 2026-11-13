@@ -22,13 +22,7 @@ const FIELDS = [
   field("rating", "unmapped-type"),
 ];
 
-/**
- * The plan is the description three backends share, so what it renders is
- * asserted directly rather than only through a written file: these cases run in
- * milliseconds and cover the shapes a full round-trip would take a typecheck to
- * reach.
- */
-describe("the query plan", () => {
+function registerAggregateAndFilterCases(): void {
   it("counts every row when nothing is filtered", () => {
     const chain = emitPlan({ filters: [], measure: { kind: "count" } }, FIELDS);
     expect(chain.body).to.equal("{\n  return this.table.count();\n}");
@@ -111,7 +105,9 @@ describe("the query plan", () => {
       },
     ]);
   });
+}
 
+function registerParameterCases(): void {
   it("names a model parameter after what the filter means", () => {
     const chain = emitPlan(
       {
@@ -215,4 +211,15 @@ describe("the query plan", () => {
       ).to.throw(/planned before it was validated/);
     }
   });
+}
+
+/**
+ * The plan is the description three backends share, so what it renders is
+ * asserted directly rather than only through a written file: these cases run in
+ * milliseconds and cover the shapes a full round-trip would take a typecheck to
+ * reach.
+ */
+describe("the query plan", () => {
+  registerAggregateAndFilterCases();
+  registerParameterCases();
 });

@@ -78,33 +78,7 @@ async function pageIds(): Promise<string[]> {
     .sort((a, b) => a.localeCompare(b));
 }
 
-describe("a mapping forgives what is clear and harmless, and keeps the other relations", function () {
-  this.timeout(OP_TIMEOUT);
-
-  before(() => {
-    setCatalogConnectionsForTests({
-      shop: {
-        async ListRelations() {
-          return DESCRIPTIONS;
-        },
-        async DescribeRelations(relations: string[]) {
-          return DESCRIPTIONS.filter((description) =>
-            relations.includes(`${description.schema}.${description.name}`),
-          );
-        },
-      },
-    });
-    setModuleReloadForTests(reloadedAtOnce);
-  });
-
-  beforeEach(freshApp);
-
-  after(() => {
-    setCatalogConnectionsForTests();
-    setModuleReloadForTests();
-    destroyFixture();
-  });
-
+function registerForgivenDisplayCases(): void {
   it("writes a boolean column plain when a badge is sent for it", async () => {
     const mapped = await MapResources(
       input({
@@ -149,7 +123,9 @@ describe("a mapping forgives what is clear and harmless, and keeps the other rel
     expect(codes(mapped)).to.include("label_changed");
     expect(await pageSource()).to.include('labelKey: "_id"');
   });
+}
 
+function registerFilterableAndRefusedRelationCases(): void {
   it("marks the columns the views, footer and tabs use filterable or sortable", async () => {
     const mapped = await MapResources(
       input(
@@ -214,4 +190,35 @@ describe("a mapping forgives what is clear and harmless, and keeps the other rel
     expect(refused.ok).to.equal(false);
     expect(messages(refused)).to.include("no_such");
   });
+}
+
+describe("a mapping forgives what is clear and harmless, and keeps the other relations", function () {
+  this.timeout(OP_TIMEOUT);
+
+  before(() => {
+    setCatalogConnectionsForTests({
+      shop: {
+        async ListRelations() {
+          return DESCRIPTIONS;
+        },
+        async DescribeRelations(relations: string[]) {
+          return DESCRIPTIONS.filter((description) =>
+            relations.includes(`${description.schema}.${description.name}`),
+          );
+        },
+      },
+    });
+    setModuleReloadForTests(reloadedAtOnce);
+  });
+
+  beforeEach(freshApp);
+
+  after(() => {
+    setCatalogConnectionsForTests();
+    setModuleReloadForTests();
+    destroyFixture();
+  });
+
+  registerForgivenDisplayCases();
+  registerFilterableAndRefusedRelationCases();
 });

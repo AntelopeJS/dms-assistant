@@ -168,25 +168,7 @@ async function analysed(): Promise<AnalysisState> {
   return finished(started.data);
 }
 
-describe("an analysis job", function () {
-  this.timeout(OP_TIMEOUT);
-
-  beforeEach(() => {
-    calls.length = 0;
-  });
-
-  before(() => {
-    app = createFixture({ modules: [MODULE] });
-    setCatalogConnectionsForTests({ erp: catalogOver(RELATIONS) });
-    setModuleReloadForTests(reloadedAtOnce);
-  });
-
-  after(() => {
-    setCatalogConnectionsForTests();
-    setModuleReloadForTests();
-    destroyFixture();
-  });
-
+function registerJobProposalCases(): void {
   it("answers its job at once, then a proposal that writes nothing", async () => {
     const state = await analysed();
     expect(state.status).to.equal("done");
@@ -246,7 +228,9 @@ describe("an analysis job", function () {
         ?.value,
     ).to.equal("erp.orders");
   });
+}
 
+function registerJobLookupCases(): void {
   it("refuses a connection the builder does not declare, and the project's own module", async () => {
     const unknown = await AnalyseDatabase({
       connection: "crm",
@@ -301,4 +285,27 @@ describe("an analysis job", function () {
       setCatalogConnectionsForTests({ erp: catalogOver(RELATIONS) });
     }
   });
+}
+
+describe("an analysis job", function () {
+  this.timeout(OP_TIMEOUT);
+
+  beforeEach(() => {
+    calls.length = 0;
+  });
+
+  before(() => {
+    app = createFixture({ modules: [MODULE] });
+    setCatalogConnectionsForTests({ erp: catalogOver(RELATIONS) });
+    setModuleReloadForTests(reloadedAtOnce);
+  });
+
+  after(() => {
+    setCatalogConnectionsForTests();
+    setModuleReloadForTests();
+    destroyFixture();
+  });
+
+  registerJobProposalCases();
+  registerJobLookupCases();
 });

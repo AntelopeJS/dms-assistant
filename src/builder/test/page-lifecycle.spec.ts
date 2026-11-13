@@ -64,40 +64,7 @@ async function pageRefs(): Promise<string[]> {
   return (await ListPages()).map((page) => page.ref);
 }
 
-/**
- * What the builder's pages panel relies on: a page it creates is written and
- * registered, one it edits is patched in place, and one it deletes leaves
- * nothing of itself behind — and nothing else broken.
- */
-describe("the page lifecycle", () => {
-  before(async function () {
-    this.timeout(120_000);
-    app = createFixture();
-    fs.mkdirSync(path.join(app.root, "src", "board"));
-    app.write(BOARD_FILE, BOARD_SOURCE);
-    app.write("index.ts", 'import "./board/page";\n\nexport {};\n');
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    expectOk(
-      await CreateResource({
-        name: "order",
-        displayName: "Order",
-        fields: [
-          {
-            name: "amount",
-            label: "Amount",
-            dataType: { $dataType: "number" },
-          },
-        ],
-      }),
-      "CreateResource",
-    );
-  });
-
-  after(() => destroyFixture());
-
+function registerBuiltPageCases(): void {
   describe("a page the builder created", () => {
     it("is written in a folder of its own and wired into the barrel", async function () {
       this.timeout(OP_TIMEOUT);
@@ -192,7 +159,9 @@ describe("the page lifecycle", () => {
       }
     });
   });
+}
 
+function registerSharedFilePageCases(): void {
   describe("a page that shares its file with its category", () => {
     before(async function () {
       this.timeout(OP_TIMEOUT);
@@ -285,4 +254,42 @@ describe("the page lifecycle", () => {
       expect(moved.version).to.not.equal(before.version);
     });
   });
+}
+
+/**
+ * What the builder's pages panel relies on: a page it creates is written and
+ * registered, one it edits is patched in place, and one it deletes leaves
+ * nothing of itself behind — and nothing else broken.
+ */
+describe("the page lifecycle", () => {
+  before(async function () {
+    this.timeout(120_000);
+    app = createFixture();
+    fs.mkdirSync(path.join(app.root, "src", "board"));
+    app.write(BOARD_FILE, BOARD_SOURCE);
+    app.write("index.ts", 'import "./board/page";\n\nexport {};\n');
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    expectOk(
+      await CreateResource({
+        name: "order",
+        displayName: "Order",
+        fields: [
+          {
+            name: "amount",
+            label: "Amount",
+            dataType: { $dataType: "number" },
+          },
+        ],
+      }),
+      "CreateResource",
+    );
+  });
+
+  after(() => destroyFixture());
+
+  registerBuiltPageCases();
+  registerSharedFilePageCases();
 });

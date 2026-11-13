@@ -68,6 +68,98 @@ const SUPPORT: RoleAccess = {
   permissions: ["pages.shop.board"],
 };
 
+/** The cases on where a page's permission comes from, run after the reserved-name cases. */
+function registerPermissionSourceCases(): void {
+  it("takes the permission a page names over its own", async function () {
+    this.timeout(120_000);
+    expectOk(
+      await ConfigurePage("/shop/custom", {
+        permission: { id: "shop.desk", title: "Desk" },
+      }),
+      "ConfigurePage",
+    );
+    const access = describePageAccess(
+      recordOf("/shop/custom"),
+      { shop: { children: { desk: node("shop.desk", "Desk") } } },
+      null,
+    );
+    expect(access.permission).to.equal("shop.desk");
+    expect(access.fullId).to.equal("pages.shop.custom");
+    expect(access.mode).to.equal("blocks");
+  });
+
+  it("answers nothing for a page it does not know, and no roles without a tenant", async function () {
+    this.timeout(30_000);
+    expect(await pageAccess("/shop/nowhere", undefined)).to.equal(undefined);
+    const access = await pageAccess("/shop/board", undefined);
+    expect(access?.mode).to.equal("unmanaged");
+    expect(access?.roles).to.equal(null);
+  });
+}
+
+function registerPageAccessCases(): void {
+  it("names the page's permission after it, and lists its blocks' actions", function () {
+    const access = describePageAccess(recordOf("/shop/board"), boardTree(), [
+      SUPPORT,
+    ]);
+    expect(access).to.deep.include({
+      mode: "blocks",
+      fullId: "pages.shop.board",
+      permission: "pages.shop.board",
+      roles: [SUPPORT],
+    });
+    expect(access.actions).to.deep.equal({
+      "pages.shop.board.tickets": [
+        { id: "pages.shop.board.tickets.export", title: "Export" },
+        { id: "pages.shop.board.tickets.list", title: "List" },
+      ],
+    });
+    expect(access.held).to.deep.equal({});
+    expect(access.granted).to.deep.equal(["pages.shop.board.tickets.list"]);
+  });
+
+  it("tells a block held through a setting from an action, and skips its children", function () {
+    const card: BlockNode = {
+      path: "card",
+      name: "card",
+      type: "ChartCard",
+      editable: true,
+      config: { title: "Sales", chart: { $block: { type: "ChartColumn" } } },
+      children: [
+        { path: "card/note", name: "note", type: "Text", editable: true },
+      ],
+    };
+    const tree = {
+      board: node("board", "Board", {
+        card: node("board.card", "Card", {
+          chart: node("board.card.chart", "Chart"),
+          note: node("board.card.note", "Note"),
+          export: node("board.card.export", "Export"),
+        }),
+      }),
+    };
+    expect(blockAccess([card], "board", tree)).to.deep.equal({
+      actions: { "board.card": [{ id: "board.card.export", title: "Export" }] },
+      held: { "board.card": [{ id: "board.card.chart", title: "Chart" }] },
+    });
+  });
+
+  it("says every member reaches a page granted by default", function () {
+    const access = describePageAccess(
+      recordOf("/shop/board"),
+      boardTree(true),
+      null,
+    );
+    expect(access.mode).to.equal("everyone");
+  });
+
+  it("leaves a page the DMS has not registered unmanaged", function () {
+    const access = describePageAccess(recordOf("/shop/board"), {}, null);
+    expect(access.mode).to.equal("unmanaged");
+    expect(access.actions).to.deep.equal({});
+  });
+}
+
 /**
  * Who reaches a page and its blocks, read the way the DMS decides it: a block's
  * permission is named after where it sits under the page's.
@@ -137,66 +229,7 @@ describe("who reaches a page", () => {
 
   after(() => destroyFixture());
 
-  it("names the page's permission after it, and lists its blocks' actions", function () {
-    const access = describePageAccess(recordOf("/shop/board"), boardTree(), [
-      SUPPORT,
-    ]);
-    expect(access).to.deep.include({
-      mode: "blocks",
-      fullId: "pages.shop.board",
-      permission: "pages.shop.board",
-      roles: [SUPPORT],
-    });
-    expect(access.actions).to.deep.equal({
-      "pages.shop.board.tickets": [
-        { id: "pages.shop.board.tickets.export", title: "Export" },
-        { id: "pages.shop.board.tickets.list", title: "List" },
-      ],
-    });
-    expect(access.held).to.deep.equal({});
-    expect(access.granted).to.deep.equal(["pages.shop.board.tickets.list"]);
-  });
-
-  it("tells a block held through a setting from an action, and skips its children", function () {
-    const card: BlockNode = {
-      path: "card",
-      name: "card",
-      type: "ChartCard",
-      editable: true,
-      config: { title: "Sales", chart: { $block: { type: "ChartColumn" } } },
-      children: [
-        { path: "card/note", name: "note", type: "Text", editable: true },
-      ],
-    };
-    const tree = {
-      board: node("board", "Board", {
-        card: node("board.card", "Card", {
-          chart: node("board.card.chart", "Chart"),
-          note: node("board.card.note", "Note"),
-          export: node("board.card.export", "Export"),
-        }),
-      }),
-    };
-    expect(blockAccess([card], "board", tree)).to.deep.equal({
-      actions: { "board.card": [{ id: "board.card.export", title: "Export" }] },
-      held: { "board.card": [{ id: "board.card.chart", title: "Chart" }] },
-    });
-  });
-
-  it("says every member reaches a page granted by default", function () {
-    const access = describePageAccess(
-      recordOf("/shop/board"),
-      boardTree(true),
-      null,
-    );
-    expect(access.mode).to.equal("everyone");
-  });
-
-  it("leaves a page the DMS has not registered unmanaged", function () {
-    const access = describePageAccess(recordOf("/shop/board"), {}, null);
-    expect(access.mode).to.equal("unmanaged");
-    expect(access.actions).to.deep.equal({});
-  });
+  registerPageAccessCases();
 
   for (const name of ["constructor", "toString", "hasOwnProperty", "valueOf"]) {
     it(`leaves a page whose permission is named ${name} unmanaged`, async function () {
@@ -212,30 +245,5 @@ describe("who reaches a page", () => {
       expect(access.permission).to.equal(name);
     });
   }
-
-  it("takes the permission a page names over its own", async function () {
-    this.timeout(120_000);
-    expectOk(
-      await ConfigurePage("/shop/custom", {
-        permission: { id: "shop.desk", title: "Desk" },
-      }),
-      "ConfigurePage",
-    );
-    const access = describePageAccess(
-      recordOf("/shop/custom"),
-      { shop: { children: { desk: node("shop.desk", "Desk") } } },
-      null,
-    );
-    expect(access.permission).to.equal("shop.desk");
-    expect(access.fullId).to.equal("pages.shop.custom");
-    expect(access.mode).to.equal("blocks");
-  });
-
-  it("answers nothing for a page it does not know, and no roles without a tenant", async function () {
-    this.timeout(30_000);
-    expect(await pageAccess("/shop/nowhere", undefined)).to.equal(undefined);
-    const access = await pageAccess("/shop/board", undefined);
-    expect(access?.mode).to.equal("unmanaged");
-    expect(access?.roles).to.equal(null);
-  });
+  registerPermissionSourceCases();
 });

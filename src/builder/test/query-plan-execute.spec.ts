@@ -52,17 +52,9 @@ function carriesText(node: Rendered): node is Rendered & Transcript {
   );
 }
 
-/** What awaiting a transcript answers: it holds the calls, not the rows, so nothing came back. */
-function nothingBack<Result>(answer: Result): PromiseLike<Result> {
-  return {
-    then: (onfulfilled, onrejected) =>
-      Promise.resolve(answer).then(onfulfilled, onrejected),
-  };
-}
-
-/** A measure, written down rather than computed. */
+/** A measure, written down rather than computed: awaiting it answers 0, because a transcript holds the calls, not the rows. */
 function measure(text: string): PromiseLike<number> & Transcript {
-  return { text, ...nothingBack(0) };
+  return Object.assign(Promise.resolve(0), { text });
 }
 
 /** A value, written down rather than computed. */
@@ -148,16 +140,15 @@ function stream(text: string): PlanStream & Transcript {
 
 /** The groups a transcribed stream made, written down the same way. */
 function points(text: string): PlanPoints & Transcript {
-  return {
+  return Object.assign(Promise.resolve<QueryPoint[]>([]), {
     text,
-    ...nothingBack<QueryPoint[]>([]),
     orderBy: (index: string, direction?: "asc" | "desc") =>
       points(
         `${text}.orderBy(${JSON.stringify(index)}, ${JSON.stringify(direction)})`,
       ),
     slice: (offset: number, count?: number) =>
       points(`${text}.slice(${offset}, ${count})`),
-  };
+  });
 }
 
 function row(name: string): PlanRow {
@@ -175,20 +166,26 @@ function ran(plan: QueryPlan, args: PlanArguments = {}): string {
 const COUNT = { kind: "count" } as const;
 const SUM_AMOUNT = { kind: "aggregate", op: "sum", field: "amount" } as const;
 
-/**
- * Running a plan and writing it are the same calculation twice, and a preview
- * that disagreed with the code it previews would be worse than no preview. Each
- * case asserts the two renderings agree, compared on the calculation rather than
- * on the layout: where the emitter breaks its chain across lines is its own
- * business, and pinning it would make every formatting change look like a
- * divergence between the two backends.
- */
-describe("running a plan", () => {
-  const renderings = (plan: QueryPlan) => ({
-    executed: canonicalBody(ran(plan), []),
-    written: canonicalBody(emitPlan(plan, FIELDS).body, []),
-  });
+const renderings = (plan: QueryPlan) => ({
+  executed: canonicalBody(ran(plan), []),
+  written: canonicalBody(emitPlan(plan, FIELDS).body, []),
+});
 
+/** The ranking case, run after the bucket cases. */
+function registerRankingCases(): void {
+  it("orders and limits a ranking", () => {
+    const { executed, written } = renderings({
+      filters: [],
+      measure: SUM_AMOUNT,
+      group: { field: "status" },
+      order: { by: "measure", direction: "desc" },
+      limit: 5,
+    });
+    expect(executed).to.equal(written);
+  });
+}
+
+function registerPlanExecutionCases(): void {
   it("counts every row", () => {
     const { executed, written } = renderings({ filters: [], measure: COUNT });
     expect(executed).to.equal(written);
@@ -244,29 +241,9 @@ describe("running a plan", () => {
     });
     expect(executed).to.equal(written);
   });
+}
 
-  for (const bucket of ["day", "week", "month", "quarter", "year"] as const) {
-    it(`buckets by ${bucket} the same way`, () => {
-      const { executed, written } = renderings({
-        filters: [],
-        measure: COUNT,
-        group: { field: "createdAt", bucket },
-      });
-      expect(executed).to.equal(written);
-    });
-  }
-
-  it("orders and limits a ranking", () => {
-    const { executed, written } = renderings({
-      filters: [],
-      measure: SUM_AMOUNT,
-      group: { field: "status" },
-      order: { by: "measure", direction: "desc" },
-      limit: 5,
-    });
-    expect(executed).to.equal(written);
-  });
-
+function registerRequestValueCases(): void {
   describe("values supplied per request", () => {
     const bound: QueryPlan = {
       filters: [
@@ -369,4 +346,30 @@ describe("running a plan", () => {
       });
     }
   });
+}
+
+/**
+ * Running a plan and writing it are the same calculation twice, and a preview
+ * that disagreed with the code it previews would be worse than no preview. Each
+ * case asserts the two renderings agree, compared on the calculation rather than
+ * on the layout: where the emitter breaks its chain across lines is its own
+ * business, and pinning it would make every formatting change look like a
+ * divergence between the two backends.
+ */
+describe("running a plan", () => {
+  registerPlanExecutionCases();
+
+  for (const bucket of ["day", "week", "month", "quarter", "year"] as const) {
+    it(`buckets by ${bucket} the same way`, () => {
+      const { executed, written } = renderings({
+        filters: [],
+        measure: COUNT,
+        group: { field: "createdAt", bucket },
+      });
+      expect(executed).to.equal(written);
+    });
+  }
+  registerRankingCases();
+
+  registerRequestValueCases();
 });

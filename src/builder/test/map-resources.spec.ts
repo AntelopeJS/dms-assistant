@@ -30,29 +30,9 @@ function moduleFile(relative: string): string {
   return projectFile(app.root, path.join("modules", MODULE, "src", relative));
 }
 
-/**
- * A client's tables mapped into a module bound to their database: the schema mirrors the catalog
- * verbatim, `_id` exists only where a key does, nothing would create or alter a table, and the
- * pages are generated over what has a key.
- */
-describe("mapping a database the project does not own", function () {
-  this.timeout(OP_TIMEOUT);
+let result: Awaited<ReturnType<typeof MapResources>>;
 
-  let result: Awaited<ReturnType<typeof MapResources>>;
-
-  before(async () => {
-    app = createFixture({ modules: [MODULE] });
-    setCatalogConnectionsForTests({ erp: FAKE_CATALOG });
-    setModuleReloadForTests(reloadedAtOnce);
-    result = await MapResources(INPUT);
-  });
-
-  after(() => {
-    setCatalogConnectionsForTests();
-    setModuleReloadForTests();
-    destroyFixture();
-  });
-
+function registerMappedModuleCases(): void {
   it("writes a module that typechecks, with every TableView page", async () => {
     expectOk(result, "MapResources");
     const refs = (await ListResources()).map((resource) => resource.ref);
@@ -141,7 +121,9 @@ describe("mapping a database the project does not own", function () {
     const pages = (await ListPages()).map((page) => page.id);
     expect(pages).to.not.include("sales-raw-log");
   });
+}
 
+function registerMappedColumnCases(): void {
   it("lets a stats query read a relation mapped without a TableView, under the connection's category", async () => {
     expectOk(result, "MapResources");
     if (!result.ok) {
@@ -245,4 +227,29 @@ describe("mapping a database the project does not own", function () {
     expect(deleted.ok).to.equal(true);
     expect(JSON.stringify(deleted)).to.include("data_kept");
   });
+}
+
+/**
+ * A client's tables mapped into a module bound to their database: the schema mirrors the catalog
+ * verbatim, `_id` exists only where a key does, nothing would create or alter a table, and the
+ * pages are generated over what has a key.
+ */
+describe("mapping a database the project does not own", function () {
+  this.timeout(OP_TIMEOUT);
+
+  before(async () => {
+    app = createFixture({ modules: [MODULE] });
+    setCatalogConnectionsForTests({ erp: FAKE_CATALOG });
+    setModuleReloadForTests(reloadedAtOnce);
+    result = await MapResources(INPUT);
+  });
+
+  after(() => {
+    setCatalogConnectionsForTests();
+    setModuleReloadForTests();
+    destroyFixture();
+  });
+
+  registerMappedModuleCases();
+  registerMappedColumnCases();
 });

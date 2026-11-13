@@ -25,15 +25,7 @@ import {
 } from "./helpers/table-view-shop";
 import { MODULE, OP_TIMEOUT } from "./mapped-database";
 
-describe("setting displays, views and footer figures on a table page", function () {
-  this.timeout(OP_TIMEOUT);
-
-  before(installShopCatalog);
-
-  beforeEach(freshMappedApp);
-
-  after(removeShopCatalog);
-
+function registerDisplayCases(): void {
   describe("displays", () => {
     it("offers a kanban grouped by a single-choice column", async () => {
       await configure({ kanban: { groupBy: "status" } });
@@ -134,129 +126,140 @@ describe("setting displays, views and footer figures on a table page", function 
       ).to.include("/cards/fields");
     });
   });
+}
 
-  describe("views", () => {
-    it("writes a named view with its filters, sort, columns and display", async () => {
-      await configure({
-        kanban: { groupBy: "status" },
-        views: {
-          layout: "strip",
-          defaultView: "open",
-          items: [
-            {
-              id: "open",
-              label: "Open orders",
-              count: true,
-              filters: [
-                {
-                  column: "status",
-                  value: ["pending", "paid"],
-                  mode: "include",
-                },
-              ],
-              sort: [{ column: "created_at", desc: true }],
-              columns: { hidden: ["channel"] },
-              display: "kanban",
-            },
-            {
-              id: "web",
-              label: "Web",
-              filters: [{ column: "channel", value: "web" }],
-            },
-          ],
-        },
-      });
-      const source = await pageSource();
-      expect(source).to.include(
-        '{ accessorKey: "status", value: "pending,paid", mode: "include" }',
-      );
-      expect(source).to.include('sort: [{ field: "created_at", desc: true }]');
-      expect(source).to.include(
-        '{ accessorKey: "channel", value: "web", mode: "is" }',
-      );
-      expect(source).to.include('layout: "strip"');
-      expect(source).to.include('defaultView: "open"');
+function registerViewWriteCases(): void {
+  it("writes a named view with its filters, sort, columns and display", async () => {
+    await configure({
+      kanban: { groupBy: "status" },
+      views: {
+        layout: "strip",
+        defaultView: "open",
+        items: [
+          {
+            id: "open",
+            label: "Open orders",
+            count: true,
+            filters: [
+              {
+                column: "status",
+                value: ["pending", "paid"],
+                mode: "include",
+              },
+            ],
+            sort: [{ column: "created_at", desc: true }],
+            columns: { hidden: ["channel"] },
+            display: "kanban",
+          },
+          {
+            id: "web",
+            label: "Web",
+            filters: [{ column: "channel", value: "web" }],
+          },
+        ],
+      },
     });
-
-    it("marks the columns a view filters or sorts on, and a footer figure compares, instead of refusing", async () => {
-      const page = (await ordersPage()).ref;
-      const result = await ConfigureTableView(page, {
-        views: {
-          items: [
-            {
-              id: "v",
-              label: "V",
-              filters: [{ column: "reference", value: "x" }],
-              sort: [{ column: "total" }],
-            },
-          ],
-        },
-        footer: {
-          summary: [
-            {
-              label: "Web",
-              op: "count",
-              where: { column: "total", op: "equals", value: 5 },
-            },
-          ],
-        },
-      });
-      expectOk(result, "ConfigureTableView");
-      expect(await ordersFlag("reference", "filterable")).to.equal(true);
-      expect(await ordersFlag("total", "sortable")).to.equal(true);
-      expect(await ordersFlag("reference", "filterable")).to.equal(true);
-      expect(JSON.stringify(result.ok ? result.warnings : "")).to.include(
-        "field_flag_set",
-      );
-    });
-
-    it("refuses a view sorting on an unknown column and a display not offered", async () => {
-      const page = (await ordersPage()).ref;
-      const view = (extra: Partial<ViewSetting>) => ({
-        views: { items: [{ id: "v", label: "V", ...extra }] },
-      });
-      expect(
-        refusal(
-          await ConfigureTableView(page, view({ sort: [{ column: "nope" }] })),
-        ),
-      ).to.include("no column");
-      expect(
-        refusal(await ConfigureTableView(page, view({ display: "kanban" }))),
-      ).to.include("does not offer");
-      expect(
-        refusal(
-          await ConfigureTableView(
-            page,
-            view({ filters: [{ column: "status" }] }),
-          ),
-        ),
-      ).to.include("needs a value");
-    });
-
-    it("refuses a view id that is not a slug, a taken id and a default view that does not exist", async () => {
-      const page = (await ordersPage()).ref;
-      const items = [
-        { id: "Late Orders", label: "A" },
-        { id: "b", label: "B" },
-        { id: "b", label: "C" },
-      ];
-      const refused = refusal(
-        await ConfigureTableView(page, {
-          views: { items, defaultView: "zzz" },
-        }),
-      );
-      expect(refused).to.include("not a view id");
-      expect(refused).to.include("is taken");
-      expect(refused).to.include("defaultView");
-    });
-
-    it("removes the views with null", async () => {
-      await configure({ views: { items: [{ id: "all", label: "All" }] } });
-      await configure({ views: null });
-      expect(await pageSource()).to.not.include("views");
-    });
+    const source = await pageSource();
+    expect(source).to.include(
+      '{ accessorKey: "status", value: "pending,paid", mode: "include" }',
+    );
+    expect(source).to.include('sort: [{ field: "created_at", desc: true }]');
+    expect(source).to.include(
+      '{ accessorKey: "channel", value: "web", mode: "is" }',
+    );
+    expect(source).to.include('layout: "strip"');
+    expect(source).to.include('defaultView: "open"');
   });
 
+  it("marks the columns a view filters or sorts on, and a footer figure compares, instead of refusing", async () => {
+    const page = (await ordersPage()).ref;
+    const result = await ConfigureTableView(page, {
+      views: {
+        items: [
+          {
+            id: "v",
+            label: "V",
+            filters: [{ column: "reference", value: "x" }],
+            sort: [{ column: "total" }],
+          },
+        ],
+      },
+      footer: {
+        summary: [
+          {
+            label: "Web",
+            op: "count",
+            where: { column: "total", op: "equals", value: 5 },
+          },
+        ],
+      },
+    });
+    expectOk(result, "ConfigureTableView");
+    expect(await ordersFlag("reference", "filterable")).to.equal(true);
+    expect(await ordersFlag("total", "sortable")).to.equal(true);
+    expect(await ordersFlag("reference", "filterable")).to.equal(true);
+    expect(JSON.stringify(result.ok ? result.warnings : "")).to.include(
+      "field_flag_set",
+    );
+  });
+}
+
+function registerViewRefusalCases(): void {
+  it("refuses a view sorting on an unknown column and a display not offered", async () => {
+    const page = (await ordersPage()).ref;
+    const view = (extra: Partial<ViewSetting>) => ({
+      views: { items: [{ id: "v", label: "V", ...extra }] },
+    });
+    expect(
+      refusal(
+        await ConfigureTableView(page, view({ sort: [{ column: "nope" }] })),
+      ),
+    ).to.include("no column");
+    expect(
+      refusal(await ConfigureTableView(page, view({ display: "kanban" }))),
+    ).to.include("does not offer");
+    expect(
+      refusal(
+        await ConfigureTableView(
+          page,
+          view({ filters: [{ column: "status" }] }),
+        ),
+      ),
+    ).to.include("needs a value");
+  });
+
+  it("refuses a view id that is not a slug, a taken id and a default view that does not exist", async () => {
+    const page = (await ordersPage()).ref;
+    const items = [
+      { id: "Late Orders", label: "A" },
+      { id: "b", label: "B" },
+      { id: "b", label: "C" },
+    ];
+    const refused = refusal(
+      await ConfigureTableView(page, {
+        views: { items, defaultView: "zzz" },
+      }),
+    );
+    expect(refused).to.include("not a view id");
+    expect(refused).to.include("is taken");
+    expect(refused).to.include("defaultView");
+  });
+
+  it("removes the views with null", async () => {
+    await configure({ views: { items: [{ id: "all", label: "All" }] } });
+    await configure({ views: null });
+    expect(await pageSource()).to.not.include("views");
+  });
+}
+
+function registerViewCases(): void {
+  describe("views", () => {
+    registerViewWriteCases();
+    registerViewRefusalCases();
+  });
+}
+
+function registerFooterCases(): void {
   describe("footer", () => {
     it("writes sum and count figures, one counting the rows where a column compares", async () => {
       await configure({
@@ -359,7 +362,9 @@ describe("setting displays, views and footer figures on a table page", function 
       expect(await pageSource()).to.not.include("footer");
     });
   });
+}
 
+function registerNoTableCases(): void {
   describe("a page without a table", () => {
     it("refuses a page that holds no TableView", async () => {
       expectOk(
@@ -377,4 +382,19 @@ describe("setting displays, views and footer figures on a table page", function 
       ).to.include("holds no TableView");
     });
   });
+}
+
+describe("setting displays, views and footer figures on a table page", function () {
+  this.timeout(OP_TIMEOUT);
+
+  before(installShopCatalog);
+
+  beforeEach(freshMappedApp);
+
+  after(removeShopCatalog);
+
+  registerDisplayCases();
+  registerViewCases();
+  registerFooterCases();
+  registerNoTableCases();
 });

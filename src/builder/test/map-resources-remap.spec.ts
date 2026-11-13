@@ -77,26 +77,7 @@ function moduleFile(relative: string): string {
   return projectFile(app.root, path.join("modules", MODULE, "src", relative));
 }
 
-/**
- * A mapping changed after it was written: a relation mapped again from new choices, its page
- * following, and the relations decided against recorded in the module.
- */
-describe("mapping again a database already mapped", function () {
-  this.timeout(OP_TIMEOUT);
-
-  before(async () => {
-    app = createFixture({ modules: [MODULE] });
-    setCatalogConnectionsForTests({ erp: FAKE_CATALOG });
-    setModuleReloadForTests(reloadedAtOnce);
-    expectOk(await MapResources(INPUT), "MapResources");
-  });
-
-  after(() => {
-    setCatalogConnectionsForTests();
-    setModuleReloadForTests();
-    destroyFixture();
-  });
-
+function registerRemapReadBackCases(): void {
   it("reads a mapped relation back as its current choices", async () => {
     const read = await GetMapping("erp", MODULE);
     expectOk(read, "GetMapping");
@@ -192,7 +173,9 @@ describe("mapping again a database already mapped", function () {
       : undefined;
     expect(after?.resource.title.value).to.equal("People");
   });
+}
 
+function registerRemapRewriteCases(): void {
   it("rewrites a relation mapped before from new choices, and keeps its page", async () => {
     const remapped = await MapResources({
       module: MODULE,
@@ -285,7 +268,9 @@ describe("mapping again a database already mapped", function () {
     const refs = (await ListResources()).map((resource) => resource.ref);
     expect(refs).to.include("erp/sales/countries");
   });
+}
 
+function registerRemapLabelCases(): void {
   it("points a relation column at a relation the module mapped before", async () => {
     const remapped = await MapResources({
       module: MODULE,
@@ -384,7 +369,9 @@ describe("mapping again a database already mapped", function () {
       "displayName: ACCOUNTS_TITLE",
     );
   });
+}
 
+function registerDecidedAgainstCases(): void {
   it("records relations decided against, and forgets one once it is mapped", async () => {
     const manifest = () => builderRecord(app.root, MODULE);
     const excluded = await MapResources({
@@ -447,4 +434,30 @@ describe("mapping again a database already mapped", function () {
     expect(refused.ok).to.equal(false);
     expect(JSON.stringify(refused)).to.include("importOverrides");
   });
+}
+
+/**
+ * A mapping changed after it was written: a relation mapped again from new choices, its page
+ * following, and the relations decided against recorded in the module.
+ */
+describe("mapping again a database already mapped", function () {
+  this.timeout(OP_TIMEOUT);
+
+  before(async () => {
+    app = createFixture({ modules: [MODULE] });
+    setCatalogConnectionsForTests({ erp: FAKE_CATALOG });
+    setModuleReloadForTests(reloadedAtOnce);
+    expectOk(await MapResources(INPUT), "MapResources");
+  });
+
+  after(() => {
+    setCatalogConnectionsForTests();
+    setModuleReloadForTests();
+    destroyFixture();
+  });
+
+  registerRemapReadBackCases();
+  registerRemapRewriteCases();
+  registerRemapLabelCases();
+  registerDecidedAgainstCases();
 });

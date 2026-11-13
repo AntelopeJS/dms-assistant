@@ -228,10 +228,11 @@ async function syncFile(projectRoot: string, addsDms: boolean): Promise<void> {
  * Brings the project's `.mcp.json` to this version: it removes the `dms-ai`
  * server the previous version added, whose launcher needs a bridge that is
  * gone, and adds the `dms` server of `@antelopejs/dms` when that module
- * writes one, its launcher is there and the server is missing. Every other server and key is kept as it is,
- * and a file that already matches is not written. A file that is not a JSON
- * object with an object of servers is left alone with a warning. Running it
- * again changes nothing, so it runs on every start.
+ * writes one, its launcher is there and the server is missing. Every other
+ * server and key is kept as it is, and a file that already matches is not
+ * written. A file that is not a JSON object with an object of servers is left
+ * alone with a warning. Running it again changes nothing, so it runs on every
+ * start.
  */
 export async function syncProjectMcpJson(projectRoot: string): Promise<void> {
   try {

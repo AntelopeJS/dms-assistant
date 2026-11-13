@@ -109,7 +109,6 @@ function pagesToRemove(details: unknown): string[] {
 	return pages.filter((page): page is string => typeof page === "string");
 }
 
-/** What a held call does: a configuration change, or a mapping that removes the pages it names. */
 function heldWhy(preview: HeldPreview, t: Translate): string {
 	if (preview.operation === CONFIGURE_PROJECT_TOOL_NAME)
 		return t("dms_ai.panel.approvals.why_held_configure");
@@ -125,10 +124,7 @@ function heldWhy(preview: HeldPreview, t: Translate): string {
  * Every value of a held call's preview on a row of its own, in full: nested
  * keys joined by dots, list items by index, text such as a diff as it is.
  */
-export function heldPreviewRows(
-	details: unknown,
-	name = "",
-): NamedArgument[] {
+export function heldPreviewRows(details: unknown, name = ""): NamedArgument[] {
 	if (Array.isArray(details) && details.length > 0)
 		return details.flatMap((item: unknown, index) =>
 			heldPreviewRows(item, `${name}[${index}]`),

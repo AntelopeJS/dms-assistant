@@ -72,7 +72,6 @@ export const DELETE_REQUEST = {
 	ruleOptions: [],
 };
 
-/** A diff longer than the cut the generic card makes. */
 export const CONFIGURE_DIFF = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n${"+    shop: {},\n".repeat(30)}`;
 
 const CONFIGURE_STEPS = [

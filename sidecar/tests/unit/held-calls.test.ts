@@ -26,7 +26,6 @@ const AS_REPORTED_BY = {
   }),
 };
 
-/** One call through the server's turn events, answered by `answer`. */
 function endCall(
   heldCalls: HeldCalls,
   call: ToolCallSubject,

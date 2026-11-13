@@ -329,7 +329,6 @@ function pendingRecord(
   });
 }
 
-/** A call the DMS held changed nothing: its repeat is the action audited. */
 function isHeldByDms(index: ConversationIndex, use: StoredMessage): boolean {
   const callId = use.callId;
   return callId !== undefined && index.results.get(callId)?.outcome === "held";

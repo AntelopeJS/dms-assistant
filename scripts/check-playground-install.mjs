@@ -40,13 +40,13 @@ function lockfileFailure(dir) {
     [
       "install",
       "--dir",
-      join(root, dir),
+      dir,
       "--ignore-workspace",
       "--frozen-lockfile",
       "--lockfile-only",
       "--ignore-scripts",
     ],
-    { encoding: "utf8" },
+    { cwd: root, encoding: "utf8", shell: process.platform === "win32" },
   );
   if (result.status === 0) return null;
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;

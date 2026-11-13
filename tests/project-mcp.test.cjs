@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { spawn, spawnSync } = require("node:child_process");
+const events = require("node:events");
 const {
   chmod,
   mkdir,
@@ -17,6 +18,7 @@ const { after, before, test } = require("node:test");
 const { HTTPResult } = require("@antelopejs/interface-api");
 const { z } = require("zod");
 const { installRequireMocks } = require("./helpers/require-mocks.cjs");
+const { posixModeTest } = require("./helpers/platform-tests.cjs");
 
 const DIST_DIR = path.resolve(__dirname, "../dist");
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -198,6 +200,7 @@ async function startBridge(root) {
     .object({ command: z.string(), args: z.array(z.string()) })
     .parse((await readMcpJson(root)).mcpServers["dms-ai"]);
   const child = spawn(entry.command, entry.args, { cwd: root });
+  const exited = events.once(child, "exit");
   const lines = readline.createInterface({ input: child.stdout });
   const iterator = lines[Symbol.asyncIterator]();
   return {
@@ -218,7 +221,10 @@ async function startBridge(root) {
         clearTimeout(timer);
       }
     },
-    stop: () => child.kill(),
+    stop: async () => {
+      child.kill();
+      await exited;
+    },
   };
 }
 
@@ -255,7 +261,7 @@ void test("a Claude Code session launched from .mcp.json reaches the sidecar's p
       },
     ]);
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -265,6 +271,7 @@ void test("a request the backend cannot answer gets a JSON-RPC error naming the 
   await publish(root);
   const configPath = path.join(root, ...CACHE, "mcp.json");
   const config = await readBridgeConfig(root);
+  assert.match(config.url, /\/ai\/mcp$/);
   await writeFile(
     configPath,
     JSON.stringify({ ...config, url: "http://127.0.0.1:1/ai/mcp" }),
@@ -280,19 +287,21 @@ void test("a request the backend cannot answer gets a JSON-RPC error naming the 
       /ajs project dev/,
     );
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
 
-void test("the credential file is readable by the project's user only", async () => {
-  const root = await tempProject();
-  await publish(root);
-  const { mode } = await stat(path.join(root, ...CACHE, "mcp.json"));
-  assert.equal(mode & 0o777, 0o600);
-  assert.match((await readBridgeConfig(root)).url, /\/ai\/mcp$/);
-  await rm(root, { recursive: true, force: true });
-});
+void posixModeTest(
+  "the credential file is readable by the project's user only",
+  async () => {
+    const root = await tempProject();
+    await publish(root);
+    const { mode } = await stat(path.join(root, ...CACHE, "mcp.json"));
+    assert.equal(mode & 0o777, 0o600);
+    await rm(root, { recursive: true, force: true });
+  },
+);
 
 void test("the route refuses a caller without this start's credential", async () => {
   const root = await tempProject();
@@ -358,8 +367,14 @@ void test("the .mcp.json the module writes passes the projects' format check", a
   await publish(extended);
   const files = [fresh, extended].map((root) => path.join(root, ".mcp.json"));
   const check = spawnSync(
-    path.join(REPO_ROOT, "node_modules", ".bin", "oxfmt"),
-    ["--check", "-c", path.join(REPO_ROOT, "oxfmt.config.ts"), ...files],
+    process.execPath,
+    [
+      path.join(REPO_ROOT, "node_modules", "oxfmt", "bin", "oxfmt"),
+      "--check",
+      "-c",
+      path.join(REPO_ROOT, "oxfmt.config.ts"),
+      ...files,
+    ],
     { encoding: "utf8" },
   );
   assert.equal(check.status, 0, `${check.stdout}${check.stderr}`);
@@ -441,7 +456,7 @@ void test("the bridge reads its config per message, so a restarted backend needs
       result: {},
     });
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -463,7 +478,7 @@ void test("the bridge writes nothing for a notification the backend acknowledges
       result: {},
     });
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -487,7 +502,7 @@ void test("a request holding U+2028 reaches the sidecar whole", async () => {
       params,
     );
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -509,7 +524,7 @@ void test("a refusal reaches the session with its cause, not as a backend that i
     assert.match(message, /credential/);
     assert.doesNotMatch(message, /not running/);
   } finally {
-    bridge.stop();
+    await bridge.stop();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -531,15 +546,18 @@ void test("the route serves nothing where the sidecar is turned off", async () =
   }
 });
 
-void test("a credential file left readable by others is made private again", async () => {
-  const root = await tempProject();
-  await publish(root);
-  const file = path.join(root, ...CACHE, "mcp.json");
-  await chmod(file, 0o644);
-  await publish(root);
-  assert.equal((await stat(file)).mode & 0o777, 0o600);
-  await rm(root, { recursive: true, force: true });
-});
+void posixModeTest(
+  "a credential file left readable by others is made private again",
+  async () => {
+    const root = await tempProject();
+    await publish(root);
+    const file = path.join(root, ...CACHE, "mcp.json");
+    await chmod(file, 0o644);
+    await publish(root);
+    assert.equal((await stat(file)).mode & 0o777, 0o600);
+    await rm(root, { recursive: true, force: true });
+  },
+);
 
 void test("a .mcp.json the module cannot read is left alone", async () => {
   const root = await tempProject();

@@ -6,6 +6,7 @@ import { check, parseJson, pause, pick, same, statusIs, text, until } from "../.
 
 const OLD_SERVER = { command: "node", args: ["node_modules/.cache/dms-ai/mcp-bridge.cjs"] };
 const OTHER_SERVER = { command: "echo", args: ["kept"] };
+const OWN_SERVER = { command: "node", args: ["tools/dms-ai.cjs"] };
 const SETTLE_MS = 6000;
 
 /** @param {Ctx} ctx */
@@ -29,7 +30,7 @@ async function restartOn(ctx, body) {
 export const mcpJsonJourneys = [
   {
     id: "a-development-start-replaces-the-old-dms-ai-server-in-mcp-json",
-    title: "the first development start after an upgrade removes the dms-ai server the previous version added to .mcp.json, whose launcher is gone, keeps every other server and key, leaves the dms server in place, writes nothing on the next start, and leaves a file that is not a JSON object of servers as it is",
+    title: "the first development start after an upgrade removes the dms-ai server the previous version added to .mcp.json, whose launcher is gone, keeps every other server and key, leaves the dms server in place, writes nothing on the next start, keeps a dms-ai server of the owner's own whose launcher is another, and leaves a file that is not a JSON object of servers as it is",
     entryPoint: "<project>/.mcp.json, ajs project dev",
     backend: "dev",
     async run(/** @type {Ctx} */ ctx) {
@@ -48,6 +49,10 @@ export const mcpJsonJourneys = [
       await statusIs(ctx, (status) => text(status, "status") === "ready", 90_000);
       await pause(SETTLE_MS);
       await ctx.verify("the next start", [same("the file is not rewritten", [statSync(projectFile(ctx)).mtimeMs, readFileSync(projectFile(ctx), "utf8")], written)]);
+      const own = `${JSON.stringify({ mcpServers: { "dms-ai": OWN_SERVER, dms: pick(upgraded, "mcpServers", "dms") } }, null, 2)}\n`;
+      await restartOn(ctx, own);
+      await pause(SETTLE_MS);
+      await ctx.verify("a dms-ai server of the owner's own", [same("the file is as it was", readFileSync(projectFile(ctx), "utf8"), own)]);
       const unusable = `${JSON.stringify({ mcpServers: ["dms-ai"] })}\n`;
       await restartOn(ctx, unusable);
       const warned = await logged(/\.mcp\.json is not a JSON object with an object of servers, so it was left as it is\./);

@@ -7,14 +7,15 @@ description: "Drive the builder surface of AntelopeJS/dms-assistant (the /api/bu
 
 Every deterministic step is a `dms-control` command. You choose which journeys to run and judge what they show; you never write a multi-step shell recipe. When a journey you need does not exist, add it to `journeys/<feature>.mjs`, describe it in its feature file, and run it.
 
-The pack has no `dms` verify kind, so this skill follows the layout of dms-media and dms-automation. `dms-control` is the bin of `@antelopejs/dms`, a dependency of the skill's own playground (`playground/`), which `prepare` installs. Run it with Node 24 after the repository install:
+The pack has no `dms` verify kind, so this skill follows the layout of dms-media and dms-automation. `dms-control` is the bin of `@antelopejs/dms`, a dependency of the skill's own playground (`playground/`). Run it with Node 24 after the repository install and the playground's own install, which `prepare` repeats:
 
 ```bash
+pnpm --dir .agents/skills/verify-dms-builder/playground install --ignore-workspace --frozen-lockfile --prefer-offline --ignore-scripts
 C="node .agents/skills/verify-dms-builder/playground/node_modules/@antelopejs/dms/bin/dms-control.mjs"
 $C                       # lists every command
 ```
 
-Give `doors` and `--skill` absolute paths. Set `TMPDIR` to a folder of yours.
+Give `doors` and `--skill` absolute paths. The repository holds two verify skills, so `plan`, `map`, `doors` and `verdict` take `--skill` too. Set `TMPDIR` to a folder of yours.
 
 ## Launch
 
@@ -42,7 +43,7 @@ Do not drive a run that fails doctor.
 ## Drive
 
 ```bash
-$C plan --base origin/main   # the diff mapped to features; unmapped surfaces
+$C plan --skill "$PWD/.agents/skills/verify-dms-builder" --base origin/main   # the diff mapped to features; unmapped surfaces
 $C journey "$RUN" database [journey-id...]
 ```
 

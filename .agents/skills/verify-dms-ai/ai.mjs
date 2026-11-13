@@ -222,20 +222,14 @@ export async function member(ctx, name, permissions = []) {
 
 /**
  * The sidecar's own folder of the run: its lock, its stored state and its log. It sits in the playground's
- * `node_modules/.cache/dms-ai`, so a checkout holds one run at a time. A standby backend (dms-control starts one for
- * the next journey's database unless the run began with `up --no-standby`) loads the module too, spawns its own
- * sidecar and overwrites `sidecar.lock` and the other files here, so nothing in the folder can be judged: the journey
- * ends with a NOT VERIFIED error and no failing check. Every reader of the lock, the log and the stored state
- * reaches them through this function.
+ * `node_modules/.cache/dms-ai`, so a checkout holds one run at a time, and a run holds one backend at a time
+ * (`guarded` refuses a run with a standby backend).
  *
  * @param {Ctx} ctx The journey
  * @param {...string} parts A path under it
  * @returns {string} The folder or file
  */
 export function sidecarPath(ctx, ...parts) {
-  if (ctx.state.noStandby !== true) {
-    throw new Error("NOT VERIFIED: a standby backend shares sidecar.lock and the sidecar's folder with the backend under test, so the sidecar cannot be read or judged. Start the run with `dms-control up --no-standby`.");
-  }
   return join(ctx.state.runPlayground ?? ctx.state.playground, "node_modules", ".cache", "dms-ai", ...parts);
 }
 

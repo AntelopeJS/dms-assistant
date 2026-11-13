@@ -14,7 +14,7 @@ C="pnpm exec dms-control"
 $C                       # lists every command
 ```
 
-Give `doors` and `--skill` absolute paths. `mongod` comes from `DMS_CONTROL_MONGOD` or `PATH`. A verifier that runs with a temporary `HOME` does not see `~/.cache/mongodb-binaries`: pass the binary in `DMS_CONTROL_MONGOD`.
+Give `doors` and `--skill` absolute paths. The repository holds two verify skills, so `plan`, `map`, `doors` and `verdict` take `--skill` too. `mongod` comes from `DMS_CONTROL_MONGOD` or `PATH`. A verifier that runs with a temporary `HOME` does not see `~/.cache/mongodb-binaries`: pass the binary in `DMS_CONTROL_MONGOD`.
 
 ## What this skill cannot verify
 
@@ -48,7 +48,7 @@ Do not drive a run that fails doctor.
 ## Drive
 
 ```bash
-$C plan --base origin/main   # the diff mapped to features; unmapped surfaces
+$C plan --skill "$PWD/.agents/skills/verify-dms-ai" --base origin/main   # the diff mapped to features; unmapped surfaces
 $C journey "$RUN" smoke
 $C journey "$RUN" settings [journey-id...]
 ```
@@ -82,7 +82,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 ## Gotchas
 
-- `up` needs `--no-standby`: without it dms-control starts a standby backend for the next journey's database, every backend of a run loads the module, and each spawns its own sidecar in the checkout's one sidecar folder, overwriting `sidecar.lock`. A journey that reads the folder ends with a NOT VERIFIED error and no failing check on a run that did not start with it.
+- `up` needs `--no-standby`: without it dms-control starts a standby backend for the next journey's database, every backend of a run loads the module, and each spawns its own sidecar in the checkout's one sidecar folder, overwriting `sidecar.lock`. Every journey ends with a NOT VERIFIED error and no failing check on a run that did not start with it (`guarded` in `guard.mjs`).
 - Every dashboard page renders on the server and hydrates after `load`; `guard.mjs` waits for the sign-in form to hydrate, and `choose` and `clickUntil` click again until a radio, a switch or a dialog responds.
 - A step whose check fails because the backend or the dashboard stopped answering ends the journey with a `NOT VERIFIED` error and no failing check.
 - The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.

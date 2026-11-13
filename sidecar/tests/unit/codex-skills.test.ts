@@ -88,6 +88,28 @@ describe("selectSkillsToDisable", () => {
     expect(disabled).toEqual([{ path: systemSkill.path, enabled: false }]);
   });
 
+  it("keeps only the first source's copy of a name our roots share, whatever order Codex lists them in", () => {
+    const workflowRoot =
+      "/srv/app/node_modules/@antelopejs/agent-skills/skills";
+    const dmsRoot = "/srv/app/node_modules/@antelopejs/dms/skills";
+    const fromDms = skill("dms-pages", dmsRoot, "user");
+    const fromWorkflow = skill("dms-pages", workflowRoot, "user");
+    const disabled = selectSkillsToDisable(listing([fromDms, fromWorkflow]), {
+      extraRoots: [workflowRoot, dmsRoot],
+      allowLocalSkills: false,
+    });
+    expect(disabled).toEqual([{ path: fromDms.path, enabled: false }]);
+  });
+
+  it("keeps our copy over a local skill of the same name", () => {
+    const local = skill(SAFE_MODE_SKILL_NAME, HOME_AGENT_SKILLS, "user");
+    const disabled = selectSkillsToDisable(listing([local, contributed]), {
+      extraRoots: [MODULE_ROOT],
+      allowLocalSkills: true,
+    });
+    expect(disabled).toEqual([{ path: local.path, enabled: false }]);
+  });
+
   it("leaves an already disabled skill alone", () => {
     const off = skill("my-notes", HOME_AGENT_SKILLS, "user", false);
     const disabled = selectSkillsToDisable(listing([off]), {

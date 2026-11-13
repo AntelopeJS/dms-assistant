@@ -58,36 +58,70 @@ function isUnderRoot(target: string, root: string): boolean {
   return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
-function isContributedByUs(
+/** The position of the extra root a skill comes from, or -1 for a skill Codex found itself. */
+function sourceIndex(
   skill: ListedSkill,
   extraRoots: readonly string[],
-): boolean {
+): number {
   const resolved = path.resolve(skill.path);
-  return extraRoots.some((root) => isUnderRoot(resolved, path.resolve(root)));
+  return extraRoots.findIndex((root) =>
+    isUnderRoot(resolved, path.resolve(root)),
+  );
 }
 
-function mustDisable(
+function isForeign(
   skill: ListedSkill,
   input: SkillNeutralizationInput,
 ): boolean {
-  if (!skill.enabled) return false;
-  if (isContributedByUs(skill, input.extraRoots)) return false;
+  if (sourceIndex(skill, input.extraRoots) !== -1) return false;
   if (CODEX_OWNED_SKILL_SCOPES.includes(skill.scope)) return true;
   return !input.allowLocalSkills;
+}
+
+/**
+ * The listed skills in source order: ours in the order of the extra roots,
+ * as the Claude path loads them, then the skills Codex found itself, in the
+ * order it listed them.
+ */
+function inSourceOrder(
+  skills: readonly ListedSkill[],
+  extraRoots: readonly string[],
+): ListedSkill[] {
+  const rankOf = (skill: ListedSkill): number => {
+    const index = sourceIndex(skill, extraRoots);
+    return index === -1 ? extraRoots.length : index;
+  };
+  return skills
+    .map((skill, position) => ({ skill, position, rank: rankOf(skill) }))
+    .sort((a, b) => a.rank - b.rank || a.position - b.position)
+    .map(({ skill }) => skill);
 }
 
 /**
  * Skills to switch off before the first turn. Codex scans `$CWD/.agents/skills`
  * and its own system scope natively, and neither an isolated CODEX_HOME nor a
  * dedicated HOME hides those — only a per-path disable does. Without this the
- * `allowLocalSkills` setting would be a lie on the Codex path.
+ * `allowLocalSkills` setting would be a lie on the Codex path. Codex also
+ * lists every copy of a name, so each copy after the first in source order is
+ * switched off too, leaving the copy the Claude path loads.
  */
 export function selectSkillsToDisable(
   entries: readonly ListedSkillsEntry[],
   input: SkillNeutralizationInput,
 ): v2.SkillsConfigWriteParams[] {
-  return collectListedSkills(entries)
-    .filter((skill) => mustDisable(skill, input))
+  const listed = collectListedSkills(entries);
+  const keptNames = new Set<string>();
+  const disabled = new Set<ListedSkill>();
+  for (const skill of inSourceOrder(listed, input.extraRoots)) {
+    if (!skill.enabled) continue;
+    if (isForeign(skill, input) || keptNames.has(skill.name)) {
+      disabled.add(skill);
+    } else {
+      keptNames.add(skill.name);
+    }
+  }
+  return listed
+    .filter((skill) => disabled.has(skill))
     .map((skill) => ({ path: skill.path, enabled: false }));
 }
 

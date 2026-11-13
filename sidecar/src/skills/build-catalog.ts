@@ -17,9 +17,10 @@ export interface SkillCatalogItem {
 export interface SkillCatalog {
   items: SkillCatalogItem[];
   /**
-   * Names contributed by more than one module. Claude loads the first source's
-   * copy only (see `firstOfEachName`); Codex keys them by bare name and keeps
-   * only one, so the loser silently disappears from the agent's index.
+   * Names contributed by more than one module. Both providers load the first
+   * source's copy only (see `firstOfEachName` and the Codex path's
+   * `selectSkillsToDisable`), so the later copies silently disappear from the
+   * agent's index.
    */
   duplicateNames: string[];
 }

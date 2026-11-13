@@ -4,7 +4,7 @@ Docs: `docs/8.database-connection.md`. Journeys: `journeys/connection-check.mjs`
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |
-| docs/8.database-connection.md:64 | The check is owner only, and answers 403 outside development | the-check-refuses-the-owner-outside-development | the owner gets 403 `forbidden` under `ajs project start`, for a good body and a bad one; the owner-only part is in http-api |
+| docs/8.database-connection.md:64 | The check is owner only, and answers 403 outside development | the-check-refuses-the-owner-outside-development | the owner gets 403 `forbidden` under `ajs project start`, for a good body and a bad one; under `ajs project dev` the-check-validates-the-body-and-reaches-the-database-in-development refuses nobody and a member with 401 or 403 before any database is reported |
 | docs/8.database-connection.md:64 | 400 for an `engine` other than `postgres`, `mongodb` or `rethinkdb`, or a `url` that is not of that engine | the-check-validates-the-body-and-reaches-the-database-in-development | an unknown engine, a URL of another engine and a missing URL answer 400, the message names the engines and the field, and none repeats the password |
 | docs/8.database-connection.md:143 | `reachable` is true when a server answered, with `latencyMs` | same | the run's MongoDB answers `reachable: true` and a numeric `latencyMs` |
 | docs/8.database-connection.md:144 | `canRead` and `canWrite`; a MongoDB without access control gives full privileges | same | `canRead` and `canWrite` true on the run's mongod |

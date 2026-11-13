@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { builder, check, isText, pick, text } from "../builder.mjs";
+import { builder, check, isText, member, pick, text } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
@@ -38,10 +38,19 @@ export const journeys = guarded([
   },
   {
     id: "the-check-validates-the-body-and-reaches-the-database-in-development",
-    title: "Under ajs project dev the check answers 400 for an engine or URL it does not accept without echoing the URL, reaches the run's MongoDB with read and write access, and reports an unreachable one with a reason that holds no password",
+    title: "Under ajs project dev the check refuses nobody and a member who is not the owner, answers 400 for an engine or URL it does not accept without echoing the URL, reaches the run's MongoDB with read and write access, and reports an unreachable one with a reason that holds no password",
     entryPoint: "POST /api/builder/database/connections/check",
     backend: "dev",
     async run(/** @type {Ctx} */ ctx) {
+      await member(ctx, "reader", []);
+      const anonymous = await builder(ctx, "check the run's MongoDB as nobody", "POST", CHECK, { as: "anon", body: { engine: "mongodb", url: runMongoUrl(ctx) } });
+      const reader = await builder(ctx, "check the run's MongoDB as a member", "POST", CHECK, { as: "reader", body: { engine: "mongodb", url: runMongoUrl(ctx) } });
+      await ctx.verify("only the owner may check in development", [
+        check("nobody is refused 401 or 403", [401, 403].includes(anonymous.status ?? 0), anonymous.status),
+        check("a member who is not the owner is refused 401 or 403", [401, 403].includes(reader.status ?? 0), reader.status),
+        check("neither refusal reports the database", [anonymous, reader].every((answer) => pick(answer.body, "reachable") === undefined), [anonymous.body, reader.body]),
+      ]);
+
       const engine = await builder(ctx, "an engine it does not connect", "POST", CHECK, { body: { engine: "mysql", url: `mysql://root:${PASSWORD}@127.0.0.1/x` } });
       const scheme = await builder(ctx, "a URL of another engine", "POST", CHECK, { body: { engine: "mongodb", url: `postgres://root:${PASSWORD}@127.0.0.1/x` } });
       const missing = await builder(ctx, "no URL", "POST", CHECK, { body: { engine: "postgres" } });

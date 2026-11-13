@@ -85,6 +85,13 @@ export const journeys = guarded([
 
       const dryRun = await builder(ctx, "dry run of an added module", "POST", "/database/project", { body: { steps: [{ op: "AddModule", id: "verify-extra", entry: { source: { type: "package", package: "@antelopejs/verify-extra", version: "^1.0.0" } } }], opts: { dryRun: true } } });
       const diff = text(list(dryRun.body, "changes")[0], "diff");
+      const dryRunVariable = await builder(ctx, "dry run of an added module with a variable", "POST", "/database/project", {
+        body: {
+          steps: [{ op: "AddModule", id: "verify-extra", entry: { source: { type: "package", package: "@antelopejs/verify-extra", version: "^1.0.0" }, env: { url: "VERIFY_EXTRA_URL" } } }],
+          opts: { dryRun: true },
+          variables: [{ name: "VERIFY_EXTRA_URL", value: "postgres://u:verify-dry-run@h/db" }],
+        },
+      });
       const repairDry = await builder(ctx, "repair as a dry run", "POST", "/database/connections/repair", { body: { dryRun: true } });
       const repair = await builder(ctx, "repair", "POST", "/database/connections/repair");
       const repairAgain = await builder(ctx, "repair again", "POST", "/database/connections/repair", { body: {} });
@@ -92,6 +99,7 @@ export const journeys = guarded([
         answer.status === 200 && pick(answer.body, "ok") === true && list(answer.body, "changes").length === 0 && Array.isArray(pick(answer.body, "data", "files")) && items(answer.body, "data", "files").length === 0;
       await ctx.verify("the dry run and the repair", [
         check("the dry run is ok and shows the module it would add", pick(dryRun.body, "ok") === true && diff.includes('"verify-extra"') && diff.includes("@antelopejs/verify-extra"), dryRun.body),
+        check("a dry run with a variable is ok and shows the module it would add", pick(dryRunVariable.body, "ok") === true && text(list(dryRunVariable.body, "changes")[0], "diff").includes('"verify-extra"'), dryRunVariable.body),
         check("a repair dry run is an empty success", emptySuccess(repairDry), repairDry),
         check("a repair with nothing missing is an empty success", emptySuccess(repair), repair),
         check("a second repair changes nothing either", emptySuccess(repairAgain), repairAgain),
@@ -102,7 +110,7 @@ export const journeys = guarded([
       const modules = await builder(ctx, "the modules after", "GET", "/database/project");
       await ctx.verify("nothing was written", [
         check("antelope.config.ts is byte for byte the same", configAfter.text === configBefore.text, configAfter.text.length),
-        check(".env is the same, or still absent", envAfter === envBefore, envAfter === null ? "absent" : envAfter.length),
+        check(".env is the same, or still absent, and holds no dry-run variable", envAfter === envBefore && !(envAfter ?? "").includes("VERIFY_EXTRA_URL"), envAfter === null ? "absent" : envAfter.length),
         check("the project's module list does not hold the dry-run module", !JSON.stringify(pick(modules.body, "modules")).includes("verify-extra"), modules.body),
       ]);
     },

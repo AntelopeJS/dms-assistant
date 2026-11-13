@@ -132,10 +132,6 @@ function previewIn(text: string): JsonValue | undefined {
 
 const CodeSchema = z.object({ code: z.string() });
 
-/**
- * The code the answer ends with. The DMS sends it as the last text block, so
- * it is the last line once the blocks are joined, as Claude hands them over.
- */
 function endingCodeOf(text: string): string | undefined {
   const lastLine = text.slice(text.lastIndexOf("\n") + 1);
   try {
@@ -166,13 +162,6 @@ export function holdRefusalOf(
   return isRefusal ? { preview: previewIn(text) } : undefined;
 }
 
-/**
- * Whether a call's end releases its hold: only a success does. The DMS
- * consumes its hold once the call passes its gate, but it runs some of its
- * work, such as a preview, before that gate, and a failure reads the same on
- * either side of it. A failure therefore keeps the hold, as does a call that
- * never reached the DMS: declined by the person, blocked or stopped first.
- */
 const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
   done: true,
   failed: false,
@@ -186,22 +175,18 @@ const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
  * DMS's whole window, counted from when its refusal arrived, so never for
  * less time than the DMS holds it, and only a success with the same
  * arguments releases it. When the chat cannot tell whether the DMS still
- * holds a call, it asks once more, so these cases cost a question, never a
- * missing one:
+ * holds a call, it asks once more: that costs a question, never a missing one.
  *
- * - An approved repeat that passed the DMS's gate and then failed keeps the
- *   chat's hold, though the DMS consumed its own: the next identical call is
- *   asked, the DMS refuses it, and its repeat is asked again. A marker from
- *   the DMS that a call passed its gate would let that failure release.
+ * - A run that fails keeps its hold, as the DMS runs some of its work, such as
+ *   a preview, before its gate, and a failure reads the same on either side of
+ *   it. After a failure past the gate, the next identical call is asked, the
+ *   DMS refuses it, and its repeat is asked again.
  * - A repeat with a key the DMS's tool drops runs on the DMS's hold, but the
- *   chat's hold, keyed on the arguments as sent, stays for the rest of the
- *   window: every call to that tool in the conversation is still asked,
- *   first calls included. Releasing the held calls whose arguments the run's
- *   contain would be unsafe: when the extra key is one the tool knows, the
- *   run consumed another hold, and the DMS would run the held call unasked.
- * - Every call to a tool with a held call is asked, whatever its arguments,
- *   as the chat cannot tell which keys the DMS drops before it looks its hold
- *   up.
+ *   chat's hold stays for the rest of the window, so the tool's later calls
+ *   are asked on their first call too. Releasing the held calls whose
+ *   arguments the run's contain would be unsafe: when the extra key is one
+ *   the tool knows, the run consumed another hold, and the DMS would run the
+ *   held call unasked.
  */
 export function createHeldCalls(now: () => number = Date.now): HeldCalls {
   const holdByCall = new Map<string, Hold>();

@@ -39,8 +39,9 @@ export interface ToolCallHooks {
   /** Awaited before a mutating tool runs: the turn's checkpoint is taken. */
   beforeMutation?: () => Promise<void>;
   /**
-   * Whether a call repeats one the DMS MCP holds until someone confirms it:
-   * the DMS runs it, so the person is asked first.
+   * Whether the DMS MCP holds a call to this call's tool in the conversation
+   * until someone confirms it: the DMS may run this one, so the person is
+   * asked first.
    */
   isHeldCall?: (call: ToolCallSubject) => boolean;
 }

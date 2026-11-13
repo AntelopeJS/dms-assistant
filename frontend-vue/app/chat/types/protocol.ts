@@ -108,9 +108,8 @@ export interface HeldPreview {
 }
 
 /**
- * Another call to a Builder tool the DMS holds a call of. The chat asks before
- * it, as the DMS may count it as the held call. `args` are the call's own, not
- * a preview from the DMS.
+ * Another call to a Builder tool the DMS holds a call of. `args` are the
+ * call's own, not a preview from the DMS.
  */
 export interface HeldToolPreview {
 	type: "held_tool";

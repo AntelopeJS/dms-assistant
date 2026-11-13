@@ -96,7 +96,6 @@ export interface BusOptions {
   /** Overrides the policy's timeout (tests). */
   timeoutMs?: number;
   rules?: PermissionRuleStore;
-  /** The calls the DMS holds, whose cards show its preview. */
   heldCalls?: Pick<HeldCalls, "holdOf">;
 }
 

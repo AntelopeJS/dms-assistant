@@ -403,9 +403,8 @@ export const HeldPreviewSchema = z.object({
 });
 
 /**
- * Another call to a Builder tool the DMS holds a call of. The chat asks before
- * it, as the DMS drops the arguments its tool does not know and so may count it
- * as the held call. `args` are the call's own, not a preview from the DMS.
+ * Another call to a Builder tool the DMS holds a call of. `args` are the
+ * call's own, not a preview from the DMS.
  */
 export const HeldToolPreviewSchema = z.object({
   type: z.literal("held_tool"),

@@ -34,8 +34,7 @@ type TimestampSource = (sources: MetricSources) => number[];
 
 const STATE_CHANGE_TOOLS: readonly string[] = [UNDO_TOOL_NAME, REDO_TOOL_NAME];
 
-/** The tool calls the metrics count: neither an undo or redo, nor a held call. */
-function calls(sources: MetricSources): ActivityRecord[] {
+function countedCalls(sources: MetricSources): ActivityRecord[] {
   return sources.records.filter(
     (r) => !STATE_CHANGE_TOOLS.includes(r.tool) && !r.isHeld,
   );
@@ -45,7 +44,7 @@ function timestampsOf(
   predicate: (record: ActivityRecord) => boolean,
 ): TimestampSource {
   return (sources) =>
-    calls(sources)
+    countedCalls(sources)
       .filter(predicate)
       .map((record) => record.timestampMs);
 }
@@ -174,7 +173,7 @@ function rowDelta(
 }
 
 function approvalBreakdown(sources: MetricSources, window: MetricWindow) {
-  const asked = calls(sources).filter(
+  const asked = countedCalls(sources).filter(
     (r) => r.isAsked && inRange(r.timestampMs, window.fromMs, window.toMs),
   );
   return {
@@ -251,7 +250,7 @@ export function buildSeries(
 }
 
 function inWindow(sources: MetricSources, window: MetricWindow) {
-  return calls(sources).filter((r) =>
+  return countedCalls(sources).filter((r) =>
     inRange(r.timestampMs, window.fromMs, window.toMs),
   );
 }

@@ -64,7 +64,7 @@ export interface ActivityRecord extends ActivityRow {
   /** The approval of the call, when the user was asked. */
   permission?: StoredMessage;
   endedAtMs?: number;
-  /** The DMS held the call: it changed nothing, so the metrics leave it out. */
+  /** The DMS held the call: it changed nothing. */
   isHeld: boolean;
 }
 
@@ -95,8 +95,7 @@ const DENIED_RESULTS: readonly ActivityResult[] = [
   "expired",
 ];
 
-/** A held call did not run, which the Activity page reads as "Not run". */
-const HELD_RESULT: ActivityResult = "denied";
+const NOT_RUN_RESULT: ActivityResult = "denied";
 const HELD_DETAIL = "Held by the DMS until you confirm it";
 
 interface ConversationIndex {
@@ -193,7 +192,6 @@ interface RowInput {
   sources: ActivitySources;
 }
 
-/** How a call ended, as its row shows it: a held call as not run, with why. */
 function endOf(
   result: StoredMessage | undefined,
   allowedBy: AllowedBy,
@@ -201,7 +199,7 @@ function endOf(
   permission: StoredMessage | undefined,
 ): Pick<ActivityRecord, "result" | "resultDetail" | "isHeld"> {
   if (result?.outcome === "held") {
-    return { result: HELD_RESULT, resultDetail: HELD_DETAIL, isHeld: true };
+    return { result: NOT_RUN_RESULT, resultDetail: HELD_DETAIL, isHeld: true };
   }
   return {
     result: resultOf(result, allowedBy, isRunning),
@@ -357,16 +355,16 @@ function pendingRecord(
   });
 }
 
-/**
- * A call the DMS held changed nothing, so the log leaves it out and lists its
- * repeat, unless the user approved it: that approval stays, as not run.
- */
+function isLogged(record: ActivityRecord): boolean {
+  return !record.isHeld || record.isAsked;
+}
+
 function conversationRecords(input: RowInput): ActivityRecord[] {
   const messages = input.entry.conversation.messages;
   const calls = messages
     .filter((m) => m.role === "tool_use")
     .map((use) => callRecord(input, use))
-    .filter((record) => !record.isHeld || record.isAsked);
+    .filter(isLogged);
   const callIds = new Set(
     messages.filter((m) => m.role === "tool_use").map((m) => m.callId),
   );

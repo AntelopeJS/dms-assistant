@@ -46,6 +46,9 @@ export default defineConfig({
           title: "dms-assistant",
           description: "dms-assistant playground",
         },
+        mcp: {
+          backendUrl: apiLocalBaseUrl,
+        },
       },
     },
     "dms-assistant": {

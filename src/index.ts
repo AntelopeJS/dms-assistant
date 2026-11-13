@@ -4,12 +4,10 @@ import { AddFrontendModule } from "@antelopejs/interface-dms/page";
 import { construct as constructBuilder } from "./builder";
 import { closeAllBridges } from "./channels/registry";
 import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
-import { DEFAULT_BACKEND_URL } from "./constants/mcp";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
 import { collectModuleRoots } from "./lifecycle/module-roots";
-import { publishProjectMcp } from "./lifecycle/project-mcp";
 import { collectSkillSources } from "./lifecycle/skill-sources";
-import { isSidecarDisabled, spawnSidecar } from "./lifecycle/spawn-sidecar";
+import { spawnSidecar } from "./lifecycle/spawn-sidecar";
 import { startLogCapture } from "./logging/log-buffer";
 import "./pages";
 import "./routes";
@@ -44,7 +42,7 @@ export async function start() {
     collectModuleRoots(),
     collectSkillSources(hostProjectRoot),
   ]);
-  const { mcpJson, builder: _builder, ...sidecarConfig } = getConfig();
+  const { builder: _builder, ...sidecarConfig } = getConfig();
   void spawnSidecar({
     hostProjectRoot,
     ...sidecarConfig,
@@ -53,14 +51,6 @@ export async function start() {
     builderEnabled: true,
   }).catch((err: unknown) => {
     Logging.Error(`${SIDECAR_LOG_PREFIX} spawn failed:`, err);
-  });
-  if (isSidecarDisabled()) return;
-  await publishProjectMcp({
-    hostProjectRoot,
-    backendUrl: sidecarConfig.backendUrl ?? DEFAULT_BACKEND_URL,
-    writeMcpJson: mcpJson !== false,
-  }).catch((err: unknown) => {
-    Logging.Error(`${SIDECAR_LOG_PREFIX} MCP publish failed:`, err);
   });
 }
 

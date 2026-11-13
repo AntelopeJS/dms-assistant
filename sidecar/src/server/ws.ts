@@ -32,10 +32,7 @@ import {
 } from "../checkpoints/checkpoints.js";
 import { createShadowGit } from "../checkpoints/shadow-git.js";
 import { WS_MAX_PAYLOAD_BYTES } from "../constants/attachments.js";
-import {
-  ASK_USER_TOOL_NAME,
-  PROJECT_CONVERSATION_ID,
-} from "../constants/mcp.js";
+import { ASK_USER_TOOL_NAME } from "../constants/mcp.js";
 import { DEFAULT_SETTINGS } from "../constants/settings.js";
 import {
   WS_CLIENT_CLOSE_GRACE_MS,
@@ -43,7 +40,6 @@ import {
   WS_LOG_PREFIX,
   WS_PATH,
 } from "../constants/ws.js";
-import { createProjectMcpEndpoint } from "../mcp/project-endpoint.js";
 import { createAiMcpServer } from "../mcp/sdk-binding.js";
 import type {
   AiMcpServer,
@@ -402,11 +398,6 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     permissionBus: buildPermissionBus(options, holder),
     navigationCompleter: options.navigationCompleter,
     idleController,
-    projectMcp: createProjectMcpEndpoint({
-      mcpDeps: options.mcpDeps,
-      sendToHost: hostCommandsOf(PROJECT_CONVERSATION_ID),
-      idleController,
-    }),
     runner: buildRunner(options, settingsStore.get(), createMcpDeps, holder),
     liveTurns: createLiveTurnStore(),
     pendingQueue: createPendingQueueStore(),
@@ -445,7 +436,6 @@ export function attachWsServer(
   holder.current = config;
   if (options.bridge !== undefined) {
     options.bridge.services = config;
-    options.bridge.projectMcp = config.projectMcp;
   }
   if (options.settingsApplier) {
     options.settingsApplier.apply = (next) => applySettings(config, next);

@@ -8,13 +8,11 @@ const BACKEND_URL = "http://127.0.0.1:41234";
 /**
  * @param {unknown[]} registrations - Receives each frontend module registered.
  * @param {unknown[]} sidecars - Receives the options of each sidecar spawned.
- * @param {unknown[]} [publications] - Receives the options the MCP tools are published with.
  * @param {{ dev?: boolean, builders?: unknown[] }} [runtime] - Whether the project runs in development, and what receives the config each builder construct gets.
  */
 function loadModule(
   registrations,
   sidecars,
-  publications = [],
   { dev = true, builders = [] } = {},
 ) {
   const filename = require.resolve("../dist/index.js");
@@ -52,15 +50,7 @@ function loadModule(
       spawnSidecar: async (options) => {
         sidecars.push(options);
       },
-      isSidecarDisabled: () => false,
     },
-    "./lifecycle/project-mcp": {
-      /** @param {unknown} options - The options the MCP tools are published with. */
-      publishProjectMcp: async (options) => {
-        publications.push(options);
-      },
-    },
-    "./constants/mcp": require("../dist/constants/mcp.js"),
     "./logging/log-buffer": { startLogCapture() {} },
     "./frontend-module": require("../dist/frontend-module.js"),
     "node:path": path,
@@ -139,58 +129,10 @@ void test("ignores config entries that are not usable origins", async () => {
   ]);
 });
 
-void test("publishes the MCP tools on the configured origin, or the default one", async () => {
-  /** @type {unknown[]} */
-  const publications = [];
-  const configured = loadModule([], [], publications);
-  await configured.construct({ backendUrl: BACKEND_URL });
-  await configured.start();
-  const unconfigured = loadModule([], [], publications);
-  await unconfigured.construct(undefined);
-  await unconfigured.start();
-  assert.deepEqual(publications, [
-    {
-      hostProjectRoot: process.cwd(),
-      backendUrl: BACKEND_URL,
-      writeMcpJson: true,
-    },
-    {
-      hostProjectRoot: process.cwd(),
-      backendUrl: "http://localhost:5010",
-      writeMcpJson: true,
-    },
-  ]);
-});
-
-void test("mcpJson: false keeps .mcp.json out of the publication, and stays out of the sidecar's options", async () => {
-  /** @type {unknown[]} */
-  const publications = [];
-  /** @type {unknown[]} */
-  const sidecars = [];
-  const loaded = loadModule([], sidecars, publications);
-  await loaded.construct({ mcpJson: false });
-  await loaded.start();
-  assert.deepEqual(publications, [
-    {
-      hostProjectRoot: process.cwd(),
-      backendUrl: "http://localhost:5010",
-      writeMcpJson: false,
-    },
-  ]);
-  assert.deepEqual(sidecars, [
-    {
-      hostProjectRoot: process.cwd(),
-      moduleRoots: ["fixture-module"],
-      skillDirs: ["fixture-skills"],
-      builderEnabled: true,
-    },
-  ]);
-});
-
 void test("turns the builder off in the frontend registration outside development", async () => {
   /** @type {{ options?: unknown }[]} */
   const registrations = [];
-  const loaded = loadModule(registrations, [], [], { dev: false });
+  const loaded = loadModule(registrations, [], { dev: false });
   await loaded.construct(undefined);
   await loaded.start();
   assert.deepEqual(
@@ -202,7 +144,7 @@ void test("turns the builder off in the frontend registration outside developmen
 void test("an explicit builder.api.enabled overrides the development default", async () => {
   /** @type {{ options?: unknown }[]} */
   const registrations = [];
-  const loaded = loadModule(registrations, [], [], { dev: false });
+  const loaded = loadModule(registrations, [], { dev: false });
   await loaded.construct({ builder: { api: { enabled: true } } });
   await loaded.start();
   assert.deepEqual(
@@ -216,7 +158,7 @@ void test("constructs the builder with its own config, never the assistant keys"
   const builders = [];
   /** @type {unknown[]} */
   const sidecars = [];
-  const loaded = loadModule([], sidecars, [], { builders });
+  const loaded = loadModule([], sidecars, { builders });
   await loaded.construct({
     backendUrl: BACKEND_URL,
     builder: { projectRoot: "/app/src", api: { enabled: "yes" } },
@@ -239,7 +181,7 @@ void test("constructs the builder with its own config, never the assistant keys"
 void test("constructs the builder on its defaults when the project sets no builder config", async () => {
   /** @type {unknown[]} */
   const builders = [];
-  const loaded = loadModule([], [], [], { builders });
+  const loaded = loadModule([], [], { builders });
   await loaded.construct({ builder: "on" });
   assert.deepEqual(builders, [undefined]);
 });

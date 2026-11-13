@@ -5,8 +5,6 @@ import type { DmsBuilderConfig } from "./builder/config";
 export interface AIConfig {
   /** Origin the sidecar reaches the DMS backend on, flags and all. */
   backendUrl?: string;
-  /** `false` keeps the module from adding its MCP server to the project's `.mcp.json`. */
-  mcpJson?: boolean;
   /** The builder's own settings: the source root it rewrites and whether its API and editor are on. */
   builder?: DmsBuilderConfig;
 }
@@ -24,20 +22,18 @@ const BuilderConfigSchema = z.object({
 
 /**
  * Keeps only the keys this module understands: `backendUrl` when it carries a
- * non-empty origin, `mcpJson` only as `false`, and `builder` when it is an
- * object. Anything else leaves the module on its defaults.
+ * non-empty origin, and `builder` when it is an object. Anything else leaves
+ * the module on its defaults.
  */
 export const ConfigSchema = z
   .object({
     backendUrl: z.unknown().optional(),
-    mcpJson: z.unknown().optional(),
     builder: z.unknown().optional(),
   })
-  .transform(({ backendUrl, mcpJson, builder }): AIConfig => {
+  .transform(({ backendUrl, builder }): AIConfig => {
     const config: AIConfig = {};
     const origin = OriginSchema.safeParse(backendUrl);
     if (origin.success) config.backendUrl = origin.data;
-    if (mcpJson === false) config.mcpJson = false;
     const builderConfig = BuilderConfigSchema.safeParse(builder);
     if (builderConfig.success) config.builder = builderConfig.data;
     return config;

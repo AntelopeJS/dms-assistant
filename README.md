@@ -22,21 +22,18 @@ The module has two parts, both for development.
 
 - Docks a chat panel next to any page, with the page as context. `Ctrl` `Shift` `K` opens it.
 - Runs a coding agent in a local sidecar. The agent is Claude Code by default, or OpenAI's Codex, and it reads the project, its loaded modules and their skills.
-- Edits pages through the builder in Safe mode, or writes code in Code mode. It then typechecks and shows the result live.
+- Edits pages through the builder tools of the DMS MCP server in Safe mode, or writes code in Code mode. It then typechecks and shows the result live.
 - Saves every turn that touches the project as a change set you can review, undo and redo.
 - Adds an **Assistant** module for owners, with the **Settings**, **Changes** and **Activity** pages.
 
 With `NODE_ENV=production`, the backend starts no sidecar and the dashboard shows no assistant. The sidecar exits if you start it yourself in production.
 
-**The builder.**
+**The database connect flow.**
 
-- Changes the project's pages, tables and data sources for the assistant and for **Build it** in the DMS mockup Edit mode. It has no editor of its own.
-- Writes each edit into the project's TypeScript as an AST rewrite, typechecks it in memory, and writes only if it compiles.
-- Creates pages from a layout, arranges the menu, and generates tables with their fields and API.
-- Gives a chart or a KPI its numbers from a query, without hand-writing a route, and connects an external database to map its tables.
-- Implements [`@antelopejs/interface-dms-builder`](https://www.npmjs.com/package/@antelopejs/interface-dms-builder), so other modules call the same operations, and serves an HTTP API under `/api/builder`.
+- Connects a database you already run, analyses its tables and maps them into pages, from **Start from an existing database** in the assistant's onboarding popup.
+- Serves the routes of that flow under `/api/builder/database`. By default they run only in development (`ajs project dev`), and every route requires a tenant owner.
 
-By default the builder's HTTP API runs only in development (`ajs project dev`), and every route requires a tenant owner.
+The builder itself, its interface [`@antelopejs/interface-dms-builder`](https://www.npmjs.com/package/@antelopejs/interface-dms-builder) and its MCP server ship in `@antelopejs/dms`.
 
 ## Install
 
@@ -54,7 +51,7 @@ ajs project modules remove dms-ai dms-builder
 
 ## Configuration
 
-The assistant's keys stay at the top level of the module's `config`. The builder's keys, which `@antelopejs/dms-builder` read at the top level, move under `builder`.
+The assistant's keys stay at the top level of the module's `config`. The builder's keys, which `@antelopejs/dms-builder` read at the top level, move under `builder`. The chat gets its builder tools from the DMS MCP server, so the `dms` module's `mcp.backendUrl` points the server's bridge at the same origin.
 
 ```ts fragment
 // antelope.config.ts
@@ -67,14 +64,18 @@ The assistant's keys stay at the top level of the module's `config`. The builder
     },
   },
 },
+dms: {
+  config: {
+    mcp: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
+  },
+},
 ```
 
 | Key                       | Default                     | What it does                                                                                  |
 | ------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
 | `backendUrl`              | `http://localhost:5010`     | The origin the sidecar reaches the backend on. Point it at the origin the `api` module reserved. |
-| `mcpJson`                 | `true`                      | `false` keeps the module from adding its MCP server to the project's `.mcp.json`.              |
-| `builder.projectRoot`     | The backend's working directory | The app source root the builder rewrites.                                                 |
-| `builder.api.enabled`     | `true` in development only  | Turns the builder's HTTP API on or off, whatever the mode.                                     |
+| `builder.projectRoot`     | The backend's working directory | The app source root that connecting a database writes into.                               |
+| `builder.api.enabled`     | `true` in development only  | Turns the database connect routes on or off, whatever the mode.                                |
 
 Claude Code runs with its own credentials, either its login or `ANTHROPIC_API_KEY` in the backend's environment. Codex runs on your ChatGPT plan and uses no OpenAI API key. To use Codex, install `@openai/codex` at the version that `peerDependencies` pins, then press **Sign in with ChatGPT** in **Assistant** › **Settings**. On a DMS that runs on another machine, finish the sign-in with **Paste the return address**.
 
@@ -102,13 +103,13 @@ The module needs a DMS backend in a release that implements the `@antelopejs/int
 
 - [Introduction](https://dms.antelopejs.com/docs/modules/assistant/introduction)
 - [Installation](https://dms.antelopejs.com/docs/modules/assistant/installation)
-- [Configuration](https://dms.antelopejs.com/docs/modules/assistant/configuration), with the agent providers, Codex, Safe mode, your own Claude Code session and remote access
+- [Configuration](https://dms.antelopejs.com/docs/modules/assistant/configuration), with the agent providers, Codex, Safe mode, the chat's MCP servers and remote access
 - [Usage](https://dms.antelopejs.com/docs/modules/assistant/usage/chat)
 - [Extending](https://dms.antelopejs.com/docs/modules/assistant/extending)
 - [FAQ](https://dms.antelopejs.com/docs/modules/assistant/faq)
-- [Builder](https://dms.antelopejs.com/docs/modules/assistant/builder/introduction): the engine, the interface and the HTTP API
+- [Builder](https://dms.antelopejs.com/docs/modules/assistant/builder/introduction): the routes that connect an existing database
 
-The guide's sources live in [`docs/`](./docs), the builder's in [`docs/8.builder`](./docs/8.builder). The package ships its agent skills in [`skills/`](./skills): `dms-ai`, `dms-ai-code-mode`, `dms-builder`, `dms-builder-safe`, `dms-external-database` and `dms-page-design`. `antelopeJs.skills` declares them, and the assistant loads them into its agent.
+The guide's sources live in [`docs/`](./docs), the builder's in [`docs/8.builder`](./docs/8.builder). The package ships its agent skills in [`skills/`](./skills): `dms-ai` and `dms-ai-code-mode`. `antelopeJs.skills` declares them. The assistant loads them into its agent after the DMS workflow skills of `@antelopejs/agent-skills`.
 
 ## Contributing
 
@@ -124,7 +125,7 @@ pnpm build:sidecar
 pnpm dev                # playground backend
 pnpm frontend:dev       # dashboard, in a second terminal
 pnpm run checks         # typecheck, lint, format, knip, node tests, size, suppressions, sync
-pnpm test:specs         # the builder engine specs (mocha, minutes)
+pnpm test:specs         # the builder engine specs (mocha)
 pnpm test:frontend      # the assistant and builder Vue unit suites
 pnpm --dir sidecar test # the sidecar suites
 ```
@@ -132,7 +133,7 @@ pnpm --dir sidecar test # the sidecar suites
 <details>
 <summary>Repository notes</summary>
 
-- The backend lives in `src/`, the builder's part in `src/builder/`. `construct()` parses the config and constructs the builder, which installs the `@antelopejs/interface-dms-builder` implementation and, when the builder is on, mounts `/api/builder`.
+- The backend lives in `src/`, the database connect routes and the engine files they use in `src/builder/`. `construct()` parses the config and constructs the builder part, which mounts `/api/builder/database` when it is on.
 - The module registers one frontend, `frontend-vue`, through `AddFrontendModule` with the Vue renderer. The registration also carries the builder's `dmsBuilder.enabled` option, `true` only when the builder is on. The chat panel, `DmsAiChatPanel`, is a docked side panel (`registerSidePanel`); its code is under `frontend-vue/app/chat`. `frontend-vue/builder` holds no components: only the client and types of the builder's database routes, which the database connect flow uses. The renderer bundles the icons it finds in `.vue` files, so an icon name belongs in the component that shows it.
 - To build and typecheck the Vue source, run `pnpm --dir frontend-vue verify-source`, or set `DMS_FRONTEND_WORKSPACE` to a generated Inertia workspace that includes this module and run `pnpm --dir frontend-vue build` and `pnpm --dir frontend-vue typecheck`.
 - `pnpm test:node` builds once, then runs every suite in `tests/` and `tests/builder/` except the sidecar build smoke test (`pnpm test:sidecar-smoke`). `DMS_PREBUILT=1` skips the build when `dist/` is fresh, as in CI. The opt-in Codex acceptance suite runs with `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.

@@ -92,7 +92,7 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 | `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`                                              | `0.4.0`                                                       |
 | `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`                                              | `0.3.1`                                                       |
 | `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`                                              | `0.0.3`                                                       |
-| `@antelopejs/interface-dms`              | `>=0.12.0 <1.0.0`                                             | `0.13.0`                                                      |
+| `@antelopejs/interface-dms`              | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz`         | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz`         |
 | `@antelopejs/interface-dms-builder`      | `file:.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz` | `file:.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz` |
 
 <!-- antelopejs-docs-compat:end -->

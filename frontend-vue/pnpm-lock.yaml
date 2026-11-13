@@ -11,16 +11,16 @@ overrides:
   '@antelopejs/dms>@antelopejs/interface-data-api': 0.6.3
   '@antelopejs/dms>@antelopejs/interface-database': 0.3.1
   '@antelopejs/dms>@antelopejs/interface-database-decorators': 0.3.2
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.13.2
   '@antelopejs/interface-dms-builder': file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz
+  '@antelopejs/interface-dms': file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz
 
 importers:
 
   .:
     dependencies:
       '@antelopejs/interface-dms':
-        specifier: '>=0.12.0 <1.0.0'
-        version: 0.13.2(dce058f19a89b4f44c741f71a1705f4d)
+        specifier: file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz
+        version: file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz(dce058f19a89b4f44c741f71a1705f4d)
       '@inertiajs/vue3':
         specifier: ^3.7.0
         version: 3.7.1(vue@3.5.34(typescript@5.9.3))
@@ -131,7 +131,7 @@ packages:
       '@antelopejs/core': '>=1.16.0 <2'
 
   '@antelopejs/dms@file:../.tgz-deps/antelopejs-dms-41d2eb4.tgz':
-    resolution: {tarball: file:../.tgz-deps/antelopejs-dms-41d2eb4.tgz}
+    resolution: {integrity: sha512-65ESGpdKdlhHJvGADuwFHcyXSubPz2dKqpjKF24Megqjh/mQOsxe+xsshC7UPYWwn432tw0mSuGwk74QZ9zYXw==, tarball: file:../.tgz-deps/antelopejs-dms-41d2eb4.tgz}
     version: 0.19.6
     hasBin: true
     peerDependencies:
@@ -186,13 +186,14 @@ packages:
       '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
 
   '@antelopejs/interface-dms-builder@file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz':
-    resolution: {tarball: file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz}
+    resolution: {integrity: sha512-SZVgpOwVXTD0QUfFfZl62wGNi5Bm3JE7dKbHrd5TpY2k9K/Xyh1po3/2VAQP5NVaSjX+nwAs95sNEBcK8KHCyg==, tarball: file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz}
     version: 0.4.1
     peerDependencies:
       '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
 
-  '@antelopejs/interface-dms@0.13.2':
-    resolution: {integrity: sha512-94YIe0aCKZDpwg21wKCREbqVutn/VHinuhvvm648sbHa3ZNpAtebyDEI9/c8wLfXU5DRvJpht+Bfs9lwicdpjQ==}
+  '@antelopejs/interface-dms@file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz':
+    resolution: {integrity: sha512-tMyRnCu/DDNBZSKdSLaaI7Ini41S1Q5jov5v2JtbmoXcaF9QhFfIYWyMSjwvcG0axkWa94z6hbNcoZ764Iq85Q==, tarball: file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz}
+    version: 0.13.3
     peerDependencies:
       '@antelopejs/interface-api': '>=0.3.0 <1.0.0'
       '@antelopejs/interface-api-util': '>=0.1.3 <1.0.0'
@@ -596,12 +597,14 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-linux-x64-gnu@0.95.0':
     resolution: {integrity: sha512-8huzHlK/N98wrnYKxIcYsK8ZGBWomQchu/Mzi6m+CtbhjWOv9DmK0jQ2fUWImtluQVpTwS0uZT06d3g7XIkJrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-win32-x64-msvc@0.95.0':
     resolution: {integrity: sha512-BQpgl7rDjFvCIHudmUR0dCwc4ylBYZl4CPVinlD3NhkMif4WD5dADckoo5ES/KOpFyvwcbKZX+grP63cjHi26g==}
@@ -650,66 +653,79 @@ packages:
     resolution: {integrity: sha512-DV6fJoxEYWJOvaZIsok7KrYl0tPvga5OZ2yvKHNNYyk/2roMLqQAbGhr78EQ5YhHpnhLKJD3S1WFusAkmUuV5g==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.60.3':
     resolution: {integrity: sha512-mQKoJAzvuOs6F+TZybQO4GOTSMUu7v0WdxEk24krQ/uUxXoPTtHjuaUuPmFhtBcM4K0ons8nrE3JyhTuCFtT/w==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.60.3':
     resolution: {integrity: sha512-Whjj2qoiJ6+OOJMGptTYazaJvjOJm+iKHpXQM1P3LzGjt7Ff++Tp7nH4N8J/BUA7R9IHfDyx4DJIflifwnbmIA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.60.3':
     resolution: {integrity: sha512-4YTNHKqGng5+yiZt3mg77nmyuCfmNfX4fPmyUapBcIk+BdwSwmCWGXOUxhXbBEkFHtoN5boLj/5NON+u5QC9tg==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.60.3':
     resolution: {integrity: sha512-SU3kNlhkpI4UqlUc2VXPGK9o886ZsSeGfMAX2ba2b8DKmMXq4AL7KUrkSWVbb7koVqx41Yczx6dx5PNargIrEA==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-loong64-musl@4.60.3':
     resolution: {integrity: sha512-6lDLl5h4TXpB1mTf2rQWnAk/LcXrx9vBfu/DT5TIPhvMhRWaZ5MxkIc8u4lJAmBo6klTe1ywXIUHFjylW505sg==}
     cpu: [loong64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-ppc64-gnu@4.60.3':
     resolution: {integrity: sha512-BMo8bOw8evlup/8G+cj5xWtPyp93xPdyoSN16Zy90Q2QZ0ZYRhCt6ZJSwbrRzG9HApFabjwj2p25TUPDWrhzqQ==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-musl@4.60.3':
     resolution: {integrity: sha512-E0L8X1dZN1/Rph+5VPF6Xj2G7JJvMACVXtamTJIDrVI44Y3K+G8gQaMEAavbqCGTa16InptiVrX6eM6pmJ+7qA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-riscv64-gnu@4.60.3':
     resolution: {integrity: sha512-oZJ/WHaVfHUiRAtmTAeo3DcevNsVvH8mbvodjZy7D5QKvCefO371SiKRpxoDcCxB3PTRTLayWBkvmDQKTcX/sw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.60.3':
     resolution: {integrity: sha512-Dhbyh7j9FybM3YaTgaHmVALwA8AkUwTPccyCQ79TG9AJUsMQqgN1DDEZNr4+QUfwiWvLDumW5vdwzoeUF+TNxQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.60.3':
     resolution: {integrity: sha512-cJd1X5XhHHlltkaypz1UcWLA8AcoIi1aWhsvaWDskD1oz2eKCypnqvTQ8ykMNI0RSmm7NkTdSqSSD7zM0xa6Ig==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.60.3':
     resolution: {integrity: sha512-DAZDBHQfG2oQuhY7mc6I3/qB4LU2fQCjRvxbDwd/Jdvb9fypP4IJ4qmtu6lNjes6B531AI8cg1aKC2di97bUxA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.60.3':
     resolution: {integrity: sha512-cRxsE8c13mZOh3vP+wLDxpQBRrOHDIGOWyDL93Sy0Ga8y515fBcC2pjUfFwUe5T7tqvTvWbCpg1URM/AXdWIXA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openbsd-x64@4.60.3':
     resolution: {integrity: sha512-QaWcIgRxqEdQdhJqW4DJctsH6HCmo5vHxY0krHSX4jMtOqfzC+dqDGuHM87bu4H8JBeibWx7jFz+h6/4C8wA5Q==}
@@ -2551,7 +2567,7 @@ snapshots:
       '@antelopejs/interface-data-api': 0.6.3(@antelopejs/interface-api-util@0.3.2(@antelopejs/interface-api@0.3.2(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-api@0.3.2(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-core@0.4.1)(@antelopejs/interface-database-decorators@0.3.2(@antelopejs/interface-api@0.3.2(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-core@0.4.1)(@antelopejs/interface-database@0.3.1(@antelopejs/interface-core@0.4.1)))(@antelopejs/interface-database@0.3.1(@antelopejs/interface-core@0.4.1))
       '@antelopejs/interface-database': 0.3.1(@antelopejs/interface-core@0.4.1)
       '@antelopejs/interface-database-decorators': 0.3.2(@antelopejs/interface-api@0.3.2(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-core@0.4.1)(@antelopejs/interface-database@0.3.1(@antelopejs/interface-core@0.4.1))
-      '@antelopejs/interface-dms': 0.13.2(dce058f19a89b4f44c741f71a1705f4d)
+      '@antelopejs/interface-dms': file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz(dce058f19a89b4f44c741f71a1705f4d)
       '@antelopejs/interface-dms-builder': file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz(@antelopejs/interface-core@0.4.1)
       '@antelopejs/interface-email': 0.2.0(@antelopejs/interface-core@0.4.1)
       '@antelopejs/interface-file-storage': 0.1.7(@antelopejs/interface-core@0.4.1)
@@ -2632,7 +2648,7 @@ snapshots:
     dependencies:
       '@antelopejs/interface-core': 0.4.1
 
-  '@antelopejs/interface-dms@0.13.2(dce058f19a89b4f44c741f71a1705f4d)':
+  '@antelopejs/interface-dms@file:../.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz(dce058f19a89b4f44c741f71a1705f4d)':
     dependencies:
       '@antelopejs/interface-api': 0.3.2(@antelopejs/interface-core@0.4.1)
       '@antelopejs/interface-api-util': 0.3.2(@antelopejs/interface-api@0.3.2(@antelopejs/interface-core@0.4.1))(@antelopejs/interface-core@0.4.1)

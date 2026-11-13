@@ -35,7 +35,7 @@ interface ToolView {
 	waiting: WaitingPosition | null;
 }
 
-type ClusterTone = "ok" | "run" | "wait" | "err";
+type ClusterTone = "ok" | "run" | "wait" | "err" | "denied";
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -47,8 +47,9 @@ const TONE_ICONS: Record<ClusterTone, string> = {
 	run: "",
 	wait: "i-ph-hand-palm",
 	err: "i-ph-warning-circle",
+	denied: "i-ph-prohibit",
 };
-const FAILING_STATES: readonly ToolRowState[] = ["failed", "denied", "blocked"];
+const FAILING_STATES: readonly ToolRowState[] = ["failed", "blocked"];
 
 const override = ref<boolean | null>(null);
 const showAll = ref(false);
@@ -90,12 +91,14 @@ const tone = computed<ClusterTone>(() => {
 	if (states.includes("waiting")) return "wait";
 	if (states.includes("running")) return "run";
 	if (states.some((state) => FAILING_STATES.includes(state))) return "err";
+	if (states.includes("denied")) return "denied";
 	return "ok";
 });
 
 const isSingle = computed(() => props.tools.length === 1);
 const hasAttention = computed(
-	() => tone.value === "wait" || tone.value === "err",
+	() =>
+		tone.value === "wait" || tone.value === "err" || tone.value === "denied",
 );
 const isOpen = computed<boolean>(
 	() =>
@@ -235,6 +238,10 @@ function toggle(): void {
 
 .cb-tools[data-tone="err"] .cb-tools__tone {
 	color: var(--ui-error);
+}
+
+.cb-tools[data-tone="denied"] .cb-tools__tone {
+	color: var(--ui-text-toned);
 }
 
 .cb-tools__headline {

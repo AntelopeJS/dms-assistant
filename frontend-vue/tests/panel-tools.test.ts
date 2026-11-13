@@ -98,6 +98,35 @@ describe("tool rows and change sets", () => {
 		expect(panel.find(".cb-tools").text()).not.toContain("failed");
 	});
 
+	it("tones a group whose repeat the person declined as declined, not failed (fails a header that reads the person's denial as a failure)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		await sendMessage(panel, "go");
+		const call = {
+			toolName: "mcp__dms__builder_delete_page",
+			args: { pageRef: "/home" },
+		};
+		deliver(harness, { type: "tool_call_start", callId: "c0", ...call });
+		deliver(harness, {
+			type: "tool_call_end",
+			callId: "c0",
+			status: "error",
+			result: "builder_delete_page was not run: no one has confirmed it yet.",
+			outcome: "held",
+		});
+		deliver(harness, { type: "tool_call_start", callId: "c1", ...call });
+		deliver(harness, {
+			type: "tool_call_end",
+			callId: "c1",
+			status: "error",
+			result: "Permission denied by user.",
+			outcome: "denied",
+		});
+		deliver(harness, { type: "run_done" });
+		await nextTick();
+		expect(panel.find(".cb-tools").attributes("data-tone")).toBe("denied");
+	});
+
 	it("shows the raw JSON of a call on demand", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

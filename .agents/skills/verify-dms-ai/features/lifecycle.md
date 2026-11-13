@@ -1,6 +1,7 @@
 ---
 covers:
   - src/lifecycle/**
+  - src/constants/project-mcp.ts
   - src/routes/health.ts
   - src/routes/sidecar-info.ts
   - src/routes/status.ts
@@ -39,9 +40,11 @@ The backend starts the sidecar as a child process, reports its status, restarts 
 - `dms-ai-0-starts-the-backend-without-a-sidecar`: DMS_AI=0 leaves the status offline and disabled, the banner without a button, and the routes that need the sidecar answering 503.
 - `a-backend-that-crashed-leaves-no-sidecar-for-long`: stopping the project stops the sidecar, and a sidecar left by a killed backend is stopped by the next start.
 
+- `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json`: the development start (the journey pins `backend: "dev"`, the run's other journeys run `ajs project start`) removes the `dms-ai` server of the previous version from the project's `.mcp.json`, keeps every other server and key, leaves the `dms` server in place, writes nothing on the next start, and leaves a file that is not a JSON object of servers as it is, with a warning.
+
 ## How to get to it (user POV)
 
-- Modules › Assistant › Settings, the banner; `DMS_AI=0` before `ajs project start`.
+- Modules › Assistant › Settings, the banner; `DMS_AI=0` before `ajs project start`; `.mcp.json` at the project root after a development start.
 
 ## Driving it with dms-control
 
@@ -51,5 +54,6 @@ dms-control journey "$RUN" lifecycle
 
 ## Gotchas
 
-- The sidecar lives in the playground's `node_modules/.cache/dms-ai`, so a checkout holds one run at a time.
+- The sidecar lives in the playground's `node_modules/.cache/dms-ai`, so a checkout holds one run at a time. A standby backend would share it, so the run must start with `up --no-standby`: `sidecarPath`, through which `sidecarLock` and every other reader of the folder go, ends a journey with a NOT VERIFIED error on a run that did not.
+- The `.mcp.json` journey does not read the sidecar's folder. The DMS writes the `dms` server itself in development, so the journey judges the end state, not which module added it.
 - A sidecar that idles for 15 minutes exits. The journeys finish well inside that, and the idle journey drives the same timer with `DMS_AI_IDLE_SHUTDOWN_MS`, a positive integer of milliseconds the sidecar reads at start; the 15-minute default itself is not waited for.

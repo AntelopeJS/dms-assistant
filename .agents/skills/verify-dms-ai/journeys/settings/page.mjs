@@ -5,10 +5,13 @@ import { DEFAULTS, settings, picked } from "./helpers.mjs";
 
 /** @typedef {import("../../ai.mjs").Ctx} Ctx */
 
+const CLAUDE_NTH = 0;
+const CODEX_NTH = 1;
+
 export const pageJourneys = [
   {
     id: "the-page-saves-each-change-as-you-make-it",
-    title: "the Settings page saves a choice, a switch and a menu the moment you change them, and a reload shows them kept",
+    title: "the Settings page saves a choice, a switch and a menu the moment you change them, each agent's default mode on its own, and a reload shows them kept",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -16,7 +19,8 @@ export const pageJourneys = [
       await tab.signIn("admin");
       await tab.goto("/modules/ai/settings");
       await ctx.verify("the page", [pageHas(tab, "says it saves instantly", /Saved instantly/), pageHas(tab, "has the usage section", /Tokens · last 14 days/i)]);
-      await tab.click({ role: "radio", name: "Plan only" });
+      await tab.click({ role: "radio", name: "Plan only", nth: CLAUDE_NTH });
+      await tab.click({ role: "radio", name: "Accept edits", nth: CODEX_NTH });
       await tab.click({ role: "radio", name: "Low" });
       await tab.click({ role: "switch", name: "Adding or removing dependencies" });
       await tab.click({ role: "switch", name: "Notify me in the DMS" });
@@ -27,12 +31,13 @@ export const pageJourneys = [
       await tab.click({ role: "option", name: "Keep 90 days" });
       const saved = await until(async () => {
         const body = await settings(ctx, "read");
-        return pick(body, "mode") === "plan" && pick(body, "checkpointRetentionDays") === "90" && pick(body, "requestTimeoutMinutes") === "15";
+        return pick(body, "defaultModeClaude") === "plan" && pick(body, "defaultModeCodex") === "acceptEdits" && pick(body, "checkpointRetentionDays") === "90" && pick(body, "requestTimeoutMinutes") === "15";
       });
       const body = await settings(ctx, "read the saved form");
       await ctx.verify("every choice reached the sidecar", [
         check("saved", saved, saved),
-        same("mode", pick(body, "mode"), "plan"),
+        same("the default mode on Claude Code", pick(body, "defaultModeClaude"), "plan"),
+        same("the default mode on Codex", pick(body, "defaultModeCodex"), "acceptEdits"),
         same("thinking", pick(body, "thinking"), "low"),
         same("dependencies switch", pick(body, "alwaysAskDependencies"), false),
         same("notify switch", pick(body, "notifyRequests"), false),
@@ -44,8 +49,11 @@ export const pageJourneys = [
       ]);
       await tab.reload();
       await ctx.verify("a reload shows them", [
-        selected(tab, { role: "radio", name: "Plan only" }, true),
-        selected(tab, { role: "radio", name: "Ask first" }, false),
+        selected(tab, { role: "radio", name: "Plan only", nth: CLAUDE_NTH }, true),
+        selected(tab, { role: "radio", name: "Auto review" }, false),
+        selected(tab, { role: "radio", name: "Accept edits", nth: CODEX_NTH }, true),
+        selected(tab, { role: "radio", name: "Ask first", nth: CODEX_NTH }, false),
+        selected(tab, { role: "radio", name: "Plan only", nth: CODEX_NTH }, false),
         selected(tab, { role: "radio", name: "Low" }, true),
         selected(tab, { role: "switch", name: "Adding or removing dependencies" }, false),
         selected(tab, { role: "switch", name: "Removing or moving Builder blocks" }, true),
@@ -58,25 +66,29 @@ export const pageJourneys = [
   },
   {
     id: "the-page-disables-what-this-machine-cannot-do",
-    title: "Codex, Full auto and the Safe mode switch are disabled with their reason, and the deletions switch is locked on",
+    title: "Codex is disabled with its reason while signed out, Codex's default mode has no Auto review and no Full auto is offered as a default, the Safe mode switch is enabled because the DMS carries the Builder, and the deletions switch is locked on",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const tab = await ctx.tab();
       await tab.signIn("admin");
       await tab.goto("/modules/ai/settings");
-      await ctx.verify("the disabled options", [
+      await ctx.verify("what is disabled and what is not", [
         tab.enabled({ role: "radio", name: "Codex" }, { disabled: true }),
-        tab.enabled({ role: "radio", name: "Full auto" }, { disabled: true }),
-        tab.enabled({ role: "switch", name: "Safe mode" }, { disabled: true }),
         tab.enabled({ role: "radio", name: "Claude Code" }),
-        pageHas(tab, "Codex says why", /Sign in with ChatGPT in Assistant › Settings to run Codex on your ChatGPT plan\./),
-        pageHas(tab, "Full auto is not a default", /Not available as a default\. Turn it on per chat, for a limited time\./),
-        pageHas(tab, "Safe mode needs the Builder", /Needs the builder, which isn't running\./),
+        tab.enabled({ role: "switch", name: "Safe mode" }),
+        pageHas(tab, "Codex says why", /Sign in with ChatGPT below to run Codex on your ChatGPT plan\./),
+        pageHas(tab, "Safe mode has no missing-Builder reason", /Needs the builder, which isn't running\./, false),
+        tab.count({ role: "radio", name: "Full auto" }, 0),
+        tab.count({ role: "radio", name: "Auto review" }, 1),
+        tab.count({ role: "radio", name: "Ask first" }, 2),
         pageHas(tab, "deletions are locked", /Deleting pages, tables, fields or queries · locked/),
         tab.count({ role: "switch", name: "Deleting pages, tables, fields or queries" }, 0),
         selected(tab, { role: "radio", name: "Claude Code" }, true),
         selected(tab, { role: "radio", name: "Medium" }, true),
+        selected(tab, { role: "radio", name: "Auto review" }, true),
+        selected(tab, { role: "radio", name: "Ask first", nth: CODEX_NTH }, true),
+        selected(tab, { role: "switch", name: "Safe mode" }, true),
       ]);
       const chosen = list((await ai(ctx, "read", "GET", "/settings")).body, "x").length;
       await ctx.verify("nothing was changed by looking", [same("defaults", picked(await settings(ctx, "read")), DEFAULTS), same("no rows", chosen, 0)]);
@@ -84,7 +96,7 @@ export const pageJourneys = [
   },
   {
     id: "the-menus-and-choices-offer-exactly-the-documented-options",
-    title: "Deny after offers 5, 15 and 30 minutes and Undo history Keep 7, 30 and 90 days, nothing else; Thinking has four choices, the agent two and the approval mode four",
+    title: "Deny after offers 5, 15 and 30 minutes and Undo history Keep 7, 30 and 90 days, nothing else; Thinking has four choices, the agent two, the default mode on Claude Code four and on Codex three",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -101,12 +113,19 @@ export const pageJourneys = [
         same("Deny after: 5, 15 and 30 minutes", await options("Deny after"), ["5 minutes", "15 minutes", "30 minutes"]),
         same("Undo history: 7, 30 and 90 days", await options("Undo history"), ["Keep 7 days", "Keep 30 days", "Keep 90 days"]),
       ]);
-      const names = async (/** @type {string[]} */ list) => list;
+      const radiosOf = async (/** @type {number} */ group, /** @type {string[]} */ expected) => {
+        const scope = tab.page.getByRole("radiogroup").nth(group);
+        const found = await Promise.all(expected.map(async (name) => ((await scope.getByRole("radio", { name, exact: true }).count()) === 1 ? name : "")));
+        const total = await scope.getByRole("radio").count();
+        return total === expected.length ? found : [...found, `${total} radios`];
+      };
       await ctx.verify("the choices", [
-        check("10 radio buttons in all", (await tab.page.getByRole("radio").count()) === 10, await tab.page.getByRole("radio").count()),
-        same("Thinking", await names(await Promise.all(["Off", "Low", "Medium", "High"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : ""))), ["Off", "Low", "Medium", "High"]),
-        same("the agent", await Promise.all(["Claude Code", "Codex"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : ""))  , ["Claude Code", "Codex"]),
-        same("the approval mode", await Promise.all(["Ask first", "Accept edits", "Plan only", "Full auto"].map(async (name) => (await tab.page.getByRole("radio", { name, exact: true }).count()) === 1 ? name : "")), ["Ask first", "Accept edits", "Plan only", "Full auto"]),
+        same("four groups of radio buttons", await tab.page.getByRole("radiogroup").count(), 4),
+        check("13 radio buttons in all", (await tab.page.getByRole("radio").count()) === 13, await tab.page.getByRole("radio").count()),
+        same("the agent", await radiosOf(0, ["Claude Code", "Codex"]), ["Claude Code", "Codex"]),
+        same("Thinking", await radiosOf(1, ["Off", "Low", "Medium", "High"]), ["Off", "Low", "Medium", "High"]),
+        same("the default mode on Claude Code", await radiosOf(2, ["Ask first", "Auto review", "Accept edits", "Plan only"]), ["Ask first", "Auto review", "Accept edits", "Plan only"]),
+        same("the default mode on Codex, which has no Auto review", await radiosOf(3, ["Ask first", "Accept edits", "Plan only"]), ["Ask first", "Accept edits", "Plan only"]),
         check("five switches: Safe mode and four more", (await tab.page.getByRole("switch").count()) === 5, await tab.page.getByRole("switch").count()),
       ]);
     },
@@ -126,7 +145,13 @@ export const pageJourneys = [
         pageHas(tab, "the banner", inOrder(["Saved instantly", "Run Codex on your ChatGPT plan", "Sign in with ChatGPT", "Paste the return address"])),
         pageHas(tab, "the sections, AI then Builder then Usage", inOrder(["AI", "Builder", "Usage"])),
         pageHas(tab, "the AI section", inOrder(["Coding agent", "Claude Code", "Codex", "Claude model", "Thinking", "Off", "Low", "Medium", "High", "Unanswered requests", "Deny after", "Notify me in the DMS", "Machine-local skills", "Use machine-local skills"])),
-        pageHas(tab, "the approval settings", inOrder(["Approval mode", "Ask first", "Accept edits", "Plan only", "Full auto", "Unanswered requests"])),
+        pageHas(tab, "the default mode on Claude Code", inOrder(["Default mode on Claude Code", "Ask first", "Auto review", "Accept edits", "Plan only", "Default mode on Codex"])),
+        pageHas(tab, "the default mode on Codex, then the unanswered requests", inOrder(["Default mode on Codex", "Ask first", "Accept edits", "Plan only", "Unanswered requests"])),
+        pageHas(tab, "Claude Code's mode hint", /What Claude Code may do without asking you first\. Auto review is the recommended default\./),
+        pageHas(tab, "Codex's mode hint", /What Codex may do without asking you first\. Codex has no Auto review\./),
+        pageHas(tab, "what Auto review does", /A safety check approves routine file edits and web access\./),
+        pageHas(tab, "what Accept edits does with Codex", /With Codex, works as Ask first: asks before every file edit/),
+        pageHas(tab, "Full auto is not offered", /Full auto/, false),
         pageHas(tab, "the Builder section", inOrder(["Builder", "Applies in development only.", "Safe mode", "Only page and data edits through the DMS tools", "Always ask for", "Deleting pages, tables, fields or queries", "Adding or removing dependencies", "Removing or moving Builder blocks", "Undo history", "Keep 30 days"])),
         pageHas(tab, "the usage section", inOrder(["Usage", "Tokens · last 14 days", "Last 14 days", "Tokens", "Conversations"])),
         pageHas(tab, "the hints", /Applies to new turns\. Open chats lose the agent's memory; transcripts stay\./),

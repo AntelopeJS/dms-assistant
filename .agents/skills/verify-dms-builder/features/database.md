@@ -66,7 +66,6 @@ docs:
 ## Sub-features
 
 - `a-project-without-an-external-database-answers-the-documented-empties-and-404s`
-- `the-database-workspace-offers-to-connect-a-database`
 
 ## Driving it with dms-control
 

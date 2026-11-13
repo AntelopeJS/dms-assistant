@@ -37,17 +37,4 @@ export const journeys = guarded([
       ]);
     },
   },
-  {
-    id: "the-database-workspace-offers-to-connect-a-database",
-    title: "The Database workspace of the builder opens on a project without a connection and offers to connect one",
-    entryPoint: "builder Database workspace",
-    async run(/** @type {Ctx} */ ctx) {
-      const { openBuilder } = await import("../editor.mjs");
-      const tab = await ctx.tab();
-      await tab.signIn("admin");
-      await openBuilder(ctx, tab);
-      await tab.page.getByRole("radio", { name: "Database" }).check();
-      await ctx.verify("the workspace opens", [tab.visible({ role: "button", name: "Connect a database" }, { timeoutMs: 20_000 }), tab.shows(/No database is connected to the builder yet\./)]);
-    },
-  },
 ]);

@@ -34,6 +34,33 @@ const OTHER_MAP_REQUEST: PermissionRequestData = {
 	expiresAtMs: 0,
 };
 
+const CONFIGURE_DIFF = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n@@ -1,3 +1,9 @@\n${"+    dms: { config: { mcp: { enabled: true } } },\n".repeat(6)}`;
+
+const CONFIGURE_REQUEST: PermissionRequestData = {
+	...OTHER_MAP_REQUEST,
+	requestId: "r7",
+	callId: "c7",
+	toolName: "mcp__dms__builder_configure_project",
+	args: { steps: [] },
+	summary: "Configure project",
+	preview: {
+		type: "held",
+		operation: "builder_configure_project",
+		details: {
+			plannedChanges: [
+				{ path: "antelope.config.ts", kind: "modify", diff: CONFIGURE_DIFF },
+			],
+			steps: [
+				{
+					action: "ConfigureModule",
+					module: "@antelopejs/dms",
+					config: { externalConnections: { erp: { access: "read" } } },
+				},
+			],
+		},
+	},
+};
+
 function mountCard(
 	request: PermissionRequestData,
 	messages: Record<string, unknown>,
@@ -73,4 +100,27 @@ describe("the card of another call to a tool the DMS holds", () => {
 			]);
 		},
 	);
+});
+
+describe("the card of a configuration change the DMS holds", () => {
+	it("lays the diff, and a row whose name is too long to sit beside its value, on the card's whole width under its name (fails a card that squeezes the DMS's diff into the column a long name leaves)", () => {
+		const rows = mountCard(CONFIGURE_REQUEST, en).find(".perm__kv.is-full");
+		const wide = (cell: string) =>
+			rows.findAll(`${cell}.is-stacked`).map((node) => node.text());
+		expect(wide("dt")).toEqual([
+			"plannedChanges[0].path",
+			"plannedChanges[0].kind",
+			"plannedChanges[0].diff",
+			"steps[0].config.externalConnections.erp.access",
+		]);
+		expect(wide("dd")).toEqual([
+			"antelope.config.ts",
+			"modify",
+			CONFIGURE_DIFF.trim(),
+			"read",
+		]);
+		expect(
+			rows.findAll("dt:not(.is-stacked)").map((node) => node.text()),
+		).toEqual(["steps[0].action", "steps[0].module"]);
+	});
 });

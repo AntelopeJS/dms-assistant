@@ -9,11 +9,12 @@ import type {
 import type { PermissionRule } from "../types/protocol";
 import {
 	heldPreviewRows,
+	isStackedRow,
 	permissionCardText,
 	permissionIcon,
 	ruleLabelKey,
 } from "../utils/permission-view";
-import { namedArguments } from "../utils/tool-lexicon";
+import { type NamedArgument, namedArguments } from "../utils/tool-lexicon";
 import DiffView from "./DiffView.vue";
 
 interface Props {
@@ -41,13 +42,17 @@ const text = computed(() => permissionCardText(props.request, t));
 const icon = computed(() => permissionIcon(props.request));
 const preview = computed(() => props.request.preview);
 const isDestructive = computed(() => preview.value.type === "destructive");
-const argumentRows = computed(() => {
+function namedRows(): NamedArgument[] {
 	if (preview.value.type === "held")
 		return heldPreviewRows(preview.value.details);
 	if (preview.value.type === "generic" || preview.value.type === "held_tool")
 		return namedArguments(preview.value.args);
 	return isDestructive.value ? namedArguments(props.request.args) : [];
-});
+}
+
+const argumentRows = computed(() =>
+	namedRows().map((row) => ({ ...row, isStacked: isStackedRow(row) })),
+);
 
 const scopes = computed(() =>
 	props.request.ruleOptions.map((rule, index) => ({
@@ -155,8 +160,8 @@ defineExpose({ allow, deny });
 					:class="{ 'is-full': preview.type === 'held' }"
 				>
 					<template v-for="arg in argumentRows" :key="arg.name">
-						<dt>{{ arg.name }}</dt>
-						<dd>{{ arg.value }}</dd>
+						<dt :class="{ 'is-stacked': arg.isStacked }">{{ arg.name }}</dt>
+						<dd :class="{ 'is-stacked': arg.isStacked }">{{ arg.value }}</dd>
 					</template>
 				</dl>
 				<label v-if="confirmText" class="perm__confirm">
@@ -388,11 +393,20 @@ defineExpose({ allow, deny });
 
 .perm__kv dt {
 	color: var(--ui-text-dimmed);
+	overflow-wrap: anywhere;
 }
 
 .perm__kv dd {
 	margin: 0;
 	overflow-wrap: anywhere;
+}
+
+.perm__kv .is-stacked {
+	grid-column: 1 / -1;
+}
+
+.perm__kv dd.is-stacked + dt {
+	margin-top: 4px;
 }
 
 .perm__kv.is-full {

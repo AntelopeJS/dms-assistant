@@ -147,6 +147,22 @@ export function heldPreviewRows(details: unknown, name = ""): NamedArgument[] {
 	return [{ name, value }];
 }
 
+const MAX_SIDE_BY_SIDE_NAME_CHARS = 16;
+const MAX_SIDE_BY_SIDE_VALUE_CHARS = 24;
+
+/**
+ * Whether a row reads on the card's whole width, its value under its name:
+ * a value of several lines, such as a diff, or a name or value too long to
+ * share a narrow panel's width with the other.
+ */
+export function isStackedRow(row: NamedArgument): boolean {
+	return (
+		row.value.includes("\n") ||
+		row.value.length > MAX_SIDE_BY_SIDE_VALUE_CHARS ||
+		row.name.length > MAX_SIDE_BY_SIDE_NAME_CHARS
+	);
+}
+
 /** "Delete the page {target}": the Builder's destructive operations by name. */
 const DESTRUCTIVE_TITLE_KEYS: Record<string, string> = {
 	builder_delete_page: "dms_ai.panel.approvals.destructive.delete_page",

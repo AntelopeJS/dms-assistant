@@ -46,7 +46,7 @@ interface Hold extends HeldCall {
  * in one conversation never records, consults or releases another's hold.
  */
 export interface HeldCalls {
-  /** A call is held by its `held` outcome and released once it ran, success or failure. */
+  /** A call is held by its `held` outcome and released once it succeeded. */
   observe(conversationId: string, call: ToolCallSubject, end: CallEnd): void;
   /**
    * Whether the call's tool has a held call pending in the conversation,
@@ -160,24 +160,32 @@ export function holdRefusalOf(
 }
 
 /**
- * Whether a call's end releases its hold. The DMS consumes its hold once the
- * call ran, whether it then succeeded or failed. A call that never reached the
- * DMS, declined by the person, blocked or stopped first, leaves it held, as
- * the DMS still runs the next identical call.
+ * Whether a call's end releases its hold: only a success does. The DMS
+ * consumes its hold once the call passes its gate, but it runs some of its
+ * work, such as a preview, before that gate, and a failure reads the same on
+ * either side of it. A failure therefore keeps the hold, as does a call that
+ * never reached the DMS: declined by the person, blocked or stopped first.
  */
 const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
   done: true,
-  failed: true,
+  failed: false,
   denied: false,
   blocked: false,
   stopped: false,
 };
 
 /**
- * A refused call stays held for the DMS's whole window, counted from when its
- * refusal arrived, so never for less time than the DMS holds it. Only a run
- * with the same arguments releases it, so a run the chat cannot match to it
- * costs one more question, never a missing one.
+ * The held calls of every conversation. A refused call stays held for the
+ * DMS's whole window, counted from when its refusal arrived, so never for
+ * less time than the DMS holds it, and only a success with the same
+ * arguments releases it. When the chat cannot tell whether the DMS still
+ * holds a call, it asks once more, so these cases cost a question, never a
+ * missing one:
+ *
+ * - An approved repeat that passed the DMS's gate and then failed keeps the
+ *   chat's hold, though the DMS consumed its own: the next identical call is
+ *   asked, the DMS refuses it, and its repeat is asked again. A marker from
+ *   the DMS that a call passed its gate would let that failure release.
  */
 export function createHeldCalls(now: () => number = Date.now): HeldCalls {
   const holdByCall = new Map<string, Hold>();

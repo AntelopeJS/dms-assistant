@@ -195,17 +195,14 @@ describe("held calls, once held", () => {
     ).toBe(false);
   });
 
-  it.each(["done", "failed"] as const)(
-    "releases the call once it ran and ended %s, as the DMS consumed its hold (fails a hold kept after a run that failed)",
-    (outcome) => {
-      const { held } = heldAfterRefusal();
-      held.observe(TURN_CONVERSATION_ID, HELD, { outcome });
-      expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
-    },
-  );
+  it("releases the call once it ran and succeeded, as the DMS consumed its hold (fails a hold kept after a run that succeeded)", () => {
+    const { held } = heldAfterRefusal();
+    held.observe(TURN_CONVERSATION_ID, HELD, { outcome: "done" });
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
+  });
 
-  it.each(["denied", "blocked", "stopped"] as const)(
-    "keeps the call held after it ended %s without reaching the DMS (fails a release that lets the next identical call run unasked)",
+  it.each(["failed", "denied", "blocked", "stopped"] as const)(
+    "keeps the call held after it ended %s, which may have stopped before the DMS's gate (fails a release that lets the next identical call run unasked)",
     (outcome) => {
       const { held } = heldAfterRefusal();
       held.observe(TURN_CONVERSATION_ID, HELD, { outcome });

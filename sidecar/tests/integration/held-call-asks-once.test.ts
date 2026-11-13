@@ -130,29 +130,36 @@ describe("a deletion the DMS holds, in a chat turn", () => {
   );
 
   it(
-    "asks once per held call when the approved repeat runs and fails, then the agent retries (fails a hold kept after a run that failed)",
+    "asks again before the retry of an approved repeat that failed before the DMS's gate, which the DMS then runs on its hold (fails a release on failure, which skips that card)",
     async () => {
       const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
-      const call = (id: string, failure?: string): ScriptedCall => {
+      const call = (id: string): ScriptedCall => {
         const refusal = gate.hold(SESSION, "builder_delete_resource", ARGS);
         const answer =
           refusal === undefined
-            ? { text: failure ?? RAN.text, isError: failure !== undefined }
+            ? RAN
             : { text: joinedText(refusal), isError: true };
         return { id, name: DELETE, input: ARGS, answer };
       };
+      const first = call("first");
+      const failsBeforeGate: ScriptedCall = {
+        id: "repeat-fails",
+        name: DELETE,
+        input: ARGS,
+        answer: {
+          text: '{"ok":false,"error":{"code":"unavailable"}}',
+          isError: true,
+        },
+      };
+      const retry = call("retry");
+      expect(retry.answer).toEqual(RAN);
       const cards = await cardsOf(
-        [
-          call("first"),
-          call("repeat-fails", '{"ok":false,"error":{"code":"in_use"}}'),
-          call("retry"),
-          call("retry-repeat"),
-        ],
+        [first, failsBeforeGate, retry],
         PERMISSION_DECISIONS.ALLOW_ONCE,
       );
       expect(cards.map(([callId]) => callId)).toEqual([
         "repeat-fails",
-        "retry-repeat",
+        "retry",
       ]);
     },
     TEST_TIMEOUT_MS,

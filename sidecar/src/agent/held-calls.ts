@@ -186,6 +186,15 @@ const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
  *   chat's hold, though the DMS consumed its own: the next identical call is
  *   asked, the DMS refuses it, and its repeat is asked again. A marker from
  *   the DMS that a call passed its gate would let that failure release.
+ * - A repeat with a key the DMS's tool drops runs on the DMS's hold, but the
+ *   chat's hold, keyed on the arguments as sent, stays for the rest of the
+ *   window: every call to that tool in the conversation is still asked,
+ *   first calls included. Releasing the held calls whose arguments the run's
+ *   contain would be unsafe: when the extra key is one the tool knows, the
+ *   run consumed another hold, and the DMS would run the held call unasked.
+ * - Every call to a tool with a held call is asked, whatever its arguments,
+ *   as the chat cannot tell which keys the DMS drops before it looks its hold
+ *   up.
  */
 export function createHeldCalls(now: () => number = Date.now): HeldCalls {
   const holdByCall = new Map<string, Hold>();

@@ -157,6 +157,27 @@ describe("held calls, once held", () => {
     expect(held.isHeld(TURN_CONVERSATION_ID, other)).toBe(true);
   });
 
+  it("keeps the held call after a run with a key the DMS's tool knows, which the DMS ran on another hold (fails a release by argument subset, which skips the card of the call the DMS still holds)", () => {
+    const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+    const held = createHeldCalls(() => 0);
+    const heldArgs = { ref: "orders" };
+    const runArgs = { ref: "orders", keepData: true };
+    const heldCall = { toolName: DELETE, args: heldArgs };
+    const run = { toolName: DELETE, args: runArgs };
+    endCall(held, heldCall, { result: refusalOf(gate, heldArgs).content });
+    endCall(held, run, { result: refusalOf(gate, runArgs).content });
+    expect(
+      gate.hold(SESSION, "builder_delete_resource", runArgs),
+    ).toBeUndefined();
+    held.observe(TURN_CONVERSATION_ID, run, { outcome: "done" });
+    expect(held.holdOf(TURN_CONVERSATION_ID, heldCall)).toEqual({
+      preview: heldArgs,
+    });
+    expect(
+      gate.hold(SESSION, "builder_delete_resource", heldArgs),
+    ).toBeUndefined();
+  });
+
   it("gives the repeat the DMS's preview, and another call of the tool none (fails a card that shows another call's preview)", () => {
     const { held } = heldAfterRefusal();
     expect(held.holdOf(TURN_CONVERSATION_ID, HELD)).toEqual({ preview: ARGS });

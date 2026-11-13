@@ -9,6 +9,7 @@ import {
 } from "../../../builder/app/runtime/database-connect";
 import { useChatI18n } from "../../chat/composables/useChatI18n";
 import {
+	CONNECTABLE_ENGINES,
 	type UrlProblem,
 	useDatabaseConnect,
 } from "../../onboarding/connect-database";
@@ -24,17 +25,17 @@ import OnboardingFrame from "./OnboardingFrame.vue";
  * anything is written, the access when the account can write, and the analysis, which opens once
  * it is ready.
  */
-const ENGINE_ICONS: Record<DatabaseEngine, string> = {
+const ENGINE_ICONS: Partial<Record<DatabaseEngine, string>> = {
 	postgres: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
 	rethinkdb: "i-ph-circles-three",
 };
+const DEFAULT_ENGINE_ICON = "i-ph-database";
 
-const PLACEHOLDERS: Record<DatabaseEngine, string> = {
-	postgres: "postgres://user:password@host:5432/shop",
-	mongodb: "mongodb://user:password@host:27017/shop",
-	rethinkdb: "rethinkdb://user:password@host:28015/shop",
-};
+function placeholder(engine: DatabaseEngine): string {
+	const { schemes, port } = ENGINES[engine];
+	return `${schemes[0] ?? `${engine}:`}//user:password@host:${port}/shop`;
+}
 
 const STATUS_ICONS: Record<CheckStatus, { name: string; tone: string }> = {
 	pending: { name: "i-ph-circle", tone: "text-dimmed" },
@@ -69,10 +70,6 @@ const ACCESS_OPTIONS: readonly {
 		hint: "dms_ai.views.onboarding.database.access_write_hint",
 	},
 ];
-
-const ENGINE_LIST = Object.keys(ENGINES).filter(
-	(engine): engine is DatabaseEngine => engine in ENGINE_ICONS,
-);
 
 const onboarding = useOnboarding();
 const { t } = useChatI18n();
@@ -201,11 +198,11 @@ watch(database.phase, (phase) => {
 	>
 		<div class="mt-5 flex flex-wrap gap-2" role="radiogroup">
 			<UButton
-				v-for="option in ENGINE_LIST"
+				v-for="option in CONNECTABLE_ENGINES"
 				:key="option"
 				role="radio"
 				:aria-checked="engine === option"
-				:icon="ENGINE_ICONS[option]"
+				:icon="ENGINE_ICONS[option] ?? DEFAULT_ENGINE_ICON"
 				:label="ENGINES[option].label"
 				size="sm"
 				:color="engine === option ? 'primary' : 'neutral'"
@@ -222,7 +219,7 @@ watch(database.phase, (phase) => {
 		>
 			<UInput
 				:model-value="url"
-				:placeholder="PLACEHOLDERS[engine]"
+				:placeholder="placeholder(engine)"
 				autocomplete="off"
 				spellcheck="false"
 				size="lg"

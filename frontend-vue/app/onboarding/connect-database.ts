@@ -14,6 +14,7 @@ import {
 	connectionId,
 	connectionUrl,
 	type DatabaseEngine,
+	ENGINES,
 	fieldProblem,
 	managedNames,
 	missingField,
@@ -32,6 +33,18 @@ import {
 } from "./database-checks";
 
 type BuilderApi = ReturnType<typeof useBuilderApi>;
+
+/** The engines the builder connects, the ones its live check accepts, in the order it lists them. */
+export const CONNECTABLE_ENGINES = Object.keys(ENGINES).filter(
+	(engine): engine is DatabaseEngine => Object.hasOwn(ENGINES, engine),
+);
+
+/** The connectable engines by name, as one "or" list in `locale`: "PostgreSQL, MongoDB or RethinkDB". */
+export function engineNames(locale: string): string {
+	return new Intl.ListFormat(locale, { type: "disjunction" }).format(
+		CONNECTABLE_ENGINES.map((engine) => ENGINES[engine].label),
+	);
+}
 
 const POLL_MS = 1_000;
 

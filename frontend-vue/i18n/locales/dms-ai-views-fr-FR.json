@@ -239,7 +239,7 @@
 					"scratch_title": "Partir de zéro",
 					"scratch_text": "Décrivez votre produit. Nous esquissons une maquette vivante que vous affinez avant que quoi que ce soit ne soit construit.",
 					"database_title": "Partir d’une base de données existante",
-					"database_text": "Connectez PostgreSQL, MongoDB ou RethinkDB. Nous lisons le schéma et proposons les écrans.",
+					"database_text": "Connectez {engines}. Nous lisons le schéma et proposons les écrans.",
 					"explore": "Je vais d’abord explorer"
 				},
 				"scratch": {

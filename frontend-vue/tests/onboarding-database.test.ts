@@ -3,10 +3,13 @@ import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
 import {
+	CONNECTABLE_ENGINES,
 	connectForm,
 	type DatabaseConnect,
+	engineNames,
 	useDatabaseConnect,
 } from "../app/onboarding/connect-database";
+import { ENGINES } from "../builder/app/runtime/database-connect";
 import type { ProjectConfigStep } from "../builder/app/runtime/database-types";
 
 vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
@@ -519,4 +522,21 @@ describe("an attempt the owner replaced", () => {
 		expect(fake.analyseDatabase).not.toHaveBeenCalled();
 		expect(schemaCheck(connect)?.status).toBe("pending");
 	});
+});
+
+describe("the engines the popup offers", () => {
+	it.each([
+		["en-GB", " or "],
+		["fr-FR", " ou "],
+	])(
+		"names every engine the builder connects, as a choice, in %s",
+		(locale, or) => {
+			const names = engineNames(locale);
+			for (const engine of CONNECTABLE_ENGINES) {
+				expect(names).toContain(ENGINES[engine].label);
+			}
+			expect(CONNECTABLE_ENGINES).toHaveLength(Object.keys(ENGINES).length);
+			expect(names).toContain(or);
+		},
+	);
 });

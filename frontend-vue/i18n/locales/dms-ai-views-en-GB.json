@@ -239,7 +239,7 @@
 					"scratch_title": "Start from scratch",
 					"scratch_text": "Describe your product. We draft a live mockup you refine before anything is built.",
 					"database_title": "Start from an existing database",
-					"database_text": "Connect PostgreSQL, MongoDB or RethinkDB. We read the schema and propose the screens.",
+					"database_text": "Connect {engines}. We read the schema and propose the screens.",
 					"explore": "I’ll explore first"
 				},
 				"scratch": {

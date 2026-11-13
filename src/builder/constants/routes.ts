@@ -28,6 +28,7 @@ export const ROUTES = {
   permissions: "/permissions",
   refresh: "/refresh",
   databaseConnections: "/database/connections",
+  databaseConnectionsRepair: "/database/connections/repair",
   databaseAnalyse: "/database/analyse",
   databaseAnalysis: "/database/analysis",
   databaseMap: "/database/map",

@@ -35,6 +35,7 @@ import {
   setConnectionUrl,
 } from "../implementations/dms-builder/engine/database-connection";
 import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
+import { repairDatabaseConnections } from "../implementations/dms-builder/engine/database-repair";
 import { latestAnalysis } from "../implementations/dms-builder/engine/analysis-job";
 import {
   configureProjectWithVariables,
@@ -46,6 +47,10 @@ const HTTP_REFUSED = 422;
 
 interface RemoveConnectionBody {
   connection: string;
+  dryRun?: boolean;
+}
+
+interface RepairConnectionsBody {
   dryRun?: boolean;
 }
 
@@ -118,6 +123,18 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
       entries.push(await connectionEntry(id));
     }
     return entries;
+  }
+
+  /**
+   * Repairs the connections made before the connect flow registered them with dms-database: adds
+   * what the configuration is missing, and answers an empty success when nothing is.
+   */
+  @Post(ROUTES.databaseConnectionsRepair)
+  async repairConnections(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: RepairConnectionsBody | undefined,
+  ) {
+    return repairDatabaseConnections({ dryRun: body?.dryRun });
   }
 
   @Post(ROUTES.databaseAnalyse)

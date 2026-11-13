@@ -60,7 +60,7 @@ function isDmsDatabaseSource(entry: ObjectLiteralExpression): boolean {
  * modules with `ajs project modules add` keys them by package name, so the id alone does not tell.
  * An entry not written as a plain literal is not found: the builder cannot write to it.
  */
-function dmsDatabaseIn(draft: ConfigDraft): string | undefined {
+export function dmsDatabaseIn(draft: ConfigDraft): string | undefined {
   const entries = moduleEntries(draft);
   return (entries.find(([id]) => id === DMS_DATABASE_ID) ??
     entries.find(([, entry]) => isDmsDatabaseSource(entry)))?.[0];

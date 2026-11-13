@@ -32,6 +32,7 @@ export type CallEnd =
   | { outcome: Exclude<ToolOutcome, "held"> };
 
 interface Hold extends HeldCall {
+  conversationId: string;
   tool: string;
   expiresAtMs: number;
 }
@@ -40,23 +41,26 @@ interface Hold extends HeldCall {
  * The DMS MCP's calls held until someone confirms them. The DMS refuses the
  * first such call and runs an identical one repeated within its window, so
  * the chat asks the person before it lets that repeat through. The DMS keeps
- * each hold for the MCP session that was refused; the chat keeps them for the
- * whole sidecar, which can only cost a question, never skip one.
+ * each hold for the MCP session that was refused, and each conversation runs
+ * its own session, so the chat keeps each hold for its conversation: a call
+ * in one conversation never records, consults or releases another's hold.
  */
 export interface HeldCalls {
   /** A call is held by its `held` outcome and released once it ran, success or failure. */
-  observe(call: ToolCallSubject, end: CallEnd): void;
+  observe(conversationId: string, call: ToolCallSubject, end: CallEnd): void;
   /**
-   * Whether the call's tool has a held call pending, whatever the call's
-   * arguments: the DMS drops the arguments its tool does not know before it
-   * looks its hold up, so a repeat with another key can still run.
+   * Whether the call's tool has a held call pending in the conversation,
+   * whatever the call's arguments: the DMS drops the arguments its tool does
+   * not know before it looks its hold up, so a repeat with another key can
+   * still run.
    */
-  isHeld(call: ToolCallSubject): boolean;
+  isHeld(conversationId: string, call: ToolCallSubject): boolean;
   /**
-   * The held call this call repeats, with the DMS's preview when the
-   * arguments are the same, or `undefined` when its tool has none held.
+   * The held call this call repeats in the conversation, with the DMS's
+   * preview when the arguments are the same, or `undefined` when its tool has
+   * none held there.
    */
-  holdOf(call: ToolCallSubject): HeldCall | undefined;
+  holdOf(conversationId: string, call: ToolCallSubject): HeldCall | undefined;
 }
 
 const TextBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
@@ -93,8 +97,12 @@ function withSortedKeys(value: JsonValue): JsonValue {
   );
 }
 
-function callKey(call: ToolCallSubject): string {
-  return `${bareToolName(call.toolName)}\u0000${JSON.stringify(withSortedKeys(call.args))}`;
+function callKey(conversationId: string, call: ToolCallSubject): string {
+  return JSON.stringify([
+    conversationId,
+    bareToolName(call.toolName),
+    withSortedKeys(call.args),
+  ]);
 }
 
 function isDmsTool(toolName: string): boolean {
@@ -178,31 +186,39 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
       if (hold.expiresAtMs < at) holdByCall.delete(key);
     }
   };
-  const holdOf = (call: ToolCallSubject): HeldCall | undefined => {
+  const holdOf = (
+    conversationId: string,
+    call: ToolCallSubject,
+  ): HeldCall | undefined => {
     if (!isDmsTool(call.toolName)) return undefined;
     dropExpired(now());
-    const same = holdByCall.get(callKey(call));
+    const same = holdByCall.get(callKey(conversationId, call));
     if (same !== undefined) return { preview: same.preview };
     const tool = bareToolName(call.toolName);
-    const isToolHeld = [...holdByCall.values()].some((h) => h.tool === tool);
+    const isToolHeld = [...holdByCall.values()].some(
+      (h) => h.conversationId === conversationId && h.tool === tool,
+    );
     return isToolHeld ? { preview: undefined } : undefined;
   };
   return {
-    observe(call, end) {
+    observe(conversationId, call, end) {
       if (!isDmsTool(call.toolName)) return;
       const at = now();
       dropExpired(at);
+      const key = callKey(conversationId, call);
       if (end.outcome === "held") {
-        holdByCall.set(callKey(call), {
+        holdByCall.set(key, {
+          conversationId,
           tool: bareToolName(call.toolName),
           preview: end.preview,
           expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
         });
       } else if (RELEASED_BY_OUTCOME[end.outcome]) {
-        holdByCall.delete(callKey(call));
+        holdByCall.delete(key);
       }
     },
-    isHeld: (call) => holdOf(call) !== undefined,
+    isHeld: (conversationId, call) =>
+      holdOf(conversationId, call) !== undefined,
     holdOf,
   };
 }

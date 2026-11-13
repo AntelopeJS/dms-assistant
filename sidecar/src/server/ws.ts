@@ -333,7 +333,10 @@ function buildPermissionBus(
       onRulesChanged(services(holder), conversationId),
     onDenyAll: (conversationId) =>
       interruptConversation(services(holder), conversationId),
-    heldCalls: { holdOf: (call) => services(holder).heldCalls.holdOf(call) },
+    heldCalls: {
+      holdOf: (conversationId, call) =>
+        services(holder).heldCalls.holdOf(conversationId, call),
+    },
   });
 }
 

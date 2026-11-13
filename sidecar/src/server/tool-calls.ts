@@ -23,7 +23,7 @@ import {
 import { JsonValueSchema } from "../protocol/json.js";
 import type { CallAudit, CallDecision } from "../audit/call-audit.js";
 import type { ConversationStore } from "../state/conversations.js";
-import type { ActiveTurn, TurnRegistry } from "./turn-registry.js";
+import type { TurnRegistry } from "./turn-registry.js";
 
 /** What starting, ending and stopping a tool call reads and writes. */
 export interface ToolCallServices {
@@ -143,17 +143,19 @@ function toolNameOf(
 
 function trackEnd(
   services: ToolCallServices,
-  turn: ActiveTurn | undefined,
+  conversationId: string,
   ev: RunnerToolResult,
   toolName: string,
   end: CallEnd,
 ): void {
+  const turn = services.turns.get(conversationId);
   if (turn === undefined) return;
   const open = turn.openCalls.get(ev.callId);
   turn.openCalls.delete(ev.callId);
   const args = JsonValueSchema.safeParse(open?.args);
   if (open !== undefined && args.success) {
     services.heldCalls.observe(
+      conversationId,
       { toolName: open.toolName, args: args.data },
       end,
     );
@@ -182,7 +184,7 @@ export function endToolCall(
   const end = endOf(ev, decision, toolName);
   const { outcome } = end;
   const allowedBy = decision?.allowedBy ?? defaultAllowedBy(toolName);
-  trackEnd(services, services.turns.get(conversationId), ev, toolName, end);
+  trackEnd(services, conversationId, ev, toolName, end);
   const status = ev.isError ? STATUS.ERROR : STATUS.SUCCESS;
   services.conversationStore.patchMessages(
     conversationId,

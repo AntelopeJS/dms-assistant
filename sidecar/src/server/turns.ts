@@ -226,7 +226,7 @@ function buildRunnerContext(
     beforeMutation: async () => {
       await services.turns.get(conversationId)?.checkpoint.ready();
     },
-    isHeldCall: (call) => services.heldCalls.isHeld(call),
+    isHeldCall: (call) => services.heldCalls.isHeld(conversationId, call),
     onTokenUsage: (usage) => addTurnUsage(services, conversationId, usage),
     onModelUsed: (model) =>
       services.conversationStore.markModel(conversationId, model),

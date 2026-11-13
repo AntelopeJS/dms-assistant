@@ -9,7 +9,7 @@ import {
   coreConfirmationGate,
   SESSION,
 } from "../helpers/core-confirmation-gate.js";
-import { playTurn } from "../helpers/turn-events.js";
+import { playTurn, TURN_CONVERSATION_ID } from "../helpers/turn-events.js";
 
 const DELETE = "mcp__dms__builder_delete_resource";
 const ARGS = { ref: "orders", keepData: false };
@@ -61,7 +61,7 @@ function heldAfterRefusal(now: () => number = () => 0) {
   return { gate, held };
 }
 
-describe("held calls", () => {
+describe("held calls, from the DMS's answer", () => {
   it.each(Object.entries(AS_REPORTED_BY))(
     "holds the call the DMS's own gate refused, as %s reports it (fails a detector the DMS's wording or a provider's shape escapes)",
     (_provider, report) => {
@@ -69,7 +69,7 @@ describe("held calls", () => {
       const held = createHeldCalls(() => 0);
       endCall(held, HELD, { result: report(refusalOf(gate, ARGS)) });
       expect(
-        held.isHeld({
+        held.isHeld(TURN_CONVERSATION_ID, {
           toolName: DELETE,
           args: { keepData: false, ref: "orders" },
         }),
@@ -89,7 +89,7 @@ describe("held calls", () => {
         },
       ];
       endCall(held, HELD, { result: report({ content, isError: true }) });
-      expect(held.isHeld(HELD)).toBe(true);
+      expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
     },
   );
 
@@ -98,7 +98,7 @@ describe("held calls", () => {
     const prose =
       "builder_delete_resource was not run: no one has confirmed it yet.";
     endCall(held, HELD, { result: [{ type: "text", text: prose }] });
-    expect(held.isHeld(HELD)).toBe(true);
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
   });
 
   it("does not hold the DMS's refusal prose when the answer ends with another code (fails a prose fallback that fires beside a code)", () => {
@@ -111,7 +111,7 @@ describe("held calls", () => {
         { type: "text", text: '{"code":"invalid_config"}' },
       ],
     });
-    expect(held.isHeld(HELD)).toBe(false);
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
   });
 
   it.each(['{"ok":true}', '{"code":"not_found"}', "not json"])(
@@ -123,14 +123,26 @@ describe("held calls", () => {
         { type: "text", text: last },
       ];
       endCall(held, HELD, { result: content });
-      expect(held.isHeld(HELD)).toBe(false);
+      expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
     },
   );
+});
 
+describe("held calls, once held", () => {
   it("holds every call to the held tool, whatever its arguments, as the DMS drops the keys its tool does not know (fails a hold keyed on the raw arguments)", () => {
     const { held } = heldAfterRefusal();
-    expect(held.isHeld({ ...HELD, args: { ...ARGS, force: true } })).toBe(true);
-    expect(held.isHeld({ ...HELD, args: { ref: "customers" } })).toBe(true);
+    expect(
+      held.isHeld(TURN_CONVERSATION_ID, {
+        ...HELD,
+        args: { ...ARGS, force: true },
+      }),
+    ).toBe(true);
+    expect(
+      held.isHeld(TURN_CONVERSATION_ID, {
+        ...HELD,
+        args: { ref: "customers" },
+      }),
+    ).toBe(true);
   });
 
   it("keeps the tool held while another of its calls is held, after one ran (fails a release of the whole tool)", () => {
@@ -138,28 +150,45 @@ describe("held calls", () => {
     const otherArgs = { ref: "customers" };
     const other = { toolName: DELETE, args: otherArgs };
     endCall(held, other, { result: refusalOf(gate, otherArgs).content });
-    held.observe(HELD, { outcome: "done" });
+    held.observe(TURN_CONVERSATION_ID, HELD, { outcome: "done" });
     expect(
       gate.hold(SESSION, "builder_delete_resource", otherArgs),
     ).toBeUndefined();
-    expect(held.isHeld(other)).toBe(true);
+    expect(held.isHeld(TURN_CONVERSATION_ID, other)).toBe(true);
   });
 
   it("gives the repeat the DMS's preview, and another call of the tool none (fails a card that shows another call's preview)", () => {
     const { held } = heldAfterRefusal();
-    expect(held.holdOf(HELD)).toEqual({ preview: ARGS });
-    expect(held.holdOf({ ...HELD, args: { ref: "customers" } })).toEqual({
+    expect(held.holdOf(TURN_CONVERSATION_ID, HELD)).toEqual({ preview: ARGS });
+    expect(
+      held.holdOf(TURN_CONVERSATION_ID, {
+        ...HELD,
+        args: { ref: "customers" },
+      }),
+    ).toEqual({
       preview: undefined,
     });
+  });
+
+  it("keeps a hold to its own conversation: another one neither sees it nor releases it (fails a hold the chat keeps for the whole sidecar)", () => {
+    const { held } = heldAfterRefusal();
+    const other = "conv-other";
+    expect(held.isHeld(other, HELD)).toBe(false);
+    expect(held.holdOf(other, HELD)).toBeUndefined();
+    held.observe(other, HELD, { outcome: "done" });
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
   });
 
   it("counts another tool or server as another call (fails a hold that asks before every DMS tool)", () => {
     const { held } = heldAfterRefusal();
     expect(
-      held.isHeld({ toolName: "mcp__dms__builder_delete_page", args: ARGS }),
+      held.isHeld(TURN_CONVERSATION_ID, {
+        toolName: "mcp__dms__builder_delete_page",
+        args: ARGS,
+      }),
     ).toBe(false);
     expect(
-      held.isHeld({
+      held.isHeld(TURN_CONVERSATION_ID, {
         toolName: "mcp__dms-ai__builder_delete_resource",
         args: ARGS,
       }),
@@ -170,8 +199,8 @@ describe("held calls", () => {
     "releases the call once it ran and ended %s, as the DMS consumed its hold (fails a hold kept after a run that failed)",
     (outcome) => {
       const { held } = heldAfterRefusal();
-      held.observe(HELD, { outcome });
-      expect(held.isHeld(HELD)).toBe(false);
+      held.observe(TURN_CONVERSATION_ID, HELD, { outcome });
+      expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
     },
   );
 
@@ -179,8 +208,8 @@ describe("held calls", () => {
     "keeps the call held after it ended %s without reaching the DMS (fails a release that lets the next identical call run unasked)",
     (outcome) => {
       const { held } = heldAfterRefusal();
-      held.observe(HELD, { outcome });
-      expect(held.isHeld(HELD)).toBe(true);
+      held.observe(TURN_CONVERSATION_ID, HELD, { outcome });
+      expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
     },
   );
 
@@ -188,7 +217,7 @@ describe("held calls", () => {
     let nowMs = 0;
     const { gate, held } = heldAfterRefusal(() => nowMs);
     nowMs = coreConfirmationGate.REPEAT_CONFIRMATION_WINDOW_MS;
-    expect(held.isHeld(HELD)).toBe(true);
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
     expect(gate.hold(SESSION, "builder_delete_resource", ARGS)).toBeUndefined();
   });
 });

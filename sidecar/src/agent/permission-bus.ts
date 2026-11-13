@@ -250,7 +250,10 @@ function heldCallOf(
 ): HeldCall | undefined {
   const args = JsonValueSchema.safeParse(req.args);
   if (!args.success) return undefined;
-  return state.heldCalls?.holdOf({ toolName: req.toolName, args: args.data });
+  return state.heldCalls?.holdOf(req.conversationId, {
+    toolName: req.toolName,
+    args: args.data,
+  });
 }
 
 async function buildPending(

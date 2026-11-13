@@ -1,6 +1,6 @@
 # dms-assistant
 
-An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the visual page editor, whose every edit is an AST rewrite of the project sources, and the external database connect flow). The module implements `@antelopejs/interface-dms-builder`, a published dependency. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
+An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). The module implements `@antelopejs/interface-dms-builder`, a published dependency. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
 
 ## Layout
 

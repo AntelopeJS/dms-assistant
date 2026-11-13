@@ -6,7 +6,7 @@
 
 <a href="https://www.npmjs.com/package/@antelopejs/dms-assistant"><img alt="npm" src="https://img.shields.io/npm/v/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="./LICENSE"><img alt="License" src="https://img.shields.io/npm/l/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="https://discord.gg/g4pFt6eXqu"><img alt="Discord" src="https://img.shields.io/badge/Discord-18181B?logo=discord&style=for-the-badge&color=000000" data-illustration></a> <a href="https://dms.antelopejs.com/docs/modules/assistant"><img alt="Documentation" src="https://img.shields.io/badge/Docs-18181B?style=for-the-badge&color=000000" data-illustration></a> <a href="https://github.com/AntelopeJS/dms"><img data-illustration alt="Star AntelopeJS DMS" src="https://img.shields.io/github/stars/AntelopeJS/dms?label=Star%20AntelopeJS%20DMS&style=for-the-badge&labelColor=000000&color=000000&logo=github"></a>
 
-**A development assistant and a visual page editor inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard.**
+**A development assistant inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard, and the builder that writes its page changes as TypeScript.**
 
 [Documentation](https://dms.antelopejs.com/docs/modules/assistant) · [All modules](https://github.com/AntelopeJS/dms#modules)
 
@@ -16,7 +16,7 @@
 
 ## What it does
 
-The module brings two tools to the dashboard, both for development.
+The module has two parts, both for development.
 
 **The assistant.**
 
@@ -30,15 +30,13 @@ With `NODE_ENV=production`, the backend starts no sidecar and the dashboard show
 
 **The builder.**
 
-![The builder open on the Helio dashboard, with the block catalog, the canvas and the settings of the Revenue invoiced KPI card](./docs/8.builder/images/captures/editor-selected.webp)
-
-- Turns any DMS page into an editor, opened with the hammer button in the page header or `Ctrl` `B`. In the editor you add blocks from a catalog, arrange them, configure them and bind them to data.
+- Changes the project's pages, tables and data sources for the assistant and for **Build it** in the DMS mockup Edit mode. It has no editor of its own.
 - Writes each edit into the project's TypeScript as an AST rewrite, typechecks it in memory, and writes only if it compiles.
 - Creates pages from a layout, arranges the menu, and generates tables with their fields and API.
 - Gives a chart or a KPI its numbers from a query, without hand-writing a route, and connects an external database to map its tables.
 - Implements [`@antelopejs/interface-dms-builder`](https://www.npmjs.com/package/@antelopejs/interface-dms-builder), so other modules call the same operations, and serves an HTTP API under `/api/builder`.
 
-By default the builder's HTTP API and editor run only in development (`ajs project dev`), and every route requires a tenant owner.
+By default the builder's HTTP API runs only in development (`ajs project dev`), and every route requires a tenant owner.
 
 ## Install
 
@@ -76,11 +74,11 @@ The assistant's keys stay at the top level of the module's `config`. The builder
 | `backendUrl`              | `http://localhost:5010`     | The origin the sidecar reaches the backend on. Point it at the origin the `api` module reserved. |
 | `mcpJson`                 | `true`                      | `false` keeps the module from adding its MCP server to the project's `.mcp.json`.              |
 | `builder.projectRoot`     | The backend's working directory | The app source root the builder rewrites.                                                 |
-| `builder.api.enabled`     | `true` in development only  | Turns the builder's HTTP API and editor on or off, whatever the mode.                          |
+| `builder.api.enabled`     | `true` in development only  | Turns the builder's HTTP API on or off, whatever the mode.                                     |
 
 Claude Code runs with its own credentials, either its login or `ANTHROPIC_API_KEY` in the backend's environment. Codex runs on your ChatGPT plan and uses no OpenAI API key. To use Codex, install `@openai/codex` at the version that `peerDependencies` pins, then press **Sign in with ChatGPT** in **Assistant** › **Settings**. On a DMS that runs on another machine, finish the sign-in with **Paste the return address**.
 
-Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev`. Sign in as an owner. Press `Ctrl` `Shift` `K` (`⌘` `⇧` `K` on macOS) for the assistant, and `Ctrl` `B` (`⌘` `B`) or the hammer button in a page header for the builder. To start the backend without the sidecar, set `DMS_AI=0`.
+Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev`. Sign in as an owner. Press `Ctrl` `Shift` `K` (`⌘` `⇧` `K` on macOS) for the assistant. To start the backend without the sidecar, set `DMS_AI=0`.
 
 ## Requirements
 
@@ -108,7 +106,7 @@ The module needs a DMS backend in a release that implements the `@antelopejs/int
 - [Usage](https://dms.antelopejs.com/docs/modules/assistant/usage/chat)
 - [Extending](https://dms.antelopejs.com/docs/modules/assistant/extending)
 - [FAQ](https://dms.antelopejs.com/docs/modules/assistant/faq)
-- [Builder](https://dms.antelopejs.com/docs/modules/assistant/builder/introduction): the page editor, tables, data sources, the interface and the HTTP API
+- [Builder](https://dms.antelopejs.com/docs/modules/assistant/builder/introduction): the engine, the interface and the HTTP API
 
 The guide's sources live in [`docs/`](./docs), the builder's in [`docs/8.builder`](./docs/8.builder). The package ships its agent skills in [`skills/`](./skills): `dms-ai`, `dms-ai-code-mode`, `dms-builder`, `dms-builder-safe`, `dms-external-database` and `dms-page-design`. `antelopeJs.skills` declares them, and the assistant loads them into its agent.
 

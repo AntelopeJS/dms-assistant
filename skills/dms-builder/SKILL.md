@@ -1,9 +1,9 @@
 ---
 name: dms-builder
-description: Uses the builder of @antelopejs/dms-assistant, the AntelopeJS DMS module which edits a project's pages, tables and data sources as typechecked AST rewrites of its TypeScript sources (the "Edit this page" editor, Ctrl+B, the /api/builder HTTP API and @antelopejs/interface-dms-builder). Use when configuring the builder (`builder.projectRoot`, `builder.api.enabled`), calling its interface or HTTP API from code, or when the editor or its routes are missing. For page edits through the dms-ai agent tools, use dms-builder-safe.
+description: Uses the builder of @antelopejs/dms-assistant, the AntelopeJS DMS module which edits a project's pages, tables and data sources as typechecked AST rewrites of its TypeScript sources (the /api/builder HTTP API and @antelopejs/interface-dms-builder; it has no editor UI). Use when configuring the builder (`builder.projectRoot`, `builder.api.enabled`), calling its interface or HTTP API from code, or when its routes are missing. For page edits through the dms-ai agent tools, use dms-builder-safe.
 icon: i-lucide-hammer
 category: builder
-tags: [builder, pages, editor, ast, typecheck, interface]
+tags: [builder, pages, ast, typecheck, interface]
 ---
 
 # dms-builder
@@ -12,7 +12,7 @@ The builder has no store of its own: pages are `PageController` classes, blocks 
 
 ## Surfaces
 
-- **Editor**: `Ctrl` `B` on any page; Page / Tables / Data workspaces; edits stay a local draft until Save (one `SetPageBlocks` transaction). Tables, menu and categories are written at once.
+- **Clients**: the dms-ai agent tools (`builder_*`, see dms-builder-safe) call the interface through the assistant's backend; **Build it** in the DMS mockup Edit mode calls the HTTP API. There is no editor UI on a live page. Connecting an existing database starts from the onboarding popup's **Start from an existing database** or from the agent (dms-external-database).
 - **Interface** (`@antelopejs/interface-dms-builder`): `ListPages`, `GetPageStructure`, `AddBlock`, `SetPageBlocks`, `PreviewLayout`, `CreateResource`, `AddQuery`… Mutations return `OpResult` (`{ ok, data, changes }` / `{ ok: false, error }`): branch on `ok`.
 - **HTTP**: `/api/builder/*`, tenant owner only, same `OpResult`. Pass the structure's `version` as `expectedVersion` to fail with `stale` instead of overwriting.
 
@@ -22,11 +22,10 @@ The builder has no store of its own: pages are `PageController` classes, blocks 
 
 ## Gotchas
 
-- Off under `ajs project start`: no routes (404), no frontend module, no Edit button. `api.enabled: true` forces it on.
+- Off under `ajs project start`: no routes (404). `api.enabled: true` forces it on.
 - Blocks are read back by shape: code that leaves the factory-call grammar becomes `opaque`, shown but not rewritten. Factories imported from a `base/<block>` subpath read like the `base` barrel; a component with no catalog factory (a helper's return value) is listed opaque and preserved on save.
-- The period selector and Live / Pause switch the editor places go into the page's top-level `PageToolbar`, made at the top when missing (children `period` / `live`, ids and options read from the catalog's `PageToolbar.initialChildren`, as `pageToolbar()` sets them, with no override of the editor's). A page with its own top-level selector or switch, or a toolbar the editor cannot rewrite (a `pageToolbar()` call is not factory grammar), gets the control beside it instead.
-- A block's permission is named after its position: moving or renaming it drops role grants; the change list warns.
+- A block's permission is named after its position: moving or renaming it drops role grants.
 - A type error anywhere in the project blocks every write: fix it first.
 - A query `AddQuery` writes is a page route served at `/dms/pages<pageRef><endpoint>`; a block's `fetchUrl` must use that address (`pageRoutePath` from `@antelopejs/interface-dms/page`).
-- Editor texts live in `frontend-vue/i18n/locales/builder-{en-GB,fr-FR}.json` (namespace `dms_builder`, English fallback); the header button's label is the key `$dms_builder.action.edit_page`. The entry point, bar, strips and toasts are translated; the panels are still English. App display strings written as `$` keys (page titles, category names, block headings) are drawn through `displayText()` (`app/runtime/i18n.ts`); edit fields keep the raw key.
+- The builder's texts live in `frontend-vue/i18n/locales/builder-{en-GB,fr-FR}.json` (namespace `dms_builder`, English fallback) and cover the database connect flow.
 - Page content rules (blocks backend-side, custom only for a missing block, `.meta()` on custom blocks) come from `dms-best-practices`.

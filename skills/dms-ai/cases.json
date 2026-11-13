@@ -33,10 +33,10 @@
       }
     },
     {
-      "id": "dms-ai-not-builder-editor",
+      "id": "dms-ai-not-builder-routes",
       "area": "dms-ai",
       "style": "clean",
-      "prompt": "The Edit this page editor never opens and Ctrl+B does nothing. How do I set the projectRoot of the builder module?",
+      "prompt": "Every /api/builder route answers 404 and the builder writes nothing. How do I set the projectRoot of the builder module?",
       "expect": {
         "skills": ["dms-builder"],
         "acceptable": ["dms"],

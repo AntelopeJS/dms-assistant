@@ -48,7 +48,8 @@ Call `database_connections`.
   up. The user approves the diff.
   - Then tell the integrator to put the URL in `.env` (`ERP_DATABASE_URL=postgres://…`,
     `mongodb://…`, or `rethinkdb://…/<database>`; for MongoDB also `ERP_DATABASE_NAME`), or in the
-    Builder's *Database* workspace, which writes it there, and to restart the project. Every
+    onboarding popup's *Start from an existing database* form, which writes it there, and to
+    restart the project. Every
     deployed environment needs the same variables, set where that environment keeps its secrets,
     never in git.
   - Recommend an account that can only read for the analysis: a PostgreSQL role with SELECT, a
@@ -199,7 +200,7 @@ Then report:
   and per table the features you gave it and why;
 - every block that still shows no data, and why;
 - what was left out and why;
-- the open items left, which the integrator finds in the Builder's *Database* workspace;
+- the open items left;
 - the variable every deployment must set.
 
 ## Guardrails

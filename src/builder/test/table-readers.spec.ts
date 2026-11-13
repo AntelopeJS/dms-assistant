@@ -13,41 +13,7 @@ import {
 } from "../implementations/dms-builder/engine/table-readers";
 import { createFixture, destroyFixture, expectOk } from "./harness";
 
-/**
- * What a table reaches, said before it is changed: the pages reading it, by a
- * block bound to it or a block pointing at its API.
- */
-describe("the pages reading a table", () => {
-  before(async function () {
-    this.timeout(120_000);
-    createFixture();
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    for (const [name, displayName] of [
-      ["board", "Board"],
-      ["intake", "Intake"],
-      ["quiet", "Quiet"],
-      ["odd", "Odd"],
-      ["named", "Named"],
-    ] as const) {
-      expectOk(
-        await CreatePage({ name, displayName, category: "pages.shop" }),
-        "CreatePage",
-      );
-    }
-    expectOk(
-      await CreateResource({
-        name: "ticket",
-        fields: [{ name: "title", dataType: { $dataType: "string" } }],
-      }),
-      "CreateResource",
-    );
-  });
-
-  after(() => destroyFixture());
-
+function registerBoundPageCases(): void {
   it("counts a block bound to it and a form sending to it, page by page", async function () {
     this.timeout(120_000);
     const board = expectOk(await GetPageStructure("/shop/board"), "board");
@@ -105,7 +71,9 @@ describe("the pages reading a table", () => {
     this.timeout(60_000);
     expect(await tableRowCounts(undefined)).to.deep.equal({});
   });
+}
 
+function registerDeletedPageCases(): void {
   it("says what deleting a page takes, and which pages still point at it", async function () {
     this.timeout(120_000);
     const quiet = expectOk(await GetPageStructure("/shop/quiet"), "quiet");
@@ -165,6 +133,9 @@ describe("the pages reading a table", () => {
       displayName: "Intake",
     });
   });
+}
+
+function registerTableNameCases(): void {
   it("counts the pages reading a table named like an Object.prototype member", async function () {
     this.timeout(120_000);
     const names = ["constructor"];
@@ -248,4 +219,44 @@ describe("the pages reading a table", () => {
       ]);
     }
   });
+}
+
+/**
+ * What a table reaches, said before it is changed: the pages reading it, by a
+ * block bound to it or a block pointing at its API.
+ */
+describe("the pages reading a table", () => {
+  before(async function () {
+    this.timeout(120_000);
+    createFixture();
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    for (const [name, displayName] of [
+      ["board", "Board"],
+      ["intake", "Intake"],
+      ["quiet", "Quiet"],
+      ["odd", "Odd"],
+      ["named", "Named"],
+    ] as const) {
+      expectOk(
+        await CreatePage({ name, displayName, category: "pages.shop" }),
+        "CreatePage",
+      );
+    }
+    expectOk(
+      await CreateResource({
+        name: "ticket",
+        fields: [{ name: "title", dataType: { $dataType: "string" } }],
+      }),
+      "CreateResource",
+    );
+  });
+
+  after(() => destroyFixture());
+
+  registerBoundPageCases();
+  registerDeletedPageCases();
+  registerTableNameCases();
 });

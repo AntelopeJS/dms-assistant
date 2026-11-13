@@ -171,21 +171,7 @@ function readConfig(): string {
   return projectFile(app.root, "antelope.config.ts");
 }
 
-/**
- * Wiring a project to another database touches several entries of `antelope.config.ts` at once,
- * and a wrong pin there binds a module to the wrong database. The builder writes them on a draft,
- * refuses what contradicts the configuration, and never writes a secret's value.
- */
-describe("project-config operations", function () {
-  this.timeout(OP_TIMEOUT);
-
-  beforeEach(() => {
-    app = createFixture();
-    fs.writeFileSync(configPath(), PROJECT_CONFIG);
-  });
-
-  after(destroyFixture);
-
+function registerConnectBatchCases(): void {
   it("writes the skill's connect batch as the configuration it expects", async () => {
     expectOk(await ConfigureProject(CONNECT_STEPS), "ConfigureProject");
     expect(readConfig()).to.equal(CONNECTED_CONFIG);
@@ -276,7 +262,9 @@ ${ARCHIVE_CONNECTION}
       ],`),
     );
   });
+}
 
+function registerNestedConfigAndScaffoldCases(): void {
   it("adds a nested config key beside the ones the module already has", async () => {
     const archive = `          archive: {
             access: "read-write",
@@ -361,7 +349,9 @@ ${connections}
     expect(result.ok).to.equal(false);
     expect(readConfig()).to.equal(computed);
   });
+}
 
+function registerDryRunAndEnvCases(): void {
   it("answers a dry run with the changes it would make, and writes nothing", async () => {
     const result = expectOk(
       await ConfigureProject(CONNECT_STEPS, { dryRun: true }),
@@ -443,7 +433,9 @@ ${connections}
     expectOk(await ConfigureProject([CONNECT_STEPS[0]]), "AddModule");
     expect(readConfig()).to.not.include("loadEnvFile");
   });
+}
 
+function registerLoadingCodeCases(): void {
   it("names its loading code apart from a constant the configuration declares", async () => {
     const own = 'const projectEnvFile = ".env.shared";\n';
     fs.writeFileSync(configPath(), own + PROJECT_CONFIG);
@@ -509,4 +501,25 @@ ${connections}
     );
     expect(readConfig()).to.include("postgres-erp").and.to.include("reports");
   });
+}
+
+/**
+ * Wiring a project to another database touches several entries of `antelope.config.ts` at once,
+ * and a wrong pin there binds a module to the wrong database. The builder writes them on a draft,
+ * refuses what contradicts the configuration, and never writes a secret's value.
+ */
+describe("project-config operations", function () {
+  this.timeout(OP_TIMEOUT);
+
+  beforeEach(() => {
+    app = createFixture();
+    fs.writeFileSync(configPath(), PROJECT_CONFIG);
+  });
+
+  after(destroyFixture);
+
+  registerConnectBatchCases();
+  registerNestedConfigAndScaffoldCases();
+  registerDryRunAndEnvCases();
+  registerLoadingCodeCases();
 });

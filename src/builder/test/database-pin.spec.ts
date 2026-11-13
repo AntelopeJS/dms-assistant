@@ -60,22 +60,7 @@ function writeConfig(text: string): void {
   fs.writeFileSync(path.join(root, "antelope.config.ts"), text);
 }
 
-/**
- * A tables module pins `interface-database` to its own database and the modules that import it
- * receive that pin, so each of them has to be pinned to the project's default database or it is
- * reached with two bindings.
- */
-describe("the database pins of the modules that import interface-database", () => {
-  before(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-builder-database-pin-"));
-    setModuleConfig({ projectRoot: root });
-  });
-
-  after(() => {
-    setModuleConfig();
-    fs.rmSync(root, { recursive: true, force: true });
-  });
-
+function registerDefaultProviderPinCases(): void {
   it("pins the DMS to the default provider, not the first one by name", () => {
     writeConfig(config(DMS_SOURCE));
     expect(databasePins(PROJECT)).to.deep.equal({
@@ -160,7 +145,9 @@ describe("the database pins of the modules that import interface-database", () =
       pins: [],
     });
   });
+}
 
+function registerModulePinCases(): void {
   it("refuses to rank a provider whose entry is spread from elsewhere", () => {
     writeConfig(
       config(DMS_SOURCE).replace(/mongodb: \{/, "mongodb: { ...MONGO,"),
@@ -241,7 +228,9 @@ describe("the database pins of the modules that import interface-database", () =
       { module: "dms-database", provider: "mongodb" },
     ]);
   });
+}
 
+function registerUnwritableEntryPinCases(): void {
   describe("a module whose entry the builder cannot write a pin into", () => {
     const wiringWith = (module: string) =>
       connections(
@@ -336,4 +325,25 @@ describe("the database pins of the modules that import interface-database", () =
       ]);
     });
   });
+}
+
+/**
+ * A tables module pins `interface-database` to its own database and the modules that import it
+ * receive that pin, so each of them has to be pinned to the project's default database or it is
+ * reached with two bindings.
+ */
+describe("the database pins of the modules that import interface-database", () => {
+  before(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-builder-database-pin-"));
+    setModuleConfig({ projectRoot: root });
+  });
+
+  after(() => {
+    setModuleConfig();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  registerDefaultProviderPinCases();
+  registerModulePinCases();
+  registerUnwritableEntryPinCases();
 });

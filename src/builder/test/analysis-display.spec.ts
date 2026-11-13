@@ -89,7 +89,7 @@ function badgeOf(field: ProposedField): BadgeItem[] {
 
 const STATUS = Column("status", "string");
 
-describe("the display of a column (D1, D2, D3)", () => {
+function registerBadgeCases(): void {
   it("makes a string column whose categories cover every row a badge, one item per value by rows, toned by its word (D1)", () => {
     const orders = propose([STATUS], {
       status: {
@@ -168,7 +168,9 @@ describe("the display of a column (D1, D2, D3)", () => {
     });
     expect(fieldOf(orders, "status").display).to.equal(undefined);
   });
+}
 
+function registerNoBadgeAndPriceCases(): void {
   it("shows no badge for one category, nor for more than ten", () => {
     const eleven = Object.fromEntries(
       Array.from({ length: 11 }, (_, index) => [`value_${index}`, 90]),
@@ -247,7 +249,9 @@ describe("the display of a column (D1, D2, D3)", () => {
       currency: "GBP",
     });
   });
+}
 
+function registerCurrencyAndRelationLabelCases(): void {
   it("leaves a price in the default currency when its currency column holds several, or is partly empty", () => {
     const mixed = propose(
       [Column("total", "number"), Column("currency", "string")],
@@ -322,6 +326,12 @@ describe("the display of a column (D1, D2, D3)", () => {
     )!;
     expect(fieldOf(found, "customer_id").label.value).to.equal("Buyer");
   });
+}
+
+describe("the display of a column (D1, D2, D3)", () => {
+  registerBadgeCases();
+  registerNoBadgeAndPriceCases();
+  registerCurrencyAndRelationLabelCases();
 });
 
 describe("the tabs of a TableView (T1)", () => {

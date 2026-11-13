@@ -67,12 +67,10 @@ function dateValue(day: string): PlanValue {
 
 function stampOf(day: string): number {
   let stamp = Number.NaN;
-  const grouped: PlanPoints = {
-    then: (onfulfilled, onrejected) =>
-      Promise.resolve<QueryPoint[]>([]).then(onfulfilled, onrejected),
+  const grouped: PlanPoints = Object.assign(Promise.resolve<QueryPoint[]>([]), {
     orderBy: () => grouped,
     slice: () => grouped,
-  };
+  });
   const stream: PlanStream = {
     filter: () => stream,
     map: (mapper) => {

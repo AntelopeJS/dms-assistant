@@ -38,174 +38,138 @@ async function queryNamed(name: string): Promise<QueryStructure> {
   return found;
 }
 
-/**
- * What the engine guarantees today about the queries it writes, pinned before the
- * calculation model is refactored: emission and read-back are inverse, and a
- * query a human can still recognize in the file is one the builder can still edit.
- */
-describe("the query engine", () => {
-  before(async function () {
-    this.timeout(120_000);
-    app = createFixture();
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    expectOk(
-      await CreateResource({
-        name: "order",
-        displayName: "Order",
-        fields: [
-          {
-            name: "amount",
-            label: "Amount",
-            dataType: { $dataType: "number" },
-          },
-          {
-            name: "status",
-            label: "Status",
-            dataType: { $dataType: "string" },
-          },
-        ],
+function registerEmittedQueryCases(): void {
+  it("emits a model method and a route, and answers with both addresses", async function () {
+    this.timeout(OP_TIMEOUT);
+    const added = expectOk(
+      await AddQuery(PAGE, {
+        name: "paidRevenue",
+        resource: "order",
+        template: "aggregate",
+        params: {
+          op: "sum",
+          field: "amount",
+          where: [{ field: "status", op: "eq", value: "paid" }],
+        },
       }),
-      "CreateResource",
+      "AddQuery",
     );
-    expectOk(
-      await CreatePage({
-        name: "orders",
-        displayName: "Orders",
-        category: "pages.shop",
-      }),
-      "CreatePage",
+
+    expect(added.query).to.equal(`${PAGE}@paidRevenue`);
+    expect(added.route).to.equal(`/dms/pages${PAGE}/stats/paid-revenue`);
+    expect(app.read(MODEL_FILE)).to.contain(
+      'return this.table\n      .filter((row) => row.key("status").eq("paid"))' +
+        '\n      .sum("amount");',
+    );
+
+    const page = app.read(PAGE_FILE);
+    expect(page).to.contain('@Get("/stats/paid-revenue")');
+    expect(page).to.contain("return { value: await model.paidRevenue() };");
+  });
+
+  it("guards the route with the page's own permission", async () => {
+    const page = app.read(PAGE_FILE);
+
+    expect(page).to.contain("@AuthUserWithPermission(OrdersPage) _user: User,");
+    expect(page).to.contain(
+      'import { AuthUserWithPermission } from "@antelopejs/interface-dms/guards";',
     );
   });
 
-  after(() => destroyFixture());
+  it("counts rows with no filter at all", async function () {
+    this.timeout(OP_TIMEOUT);
+    expectOk(
+      await AddQuery(PAGE, {
+        name: "orderCount",
+        resource: "order",
+        template: "count",
+      }),
+      "AddQuery",
+    );
+    expect(app.read(MODEL_FILE)).to.contain("return this.table.count();");
+  });
+}
 
-  describe("writing a query", () => {
-    it("emits a model method and a route, and answers with both addresses", async function () {
-      this.timeout(OP_TIMEOUT);
-      const added = expectOk(
-        await AddQuery(PAGE, {
-          name: "paidRevenue",
-          resource: "order",
-          template: "aggregate",
-          params: {
-            op: "sum",
-            field: "amount",
-            where: [{ field: "status", op: "eq", value: "paid" }],
-          },
-        }),
-        "AddQuery",
-      );
-
-      expect(added.query).to.equal(`${PAGE}@paidRevenue`);
-      expect(added.route).to.equal(`/dms/pages${PAGE}/stats/paid-revenue`);
-      expect(app.read(MODEL_FILE)).to.contain(
-        'return this.table\n      .filter((row) => row.key("status").eq("paid"))' +
-          '\n      .sum("amount");',
-      );
-
-      const page = app.read(PAGE_FILE);
-      expect(page).to.contain('@Get("/stats/paid-revenue")');
-      expect(page).to.contain("return { value: await model.paidRevenue() };");
-    });
-
-    it("guards the route with the page's own permission", async () => {
-      const page = app.read(PAGE_FILE);
-
-      expect(page).to.contain(
-        "@AuthUserWithPermission(OrdersPage) _user: User,",
-      );
-      expect(page).to.contain(
-        'import { AuthUserWithPermission } from "@antelopejs/interface-dms/guards";',
-      );
-    });
-
-    it("counts rows with no filter at all", async function () {
-      this.timeout(OP_TIMEOUT);
-      expectOk(
-        await AddQuery(PAGE, {
-          name: "orderCount",
-          resource: "order",
-          template: "count",
-        }),
-        "AddQuery",
-      );
-      expect(app.read(MODEL_FILE)).to.contain("return this.table.count();");
-    });
-
-    it("binds a filter value to a route parameter instead of baking it in", async function () {
-      this.timeout(OP_TIMEOUT);
-      expectOk(
-        await AddQuery(PAGE, {
-          name: "cheaperThan",
-          resource: "order",
-          template: "count",
-          params: {
-            where: [
-              {
-                field: "amount",
-                op: "lt",
-                value: { $param: { name: "maxAmount" } },
-              },
-            ],
-          },
-        }),
-        "AddQuery",
-      );
-
-      const page = app.read(PAGE_FILE);
-      expect(page).to.contain('@Parameter("maxAmount", "query")');
-      expect(page, "the route coerces before calling the model").to.contain(
-        "Number(maxAmount)",
-      );
-    });
-
-    it("gives a second query its own model method, even for an identical chain", async function () {
-      this.timeout(OP_TIMEOUT);
-      expectOk(
-        await AddQuery(PAGE, {
-          name: "totalOrders",
-          resource: "order",
-          template: "count",
-        }),
-        "AddQuery",
-      );
-
-      const model = app.read(MODEL_FILE);
-      const occurrences = model.split("return this.table.count();").length - 1;
-      expect(
-        occurrences,
-        "each query carries its own copy of the chain",
-      ).to.equal(2);
-    });
-
-    it("refuses a raw expression in a query's parameters", async function () {
-      this.timeout(OP_TIMEOUT);
-      const result = await AddQuery(PAGE, {
-        name: "injected",
+function registerQueryParameterCases(): void {
+  it("binds a filter value to a route parameter instead of baking it in", async function () {
+    this.timeout(OP_TIMEOUT);
+    expectOk(
+      await AddQuery(PAGE, {
+        name: "cheaperThan",
         resource: "order",
         template: "count",
         params: {
           where: [
             {
               field: "amount",
-              op: "gt",
-              value: { $expr: "process.env.SECRET" },
+              op: "lt",
+              value: { $param: { name: "maxAmount" } },
             },
           ],
         },
-      });
+      }),
+      "AddQuery",
+    );
 
-      expect(result.ok).to.equal(false);
-      if (!result.ok) {
-        expect(result.error.code).to.equal("invalid_config");
-      }
-      expect(app.read(MODEL_FILE)).to.not.contain("process.env");
-    });
+    const page = app.read(PAGE_FILE);
+    expect(page).to.contain('@Parameter("maxAmount", "query")');
+    expect(page, "the route coerces before calling the model").to.contain(
+      "Number(maxAmount)",
+    );
   });
 
+  it("gives a second query its own model method, even for an identical chain", async function () {
+    this.timeout(OP_TIMEOUT);
+    expectOk(
+      await AddQuery(PAGE, {
+        name: "totalOrders",
+        resource: "order",
+        template: "count",
+      }),
+      "AddQuery",
+    );
+
+    const model = app.read(MODEL_FILE);
+    const occurrences = model.split("return this.table.count();").length - 1;
+    expect(
+      occurrences,
+      "each query carries its own copy of the chain",
+    ).to.equal(2);
+  });
+
+  it("refuses a raw expression in a query's parameters", async function () {
+    this.timeout(OP_TIMEOUT);
+    const result = await AddQuery(PAGE, {
+      name: "injected",
+      resource: "order",
+      template: "count",
+      params: {
+        where: [
+          {
+            field: "amount",
+            op: "gt",
+            value: { $expr: "process.env.SECRET" },
+          },
+        ],
+      },
+    });
+
+    expect(result.ok).to.equal(false);
+    if (!result.ok) {
+      expect(result.error.code).to.equal("invalid_config");
+    }
+    expect(app.read(MODEL_FILE)).to.not.contain("process.env");
+  });
+}
+
+function registerWriteQueryCases(): void {
+  describe("writing a query", () => {
+    registerEmittedQueryCases();
+    registerQueryParameterCases();
+  });
+}
+
+function registerReadQueryBackCases(): void {
   describe("reading a written query back", () => {
     it("reports the parameters that produced it", async () => {
       const query = await queryNamed("paidRevenue");
@@ -278,4 +242,52 @@ describe("the query engine", () => {
       );
     });
   });
+}
+
+/**
+ * What the engine guarantees today about the queries it writes, pinned before the
+ * calculation model is refactored: emission and read-back are inverse, and a
+ * query a human can still recognize in the file is one the builder can still edit.
+ */
+describe("the query engine", () => {
+  before(async function () {
+    this.timeout(120_000);
+    app = createFixture();
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    expectOk(
+      await CreateResource({
+        name: "order",
+        displayName: "Order",
+        fields: [
+          {
+            name: "amount",
+            label: "Amount",
+            dataType: { $dataType: "number" },
+          },
+          {
+            name: "status",
+            label: "Status",
+            dataType: { $dataType: "string" },
+          },
+        ],
+      }),
+      "CreateResource",
+    );
+    expectOk(
+      await CreatePage({
+        name: "orders",
+        displayName: "Orders",
+        category: "pages.shop",
+      }),
+      "CreatePage",
+    );
+  });
+
+  after(() => destroyFixture());
+
+  registerWriteQueryCases();
+  registerReadQueryBackCases();
 });

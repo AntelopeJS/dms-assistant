@@ -21,6 +21,7 @@ import {
   expectOk,
   type Fixture,
 } from "./harness";
+import { isPreviewFieldList } from "./helpers/preview-fields";
 
 const PAGE = "/shop/board";
 const PAGE_FILE = "board/page.ts";
@@ -28,53 +29,11 @@ const OP_TIMEOUT = 60_000;
 
 let app: Fixture;
 
-/** A field a form preview lists: what the spec reads of it is its `id`. */
-interface PreviewField {
-  id: string;
-}
-
-function isPreviewField(value: unknown): value is PreviewField {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
-    typeof value.id === "string"
-  );
-}
-
-function isPreviewFieldList(value: unknown): value is PreviewField[] {
-  return Array.isArray(value) && value.every(isPreviewField);
-}
-
 async function structure(): Promise<PageStructure> {
   return expectOk(await GetPageStructure(PAGE), "GetPageStructure");
 }
 
-/**
- * How a page's block tree is written, previewed and rewritten. The draft is what
- * the data-source work extends — queries join it — so what it guarantees today is
- * pinned here: a preview writes nothing, and a whole-tree write is conditional.
- */
-describe("the page draft", () => {
-  before(async function () {
-    this.timeout(120_000);
-    app = createFixture();
-    expectOk(
-      await CreateCategory({ name: "shop", displayName: "Shop" }),
-      "CreateCategory",
-    );
-    expectOk(
-      await CreatePage({
-        name: "board",
-        displayName: "Board",
-        category: "pages.shop",
-      }),
-      "CreatePage",
-    );
-  });
-
-  after(() => destroyFixture());
-
+function registerEditOneBlockCases(): void {
   describe("editing one block at a time", () => {
     it("adds a static block and addresses it by path", async function () {
       this.timeout(OP_TIMEOUT);
@@ -184,7 +143,9 @@ describe("the page draft", () => {
       expect(app.read(PAGE_FILE)).to.equal(before);
     });
   });
+}
 
+function registerPreviewDraftCases(): void {
   describe("previewing a draft", () => {
     it("serializes the draft the way the frontend consumes it", async function () {
       this.timeout(OP_TIMEOUT);
@@ -286,169 +247,178 @@ describe("the page draft", () => {
       );
     });
   });
+}
 
-  describe("writing a whole tree at once", () => {
-    it("reconciles the page against the draft and answers a new version", async function () {
-      this.timeout(OP_TIMEOUT);
-      const current = await structure();
-      const saved = expectOk(
-        await SetPageBlocks(
-          PAGE,
-          {
-            blocks: [
-              {
-                name: "ordersKpi",
-                type: "KpiCard",
-                config: { title: "Orders" },
-              },
-              {
-                name: "revenueKpi",
-                type: "KpiCard",
-                config: { title: "Revenue" },
-              },
-            ],
-          },
-          { expectedVersion: current.version },
-        ),
-        "SetPageBlocks",
-      );
-
-      expect(saved.version).to.not.equal(current.version);
-      const names = (await structure()).blocks.map((block) => block.name);
-      expect(names, "the draft's order is the file's order").to.deep.equal([
-        "ordersKpi",
-        "revenueKpi",
-      ]);
-    });
-
-    it("writes the page's own options with the blocks, and takes out one sent empty", async function () {
-      this.timeout(OP_TIMEOUT);
-      const blocks = (await structure()).blocks.map((block) => ({
-        name: block.name,
-        type: block.type ?? undefined,
-        config: block.config,
-      }));
-      const ordered = expectOk(
-        await SetPageBlocks(
-          PAGE,
-          { page: { order: 3, permission: { id: "shop.board" } }, blocks },
-          { expectedVersion: (await structure()).version },
-        ),
-        "SetPageBlocks",
-      );
-      expect(app.read(PAGE_FILE)).to.contain("order: 3");
-      expect(app.read(PAGE_FILE)).to.contain(
-        'permission: { id: "shop.board" }',
-      );
-
-      // @ts-expect-error null is off-contract for the page's order and permission, and SetPageBlocks must clear both from the page file instead of writing null
-      const cleared: PageDraft["page"] = { order: null, permission: null };
-      expectOk(
-        await SetPageBlocks(
-          PAGE,
-          { page: cleared, blocks },
-          { expectedVersion: ordered.version },
-        ),
-        "SetPageBlocks",
-      );
-      expect(app.read(PAGE_FILE)).to.not.contain("order:");
-      expect(app.read(PAGE_FILE)).to.not.contain("permission:");
-      expect(app.read(PAGE_FILE), "and nothing written as null").to.not.contain(
-        "null",
-      );
-    });
-
-    it("makes the page live with its blocks, reads it back, and takes it off", async function () {
-      this.timeout(OP_TIMEOUT);
-      const blocks = (await structure()).blocks.map((block) => ({
-        name: block.name,
-        type: block.type ?? undefined,
-        config: block.config,
-      }));
-      const live = expectOk(
-        await SetPageBlocks(
-          PAGE,
-          { page: { live: { maxRate: 5 } }, blocks },
-          { expectedVersion: (await structure()).version },
-        ),
-        "SetPageBlocks",
-      );
-      expect(app.read(PAGE_FILE)).to.contain("live: { maxRate: 5 }");
-      expect((await structure()).page.live).to.deep.equal({ maxRate: 5 });
-
-      // @ts-expect-error null is off-contract for the page's live setting, and SetPageBlocks must take the page off instead of writing null
-      const off: PageDraft["page"] = { live: null };
-      expectOk(
-        await SetPageBlocks(
-          PAGE,
-          { page: off, blocks },
-          { expectedVersion: live.version },
-        ),
-        "SetPageBlocks",
-      );
-      expect(app.read(PAGE_FILE)).to.not.contain("live:");
-      expect((await structure()).page.live).to.equal(undefined);
-    });
-
-    it("refuses a write based on a version that has moved", async function () {
-      this.timeout(OP_TIMEOUT);
-      const result = await SetPageBlocks(
+function registerReconcileCases(): void {
+  it("reconciles the page against the draft and answers a new version", async function () {
+    this.timeout(OP_TIMEOUT);
+    const current = await structure();
+    const saved = expectOk(
+      await SetPageBlocks(
         PAGE,
-        { blocks: [] },
-        { expectedVersion: "0000000000000000" },
-      );
+        {
+          blocks: [
+            {
+              name: "ordersKpi",
+              type: "KpiCard",
+              config: { title: "Orders" },
+            },
+            {
+              name: "revenueKpi",
+              type: "KpiCard",
+              config: { title: "Revenue" },
+            },
+          ],
+        },
+        { expectedVersion: current.version },
+      ),
+      "SetPageBlocks",
+    );
 
-      expect(result.ok).to.equal(false);
-      if (!result.ok) {
-        expect(result.error.code).to.equal("stale");
-      }
-      expect(
-        (await structure()).blocks.length,
-        "a stale write changes nothing",
-      ).to.equal(2);
-    });
-
-    it("reads the page as the disk has it, not as it was last scanned", async function () {
-      this.timeout(OP_TIMEOUT);
-      app.write(PAGE_FILE, `${app.read(PAGE_FILE)}\n// edited by hand\n`);
-
-      const current = await structure();
-      expectOk(
-        await SetPageBlocks(
-          PAGE,
-          {
-            blocks: [
-              {
-                name: "ordersKpi",
-                type: "KpiCard",
-                config: { title: "Orders" },
-              },
-              {
-                name: "revenueKpi",
-                type: "KpiCard",
-                config: { title: "Revenue" },
-              },
-            ],
-          },
-          { expectedVersion: current.version },
-        ),
-        "SetPageBlocks",
-      );
-      expect(app.read(PAGE_FILE), "and the edit is still there").to.contain(
-        "// edited by hand",
-      );
-    });
-
-    it("removes a block and leaves its siblings alone", async function () {
-      this.timeout(OP_TIMEOUT);
-      expectOk(await RemoveBlock(`${PAGE}#ordersKpi`), "RemoveBlock");
-
-      const names = (await structure()).blocks.map((block) => block.name);
-      expect(names).to.deep.equal(["revenueKpi"]);
-      expect(app.read(PAGE_FILE)).to.not.contain("ordersKpi");
-    });
+    expect(saved.version).to.not.equal(current.version);
+    const names = (await structure()).blocks.map((block) => block.name);
+    expect(names, "the draft's order is the file's order").to.deep.equal([
+      "ordersKpi",
+      "revenueKpi",
+    ]);
   });
 
+  it("writes the page's own options with the blocks, and takes out one sent empty", async function () {
+    this.timeout(OP_TIMEOUT);
+    const blocks = (await structure()).blocks.map((block) => ({
+      name: block.name,
+      type: block.type ?? undefined,
+      config: block.config,
+    }));
+    const ordered = expectOk(
+      await SetPageBlocks(
+        PAGE,
+        { page: { order: 3, permission: { id: "shop.board" } }, blocks },
+        { expectedVersion: (await structure()).version },
+      ),
+      "SetPageBlocks",
+    );
+    expect(app.read(PAGE_FILE)).to.contain("order: 3");
+    expect(app.read(PAGE_FILE)).to.contain('permission: { id: "shop.board" }');
+
+    // @ts-expect-error null is off-contract for the page's order and permission, and SetPageBlocks must clear both from the page file instead of writing null
+    const cleared: PageDraft["page"] = { order: null, permission: null };
+    expectOk(
+      await SetPageBlocks(
+        PAGE,
+        { page: cleared, blocks },
+        { expectedVersion: ordered.version },
+      ),
+      "SetPageBlocks",
+    );
+    expect(app.read(PAGE_FILE)).to.not.contain("order:");
+    expect(app.read(PAGE_FILE)).to.not.contain("permission:");
+    expect(app.read(PAGE_FILE), "and nothing written as null").to.not.contain(
+      "null",
+    );
+  });
+}
+
+function registerLiveWriteCases(): void {
+  it("makes the page live with its blocks, reads it back, and takes it off", async function () {
+    this.timeout(OP_TIMEOUT);
+    const blocks = (await structure()).blocks.map((block) => ({
+      name: block.name,
+      type: block.type ?? undefined,
+      config: block.config,
+    }));
+    const live = expectOk(
+      await SetPageBlocks(
+        PAGE,
+        { page: { live: { maxRate: 5 } }, blocks },
+        { expectedVersion: (await structure()).version },
+      ),
+      "SetPageBlocks",
+    );
+    expect(app.read(PAGE_FILE)).to.contain("live: { maxRate: 5 }");
+    expect((await structure()).page.live).to.deep.equal({ maxRate: 5 });
+
+    // @ts-expect-error null is off-contract for the page's live setting, and SetPageBlocks must take the page off instead of writing null
+    const off: PageDraft["page"] = { live: null };
+    expectOk(
+      await SetPageBlocks(
+        PAGE,
+        { page: off, blocks },
+        { expectedVersion: live.version },
+      ),
+      "SetPageBlocks",
+    );
+    expect(app.read(PAGE_FILE)).to.not.contain("live:");
+    expect((await structure()).page.live).to.equal(undefined);
+  });
+
+  it("refuses a write based on a version that has moved", async function () {
+    this.timeout(OP_TIMEOUT);
+    const result = await SetPageBlocks(
+      PAGE,
+      { blocks: [] },
+      { expectedVersion: "0000000000000000" },
+    );
+
+    expect(result.ok).to.equal(false);
+    if (!result.ok) {
+      expect(result.error.code).to.equal("stale");
+    }
+    expect(
+      (await structure()).blocks.length,
+      "a stale write changes nothing",
+    ).to.equal(2);
+  });
+
+  it("reads the page as the disk has it, not as it was last scanned", async function () {
+    this.timeout(OP_TIMEOUT);
+    app.write(PAGE_FILE, `${app.read(PAGE_FILE)}\n// edited by hand\n`);
+
+    const current = await structure();
+    expectOk(
+      await SetPageBlocks(
+        PAGE,
+        {
+          blocks: [
+            {
+              name: "ordersKpi",
+              type: "KpiCard",
+              config: { title: "Orders" },
+            },
+            {
+              name: "revenueKpi",
+              type: "KpiCard",
+              config: { title: "Revenue" },
+            },
+          ],
+        },
+        { expectedVersion: current.version },
+      ),
+      "SetPageBlocks",
+    );
+    expect(app.read(PAGE_FILE), "and the edit is still there").to.contain(
+      "// edited by hand",
+    );
+  });
+
+  it("removes a block and leaves its siblings alone", async function () {
+    this.timeout(OP_TIMEOUT);
+    expectOk(await RemoveBlock(`${PAGE}#ordersKpi`), "RemoveBlock");
+
+    const names = (await structure()).blocks.map((block) => block.name);
+    expect(names).to.deep.equal(["revenueKpi"]);
+    expect(app.read(PAGE_FILE)).to.not.contain("ordersKpi");
+  });
+}
+
+function registerWholeTreeCases(): void {
+  describe("writing a whole tree at once", () => {
+    registerReconcileCases();
+    registerLiveWriteCases();
+  });
+}
+
+function registerNamedValueCases(): void {
   describe("a block whose author named one of its values", () => {
     const revenueKpi = (config: NonNullable<BlockDraft["config"]>) => ({
       blocks: [{ name: "revenueKpi", type: "KpiCard", config }],
@@ -558,4 +528,35 @@ describe("the page draft", () => {
       expect(written).to.contain("staticSparkline: [PEAK, 3, 5]");
     });
   });
+}
+
+/**
+ * How a page's block tree is written, previewed and rewritten. The draft is what
+ * the data-source work extends — queries join it — so what it guarantees today is
+ * pinned here: a preview writes nothing, and a whole-tree write is conditional.
+ */
+describe("the page draft", () => {
+  before(async function () {
+    this.timeout(120_000);
+    app = createFixture();
+    expectOk(
+      await CreateCategory({ name: "shop", displayName: "Shop" }),
+      "CreateCategory",
+    );
+    expectOk(
+      await CreatePage({
+        name: "board",
+        displayName: "Board",
+        category: "pages.shop",
+      }),
+      "CreatePage",
+    );
+  });
+
+  after(() => destroyFixture());
+
+  registerEditOneBlockCases();
+  registerPreviewDraftCases();
+  registerWholeTreeCases();
+  registerNamedValueCases();
 });

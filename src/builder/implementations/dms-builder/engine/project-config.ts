@@ -19,6 +19,7 @@ import { configObject, propertyKey } from "./modules";
 import { indentationText, resolveProjectRoot } from "./project";
 import { keyText, literalText } from "./project-config-text";
 import { type Scaffold, scaffoldLocalModule } from "./project-scaffold";
+import { isPlainObject } from "./value";
 
 export const ENV_OVERRIDES = "envOverrides";
 export const MODULES = "modules";
@@ -251,6 +252,39 @@ export function stringOf(node: Node | undefined): string | undefined {
     : undefined;
 }
 
+/** Whether `key` of the object at `path` holds an object literal that keys can be added to: one with no spread. */
+function holdsMergeableObject(
+  draft: ConfigDraft,
+  path: string[],
+  key: string,
+): boolean {
+  const owner = objectAt(draft, path);
+  const existing = owner && propertyNamed(owner, key)?.getInitializer();
+  return (
+    Node.isObjectLiteralExpression(existing) &&
+    !existing.getProperties().some(Node.isSpreadAssignment)
+  );
+}
+
+/**
+ * Sets `key` on the object at `path`. An object value is merged key by key into an object literal
+ * the property already holds, so the keys it does not name stay; any other value replaces it.
+ */
+function mergeProperty(
+  draft: ConfigDraft,
+  path: string[],
+  key: string,
+  value: ConfigValue,
+): void {
+  if (isPlainObject(value) && holdsMergeableObject(draft, path, key)) {
+    for (const [nested, item] of Object.entries(value)) {
+      mergeProperty(draft, [...path, key], nested, item);
+    }
+    return;
+  }
+  setProperty(draft, path, key, value);
+}
+
 function mergeValues(
   draft: ConfigDraft,
   path: string[],
@@ -261,7 +295,7 @@ function mergeValues(
   }
   ensureObject(draft, path);
   for (const [key, value] of Object.entries(values)) {
-    setProperty(draft, path, key, value);
+    mergeProperty(draft, path, key, value);
   }
 }
 

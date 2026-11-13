@@ -277,6 +277,31 @@ ${ARCHIVE_CONNECTION}
     );
   });
 
+  it("adds a nested config key beside the ones the module already has", async () => {
+    const archive = `          archive: {
+            access: "read-write",
+          },`;
+    const configWith = (connections: string) =>
+      dmsDatabaseConfig(`      config: {
+        externalConnections: {
+${connections}
+        },
+      },`);
+    fs.writeFileSync(configPath(), configWith(archive));
+    expectOk(
+      await ConfigureModule("dms-database", {
+        config: { externalConnections: { erp: { access: "read" } } },
+      }),
+      "register erp",
+    );
+    expect(readConfig()).to.equal(
+      configWith(`${archive}
+          erp: {
+            access: "read",
+          },`),
+    );
+  });
+
   it("scaffolds a local module the builder then writes into", async () => {
     expectOk(
       await CreateLocalModule("erp-tables", "modules/erp-tables"),

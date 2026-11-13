@@ -182,17 +182,15 @@ function collectPendingForConversation(
 }
 
 /**
- * Settles each matching pending question as unanswered. Iterates over a snapshot because
- * `settlePending` deletes from the map being iterated.
+ * Settles each matching pending question as unanswered. Picks them out first
+ * because `settlePending` deletes from the map.
  */
 function expireMatching(
   state: BusState,
   matches: (pending: PendingState) => boolean,
 ): void {
-  // oxlint-disable-next-line unicorn/no-useless-spread -- a snapshot: settlePending deletes from the map being iterated
-  for (const pending of [...state.pending.values()]) {
-    if (matches(pending)) expirePending(state, pending);
-  }
+  const expiring = [...state.pending.values()].filter(matches);
+  for (const pending of expiring) expirePending(state, pending);
 }
 
 function buildState(opts: QuestionBusOptions): BusState {

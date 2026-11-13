@@ -1,34 +1,13 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type {
-  PendingRequest,
-  PermissionPolicy,
-} from "../../src/agent/permission-bus.js";
-import type { ToolDecision } from "../../src/agent/provider.js";
-import { type AgentRunner, createAgentRunner } from "../../src/agent/runner.js";
+import { describe, expect, it } from "vitest";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
 import { MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
 import { PERMISSION_DECISIONS } from "../../src/constants/permissions.js";
-import { DEFAULT_SETTINGS } from "../../src/constants/settings.js";
-import type { PermissionDecisionValue } from "../../src/protocol/messages.js";
-import { createClaudeProvider } from "../../src/providers/claude/provider.js";
-import type { AppSettings } from "../../src/state/settings-types.js";
 import {
-  type ScriptedCall,
-  writeClaudeScript,
-} from "../helpers/claude-scripts.js";
-import { createTestBus } from "../helpers/permission-bus.js";
-import {
-  readClaudeTrace,
-  type TracedClaudeEntry,
-} from "../helpers/provider-fixtures.js";
+  type TurnFixture,
+  useClaudeTurnRunner,
+} from "../helpers/claude-turn-runner.js";
 
-const CONVERSATION_ID = "conv-auto-review";
-const PROMPT_TIMEOUT_MS = 2_000;
-const TURN_TIMEOUT_MS = 10_000;
 const TEST_TIMEOUT_MS = 30_000;
 const MCP = MCP_TOOL_NAME_PREFIX;
 const DEPENDENCY_CHANGE = { command: "pnpm add jsvat" };
@@ -42,96 +21,7 @@ const REVIEWED = { decidedBy: "classifier", isAllowed: true };
 const REFUSED_IN_REVIEW = { decidedBy: "classifier", isAllowed: false };
 const UNREVIEWED = { decidedBy: "mode", isAllowed: true };
 
-interface TurnOptions {
-  settings?: Partial<AppSettings>;
-  policy?: Partial<PermissionPolicy>;
-  answer?: PermissionDecisionValue;
-}
-
-interface Turn {
-  prompts: PendingRequest[];
-  decisions: ToolDecision[];
-  announced: string[];
-  tools: TracedClaudeEntry[];
-  sessionMode: string | undefined;
-}
-
-describe("the permission modes on the Claude provider", () => {
-  let dir: string;
-  let traceFile: string;
-  let runner: AgentRunner | undefined;
-
-  beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-auto-review-"));
-    traceFile = join(dir, "trace.jsonl");
-    process.env.MOCK_CLAUDE = "1";
-    process.env.MOCK_CLAUDE_TRACE = traceFile;
-  });
-
-  afterEach(async () => {
-    await runner?.dispose();
-    runner = undefined;
-    setBuilderAvailable(false);
-    delete process.env.MOCK_CLAUDE;
-    delete process.env.MOCK_CLAUDE_SCRIPT;
-    delete process.env.MOCK_CLAUDE_TRACE;
-    await rm(dir, { recursive: true, force: true });
-  });
-
-  async function runTurn(
-    calls: ScriptedCall[],
-    options: TurnOptions = {},
-  ): Promise<Turn> {
-    process.env.MOCK_CLAUDE_SCRIPT = await writeClaudeScript(
-      dir,
-      "turn",
-      calls,
-    );
-    const settings: AppSettings = {
-      ...DEFAULT_SETTINGS,
-      generationMode: "vibe",
-      ...options.settings,
-    };
-    runner = createAgentRunner(
-      createClaudeProvider({ timeoutMs: TURN_TIMEOUT_MS }),
-      { settings },
-    );
-    const prompts: PendingRequest[] = [];
-    const decisions: ToolDecision[] = [];
-    const announced: string[] = [];
-    const { bus } = createTestBus({
-      timeoutMs: PROMPT_TIMEOUT_MS,
-      policy: { hostProjectRoot: dir, ...options.policy },
-      extra: {
-        onPromptChat: (request) => {
-          prompts.push(request);
-          bus.resolvePermission({
-            requestId: request.requestId,
-            decision: options.answer ?? PERMISSION_DECISIONS.ALLOW_ONCE,
-          });
-        },
-      },
-    });
-    for await (const _event of runner.start("go", {
-      conversationId: CONVERSATION_ID,
-      hostProjectRoot: dir,
-      getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
-      permissionBus: bus,
-      onToolDecision: (decision) => decisions.push(decision),
-      onToolAnnounced: (callId) => announced.push(callId),
-    })) {
-    }
-    const trace = readClaudeTrace(traceFile);
-    return {
-      prompts,
-      decisions,
-      announced,
-      tools: trace.filter((entry) => entry.kind === "tool"),
-      sessionMode: trace.find((entry) => entry.kind === "session")
-        ?.permissionMode,
-    };
-  }
-
+function registerAskModeCases({ runTurn }: TurnFixture): void {
   it(
     "asks before a dependency change, and a refusal stops it",
     async () => {
@@ -213,7 +103,9 @@ describe("the permission modes on the Claude provider", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerHookAndToolCases({ runTurn }: TurnFixture): void {
   it(
     "asks before an edit of a git hook file under Auto review",
     async () => {
@@ -280,7 +172,12 @@ describe("the permission modes on the Claude provider", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerDependencyFileCases({
+  runTurn,
+  projectDir,
+}: TurnFixture): void {
   it(
     "asks before an edit of each dependency manifest, lockfile and setting, as always-ask",
     async () => {
@@ -302,7 +199,7 @@ describe("the permission modes on the Claude provider", () => {
       const turn = await runTurn(
         files.map((file, index) => {
           const name = EDIT_TOOLS[index % EDIT_TOOLS.length] ?? "Write";
-          const path = join(dir, "packages", "app", file);
+          const path = join(projectDir(), "packages", "app", file);
           const pathKey =
             name === "NotebookEdit" ? "notebook_path" : "file_path";
           return { id: file, name, input: { [pathKey]: path } };
@@ -328,17 +225,19 @@ describe("the permission modes on the Claude provider", () => {
         {
           id: "dotted",
           name: "Edit",
-          input: { file_path: join(dir, "src", "..", "pnpm-lock.yaml") },
+          input: {
+            file_path: join(projectDir(), "src", "..", "pnpm-lock.yaml"),
+          },
         },
         {
           id: "trailing",
           name: "Write",
-          input: { file_path: `${join(dir, "package.json")}/.` },
+          input: { file_path: `${join(projectDir(), "package.json")}/.` },
         },
         {
           id: "cased",
           name: "Write",
-          input: { file_path: join(dir, "Package.JSON") },
+          input: { file_path: join(projectDir(), "Package.JSON") },
         },
         {
           id: "outside",
@@ -348,7 +247,7 @@ describe("the permission modes on the Claude provider", () => {
         {
           id: "lookalike",
           name: "Write",
-          input: { file_path: join(dir, "src", "package.json.ts") },
+          input: { file_path: join(projectDir(), "src", "package.json.ts") },
         },
       ]);
       expect(turn.prompts.map((p) => [p.callId, p.alwaysAsk])).toEqual([
@@ -372,7 +271,9 @@ describe("the permission modes on the Claude provider", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerBuilderAndLedgerCases({ runTurn }: TurnFixture): void {
   it(
     "leaves a dependency file edit to Auto review when the setting is off",
     async () => {
@@ -431,7 +332,9 @@ describe("the permission modes on the Claude provider", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerScopeCases({ runTurn, projectDir }: TurnFixture): void {
   it(
     "sends the built-in question tool to canUseTool, never counting it as Auto review's",
     async () => {
@@ -449,7 +352,11 @@ describe("the permission modes on the Claude provider", () => {
     async () => {
       const turn = await runTurn([
         { id: "outside", name: "Read", input: { file_path: "/etc/hostname" } },
-        { id: "inside", name: "Read", input: { file_path: join(dir, "a.ts") } },
+        {
+          id: "inside",
+          name: "Read",
+          input: { file_path: join(projectDir(), "a.ts") },
+        },
       ]);
       expect(turn.prompts.map((p) => p.callId)).toEqual(["outside"]);
       expect(turn.tools).toMatchObject([ASKED, UNREVIEWED]);
@@ -516,4 +423,18 @@ describe("the permission modes on the Claude provider", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
+
+describe("the permission modes on the Claude provider", () => {
+  const fixture = useClaudeTurnRunner();
+
+  registerAskModeCases(fixture);
+
+  registerHookAndToolCases(fixture);
+
+  registerDependencyFileCases(fixture);
+
+  registerBuilderAndLedgerCases(fixture);
+
+  registerScopeCases(fixture);
 });

@@ -2,7 +2,10 @@
 import { computed, inject } from "vue";
 import { useChatI18n } from "../chat/composables/useChatI18n";
 import { PROGRESS } from "../onboarding/flow";
-import { ONBOARDING_CONTROLLER_KEY } from "../onboarding/runtime";
+import {
+	ONBOARDING_COMPONENT_NAME,
+	ONBOARDING_CONTROLLER_KEY,
+} from "../onboarding/runtime";
 import OnboardingAi from "../views/onboarding/OnboardingAi.vue";
 import OnboardingAnalysis from "../views/onboarding/OnboardingAnalysis.vue";
 import OnboardingClaude from "../views/onboarding/OnboardingClaude.vue";
@@ -14,6 +17,8 @@ import OnboardingPaths from "../views/onboarding/OnboardingPaths.vue";
 import OnboardingReady from "../views/onboarding/OnboardingReady.vue";
 import OnboardingScratch from "../views/onboarding/OnboardingScratch.vue";
 import OnboardingWelcome from "../views/onboarding/OnboardingWelcome.vue";
+
+defineOptions({ name: ONBOARDING_COMPONENT_NAME });
 
 /**
  * The onboarding popup, drawn over every page once the assistant runs: a progress bar of three

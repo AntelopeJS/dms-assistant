@@ -15,59 +15,7 @@ function jsonResponse(body: PagesRegistryEntry[], status = 200): Response {
   });
 }
 
-describe("createRegistryClient", () => {
-  it("fetches and caches the registry within TTL", async () => {
-    const entries = buildEntries();
-    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse(entries));
-    const client = createRegistryClient({
-      backendBaseUrl: BASE_URL,
-      fetchImpl,
-      now: () => 1000,
-      ttlMs: 30_000,
-    });
-    const a = await client.getRegistry();
-    const b = await client.getRegistry();
-    expect(a).toEqual(entries);
-    expect(b).toEqual(entries);
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-  });
-
-  it("refreshes after TTL expires", async () => {
-    let nowMs = 0;
-    const entries = buildEntries();
-    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse(entries));
-    const client = createRegistryClient({
-      backendBaseUrl: BASE_URL,
-      fetchImpl,
-      now: () => nowMs,
-      ttlMs: 30_000,
-    });
-    await client.getRegistry();
-    nowMs = 31_000;
-    await client.getRegistry();
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-  });
-
-  it("falls back to cache on fetch failure", async () => {
-    const entries = buildEntries();
-    let mustFail = false;
-    const fetchImpl = vi.fn<typeof fetch>(async () => {
-      if (mustFail) throw new Error("boom");
-      return jsonResponse(entries);
-    });
-    const client = createRegistryClient({
-      backendBaseUrl: BASE_URL,
-      fetchImpl,
-      now: () => 0,
-      ttlMs: 0,
-      logger: { warn: () => {} },
-    });
-    const a = await client.getRegistry();
-    mustFail = true;
-    const b = await client.getRegistry();
-    expect(b).toEqual(a);
-  });
-
+function registerStaleCases(): void {
   it("tracks staleSinceMs and warns once on stale fallback", async () => {
     const entries = buildEntries();
     let mustFail = false;
@@ -128,6 +76,62 @@ describe("createRegistryClient", () => {
     expect(client.getStaleSinceMs()).toBe(4000);
     expect(warn).toHaveBeenCalledTimes(2);
   });
+}
+
+describe("createRegistryClient", () => {
+  it("fetches and caches the registry within TTL", async () => {
+    const entries = buildEntries();
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse(entries));
+    const client = createRegistryClient({
+      backendBaseUrl: BASE_URL,
+      fetchImpl,
+      now: () => 1000,
+      ttlMs: 30_000,
+    });
+    const a = await client.getRegistry();
+    const b = await client.getRegistry();
+    expect(a).toEqual(entries);
+    expect(b).toEqual(entries);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes after TTL expires", async () => {
+    let nowMs = 0;
+    const entries = buildEntries();
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse(entries));
+    const client = createRegistryClient({
+      backendBaseUrl: BASE_URL,
+      fetchImpl,
+      now: () => nowMs,
+      ttlMs: 30_000,
+    });
+    await client.getRegistry();
+    nowMs = 31_000;
+    await client.getRegistry();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to cache on fetch failure", async () => {
+    const entries = buildEntries();
+    let mustFail = false;
+    const fetchImpl = vi.fn<typeof fetch>(async () => {
+      if (mustFail) throw new Error("boom");
+      return jsonResponse(entries);
+    });
+    const client = createRegistryClient({
+      backendBaseUrl: BASE_URL,
+      fetchImpl,
+      now: () => 0,
+      ttlMs: 0,
+      logger: { warn: () => {} },
+    });
+    const a = await client.getRegistry();
+    mustFail = true;
+    const b = await client.getRegistry();
+    expect(b).toEqual(a);
+  });
+
+  registerStaleCases();
 
   it("throws when fetch fails and no cache exists", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () => {

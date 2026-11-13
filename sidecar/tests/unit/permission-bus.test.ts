@@ -31,6 +31,143 @@ function requestIdOf(prompt: PendingRequest | undefined): string {
   return prompt.requestId;
 }
 
+function registerAgentFeedbackCases(): void {
+  it("hands the agent the user's own words when they suggest a change", async () => {
+    const t = createTestBus();
+    const pending = t.bus.requestPermission(request(TEST_COMMAND));
+    const [prompt] = await t.waitForPrompts(1);
+    t.bus.resolvePermission({
+      requestId: requestIdOf(prompt),
+      decision: PERMISSION_DECISIONS.DENY,
+      feedback: "run only the unit tests",
+    });
+    const outcome = await pending;
+    expect(outcome).toMatchObject({ isAllowed: false, allowedBy: "denied" });
+    expect(denialMessage(outcome)).toBe(
+      `${PERMISSION_FEEDBACK_PREFIX}run only the unit tests`,
+    );
+  });
+
+  it("expires an unanswered request and says so", async () => {
+    const t = createTestBus();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const outcome = await t.bus.requestPermission(request(TEST_COMMAND));
+    warnSpy.mockRestore();
+    expect(outcome.allowedBy).toBe("expired");
+    expect(denialMessage(outcome)).toBe(PERMISSION_EXPIRED_MESSAGE);
+    expect(t.decisions[0]?.prompt?.settledAs).toBe("expired");
+  });
+
+  it("deny_all refuses every pending request of the chat and stops the turn", async () => {
+    const t = createTestBus();
+    const first = t.bus.requestPermission(request(TEST_COMMAND));
+    const second = t.bus.requestPermission(request(LINT_COMMAND));
+    const other = t.bus.requestPermission(
+      request(LINT_COMMAND, OTHER_CONVERSATION_ID),
+    );
+    const prompts = await t.waitForPrompts(3);
+    const own = prompts.find((p) => p.conversationId === CONVERSATION_ID);
+    t.bus.resolvePermission({
+      requestId: requestIdOf(own),
+      decision: PERMISSION_DECISIONS.DENY_ALL,
+    });
+    await expect(first).resolves.toMatchObject({
+      isAllowed: false,
+      shouldInterrupt: true,
+    });
+    await expect(second).resolves.toMatchObject({
+      isAllowed: false,
+      shouldInterrupt: true,
+    });
+    expect(t.denyAlls).toEqual([CONVERSATION_ID]);
+    expect(t.bus.countPending(OTHER_CONVERSATION_ID)).toBe(1);
+    t.bus.cancelConversation(OTHER_CONVERSATION_ID);
+    await expect(other).resolves.toMatchObject({ isAllowed: false });
+  });
+
+  it("cancels only the request of a call that already ended", async () => {
+    const t = createTestBus({ timeoutMs: 10_000 });
+    const ended = request({ pageRef: "/a" }, CONVERSATION_ID, DELETE_PAGE);
+    const ongoing = request({ pageRef: "/b" }, CONVERSATION_ID, DELETE_PAGE);
+    const endedOutcome = t.bus.requestPermission(ended);
+    void t.bus.requestPermission(ongoing);
+    await t.waitForPrompts(2);
+    t.bus.cancelCall(CONVERSATION_ID, ended.callId);
+    await expect(endedOutcome).resolves.toMatchObject({ isAllowed: false });
+    expect(t.decisions.at(-1)?.prompt?.settledAs).toBe("cancelled");
+    expect(t.bus.getPendingForConversation(CONVERSATION_ID)).toMatchObject([
+      { callId: ongoing.callId },
+    ]);
+    t.bus.cancelConversation(CONVERSATION_ID);
+  });
+}
+
+function registerAlwaysAskCases(): void {
+  it("asks for the always-ask set with no rule to keep", async () => {
+    const t = createTestBus();
+    void t.bus.requestPermission(request(DEPENDENCY_COMMAND));
+    void t.bus.requestPermission(
+      request({ pageRef: "/dashboard" }, CONVERSATION_ID, DELETE_PAGE),
+    );
+    void t.bus.requestPermission(
+      request({ path: "/p#a" }, CONVERSATION_ID, REMOVE_BLOCK),
+    );
+    const prompts = await t.waitForPrompts(3);
+    expect(
+      prompts.every((p) => p.alwaysAsk && p.ruleOptions.length === 0),
+    ).toBe(true);
+    const dependency = prompts.find((p) => p.toolName === BASH);
+    expect(dependency?.preview).toMatchObject({
+      type: "command",
+      effect: "adds_dependency",
+      touches: ["package.json", "pnpm-lock.yaml"],
+    });
+    const deletion = prompts.find((p) => p.toolName === DELETE_PAGE);
+    expect(deletion?.kind).toBe("destructive");
+    expect(deletion?.preview).toMatchObject({
+      type: "destructive",
+      target: "/dashboard",
+    });
+  });
+
+  it("asks for block removal as an ordinary request when its always-ask setting is off", async () => {
+    const t = createTestBus({ policy: { alwaysAskBlockRemoval: false } });
+    void t.bus.requestPermission(
+      request({ path: "/p#a" }, CONVERSATION_ID, REMOVE_BLOCK),
+    );
+    const [prompt] = await t.waitForPrompts(1);
+    expect(prompt?.alwaysAsk).toBe(false);
+    t.bus.cancelConversation(CONVERSATION_ID);
+  });
+
+  it("forwards keepData for a resource deletion kept as data", async () => {
+    const t = createTestBus();
+    const pending = t.bus.requestPermission(
+      request(
+        { ref: "books" },
+        CONVERSATION_ID,
+        "mcp__dms-ai__builder_delete_resource",
+      ),
+    );
+    const [prompt] = await t.waitForPrompts(1);
+    expect(prompt?.preview).toMatchObject({
+      type: "destructive",
+      consequence: "deletes_data",
+      canKeepData: true,
+      confirmText: "books",
+    });
+    t.bus.resolvePermission({
+      requestId: requestIdOf(prompt),
+      decision: PERMISSION_DECISIONS.ALLOW_ONCE,
+      keepData: true,
+    });
+    await expect(pending).resolves.toMatchObject({
+      isAllowed: true,
+      keepData: true,
+    });
+  });
+}
+
 describe("permission bus", () => {
   it("allows once and records the call as approved by the user", async () => {
     const t = createTestBus();
@@ -131,136 +268,7 @@ describe("permission bus", () => {
     expect(t.bus.revokeRule(CONVERSATION_ID, "unknown")).toBe(false);
   });
 
-  it("hands the agent the user's own words when they suggest a change", async () => {
-    const t = createTestBus();
-    const pending = t.bus.requestPermission(request(TEST_COMMAND));
-    const [prompt] = await t.waitForPrompts(1);
-    t.bus.resolvePermission({
-      requestId: requestIdOf(prompt),
-      decision: PERMISSION_DECISIONS.DENY,
-      feedback: "run only the unit tests",
-    });
-    const outcome = await pending;
-    expect(outcome).toMatchObject({ isAllowed: false, allowedBy: "denied" });
-    expect(denialMessage(outcome)).toBe(
-      `${PERMISSION_FEEDBACK_PREFIX}run only the unit tests`,
-    );
-  });
+  registerAgentFeedbackCases();
 
-  it("expires an unanswered request and says so", async () => {
-    const t = createTestBus();
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const outcome = await t.bus.requestPermission(request(TEST_COMMAND));
-    warnSpy.mockRestore();
-    expect(outcome.allowedBy).toBe("expired");
-    expect(denialMessage(outcome)).toBe(PERMISSION_EXPIRED_MESSAGE);
-    expect(t.decisions[0]?.prompt?.settledAs).toBe("expired");
-  });
-
-  it("deny_all refuses every pending request of the chat and stops the turn", async () => {
-    const t = createTestBus();
-    const first = t.bus.requestPermission(request(TEST_COMMAND));
-    const second = t.bus.requestPermission(request(LINT_COMMAND));
-    const other = t.bus.requestPermission(
-      request(LINT_COMMAND, OTHER_CONVERSATION_ID),
-    );
-    const prompts = await t.waitForPrompts(3);
-    const own = prompts.find((p) => p.conversationId === CONVERSATION_ID);
-    t.bus.resolvePermission({
-      requestId: requestIdOf(own),
-      decision: PERMISSION_DECISIONS.DENY_ALL,
-    });
-    await expect(first).resolves.toMatchObject({
-      isAllowed: false,
-      shouldInterrupt: true,
-    });
-    await expect(second).resolves.toMatchObject({
-      isAllowed: false,
-      shouldInterrupt: true,
-    });
-    expect(t.denyAlls).toEqual([CONVERSATION_ID]);
-    expect(t.bus.countPending(OTHER_CONVERSATION_ID)).toBe(1);
-    t.bus.cancelConversation(OTHER_CONVERSATION_ID);
-    await expect(other).resolves.toMatchObject({ isAllowed: false });
-  });
-
-  it("cancels only the request of a call that already ended", async () => {
-    const t = createTestBus({ timeoutMs: 10_000 });
-    const ended = request({ pageRef: "/a" }, CONVERSATION_ID, DELETE_PAGE);
-    const ongoing = request({ pageRef: "/b" }, CONVERSATION_ID, DELETE_PAGE);
-    const endedOutcome = t.bus.requestPermission(ended);
-    void t.bus.requestPermission(ongoing);
-    await t.waitForPrompts(2);
-    t.bus.cancelCall(CONVERSATION_ID, ended.callId);
-    await expect(endedOutcome).resolves.toMatchObject({ isAllowed: false });
-    expect(t.decisions.at(-1)?.prompt?.settledAs).toBe("cancelled");
-    expect(t.bus.getPendingForConversation(CONVERSATION_ID)).toMatchObject([
-      { callId: ongoing.callId },
-    ]);
-    t.bus.cancelConversation(CONVERSATION_ID);
-  });
-
-  it("asks for the always-ask set with no rule to keep", async () => {
-    const t = createTestBus();
-    void t.bus.requestPermission(request(DEPENDENCY_COMMAND));
-    void t.bus.requestPermission(
-      request({ pageRef: "/dashboard" }, CONVERSATION_ID, DELETE_PAGE),
-    );
-    void t.bus.requestPermission(
-      request({ path: "/p#a" }, CONVERSATION_ID, REMOVE_BLOCK),
-    );
-    const prompts = await t.waitForPrompts(3);
-    expect(
-      prompts.every((p) => p.alwaysAsk && p.ruleOptions.length === 0),
-    ).toBe(true);
-    const dependency = prompts.find((p) => p.toolName === BASH);
-    expect(dependency?.preview).toMatchObject({
-      type: "command",
-      effect: "adds_dependency",
-      touches: ["package.json", "pnpm-lock.yaml"],
-    });
-    const deletion = prompts.find((p) => p.toolName === DELETE_PAGE);
-    expect(deletion?.kind).toBe("destructive");
-    expect(deletion?.preview).toMatchObject({
-      type: "destructive",
-      target: "/dashboard",
-    });
-  });
-
-  it("asks for block removal as an ordinary request when its always-ask setting is off", async () => {
-    const t = createTestBus({ policy: { alwaysAskBlockRemoval: false } });
-    void t.bus.requestPermission(
-      request({ path: "/p#a" }, CONVERSATION_ID, REMOVE_BLOCK),
-    );
-    const [prompt] = await t.waitForPrompts(1);
-    expect(prompt?.alwaysAsk).toBe(false);
-    t.bus.cancelConversation(CONVERSATION_ID);
-  });
-
-  it("forwards keepData for a resource deletion kept as data", async () => {
-    const t = createTestBus();
-    const pending = t.bus.requestPermission(
-      request(
-        { ref: "books" },
-        CONVERSATION_ID,
-        "mcp__dms-ai__builder_delete_resource",
-      ),
-    );
-    const [prompt] = await t.waitForPrompts(1);
-    expect(prompt?.preview).toMatchObject({
-      type: "destructive",
-      consequence: "deletes_data",
-      canKeepData: true,
-      confirmText: "books",
-    });
-    t.bus.resolvePermission({
-      requestId: requestIdOf(prompt),
-      decision: PERMISSION_DECISIONS.ALLOW_ONCE,
-      keepData: true,
-    });
-    await expect(pending).resolves.toMatchObject({
-      isAllowed: true,
-      keepData: true,
-    });
-  });
+  registerAlwaysAskCases();
 });

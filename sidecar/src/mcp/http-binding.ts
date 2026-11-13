@@ -11,7 +11,11 @@ import {
   MCP_SERVER_NAME,
   MCP_SERVER_VERSION,
 } from "../constants/mcp.js";
-import type { AnyMcpToolDefinition } from "./define-tool.js";
+import type {
+  AnyMcpToolDefinition,
+  McpToolDefinition,
+  McpToolInputSchema,
+} from "./define-tool.js";
 import { buildToolDefinitions } from "./tool-definitions.js";
 import type { AiMcpServerDeps } from "./types.js";
 
@@ -36,14 +40,13 @@ export interface McpHttpRegistry {
 
 function registerDefinition(
   server: McpServer,
-  definition: AnyMcpToolDefinition,
+  definition: McpToolDefinition<McpToolInputSchema>,
 ): void {
   server.registerTool(
     definition.name,
     {
       title: definition.title,
       description: definition.description,
-      // oxlint-disable-next-line typescript/no-unsafe-assignment -- AnyMcpToolDefinition is McpToolDefinition<any> so that one list holds tools with different input schemas, which makes definition.schema any; the MCP SDK takes it as the raw zod shape the tool declared
       inputSchema: definition.schema,
     },
     definition.handler,

@@ -38,78 +38,70 @@ interface Client {
   frames: WireCollector;
 }
 
-describe("a person's conversation history in the sidecar", () => {
-  let harness: WsHarness | undefined;
-  let clients: Client[] = [];
-  let syncCount = 0;
+let harness: WsHarness | undefined;
+let clients: Client[] = [];
+let syncCount = 0;
 
-  afterEach(async () => {
-    for (const client of clients) client.socket.close();
-    clients = [];
-    CLAUDE_FIXTURE.reset();
-    await harness?.close();
-    harness = undefined;
+async function start(): Promise<WsHarness> {
+  CLAUDE_FIXTURE.use("plain");
+  harness = await startWsHarness({ provider: CLAUDE_FIXTURE.name });
+  return harness;
+}
+
+async function connect(actor?: typeof CAMILLE): Promise<Client> {
+  if (harness === undefined) throw new Error("harness not started");
+  const socket = await openChat(harness.port);
+  const client = { socket, frames: createCollector(socket, WAIT_MS) };
+  clients.push(client);
+  if (actor !== undefined) sendWire(socket, { type: "actor", ...actor });
+  return client;
+}
+
+/** Resolves once the server has handled every frame the client sent before. */
+async function settle(client: Client): Promise<void> {
+  syncCount += 1;
+  const payload = `sync-${syncCount}`;
+  sendWire(client.socket, { type: "echo", payload });
+  await client.frames.next(
+    (msg) => msg.type === "echo_reply" && msg.payload === payload,
+  );
+}
+
+async function ask(
+  client: Client,
+  conversationId: string,
+  content = "list",
+): Promise<void> {
+  sendHello(client.socket, conversationId);
+  sendUserMessage(client.socket, conversationId, content);
+  await settle(client);
+}
+
+/** The ids the server lists for the client when it asks now. */
+function listed(client: Client): Promise<string[]> {
+  return new Promise((done, fail) => {
+    const timer = setTimeout(() => fail(new Error("no list")), WAIT_MS);
+    const onMessage = (data: Parameters<typeof rawDataToText>[0]): void => {
+      const msg = parseWireMessage(rawDataToText(data));
+      if (!isList(msg)) return;
+      clearTimeout(timer);
+      client.socket.off("message", onMessage);
+      done(idsOf(msg));
+    };
+    client.socket.on("message", onMessage);
+    sendWire(client.socket, { type: "list_conversations" });
   });
+}
 
-  async function start(): Promise<WsHarness> {
-    CLAUDE_FIXTURE.use("plain");
-    harness = await startWsHarness({ provider: CLAUDE_FIXTURE.name });
-    return harness;
-  }
+function seedLegacyConversation(running: WsHarness): void {
+  running.conversationStore.appendMessage(LEGACY, {
+    role: "user",
+    content: "written before owners existed",
+    timestampMs: 1_000,
+  });
+}
 
-  async function connect(actor?: typeof CAMILLE): Promise<Client> {
-    if (harness === undefined) throw new Error("harness not started");
-    const socket = await openChat(harness.port);
-    const client = { socket, frames: createCollector(socket, WAIT_MS) };
-    clients.push(client);
-    if (actor !== undefined) sendWire(socket, { type: "actor", ...actor });
-    return client;
-  }
-
-  /** Resolves once the server has handled every frame the client sent before. */
-  async function settle(client: Client): Promise<void> {
-    syncCount += 1;
-    const payload = `sync-${syncCount}`;
-    sendWire(client.socket, { type: "echo", payload });
-    await client.frames.next(
-      (msg) => msg.type === "echo_reply" && msg.payload === payload,
-    );
-  }
-
-  async function ask(
-    client: Client,
-    conversationId: string,
-    content = "list",
-  ): Promise<void> {
-    sendHello(client.socket, conversationId);
-    sendUserMessage(client.socket, conversationId, content);
-    await settle(client);
-  }
-
-  /** The ids the server lists for the client when it asks now. */
-  function listed(client: Client): Promise<string[]> {
-    return new Promise((done, fail) => {
-      const timer = setTimeout(() => fail(new Error("no list")), WAIT_MS);
-      const onMessage = (data: Parameters<typeof rawDataToText>[0]): void => {
-        const msg = parseWireMessage(rawDataToText(data));
-        if (!isList(msg)) return;
-        clearTimeout(timer);
-        client.socket.off("message", onMessage);
-        done(idsOf(msg));
-      };
-      client.socket.on("message", onMessage);
-      sendWire(client.socket, { type: "list_conversations" });
-    });
-  }
-
-  function seedLegacyConversation(running: WsHarness): void {
-    running.conversationStore.appendMessage(LEGACY, {
-      role: "user",
-      content: "written before owners existed",
-      timestampMs: 1_000,
-    });
-  }
-
+function registerReadCases(): void {
   it(
     "lists only the asker's own conversations (fails a list that returns every stored conversation)",
     async () => {
@@ -219,7 +211,9 @@ describe("a person's conversation history in the sidecar", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
 
+function registerDeleteCases(): void {
   it(
     "refuses another person's delete and keeps the conversation (fails a delete that checks no owner)",
     async () => {
@@ -310,4 +304,17 @@ describe("a person's conversation history in the sidecar", () => {
     },
     TEST_TIMEOUT_MS,
   );
+}
+
+describe("a person's conversation history in the sidecar", () => {
+  afterEach(async () => {
+    for (const client of clients) client.socket.close();
+    clients = [];
+    CLAUDE_FIXTURE.reset();
+    await harness?.close();
+    harness = undefined;
+  });
+
+  registerReadCases();
+  registerDeleteCases();
 });

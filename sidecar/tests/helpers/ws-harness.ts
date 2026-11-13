@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import WebSocket from "ws";
 import { z } from "zod";
+import type { Serializable } from "../../src/protocol/json.js";
 import type { PermissionBus } from "../../src/agent/permission-bus.js";
 import { DEFAULT_SETTINGS } from "../../src/constants/settings.js";
 import {
@@ -408,12 +409,13 @@ export function createCollector(
 }
 
 /**
- * `object`, not a message type: several cases send a frame the protocol should
- * reject, and not `unknown`, which would let `sendWire(socket, undefined)`
- * compile.
+ * Any frame `JSON.stringify` writes faithfully, not only a client message:
+ * several cases send a frame the protocol should reject.
  */
-// oxlint-disable-next-line anti-slop/no-object-parameters -- a message type would forbid the frames the protocol should reject, and unknown would let sendWire(socket, undefined) compile
-export function sendWire(socket: WebSocket, msg: object): void {
+export function sendWire<Frame extends { type: string }>(
+  socket: WebSocket,
+  msg: Frame & Serializable<Frame>,
+): void {
   socket.send(JSON.stringify(msg));
 }
 

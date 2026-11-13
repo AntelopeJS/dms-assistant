@@ -1,30 +1,50 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { ExcludedRelation } from "@antelopejs/interface-dms-builder";
+import { z } from "zod";
 import { moduleOfFile, targetModule } from "./modules";
 import { resolveProjectRoot } from "./project";
 import { StepRefusal } from "./project-config";
 
 const MANIFEST = "package.json";
 
-interface MappedManifest {
-  dmsBuilder?: BuilderManifest;
-}
-
-interface BuilderManifest {
-  database?: DatabaseRecord;
-  /** dms-builder 0.6 and earlier: the connection, read until the next save. */
-  mapped?: string;
-  /** dms-builder 0.6 and earlier: the excluded tables, read until the next save. */
-  excluded?: Record<string, string>;
-}
+const TextSchema = z.string().optional().catch(undefined);
+const RelationReasonsSchema = z
+  .record(z.string(), z.string())
+  .optional()
+  .catch(undefined);
 
 /** What a module bound to an external database records about it in its `package.json`. */
-interface DatabaseRecord {
-  connection?: string;
+const DatabaseRecordSchema = z.looseObject({
+  connection: TextSchema,
   /** Tables decided against, `"schema.name"` → why, so no analysis proposes them again. */
-  excludedTables?: Record<string, string>;
-}
+  excludedTables: RelationReasonsSchema,
+});
+
+const BuilderManifestSchema = z.looseObject({
+  database: DatabaseRecordSchema.optional().catch(undefined),
+  /** dms-builder 0.6 and earlier: the connection, read until the next save. */
+  mapped: TextSchema,
+  /** dms-builder 0.6 and earlier: the excluded tables, read until the next save. */
+  excluded: RelationReasonsSchema,
+});
+
+/** The builder's keys of a module's `package.json`; one of the wrong type reads as absent. */
+const MappedManifestSchema = z
+  .looseObject({
+    dmsBuilder: BuilderManifestSchema.optional().catch(undefined),
+  })
+  .catch({});
+
+/**
+ * A JSON object as the file holds it, keys in file order, so a save writes back every key it does
+ * not own where it was. Anything but an object reads as an empty one.
+ */
+const JsonObjectSchema = z.record(z.string(), z.json()).catch({});
+
+type MappedManifest = z.infer<typeof MappedManifestSchema>;
+type DatabaseRecord = z.infer<typeof DatabaseRecordSchema>;
+type JsonObject = z.infer<typeof JsonObjectSchema>;
 
 /** What one `MapResources` call changes in the module's record. */
 export interface MappedRecordUpdate {
@@ -39,22 +59,26 @@ function manifestPath(root: string): string {
 
 const BYTE_ORDER_MARK = /^\uFEFF/;
 
-/** A module's manifest; refused, naming the file, when it is not JSON. */
-function readManifest(root: string): MappedManifest {
+/** A module's manifest as written; refused, naming the file, when it is not JSON. */
+function readManifestFile(root: string): JsonObject {
   const file = manifestPath(root);
   if (!fs.existsSync(file)) {
     return {};
   }
   try {
-    // oxlint-disable-next-line typescript/no-unsafe-return -- JSON.parse is typed `any` by the TypeScript lib and the file is the module's own manifest read from disk; naming MappedManifest through a typed local or a cast would only assert it
-    return JSON.parse(
-      fs.readFileSync(file, "utf8").replace(BYTE_ORDER_MARK, ""),
+    return JsonObjectSchema.parse(
+      JSON.parse(fs.readFileSync(file, "utf8").replace(BYTE_ORDER_MARK, "")),
     );
   } catch (error) {
     throw new StepRefusal(
       `${path.relative(resolveProjectRoot(), file)} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+}
+
+/** The builder's keys of a module's manifest. */
+function readManifest(root: string): MappedManifest {
+  return MappedManifestSchema.parse(readManifestFile(root));
 }
 
 function updatedExclusions(
@@ -79,28 +103,28 @@ function databaseRecord(manifest: MappedManifest): DatabaseRecord {
   };
 }
 
-function recorded(
-  manifest: MappedManifest,
-  record: DatabaseRecord,
-): MappedManifest {
+function recorded(manifest: JsonObject, record: DatabaseRecord): JsonObject {
   const {
     mapped: _mapped,
     excluded: _excluded,
     ...builder
-  } = manifest.dmsBuilder ?? {};
-  const database: DatabaseRecord = { connection: record.connection };
+  } = JsonObjectSchema.parse(manifest.dmsBuilder);
+  const database: JsonObject = {};
+  if (record.connection !== undefined) {
+    database.connection = record.connection;
+  }
   if (record.excludedTables && Object.keys(record.excludedTables).length > 0) {
     database.excludedTables = record.excludedTables;
   }
   return { ...manifest, dmsBuilder: { ...builder, database } };
 }
 
-function manifestText(manifest: MappedManifest): string {
+function manifestText(manifest: JsonObject): string {
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
 function writeDatabaseRecord(root: string, record: DatabaseRecord): void {
-  const manifest = readManifest(root);
+  const manifest = readManifestFile(root);
   const next = recorded(manifest, record);
   if (JSON.stringify(next) === JSON.stringify(manifest)) {
     return;

@@ -4,7 +4,6 @@ import {
   ControllerMeta,
 } from "@antelopejs/interface-api";
 import { GetMetadata } from "@antelopejs/interface-core";
-import type { Class } from "@antelopejs/interface-core/decorators";
 import type { ComponentBuilder } from "@antelopejs/interface-dms/component";
 import type { DataType } from "@antelopejs/interface-dms/base/data-types";
 import type * as TableViewApi from "@antelopejs/interface-dms/base/table-view";
@@ -149,13 +148,48 @@ function isDataTypeSentinel(value: ConfigObject): value is DataTypeSentinel {
   return isString(value.$dataType);
 }
 
+/** Whether a block factory answered a builder: something the canvas can nest and serialize. */
+function isPreviewBuilder(built: unknown): built is PreviewBuilder {
+  return (
+    typeof built === "object" &&
+    built !== null &&
+    "child" in built &&
+    typeof built.child === "function" &&
+    "serialize" in built &&
+    typeof built.serialize === "function"
+  );
+}
+
 function factoryFor(type: string): BlockFactory {
   const factory: unknown = require(BASE_MODULE)[type];
   if (!isCallable(factory)) {
     throw new DegradedBlockError(`no runtime factory for block type "${type}"`);
   }
-  // SAFETY: BASE_MODULE exports one factory per block type, each taking the block's options and answering a builder, and isCallable has just checked that this export is a function.
-  return factory as BlockFactory;
+  return (...args) => {
+    const built: unknown = factory.call(undefined, ...args);
+    if (!isPreviewBuilder(built)) {
+      throw new DegradedBlockError(`block type "${type}" built no preview`);
+    }
+    return built;
+  };
+}
+
+/**
+ * Whether an export is the DataAPI controller class mounted at `route`: a class carrying the
+ * controller statics whose own metadata places it there.
+ */
+function isRouteController(
+  exported: unknown,
+  route: string,
+): exported is ControllerClass {
+  return (
+    isCallable(exported) &&
+    "extend" in exported &&
+    typeof exported.extend === "function" &&
+    "location" in exported &&
+    typeof exported.location === "string" &&
+    GetMetadata(exported, ControllerMeta).location === route
+  );
 }
 
 /**
@@ -181,13 +215,8 @@ function loadedController(
       continue;
     }
     const exported: unknown = entry?.exports?.[record.apiName];
-    if (!isCallable(exported)) {
-      continue;
-    }
-    // SAFETY: apiName is the export name of the resource's DataAPI controller class in the module that defines it, and isCallable has checked the export is a function; the location comparison on the next line rejects any other function of that name.
-    const controller = exported as ControllerClass;
-    if (GetMetadata(controller, ControllerMeta).location === record.route) {
-      return controller;
+    if (isRouteController(exported, record.route)) {
+      return exported;
     }
   }
   return undefined;
@@ -212,10 +241,51 @@ function instantiateDataType(value: DataTypeSentinel): DataType {
   if (!isCallable(exported)) {
     throw new DegradedBlockError(`dataType "${id}" is not constructible`);
   }
-  // SAFETY: the catalog entry's import names a DataType class export, such as DefaultDataTypes.StringType, and isCallable has checked that this export is a function.
-  const Ctor = exported as Class<DataType>;
-  return new Ctor(
+  const instance: unknown = Reflect.construct(exported, [
     value.config === undefined ? undefined : materialize(value.config),
+  ]);
+  if (!isDataType(instance)) {
+    throw new DegradedBlockError(`dataType "${id}" built no DataType`);
+  }
+  return instance;
+}
+
+/** Whether a DataType's settings hold: its compare modes as classes, an optional default mode and options. */
+function hasDataTypeSettings(
+  instance: unknown,
+): instance is Pick<
+  DataType,
+  "compareModes" | "defaultCompareMode" | "options"
+> {
+  return (
+    typeof instance === "object" &&
+    instance !== null &&
+    "compareModes" in instance &&
+    Array.isArray(instance.compareModes) &&
+    instance.compareModes.every(isCallable) &&
+    (!("defaultCompareMode" in instance) ||
+      instance.defaultCompareMode === undefined ||
+      isCallable(instance.defaultCompareMode)) &&
+    (!("options" in instance) ||
+      instance.options === undefined ||
+      isPlainObject(instance.options))
+  );
+}
+
+/** Whether a constructed value carries every public member of a DataType: its settings and its methods. */
+function isDataType(instance: unknown): instance is DataType {
+  return (
+    hasDataTypeSettings(instance) &&
+    "filter" in instance &&
+    typeof instance.filter === "function" &&
+    "filterComponents" in instance &&
+    typeof instance.filterComponents === "function" &&
+    "inputComponent" in instance &&
+    typeof instance.inputComponent === "function" &&
+    "describedInputComponent" in instance &&
+    typeof instance.describedInputComponent === "function" &&
+    "getValidation" in instance &&
+    typeof instance.getValidation === "function"
   );
 }
 
@@ -464,6 +534,18 @@ function listedColumns(meta: TableMetadata) {
   );
 }
 
+/** Whether the installed table-view module exports the two names the preview drives. */
+function isTableViewModule(exported: unknown): exported is TableViewModule {
+  return (
+    typeof exported === "object" &&
+    exported !== null &&
+    "TableViewMeta" in exported &&
+    typeof exported.TableViewMeta === "function" &&
+    "tableViewFromSource" in exported &&
+    typeof exported.tableViewFromSource === "function"
+  );
+}
+
 /**
  * A Table block as the canvas shows it: the table's columns and rows, read
  * through its own list route by a read-only table over that route.
@@ -472,12 +554,17 @@ function listedColumns(meta: TableMetadata) {
  * forms onto the table's metadata, which every page mounting that table shares.
  * Its actions are what the saved page adds; the rows are the ones it will list.
  */
+
 function tablePreview(
   controller: ControllerClass,
   options: RuntimeObject,
 ): PreviewBuilder {
-  // SAFETY: TableViewModule restates the two exports of `@antelopejs/interface-dms/base/table-view` that the preview drives, typed from that module's own declarations; require returns any.
-  const module = require(TABLE_VIEW_MODULE) as TableViewModule;
+  const module: unknown = require(TABLE_VIEW_MODULE);
+  if (!isTableViewModule(module)) {
+    throw new DegradedBlockError(
+      `${TABLE_VIEW_MODULE} does not export TableViewMeta and tableViewFromSource`,
+    );
+  }
   const meta = GetMetadata(controller, module.TableViewMeta);
   return module.tableViewFromSource({
     ...picked(options, TABLE_PREVIEW_OPTIONS),

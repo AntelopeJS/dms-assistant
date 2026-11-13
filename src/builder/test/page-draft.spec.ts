@@ -12,7 +12,6 @@ import {
 import type {
   BlockDraft,
   ConfigValue,
-  PageDraft,
   PageStructure,
 } from "@antelopejs/interface-dms-builder";
 import {
@@ -21,6 +20,7 @@ import {
   expectOk,
   type Fixture,
 } from "./harness";
+import { nullDraft } from "./helpers/null-draft";
 import { isPreviewFieldList } from "./helpers/preview-fields";
 
 const PAGE = "/shop/board";
@@ -301,8 +301,7 @@ function registerReconcileCases(): void {
     expect(app.read(PAGE_FILE)).to.contain("order: 3");
     expect(app.read(PAGE_FILE)).to.contain('permission: { id: "shop.board" }');
 
-    // @ts-expect-error null is off-contract for the page's order and permission, and SetPageBlocks must clear both from the page file instead of writing null
-    const cleared: PageDraft["page"] = { order: null, permission: null };
+    const cleared = nullDraft("order", "permission");
     expectOk(
       await SetPageBlocks(
         PAGE,
@@ -338,8 +337,7 @@ function registerLiveWriteCases(): void {
     expect(app.read(PAGE_FILE)).to.contain("live: { maxRate: 5 }");
     expect((await structure()).page.live).to.deep.equal({ maxRate: 5 });
 
-    // @ts-expect-error null is off-contract for the page's live setting, and SetPageBlocks must take the page off instead of writing null
-    const off: PageDraft["page"] = { live: null };
+    const off = nullDraft("live");
     expectOk(
       await SetPageBlocks(
         PAGE,

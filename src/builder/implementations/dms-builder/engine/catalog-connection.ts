@@ -8,7 +8,38 @@ function catalogConnections(): InterfaceConnection[] {
 }
 
 /** The catalog functions of one connection, as its provider answers them. */
-export type CatalogConnection = typeof Catalog;
+export type CatalogConnection = Pick<
+  typeof Catalog,
+  | "Info"
+  | "ListRelations"
+  | "DescribeRelations"
+  | "Profile"
+  | "CheckReference"
+  | "SampleRows"
+>;
+
+/**
+ * Whether a provider's module exports every catalog function. Their signatures cannot be read at
+ * run time, so a module that exports functions under these names is taken at its interface's word.
+ */
+function isCatalogConnection(exported: unknown): exported is CatalogConnection {
+  return (
+    typeof exported === "object" &&
+    exported !== null &&
+    "Info" in exported &&
+    typeof exported.Info === "function" &&
+    "ListRelations" in exported &&
+    typeof exported.ListRelations === "function" &&
+    "DescribeRelations" in exported &&
+    typeof exported.DescribeRelations === "function" &&
+    "Profile" in exported &&
+    typeof exported.Profile === "function" &&
+    "CheckReference" in exported &&
+    typeof exported.CheckReference === "function" &&
+    "SampleRows" in exported &&
+    typeof exported.SampleRows === "function"
+  );
+}
 
 type CatalogResolver = (id: string) => CatalogConnection | undefined;
 type ConnectionLister = () => string[];
@@ -23,10 +54,9 @@ function declaredCatalog(id: string): CatalogConnection | undefined {
   const connection = catalogConnections().find(
     (candidate) => candidate.id === id,
   );
-  // SAFETY: connection.path is the module of a provider declared for the catalog interface, and such a module exports the functions of `@antelopejs/interface-database-catalog`, which CatalogConnection names; require returns any.
-  return connection
-    ? (require(connection.path) as CatalogConnection)
-    : undefined;
+  if (!connection) return undefined;
+  const exported: unknown = require(connection.path);
+  return isCatalogConnection(exported) ? exported : undefined;
 }
 
 let listConnectionIds: ConnectionLister = declaredConnections;
@@ -45,6 +75,20 @@ export function catalogOf(id: string): CatalogConnection | undefined {
   return resolveCatalog(id);
 }
 
+async function notSupplied(): Promise<never> {
+  throw new Error("this catalog function is not supplied by the spec");
+}
+
+/** A spec's catalog under the functions it supplies: each one it leaves out refuses. */
+const UNSUPPLIED_CATALOG: CatalogConnection = {
+  Info: notSupplied,
+  ListRelations: notSupplied,
+  DescribeRelations: notSupplied,
+  Profile: notSupplied,
+  CheckReference: notSupplied,
+  SampleRows: notSupplied,
+};
+
 /** Replaces the declared connections, for specs that run without a provider. */
 export function setCatalogConnectionsForTests(
   catalogs?: Record<string, Partial<CatalogConnection>>,
@@ -52,11 +96,10 @@ export function setCatalogConnectionsForTests(
   listConnectionIds = catalogs
     ? () => Object.keys(catalogs)
     : declaredConnections;
-  // SAFETY: the catalogs of a spec are partial on purpose, and the spec calls only the functions it supplied.
   resolveCatalog = catalogs
     ? (id) =>
         Object.hasOwn(catalogs, id)
-          ? (catalogs[id] as CatalogConnection)
+          ? { ...UNSUPPLIED_CATALOG, ...catalogs[id] }
           : undefined
     : declaredCatalog;
 }

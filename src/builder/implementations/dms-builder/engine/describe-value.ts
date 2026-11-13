@@ -1,18 +1,22 @@
+import type { ConfigValue } from "@antelopejs/interface-dms-builder";
+
+/** What a message shows for a value JSON cannot write, such as one that contains itself. */
+const UNWRITABLE_VALUE = "a value JSON cannot represent";
+
 /**
  * A rejected value, as it appears in a validation message.
  *
  * These messages report input that failed its own type: the interface functions
- * are called in-process by other modules, so the declared `string` is not
+ * are called in-process by other modules, so the declared type is not
  * enforced at run time -- which is the whole reason the message exists. Total by
  * construction: JSON.stringify throws on a cycle and on BigInt, and returns
- * `undefined` for a function or a symbol, so a message meant to explain a
- * refusal would have thrown out of the OpResult channel or read "undefined".
+ * `undefined` for `undefined`, a function or a symbol, so a message meant to
+ * explain a refusal never throws out of the OpResult channel.
  */
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- formats whatever a caller passed to an interface function in-process, typed `string` but not enforced at run time, which is the input this message reports; a narrower type would state a guarantee that does not hold
-export function describeValue(value: unknown): string {
+export function describeValue(value: ConfigValue): string {
   try {
-    const json = JSON.stringify(value);
-    if (json !== undefined) return json;
-  } catch {}
-  return String(value);
+    return JSON.stringify(value) ?? "undefined";
+  } catch {
+    return UNWRITABLE_VALUE;
+  }
 }

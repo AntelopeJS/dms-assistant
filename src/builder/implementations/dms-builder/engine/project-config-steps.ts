@@ -7,11 +7,12 @@ import {
 } from "./project-config-entry";
 import { removeConnection, removeModule } from "./project-config-remove";
 
+type StepOp = ProjectConfigStep["op"];
+
+type StepsByOp = { [Op in StepOp]: Extract<ProjectConfigStep, { op: Op }> };
+
 type StepHandlers = {
-  [Op in ProjectConfigStep["op"]]: (
-    draft: ConfigDraft,
-    step: Extract<ProjectConfigStep, { op: Op }>,
-  ) => void;
+  [Op in StepOp]: (draft: ConfigDraft, step: StepsByOp[Op]) => void;
 };
 
 const STEPS: StepHandlers = {
@@ -22,14 +23,18 @@ const STEPS: StepHandlers = {
   RemoveConnection: removeConnection,
 };
 
-type AnyStepHandler = (draft: ConfigDraft, step: ProjectConfigStep) => void;
+function runStep<Op extends StepOp>(
+  draft: ConfigDraft,
+  op: Op,
+  step: StepsByOp[Op],
+): void {
+  STEPS[op](draft, step);
+}
 
 /** Applies one step to the draft, or throws a `StepRefusal` saying why it cannot. */
 export function applyStep(draft: ConfigDraft, step: ProjectConfigStep): void {
-  // SAFETY: STEPS maps each op to the handler of the step carrying that op.
-  const handler = STEPS[step.op] as AnyStepHandler | undefined;
-  if (!handler) {
+  if (!Object.hasOwn(STEPS, step.op)) {
     refuse(`unknown step "${String(step.op)}"`);
   }
-  handler(draft, step);
+  runStep(draft, step.op, step);
 }

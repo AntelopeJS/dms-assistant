@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildActivityRecords } from "../../src/audit/activity.js";
 import { PERMISSION_DECISIONS } from "../../src/constants/permissions.js";
-import { buildAllowed } from "../../src/metrics/aggregate.js";
+import { buildAllowed, buildKpi } from "../../src/metrics/aggregate.js";
 import {
   type ScriptedCall,
   writeClaudeScript,
@@ -201,6 +201,67 @@ describe("the step and the audit of a call the DMS held", () => {
         { fromMs: 0, toMs: Number.MAX_SAFE_INTEGER },
       );
       expect([allowed.deletions, allowed.deletionsAsked]).toEqual([1, 1]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "lists an approval the DMS then held as not run, and counts only the repeat that ran (fails an approval missing from Activity, or a held call shown as a failure or counted)",
+    async () => {
+      const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+      const call = (id: string, args: { ref: string }): ScriptedCall => {
+        const refusal = gate.hold(SESSION, "builder_delete_resource", args);
+        const answer =
+          refusal === undefined
+            ? RAN
+            : { text: joinedText(refusal), isError: true };
+        return { id, name: DELETE, input: args, answer };
+      };
+      const other = { ref: "customers" };
+      await runTurn(
+        [
+          call("first", ARGS),
+          call("other", other),
+          call("other-repeat", other),
+        ],
+        PERMISSION_DECISIONS.ALLOW_ONCE,
+      );
+      const entries = harness?.conversationStore.entries() ?? [];
+      const records = buildActivityRecords({
+        entries,
+        changeSets: [],
+        pending: [],
+        running: new Set(),
+        hostProjectRoot: "/project",
+      });
+      expect(
+        Object.fromEntries(
+          records.map((r) => [
+            r.id.split(":").at(-1),
+            [r.result, r.resultDetail, r.allowedBy, r.isAsked, r.category],
+          ]),
+        ),
+      ).toEqual({
+        other: [
+          "denied",
+          "Held by the DMS until you confirm it",
+          "approved",
+          true,
+          ["asked"],
+        ],
+        "other-repeat": [
+          "done",
+          undefined,
+          "approved",
+          true,
+          ["changed", "asked"],
+        ],
+      });
+      const sources = { records, changeSets: [], entries };
+      const window = { fromMs: 0, toMs: Date.now() + 60_000 };
+      const allowed = buildAllowed(sources, window);
+      expect([allowed.deletions, allowed.deletionsAsked]).toEqual([1, 1]);
+      expect(buildKpi(sources, "approved", window).value).toBe(1);
     },
     TEST_TIMEOUT_MS,
   );

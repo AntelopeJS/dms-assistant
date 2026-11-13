@@ -34,8 +34,11 @@ type TimestampSource = (sources: MetricSources) => number[];
 
 const STATE_CHANGE_TOOLS: readonly string[] = [UNDO_TOOL_NAME, REDO_TOOL_NAME];
 
+/** The tool calls the metrics count: neither an undo or redo, nor a held call. */
 function calls(sources: MetricSources): ActivityRecord[] {
-  return sources.records.filter((r) => !STATE_CHANGE_TOOLS.includes(r.tool));
+  return sources.records.filter(
+    (r) => !STATE_CHANGE_TOOLS.includes(r.tool) && !r.isHeld,
+  );
 }
 
 function timestampsOf(

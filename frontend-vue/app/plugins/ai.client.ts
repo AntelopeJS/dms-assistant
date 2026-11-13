@@ -16,6 +16,13 @@ import {
 import { CHAT_I18N_KEY, type ChatI18n } from "../chat/composables/useChatI18n";
 import type { ChatApi } from "../chat/composables/useChangeSetActions";
 import type { CurrentPage } from "../chat/types/conversation";
+import type { OnboardingController } from "../onboarding/controller";
+import { startOnboarding } from "../onboarding/install";
+import { ONBOARDING_KEY } from "../onboarding/public";
+import {
+	ONBOARDING_CONTROLLER_KEY,
+	publicOnboarding,
+} from "../onboarding/runtime";
 import {
 	type AssistantActivity,
 	type AssistantStatusPayload,
@@ -385,7 +392,14 @@ function registerOnceMounted(
 /** What the plugin provides the app before the assistant runs. */
 interface ProvidedAssistant {
 	session: ShallowRef<AssistantSession | null>;
+	onboarding: ShallowRef<OnboardingController | null>;
 	i18n: ChatI18n;
+}
+
+/** The parts of the module the backend turned on. */
+export interface AssistantFeatures {
+	/** The builder runs, so the onboarding offers to connect a database. */
+	builderEnabled: boolean;
 }
 
 interface AssistantRuntime {
@@ -462,6 +476,8 @@ interface WireOptions {
 	appMounted: Promise<void>;
 	provided: ProvidedAssistant;
 	toaster: Toaster;
+	router: DashboardDeps["router"];
+	features: AssistantFeatures;
 }
 
 function wireAssistant(
@@ -474,6 +490,14 @@ function wireAssistant(
 	const stops = [
 		registerOnceMounted(context, appMounted, session, provided.i18n),
 		installToasts(session, provided.i18n, options.toaster),
+		startOnboarding({
+			session,
+			router: options.router,
+			provided: provided.onboarding,
+			canConnectDatabase: options.features.builderEnabled,
+			appMounted,
+			runWithContext: (callback) => context.runWithContext(callback),
+		}),
 		...runtime.stops,
 	];
 	return () => {
@@ -486,6 +510,7 @@ async function startAssistant(
 	context: DmsAppContext,
 	appMounted: Promise<void>,
 	provided: ProvidedAssistant,
+	features: AssistantFeatures,
 ): Promise<void> {
 	const deps: DashboardDeps = {
 		$authFetch: useAuthFetch().$authFetch,
@@ -507,7 +532,14 @@ async function startAssistant(
 	}
 	const teardown = context.runWithContext(() =>
 		wireAssistant(
-			{ context, appMounted, provided, toaster: deps.toaster },
+			{
+				context,
+				appMounted,
+				provided,
+				toaster: deps.toaster,
+				router: deps.router,
+				features,
+			},
 			createRuntime(deps, controller),
 		),
 	);
@@ -518,31 +550,40 @@ async function startAssistant(
 /**
  * The assistant appears for a signed-in owner in development only: a first
  * probe that finds no dms-ai backend, or a disabled sidecar, leaves no trace.
- * The session is provided at once, empty until that probe answers, so the
- * panel the server rendered open and the workspace pages follow it.
+ * The session and the onboarding are provided at once, empty until that probe
+ * answers, so the panel the server rendered open and the workspace pages
+ * follow them, and another module's layer finds the public onboarding.
  */
-export default defineDmsPlugin((context) => {
-	if (!import.meta.env.DEV) return;
-	const provided: ProvidedAssistant = {
-		session: shallowRef<AssistantSession | null>(null),
-		i18n: createChatI18n(context.$i18n),
-	};
-	context.vueApp.provide(ASSISTANT_SESSION_KEY, provided.session);
-	context.vueApp.provide(
-		ASSISTANT_ACTIONS_KEY,
-		publicAssistantActions(provided.session),
-	);
-	context.vueApp.provide(CHAT_I18N_KEY, provided.i18n);
-	const appMounted = new Promise<void>((resolve) =>
-		context.hook("app:mounted", resolve),
-	);
-	const { loggedIn } = useDmsUserSession();
-	const stopGate = runWhenLoggedIn(
-		() => loggedIn.value,
-		() =>
-			void context.runWithContext(() =>
-				startAssistant(context, appMounted, provided),
-			),
-	);
-	context.vueApp.onUnmount(stopGate);
-});
+export function assistantPlugin(features: AssistantFeatures) {
+	return defineDmsPlugin((context) => {
+		if (!import.meta.env.DEV) return;
+		const provided: ProvidedAssistant = {
+			session: shallowRef<AssistantSession | null>(null),
+			onboarding: shallowRef<OnboardingController | null>(null),
+			i18n: createChatI18n(context.$i18n),
+		};
+		context.vueApp.provide(ASSISTANT_SESSION_KEY, provided.session);
+		context.vueApp.provide(
+			ASSISTANT_ACTIONS_KEY,
+			publicAssistantActions(provided.session),
+		);
+		context.vueApp.provide(ONBOARDING_CONTROLLER_KEY, provided.onboarding);
+		context.vueApp.provide(
+			ONBOARDING_KEY,
+			publicOnboarding(provided.onboarding),
+		);
+		context.vueApp.provide(CHAT_I18N_KEY, provided.i18n);
+		const appMounted = new Promise<void>((resolve) =>
+			context.hook("app:mounted", resolve),
+		);
+		const { loggedIn } = useDmsUserSession();
+		const stopGate = runWhenLoggedIn(
+			() => loggedIn.value,
+			() =>
+				void context.runWithContext(() =>
+					startAssistant(context, appMounted, provided, features),
+				),
+		);
+		context.vueApp.onUnmount(stopGate);
+	});
+}

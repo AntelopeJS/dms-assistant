@@ -34,6 +34,7 @@ import { readSidecarVersion } from "../state/sidecar-version.js";
 import { API_ROUTES, type ApiDeps, type ApiRoute } from "./http-routes.js";
 import { readBody, sendJson, sendResponse } from "./http-io.js";
 import { decodeRouteParam } from "./http-params.js";
+import { ONBOARDING_ROUTES } from "./onboarding.js";
 import { handleProjectMcp } from "./project-mcp-route.js";
 import type { SidecarServices } from "./services.js";
 
@@ -212,7 +213,11 @@ function decodeParams(raw: string[]): string[] | null {
 }
 
 function matchRoute(method: string, path: string): MatchedRoute | null {
-  for (const route of [...SETTINGS_ROUTES, ...API_ROUTES]) {
+  for (const route of [
+    ...SETTINGS_ROUTES,
+    ...ONBOARDING_ROUTES,
+    ...API_ROUTES,
+  ]) {
     if (route.method !== method) continue;
     const match = route.pattern.exec(path);
     if (match !== null) return { route, params: decodeParams(match.slice(1)) };

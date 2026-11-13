@@ -12,6 +12,14 @@ export default defineConfig({
 				__dirname,
 				"tests/support/dms-frontend-module.ts",
 			),
+			"#dms-core": resolve(
+				__dirname,
+				"node_modules/@antelopejs/dms/frontend-vue/layers/dms-core",
+			),
+			"#dms-ui": resolve(
+				__dirname,
+				"node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui",
+			),
 		},
 	},
 	test: {

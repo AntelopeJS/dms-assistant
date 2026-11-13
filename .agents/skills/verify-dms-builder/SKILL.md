@@ -47,7 +47,7 @@ $C journey "$RUN" smoke
 $C journey "$RUN" pages [journey-id...]
 ```
 
-- Each feature file in [features/](features/README.md) lists its source globs (`covers:`), its docs pages (`docs:`) and its journeys; [coverage/](coverage) holds one table per feature with every documented behaviour, its catching check or its `Not driven` reason. Journeys are in `journeys/<feature>.mjs`; helpers are `builder.mjs` (API, operations, project files, `rebuild`, `withConfig`, `member`), `editor.mjs` (open the builder, select a block, the save status) and `guard.mjs`.
+- Each feature file in [features/](features/README.md) lists its source globs (`covers:`), its docs pages (`docs:`) and its journeys; [coverage/](coverage) holds one table per feature with every documented behaviour, its catching check or its `Not driven` reason. Journeys are in `journeys/<feature>.mjs`; helpers are `builder.mjs` (API, operations, project files, `rebuild`, `withConfig`, `member`) and `guard.mjs`.
 - A journey starts on an empty database with the owner onboarded and the backend restarted on it. The builder writes the playground's sources, so `guard.mjs` copies `src` and `dist` aside before the first journey and puts them back when each journey ends. A journey reads every write back through a second view: the project files, `GetPageStructure`, the listing operations, a reload, or a rebuilt and restarted backend (`rebuild`).
 - `withConfig(ctx, { VERIFY_BUILDER_*: … }, body)` restarts the backend with `api.enabled` (`VERIFY_BUILDER_API=off|follow-dev`) or `projectRoot` (`VERIFY_BUILDER_PROJECT_ROOT`) set and restarts it again without them.
 - To look at the product yourself: `$C onboard "$RUN"`, `$C browser "$RUN" login`, `goto --path`, `snapshot`, `click --role --name`, `fill`, `press`, `screenshot`, `$C api "$RUN" <method> <path> [--as anon] [--body <json>]`, `$C reset "$RUN"`. Each writes its evidence under `$RUN/evidence/`.
@@ -76,8 +76,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 ## Gotchas
 
-- Every dashboard page renders on the server and hydrates after `load`; a click that lands first does nothing. `openBuilder` clicks the hammer until the editor bar shows.
-- On a project with no external database the dashboard asks a fresh browser to connect one, in a dialog over every page. `guarded` answers Not now once per browser before any page script runs; `database/the-connect-prompt-asks-once-per-browser` removes that answer to drive the dialog.
+- In a development dashboard dms-assistant's onboarding popup covers every page until onboarding is done. `guarded` ticks its "Don't show on startup" once per browser before any page script runs; verify-dms-ai drives the popup itself.
 - The page files the builder writes are not served until the project is compiled and the backend restarted, which `ajs project dev -w` does on its own; journeys that need the rendered page call `rebuild`.
 - A frontend is built once: the dashboard keeps its builder button after the backend turns the builder off, so the button's absence is Not driven; the routes' 404 is driven.
 - `CreatePage` places a page at `<category-folder>/<name>/page.ts` when a barrel sits beside the category's file, and at `src/<name>.ts` otherwise; journeys create a category first when they need the folder form.

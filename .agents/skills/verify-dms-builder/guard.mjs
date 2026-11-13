@@ -88,23 +88,22 @@ async function signInHydrated(ctx, tab, account) {
   ctx.record(ctx.step(`${tab.label} signed in as ${account}`), [{ name: `${account} signs in and leaves /auth`, pass: left.pass === true, detail: String(left.detail) }], { critical: true });
 }
 
-/** The browser keys of the connect prompt: the product's answer, and the marker that the harness gave it once. */
-export const CONNECT_PROMPT = { answered: "dms-builder:connect-prompt-dismissed", seeded: "verify-dms-builder:connect-prompt-seeded" };
+/** The browser keys of the onboarding popup: its preferences, and the marker that the harness seeded them once. */
+const ONBOARDING = { preferences: "dms-assistant:onboarding", seeded: "verify-dms-builder:onboarding-seeded" };
 
 /**
- * Answers "Not now" for the connect prompt once per browser, before any page script runs: the prompt covers every
- * dashboard page of a fresh browser on a project with no external database, so a journey could not reach the builder.
- * A journey that drives the prompt removes `CONNECT_PROMPT.answered`; the marker keeps it removed.
+ * Ticks "Don't show on startup" for the onboarding popup once per browser, before any page script runs: in a
+ * development dashboard the popup covers every page until onboarding is done, so a journey could not reach the builder.
  *
  * @param {Tab} tab A new tab
  * @returns {Promise<void>}
  */
-function answerConnectPromptOnce(tab) {
+function silenceOnboardingOnce(tab) {
   return tab.page.addInitScript((keys) => {
     if (localStorage.getItem(keys.seeded) !== null) return;
-    localStorage.setItem(keys.answered, "1");
+    localStorage.setItem(keys.preferences, JSON.stringify({ dontShow: true }));
     localStorage.setItem(keys.seeded, "1");
-  }, CONNECT_PROMPT);
+  }, ONBOARDING);
 }
 
 const PRISTINE = ["src", "dist"];
@@ -151,7 +150,7 @@ export function guarded(journeys) {
       ctx.tab = async (account, label) => {
         const tab = await openTab(account, label);
         tabs.push(tab);
-        await answerConnectPromptOnce(tab);
+        await silenceOnboardingOnce(tab);
         tab.signIn = (/** @type {string} */ who) => signInHydrated(ctx, tab, who);
         return tab;
       };

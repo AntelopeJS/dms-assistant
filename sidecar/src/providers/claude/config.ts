@@ -6,12 +6,17 @@ import type {
 import { agentEnvironment } from "../../agent/project-secrets.js";
 import { CLAUDE_MCP_TOOL_TIMEOUT_ENV_VAR } from "../../constants/claude.js";
 import { MCP_TOOL_TIMEOUT_MS } from "../../constants/mcp.js";
+import {
+  CLAUDE_CREDENTIAL_ENV_VARS,
+  CLAUDE_OAUTH_TOKEN_ENV_VAR,
+} from "../../constants/onboarding.js";
 import type {
   AppSettings,
   ChatMode,
   ThinkingLevel,
   TurnSettings,
 } from "../../state/settings-types.js";
+import { readSavedClaudeToken, type SavedClaudeToken } from "./credentials.js";
 
 /**
  * Neutral chat modes rendered in the SDK's own vocabulary, the mirror of what
@@ -77,17 +82,35 @@ export type ClaudeProcessEnv = Record<string, string | undefined>;
 type ClaudeEnv = ClaudeProcessEnv &
   Record<typeof CLAUDE_MCP_TOOL_TIMEOUT_ENV_VAR, string>;
 
+/** Whether the environment holds any of the variables that carry a Claude credential. */
+export function hasClaudeEnvCredential(env: ClaudeProcessEnv): boolean {
+  return Object.entries(env).some(
+    ([name, value]) =>
+      value !== undefined &&
+      value !== "" &&
+      CLAUDE_CREDENTIAL_ENV_VARS.some((credential) => credential === name),
+  );
+}
+
 /**
  * The CLI's environment: the sidecar's own (the SDK replaces it rather than
  * merging) minus the variables the project's secret files assign, with an MCP
- * tool timeout that outlasts every wait on the user.
+ * tool timeout that outlasts every wait on the user. The token saved from the
+ * onboarding popup is added as `CLAUDE_CODE_OAUTH_TOKEN` only when that
+ * environment holds no Claude credential of its own.
  */
 export function buildClaudeEnv(
   baseEnv: ClaudeProcessEnv,
   hostProjectRoot: string,
+  readSavedToken: () => SavedClaudeToken | undefined = readSavedClaudeToken,
 ): ClaudeEnv {
-  return {
+  const env: ClaudeEnv = {
     ...agentEnvironment(baseEnv, hostProjectRoot),
     [CLAUDE_MCP_TOOL_TIMEOUT_ENV_VAR]: String(MCP_TOOL_TIMEOUT_MS),
   };
+  if (!hasClaudeEnvCredential(env)) {
+    const saved = readSavedToken();
+    if (saved !== undefined) env[CLAUDE_OAUTH_TOKEN_ENV_VAR] = saved.token;
+  }
+  return env;
 }

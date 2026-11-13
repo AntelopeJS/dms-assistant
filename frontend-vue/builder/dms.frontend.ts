@@ -25,7 +25,8 @@ const components = import.meta.glob<VueModule>('./app/components/**/*.vue')
 const CONFIG_KEY = 'dmsBuilder'
 const ENABLED_OPTION = 'enabled'
 
-function isEnabled(options: Record<string, unknown> | undefined): boolean {
+/** Whether the backend turned the builder on, read from the module's public options. */
+export function isBuilderEnabled(options: Record<string, unknown> | undefined): boolean {
   const scoped = options?.[CONFIG_KEY] as Record<string, unknown> | undefined
   return scoped?.[ENABLED_OPTION] === true
 }
@@ -37,7 +38,7 @@ function isEnabled(options: Record<string, unknown> | undefined): boolean {
  */
 const frontendModule: DmsFrontendModule = {
   setup(sdk) {
-    if (!isEnabled(sdk.options.public)) {
+    if (!isBuilderEnabled(sdk.options.public)) {
       return
     }
     Object.entries(components)

@@ -1,5 +1,5 @@
-import { CONNECT_PROMPT, guarded } from "../guard.mjs";
-import { BOARD, builder, check, pick, text } from "../builder.mjs";
+import { guarded } from "../guard.mjs";
+import { builder, check, pick, text } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
@@ -34,48 +34,6 @@ export const journeys = guarded([
         check("setting a url on an unknown connection is not ok", pick(url.body, "ok") === false || url.status >= 400, url),
         check("analysing an unknown connection is not ok", pick(refused.body, "ok") === false || refused.status >= 400, refused),
         check("a refused request carries a code", [text(refused.body, "code"), text(refused.body, "error", "code")].some((code) => code !== ""), refused.body),
-      ]);
-    },
-  },
-  {
-    id: "the-database-workspace-offers-to-connect-a-database",
-    title: "The Database workspace of the builder opens on a project without a connection and offers to connect one",
-    entryPoint: "builder Database workspace",
-    async run(/** @type {Ctx} */ ctx) {
-      const { openBuilder } = await import("../editor.mjs");
-      const tab = await ctx.tab();
-      await tab.signIn("admin");
-      await openBuilder(ctx, tab);
-      await tab.page.getByRole("radio", { name: "Database" }).check();
-      await ctx.verify("the workspace opens", [tab.visible({ role: "button", name: "Connect a database" }, { timeoutMs: 20_000 }), tab.shows(/No database is connected to the builder yet\./)]);
-    },
-  },
-  {
-    id: "the-connect-prompt-asks-once-per-browser",
-    title: "On a project with no external database a browser that never answered is asked to connect one on its first dashboard page; Not now keeps the question away after a reload, and Connect a database opens the builder on the connect form",
-    entryPoint: "dashboard connect prompt",
-    async run(/** @type {Ctx} */ ctx) {
-      const tab = await ctx.tab();
-      await tab.signIn("admin");
-      const prompt = { role: "dialog", name: "Start from a database you already run" };
-      const forget = () => tab.page.evaluate((key) => localStorage.removeItem(key), CONNECT_PROMPT.answered);
-      await forget();
-      await tab.goto(BOARD);
-      await ctx.verify("a browser that never answered is asked", [tab.visible(prompt, { timeoutMs: 30_000 }), tab.visible({ role: "button", name: "Not now" }), tab.visible({ role: "button", name: "Connect a database" })]);
-      await tab.page.getByRole("button", { name: "Not now" }).click();
-      await ctx.verify("Not now closes it", [tab.visible(prompt, { hidden: true, timeoutMs: 15_000 })]);
-      await tab.goto(BOARD);
-      await tab.page.waitForTimeout(4000);
-      const remembered = await tab.page.evaluate((key) => localStorage.getItem(key), CONNECT_PROMPT.answered);
-      await ctx.verify("the answer holds after a reload", [tab.visible(prompt, { hidden: true, timeoutMs: 2_000 }), check("the browser remembers the answer", remembered === "1", String(remembered))]);
-      await forget();
-      await tab.goto(BOARD);
-      await tab.visible(prompt, { timeoutMs: 30_000 });
-      await tab.page.getByRole("dialog", { name: prompt.name }).getByRole("button", { name: "Connect a database" }).click();
-      await ctx.verify("Connect a database opens the connect form", [
-        tab.visible(prompt, { hidden: true, timeoutMs: 15_000 }),
-        tab.visible({ role: "radiogroup", name: "Workspace" }, { timeoutMs: 30_000 }),
-        tab.shows(/Wires an existing database into the project, so its tables can be mapped into pages\./, { timeoutMs: 20_000 }),
       ]);
     },
   },

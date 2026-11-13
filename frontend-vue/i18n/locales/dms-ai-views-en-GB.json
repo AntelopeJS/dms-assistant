@@ -139,6 +139,168 @@
 				"used_value": "{count}× · 30 days",
 				"last_used_label": "Last used",
 				"open_last_conversation": "Open last conversation"
+			},
+			"onboarding": {
+				"close": "Close",
+				"dont_show": "Don't show on startup",
+				"back": "Back",
+				"proceed": "Continue",
+				"continue": {
+					"title": "Welcome back",
+					"pick_up": "Pick up",
+					"chat": "Chat · {when}",
+					"resume": "Resume",
+					"mockups": "Mockups",
+					"pages": "{count} page | {count} pages",
+					"from": "from {source}",
+					"comments": "{count} open comment | {count} open comments",
+					"built": "Built",
+					"draft": "Draft",
+					"databases": "Databases",
+					"project": "Project",
+					"external": "{name} · External",
+					"new_scratch": "New: from scratch",
+					"connect": "Connect a DB"
+				},
+				"progress": "Step {step} of 3",
+				"widget": {
+					"label": "Assistant",
+					"attention": "Assistant, setup unfinished",
+					"ai": "AI",
+					"not_connected": "Not connected",
+					"mockups": "Mockups",
+					"open": "Open"
+				},
+				"welcome": {
+					"title": "Let’s build your back office",
+					"lede_before": "Connect an AI model once, then describe what you need or start from a database you already have. You can reopen this anytime from the",
+					"lede_after": "button.",
+					"ai_title": "Connect Claude or Codex",
+					"ai_text": "Use your existing subscription. About a minute.",
+					"start_title": "Pick a starting point",
+					"start_text": "From scratch, or from an existing database.",
+					"shape_title": "Shape it",
+					"shape_text": "Iterate on a live mockup, then build it for real.",
+					"skip": "Skip for now",
+					"get_started": "Get started"
+				},
+				"login": {
+					"with_plan": "{name} · {plan}",
+					"detail": "{email} · {source}",
+					"source_env": "set in the environment",
+					"source_saved": "saved on this machine",
+					"source_claude_cli": "found in ~/.claude",
+					"source_chatgpt": "signed in with ChatGPT"
+				},
+				"ready": {
+					"title": "Your assistant is ready",
+					"lede": "We found an AI login on this machine. Use it, or pick another.",
+					"works": "Works",
+					"other": "Use Codex or another account instead",
+					"use": "Use this login"
+				},
+				"ai": {
+					"title": "Which AI do you use?",
+					"lede": "The assistant runs on your own subscription. Nothing is billed by us.",
+					"claude_text": "Claude Pro or Max subscription",
+					"codex_text": "ChatGPT Plus, Pro or Team",
+					"signed_in": "Signed in",
+					"expired": "Expired",
+					"found_claude": "Found a Claude login on this machine ({email}). We’ll use it, no token needed.",
+					"found_claude_plain": "Found a Claude login on this machine. We’ll use it, no token needed.",
+					"found_codex": "Found a ChatGPT login on this machine ({email}). We’ll use it, no sign-in needed.",
+					"found_codex_plain": "Found a ChatGPT login on this machine. We’ll use it, no sign-in needed.",
+					"expired_claude": "Your Claude login has expired. Connect it again to keep using it.",
+					"expired_codex": "Your ChatGPT login has expired. Sign in again to keep using it.",
+					"use": "Use this login"
+				},
+				"claude": {
+					"title": "Connect Claude",
+					"lede": "Generate a long-lived token from your terminal and paste it here. We store it on this machine only.",
+					"run": "Run this in a terminal",
+					"copy": "Copy",
+					"copied": "Copied",
+					"paste": "Paste the token it prints",
+					"checking": "Checking with Anthropic…",
+					"connected": "Connected · {who}",
+					"rejected": "This token was rejected. Run the command again and paste the new token.",
+					"unreachable": "Anthropic could not be reached. Check your connection and try again.",
+					"malformed": "This is not a Claude token. Paste the one the command prints, starting with sk-ant-.",
+					"unsaved": "The token works but could not be saved on this machine. Check that its configuration folder is writable, then try again."
+				},
+				"codex": {
+					"title": "Sign in with ChatGPT",
+					"lede": "We open ChatGPT in a new tab. Approve the request and come back, this window updates by itself.",
+					"start": "Continue with ChatGPT",
+					"remote": "DMS running on another machine?",
+					"waiting": "Waiting for approval in ChatGPT…",
+					"reopen": "Reopen ChatGPT",
+					"remote_lede": "After approving, your browser lands on a page that fails to load. Copy its full address and paste it here.",
+					"remote_hint": "The address starts with",
+					"connect": "Connect",
+					"unavailable": "ChatGPT sign-in is not available yet. Reopen this window in a moment."
+				},
+				"connected": {
+					"title_claude": "Claude is connected",
+					"title_codex": "Codex is connected",
+					"lede": "The assistant is ready. Next, tell us where you start from.",
+					"next": "Choose a starting point"
+				},
+				"paths": {
+					"title": "Where do you start from?",
+					"lede": "Pick one. You can always do the other later.",
+					"scratch_title": "Start from scratch",
+					"scratch_text": "Describe your product. We draft a live mockup you refine before anything is built.",
+					"database_title": "Start from an existing database",
+					"database_text": "Connect PostgreSQL, MongoDB or RethinkDB. We read the schema and propose the screens.",
+					"explore": "I’ll explore first"
+				},
+				"scratch": {
+					"title": "What are you building?",
+					"lede": "A few sentences is enough. The assistant asks what it needs, then shows you a mockup.",
+					"placeholder": "A back office for my bike rental shop: bikes, customers, rentals, and a dashboard of revenue per week…",
+					"suggestion_crm": "CRM for a small agency",
+					"suggestion_inventory": "Inventory & suppliers",
+					"suggestion_events": "Event registrations",
+					"suggestion_support": "Support tickets",
+					"start": "Start the mockup"
+				},
+				"database": {
+					"title": "Connect your database",
+					"lede": "We only read the schema and a small sample until you allow more.",
+					"url": "Connection URL",
+					"stored": "Saved in your project’s .env, never sent anywhere else.",
+					"connect": "Connect and analyse",
+					"unreadable": "This is not a {engine} connection URL.",
+					"no_database": "The URL names no database.",
+					"no_name": "The database name needs at least one letter or digit, to name the connection after it.",
+					"reachable_running": "Reaching the server…",
+					"reachable": "Server reachable",
+					"reachable_latency": "Server reachable · {ms} ms",
+					"unreachable": "Server not reachable: {error}",
+					"signed_in": "Signed in as {user}",
+					"signed_in_pending": "Signing in",
+					"read": "Read access",
+					"schema_running": "Reading the schema…",
+					"schema_done": "Schema read",
+					"schema_failed": "The schema could not be read: {error}",
+					"empty": "No table this user can read.",
+					"gave_up": "The project did not come back. Restart it, then reopen this window."
+				},
+				"analysis": {
+					"title": "Here’s what’s in",
+					"lede": "{engine} · {tables} · read only for now. Untick what you don’t need.",
+					"tables_count": "{count} table | {count} tables",
+					"tables": "Tables",
+					"screens": "Screens we propose",
+					"kind_table": "table",
+					"kind_status": "table + status",
+					"kind_tabs": "table + tabs",
+					"kind_stats": "statistics",
+					"loading": "Reading the analysis…",
+					"build": "Build directly",
+					"mockup": "Generate a first mockup"
+				}
 			}
 		}
 	}

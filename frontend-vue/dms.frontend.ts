@@ -1,8 +1,8 @@
 import { defineAsyncComponent, type Component } from "vue";
 import type { DmsFrontendModule } from "#dms/frontend-module";
-import aiPlugin from "./app/plugins/ai.client";
+import { assistantPlugin } from "./app/plugins/ai.client";
 import sidePanelPlugin from "./app/plugins/side-panel";
-import builderModule from "./builder/dms.frontend";
+import builderModule, { isBuilderEnabled } from "./builder/dms.frontend";
 
 interface VueModule {
 	default: Component;
@@ -32,7 +32,12 @@ const frontendModule: DmsFrontendModule = {
 				);
 			});
 		sdk.registerPlugin(sidePanelPlugin);
-		sdk.registerPlugin(aiPlugin, { clientOnly: true });
+		sdk.registerPlugin(
+			assistantPlugin({
+				builderEnabled: isBuilderEnabled(sdk.options.public),
+			}),
+			{ clientOnly: true },
+		);
 		return builderModule.setup(sdk);
 	},
 };

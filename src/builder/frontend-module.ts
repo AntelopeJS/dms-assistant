@@ -18,9 +18,9 @@ export function builderEnabled(
 
 /**
  * The builder's part of the module's frontend registration: whether it is on,
- * under the key the frontend's builder setup reads it from. A frontend can be
- * built once and served later, so the setup registers the editor only when the
- * registration it is served with says `true`.
+ * under the key the frontend reads it from. A frontend can be built once and
+ * served later, so the frontend trusts the registration it is served with, not
+ * its own build mode.
  */
 export function builderFrontendOptions(
   config: DmsBuilderConfig | undefined,

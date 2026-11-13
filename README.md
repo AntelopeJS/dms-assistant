@@ -126,7 +126,6 @@ pnpm frontend:dev       # dashboard, in a second terminal
 pnpm run checks         # typecheck, lint, format, knip, node tests, size, suppressions, sync
 pnpm test:specs         # the builder engine specs (mocha, minutes)
 pnpm test:frontend      # the assistant and builder Vue unit suites
-pnpm test:components    # the builder component suites
 pnpm --dir sidecar test # the sidecar suites
 ```
 
@@ -134,7 +133,7 @@ pnpm --dir sidecar test # the sidecar suites
 <summary>Repository notes</summary>
 
 - The backend lives in `src/`, the builder's part in `src/builder/`. `construct()` parses the config and constructs the builder, which installs the `@antelopejs/interface-dms-builder` implementation and, when the builder is on, mounts `/api/builder`.
-- The module registers one frontend, `frontend-vue`, through `AddFrontendModule` with the Vue renderer. Its setup runs the assistant's, then the builder's from `frontend-vue/builder/dms.frontend.ts`, which registers nothing unless the registration's `dmsBuilder.enabled` option is `true`. The chat panel, `DmsAiChatPanel`, is a docked side panel (`registerSidePanel`); its code is under `frontend-vue/app/chat`. The builder's components keep their `DmsBuilder` names. The renderer bundles the icons it finds in `.vue` files, so an icon name belongs in the component that shows it.
+- The module registers one frontend, `frontend-vue`, through `AddFrontendModule` with the Vue renderer. The registration also carries the builder's `dmsBuilder.enabled` option, `true` only when the builder is on. The chat panel, `DmsAiChatPanel`, is a docked side panel (`registerSidePanel`); its code is under `frontend-vue/app/chat`. `frontend-vue/builder` holds no components: only the client and types of the builder's database routes, which the database connect flow uses. The renderer bundles the icons it finds in `.vue` files, so an icon name belongs in the component that shows it.
 - To build and typecheck the Vue source, run `pnpm --dir frontend-vue verify-source`, or set `DMS_FRONTEND_WORKSPACE` to a generated Inertia workspace that includes this module and run `pnpm --dir frontend-vue build` and `pnpm --dir frontend-vue typecheck`.
 - `pnpm test:node` builds once, then runs every suite in `tests/` and `tests/builder/` except the sidecar build smoke test (`pnpm test:sidecar-smoke`). `DMS_PREBUILT=1` skips the build when `dist/` is fresh, as in CI. The opt-in Codex acceptance suite runs with `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
 

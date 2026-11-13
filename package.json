@@ -11,8 +11,7 @@
     "codegen",
     "codex",
     "dms",
-    "dms-module",
-    "page-editor"
+    "dms-module"
   ],
   "homepage": "https://dms.antelopejs.com/docs/modules/assistant",
   "bugs": {

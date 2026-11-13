@@ -4,15 +4,13 @@ covers:
   - sidecar/src/server/onboarding.ts
   - sidecar/src/providers/login.ts
   - frontend-vue/app/onboarding/**
-  - frontend-vue/builder/**
 docs:
   - docs/1.introduction.md
-  - docs/8.database-connection.md
 ---
 
 # Onboarding
 
-The first-run popup connects an AI and picks a starting point. Its routes tell where each login stands, take a pasted Claude token and record the provider. Driven here: those routes, offline. The popup itself, the live token check, the ChatGPT consent and the database path are under the skill's Not driven list.
+The first-run popup connects an AI and picks a starting point. Its routes tell where each login stands, take a pasted Claude token and record the provider. Driven here: those routes, offline. The popup itself, the live token check and the ChatGPT consent are under the skill's Not driven list. The database path's routes belong to `verify-dms-builder`.
 
 ## Sub-features
 

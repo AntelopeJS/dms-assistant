@@ -19,23 +19,20 @@ covers:
   - src/routes/pages-registry.ts
   - src/pages-registry.ts
   - src/logging/**
-  - src/builder/**
   - src/sidecar/**
   - sidecar/src/server/client-auth.ts
 docs:
   - docs/5.extending.md
   - docs/3.configuration.md
-  - docs/8.database-connection.md
 ---
 
 # Access
 
-Every route of the module answers the owner. The sidecar calls its own routes with a token only it holds, and the dashboard's server forwards `/ai/**` to the backend. The external database connect routes under `/api/builder/database` answer a tenant owner only.
+Every route of the module answers the owner. The sidecar calls its own routes with a token only it holds, and the dashboard's server forwards `/ai/**` to the backend. The external database connect routes under `/api/builder/database` belong to `verify-dms-builder`.
 
 ## Sub-features
 
 - `every-owner-route-refuses-nobody-and-a-member`: 401 without a session, 403 to a member, the owner let in, nothing changed by the refusals. The sweep holds the Settings, Activity, Changes, Codex account and onboarding routes.
-- `the-database-connect-routes-answer-only-an-owner`: each `/api/builder/database` route, the ones that act included, answers 401 to nobody and 403 to a member before it does anything; the owner reads the connections and is let in to the analysis. The journey pins `backend: "dev"`: the routes are mounted by the development start only.
 - `the-sidecar-routes-answer-only-the-sidecar`: logs and the pages registry refuse anyone but the holder of the sidecar's token (an owner session, nobody, a wrong token, the browser's client credential); health needs no sign-in.
 - `the-dashboard-origin-forwards-ai-with-the-session`: the dashboard's origin forwards `/ai/**` with the session.
 
@@ -43,7 +40,7 @@ The DMS's own MCP server, `.mcp.json` and bridge belong to `@antelopejs/dms`: th
 
 ## How to get to it (user POV)
 
-- Any page of the Assistant; the routes are the ones the pages call. The connect routes are the ones the onboarding popup calls.
+- Any page of the Assistant; the routes are the ones the pages call.
 
 ## Driving it with dms-control
 
@@ -55,4 +52,3 @@ dms-control journey "$RUN" access
 
 - The sidecar's token is read from the lock file the sidecar publishes, as the backend does.
 - `GET /ai/channel/events` is a stream: the owner sweep only reads its refusals and skips it for the owner.
-- The connect routes are not mounted under `ajs project start` (the builder follows the development flag unless `builder.api.enabled` says otherwise), so a run without the dev pin answers 404 to everyone. They answer 404 for a missing analysis: the owner journey only checks that the owner is not refused.

@@ -18,19 +18,11 @@ const OWNER_ROUTES = [
 /** The routes only the sidecar calls, with its own token. */
 const SIDECAR_ROUTES = [["GET", "/logs"], ["GET", "/pages-registry"]];
 
-const CONNECT = "/api/builder/database";
-
-/** The external database connect routes the onboarding popup calls, which only a tenant owner may reach. */
-const CONNECT_ROUTES = [
-  ["GET", "/connections"], ["POST", "/connections/repair"], ["POST", "/connections/check"], ["POST", "/analyse"], ["GET", "/analysis"], ["POST", "/map"],
-  ["GET", "/mapping"], ["GET", "/project"], ["POST", "/project"], ["GET", "/connection"], ["POST", "/connection/remove"], ["POST", "/connection/url"], ["POST", "/sample"],
-];
-
-/** @param {Ctx} ctx @param {string} method @param {string} path @param {string | undefined} who @param {string} [prefix] */
-function call(ctx, method, path, who, prefix = AI) {
+/** @param {Ctx} ctx @param {string} method @param {string} path @param {string | undefined} who */
+function call(ctx, method, path, who) {
   const hasBody = method === "POST" || method === "PUT";
   return raw(ctx, `${method} ${path} as ${who ?? "nobody"}`, {
-    path: `${prefix}${path}`,
+    path: `${AI}${path}`,
     method,
     as: who,
     headers: hasBody ? { "content-type": "application/json" } : {},
@@ -64,30 +56,6 @@ export const journeys = guarded([
         same("a member gets 403 on every route", refused.filter(([, status]) => status !== 403), []),
         same("the owner is let in", allowed.filter(([, ok]) => !ok), []),
         same("nothing changed", after, before),
-      ]);
-    },
-  },
-  {
-    id: "the-database-connect-routes-answer-only-an-owner",
-    title: "each external database connect route answers 401 without a session and 403 to a member whose role holds no permission, without acting, and the owner is let in to the routes that only read",
-    entryPoint: "every route of /api/builder/database as nobody, as a member and as the owner",
-    backend: "dev",
-    async run(/** @type {Ctx} */ ctx) {
-      await freshSidecar(ctx);
-      await member(ctx, "plain", []);
-      const anonymous = [];
-      const refused = [];
-      for (const [method, path] of CONNECT_ROUTES) {
-        anonymous.push([`${method} ${path}`, (await call(ctx, method, path, undefined, CONNECT)).status]);
-        refused.push([`${method} ${path}`, (await call(ctx, method, path, "plain", CONNECT)).status]);
-      }
-      const connections = await call(ctx, "GET", "/connections", "admin", CONNECT);
-      const analysis = await call(ctx, "GET", "/analysis", "admin", CONNECT);
-      await ctx.verify("the refusals", [
-        same("nobody gets 401 on every route", anonymous.filter(([, status]) => status !== 401), []),
-        same("a member gets 403 on every route", refused.filter(([, status]) => status !== 403), []),
-        same("the owner reads the connections, none yet", [connections.status, connections.json], [200, []]),
-        check("the owner is let in to the analysis, which is not there yet", analysis.status !== 401 && analysis.status !== 403, analysis.status),
       ]);
     },
   },

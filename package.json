@@ -105,7 +105,7 @@
     "@antelopejs/dms": "file:.tgz-deps/antelopejs-dms-41d2eb4.tgz",
     "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-data-api": ">=0.6.1 <1.0.0",
-    "@antelopejs/interface-database-decorators": ">=0.2.0 <1.0.0",
+    "@antelopejs/interface-database-decorators": ">=0.3.2 <1.0.0",
     "@antelopejs/tooling-configs": "^0.5.1",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
@@ -165,7 +165,8 @@
       "@antelopejs/dms>@antelopejs/interface-data-api": "0.6.1",
       "@antelopejs/dms>@antelopejs/interface-database": "0.3.1",
       "@antelopejs/dms>@antelopejs/interface-dms": "0.13.0",
-      "@antelopejs/agent-skills": "file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz"
+      "@antelopejs/agent-skills": "file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz",
+      "@antelopejs/dms>@antelopejs/interface-database-decorators": "0.3.2"
     }
   },
   "antelopeJs": {

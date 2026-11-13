@@ -11,7 +11,7 @@
     "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
     "@antelopejs/interface-data-api": ">=0.6.1 <1.0.0",
     "@antelopejs/interface-database": ">=0.3.1 <1.0.0",
-    "@antelopejs/interface-database-decorators": ">=0.2.1 <1.0.0",
+    "@antelopejs/interface-database-decorators": ">=0.3.2 <1.0.0",
     "@antelopejs/interface-dms": ">=0.12.0 <1.0.0",
     "zod": "^4.0.0"
   },
@@ -39,7 +39,9 @@
       "@antelopejs/dms>@antelopejs/interface-core": "0.4.0",
       "@antelopejs/dms>@antelopejs/interface-data-api": "0.6.1",
       "@antelopejs/dms>@antelopejs/interface-database": "0.3.1",
-      "@antelopejs/dms>@antelopejs/interface-dms": "0.13.0"
+      "@antelopejs/dms>@antelopejs/interface-dms": "0.13.0",
+      "@antelopejs/interface-dms-builder": "file:../../../../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz",
+      "@antelopejs/dms>@antelopejs/interface-database-decorators": "0.3.2"
     }
   }
 }

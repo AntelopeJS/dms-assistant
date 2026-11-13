@@ -43,3 +43,11 @@
 @antelopejs/dms>@antelopejs/interface-dms	package.json	pnpm.overrides	
 @antelopejs/agent-skills	package.json	dependencies	^0.1.0
 @antelopejs/agent-skills	package.json	pnpm.overrides	
+@antelopejs/interface-dms-builder	.agents/skills/verify-dms-ai/playground/package.json	pnpm.overrides	
+@antelopejs/interface-dms-builder	.agents/skills/verify-dms-builder/playground/package.json	pnpm.overrides	
+@antelopejs/interface-dms-builder	frontend-vue/package.json	pnpm.overrides	
+@antelopejs/interface-dms-builder	playground/package.json	pnpm.overrides	
+@antelopejs/dms>@antelopejs/interface-database-decorators	package.json	pnpm.overrides	
+@antelopejs/dms>@antelopejs/interface-database-decorators	playground/package.json	pnpm.overrides	
+@antelopejs/dms>@antelopejs/interface-database-decorators	.agents/skills/verify-dms-ai/playground/package.json	pnpm.overrides	
+@antelopejs/dms>@antelopejs/interface-database-decorators	.agents/skills/verify-dms-builder/playground/package.json	pnpm.overrides	

@@ -9,7 +9,7 @@
     "frontend:dev": "ajs dms dev"
   },
   "dependencies": {
-    "@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-a652040.tgz",
+    "@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-c07a88d.tgz",
     "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
@@ -28,7 +28,7 @@
   "packageManager": "pnpm@10.2.0",
   "pnpm": {
     "overrides": {
-      "@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-a652040.tgz",
+      "@antelopejs/dms": "file:../.tgz-deps/antelopejs-dms-c07a88d.tgz",
       "@antelopejs/dms>@antelopejs/interface-api": "0.3.0",
       "@antelopejs/dms>@antelopejs/interface-api-util": "0.3.0",
       "@antelopejs/dms>@antelopejs/interface-core": "0.4.0",

@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@antelopejs/dms': file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz
+  '@antelopejs/dms': file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz
   '@antelopejs/dms>@antelopejs/interface-api': 0.3.0
   '@antelopejs/dms>@antelopejs/interface-api-util': 0.3.0
   '@antelopejs/dms>@antelopejs/interface-core': 0.4.0
@@ -20,8 +20,8 @@ importers:
   .:
     dependencies:
       '@antelopejs/dms':
-        specifier: file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz
-        version: file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz(@antelopejs/core@1.21.1)(bare-buffer@3.7.1)
+        specifier: file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz
+        version: file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz(@antelopejs/core@1.21.1)(bare-buffer@3.7.1)
       '@antelopejs/interface-api':
         specifier: '>=0.3.0 <1.0.0'
         version: 0.3.0(@antelopejs/interface-core@0.4.0)
@@ -89,8 +89,8 @@ packages:
     peerDependencies:
       '@antelopejs/core': '>=1.16.0 <2'
 
-  '@antelopejs/dms@file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz':
-    resolution: {integrity: sha512-3ZOm3fMNVOe3J3jqKqsx52NmRvaoRVaCYhcFuuE9Xw7WK3jszLGI8MxhogjhwC3EGX/A/Pzz4SO67HfEe+j71g==, tarball: file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz}
+  '@antelopejs/dms@file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz':
+    resolution: {integrity: sha512-uQEoINWfeFXBOrPAhYVqlusUSK84Xd+JWjDhlu/Gj76uqtiMupXwAubJ8zJ4xfxGfnmjxDqfFPDG33zAScJ+mg==, tarball: file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz}
     version: 0.19.6
     hasBin: true
     peerDependencies:
@@ -1464,7 +1464,7 @@ snapshots:
       '@oxc-parser/binding-linux-x64-gnu': 0.95.0
       '@oxc-parser/binding-win32-x64-msvc': 0.95.0
 
-  '@antelopejs/dms@file:../../../../.tgz-deps/antelopejs-dms-a652040.tgz(@antelopejs/core@1.21.1)(bare-buffer@3.7.1)':
+  '@antelopejs/dms@file:../../../../.tgz-deps/antelopejs-dms-c07a88d.tgz(@antelopejs/core@1.21.1)(bare-buffer@3.7.1)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.0(@antelopejs/interface-core@0.4.0)

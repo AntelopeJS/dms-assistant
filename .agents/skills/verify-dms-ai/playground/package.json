@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "packageManager": "pnpm@10.2.0",
   "dependencies": {
-    "@antelopejs/dms": ">=0.19.1 <1.0.0",
+    "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
     "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
@@ -29,6 +29,17 @@
       "@/*": [
         "*"
       ]
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "@antelopejs/dms": "file:../../../../.tgz-deps/antelopejs-dms-41d2eb4.tgz",
+      "@antelopejs/dms>@antelopejs/interface-api": "0.3.0",
+      "@antelopejs/dms>@antelopejs/interface-api-util": "0.3.0",
+      "@antelopejs/dms>@antelopejs/interface-core": "0.4.0",
+      "@antelopejs/dms>@antelopejs/interface-data-api": "0.6.1",
+      "@antelopejs/dms>@antelopejs/interface-database": "0.3.1",
+      "@antelopejs/dms>@antelopejs/interface-dms": "0.13.0"
     }
   }
 }

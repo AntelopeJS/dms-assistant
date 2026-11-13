@@ -16,7 +16,7 @@ const API_PREFERRED_PORT = "5010";
 const apiLocalBaseUrl = "${@api.API_LOCAL_BASE_URL}";
 
 export default defineConfig({
-  name: "dms-ai-playground",
+  name: "dms-assistant-playground",
   logging: {
     channelFilter: {
       "*": "trace",
@@ -43,12 +43,12 @@ export default defineConfig({
           jwtSecret: "dev",
         },
         meta: {
-          title: "dms-ai",
-          description: "dms-ai playground",
+          title: "dms-assistant",
+          description: "dms-assistant playground",
         },
       },
     },
-    "dms-ai": {
+    "dms-assistant": {
       source: {
         type: "local",
         path: "../",
@@ -67,7 +67,7 @@ export default defineConfig({
       },
       config: {
         url: process.env.MONGO_URL ?? "mongodb://localhost:27017",
-        database: "dms-ai-playground",
+        database: "dms-assistant-playground",
       },
       importOverrides: [],
       disabledExports: [],

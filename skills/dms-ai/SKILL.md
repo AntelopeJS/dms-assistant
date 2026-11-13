@@ -1,6 +1,6 @@
 ---
 name: dms-ai
-description: Sets up and troubleshoots @antelopejs/dms-ai, the AI development assistant of the AntelopeJS DMS (chat panel, sidecar running Claude Code or Codex, change sets with undo, audit log and skills pages under /modules/ai). Use when installing or configuring dms-ai (backendUrl, DMS_AI, providers, Codex), when the assistant is offline, or when a module must ship skills to it through antelopeJs.skills.
+description: Sets up and troubleshoots @antelopejs/dms-assistant, the AI development assistant of the AntelopeJS DMS (chat panel, sidecar running Claude Code or Codex, change sets with undo, audit log and skills pages under /modules/ai). Use when installing or configuring dms-ai (backendUrl, DMS_AI, providers, Codex), when the assistant is offline, or when a module must ship skills to it through antelopeJs.skills.
 icon: i-lucide-sparkles
 category: ai
 tags: [ai, assistant, sidecar, claude-code, codex, skills]
@@ -8,13 +8,13 @@ tags: [ai, assistant, sidecar, claude-code, codex, skills]
 
 # dms-ai
 
-An owner-only development assistant. The backend starts a sidecar (child process, `127.0.0.1` only) that runs the agent in the project folder; the browser reaches it only through the DMS frontend server. User docs: https://dms.antelopejs.com/docs/modules/ai (source: `docs/` of this package).
+An owner-only development assistant. The backend starts a sidecar (child process, `127.0.0.1` only) that runs the agent in the project folder; the browser reaches it only through the DMS frontend server. User docs: https://dms.antelopejs.com/docs/modules/assistant (source: `docs/` of this package).
 
 ## Setup
 
-- `ajs project modules add @antelopejs/dms-ai`; config `backendUrl: "${@api.API_LOCAL_BASE_URL}"`.
+- `ajs project modules add @antelopejs/dms-assistant`; config `backendUrl: "${@api.API_LOCAL_BASE_URL}"`, builder keys under `builder`.
 - The frontend server proxies `/ai/**` to the backend with the session (`backendProxies`). See the package README for requirements.
-- Load `@antelopejs/dms-builder` too: chats then default to Safe mode (Builder tools only, typechecked writes). Code mode allows file edits and commands under the approval mode.
+- The builder ships in the same module, so chats default to Safe mode (Builder tools only, typechecked writes). Code mode allows file edits and commands under the approval mode.
 - Claude Code is the default provider. Codex needs `@openai/codex` at the exact version in `peerDependencies` and a ChatGPT sign-in (Assistant › Settings; on a remote DMS the 127.0.0.1 return page fails to load and its address is pasted with **Paste the return address**; stored per user in `~/.config/dms-ai/chatgpt-auth.json`, `OPENAI_API_KEY` is ignored); a provider that cannot run fails the turn, never falls back.
 
 ## Skills

@@ -1,0 +1,75 @@
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { defineConfig, transformWithEsbuild, type Plugin } from 'vite'
+import { backendBoundary } from '../../build/backend-boundary.ts'
+
+/**
+ * A second vitest project, for the tests that mount the builder's components.
+ *
+ * The package declares no SFC plugin, so one is assembled here from
+ * `@vue/compiler-sfc`, which vue already brings. It only has to handle these
+ * components: `<script setup lang="ts">` plus a template. A `<style>` block is
+ * simply left where it is — nothing here has a layout for it to describe, and
+ * the one component carrying one says in CSS what it would otherwise have
+ * needed a transition, and a real DOM, to say.
+ *
+ * Run with `pnpm test:components`. The suite matches `*.spec.ts`, so the
+ * package's own `vitest.config.ts` — which matches `*.test.ts` — is untouched
+ * and `pnpm test` keeps working as before.
+ */
+function singleFileComponents(): Plugin {
+	return {
+		name: 'tests:sfc',
+		async transform(code, id) {
+			const file = id.split('?')[0] ?? id
+			if (!file.endsWith('.vue')) {
+				return null
+			}
+			const { parse, compileScript } = await import('@vue/compiler-sfc')
+			const { descriptor } = parse(code, { filename: file })
+			const compiled = compileScript(descriptor, {
+				fs: {
+					fileExists: existsSync,
+					readFile: (target: string) => readFileSync(target, 'utf8'),
+					realpath: realpathSync,
+				},
+				id: createHash('sha256').update(file).digest('hex').slice(0, 8),
+				inlineTemplate: true,
+				// Static hoisting emits vnodes the renderer would have to clone
+				// out of markup; there is no markup here.
+				templateOptions: { compilerOptions: { hoistStatic: false } },
+			})
+			const js = await transformWithEsbuild(compiled.content, `${file}.ts`, {
+				loader: 'ts',
+			})
+			return { code: js.code, map: js.map }
+		},
+	}
+}
+
+export default defineConfig({
+	root: fileURLToPath(new URL('..', import.meta.url)),
+	plugins: [backendBoundary(), singleFileComponents()],
+	resolve: {
+		alias: {
+			'#dms/frontend-module': fileURLToPath(
+				new URL('./stubs/frontend-module.ts', import.meta.url),
+			),
+			// The DMS core layer's own sources, which a module imports by this alias.
+			'#dms-core': fileURLToPath(
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-core', import.meta.url),
+			),
+			'#dms-ui': fileURLToPath(
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui', import.meta.url),
+			),
+			'#dms-onboarding': fileURLToPath(
+				new URL('../../node_modules/@antelopejs/dms/frontend-vue/layers/dms-onboarding', import.meta.url),
+			),
+		},
+	},
+	test: {
+		environment: 'node',
+		include: ['tests/**/*.spec.ts'],
+	},
+})

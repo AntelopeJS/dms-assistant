@@ -34,9 +34,9 @@ export default defineConfig({
     playground: {
       source: { type: "local", path: "." },
     },
-    "dms-builder": {
-      source: { type: "local", path: "../../../../packages/dms-builder" },
-      config: { projectRoot: projectRoot(), api: builderApi() },
+    "dms-assistant": {
+      source: { type: "local", path: "../../../.." },
+      config: { builder: { projectRoot: projectRoot(), api: builderApi() } },
     },
     dms: {
       source: {

@@ -7,7 +7,7 @@
     "maxNodeModuleJsDepth": 5,
     "types": ["node"],
     "lib": ["esnext", "dom", "dom.iterable"],
-    "typeRoots": ["../../../packages/dms-builder/node_modules/@types"],
+    "typeRoots": ["../../../node_modules/@types"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
@@ -16,8 +16,8 @@
     "incremental": false,
     "experimentalDecorators": true,
     "paths": {
-      "@antelopejs/interface-dms/*": ["../../../packages/dms-builder/node_modules/@antelopejs/interface-dms/dist/*"],
-      "*": ["../../../packages/dms-builder/node_modules/*"]
+      "@antelopejs/interface-dms/*": ["../../../node_modules/@antelopejs/interface-dms/dist/*"],
+      "*": ["../../../node_modules/*"]
     }
   },
   "include": ["**/*.mjs", "**/*.ts"],

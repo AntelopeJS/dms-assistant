@@ -4,7 +4,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@antelopejs/dms-ai/*": ["../src/*"],
+      "@antelopejs/dms-assistant/*": ["../src/*"],
       "vue": ["../frontend-vue/node_modules/vue"]
     }
   },

@@ -5,7 +5,6 @@ import {
   Parameter,
 } from "@antelopejs/interface-api";
 import * as Builder from "@antelopejs/interface-dms-builder";
-import { isBuilderAvailable } from "../builder/presence";
 import { ROUTE_PREFIX } from "../constants/module";
 import { SIDECAR_AUTH_HEADER } from "../constants/sidecar";
 import { listPagesRegistry } from "../pages-registry";
@@ -13,15 +12,14 @@ import type { PagesRegistryEntry } from "../types/pages-registry";
 import { isSidecarRequest, sidecarForbidden } from "./sidecar-auth";
 
 /**
- * The runtime registry has no file path (it knows route/id/module only). When
- * the Builder is present, enrich each entry with the real source file it
+ * The runtime registry has no file path (it knows route/id/module only). The
+ * Builder enriches each entry with the real source file it
  * resolves from its own scan, keyed by route — so page-file tools work for every
  * page.
  */
 async function withBuilderFilepaths(
   entries: PagesRegistryEntry[],
 ): Promise<PagesRegistryEntry[]> {
-  if (!(await isBuilderAvailable())) return entries;
   try {
     const pages = await Builder.ListPages();
     const byRoute = new Map(pages.map((page) => [page.ref, page.filepath]));

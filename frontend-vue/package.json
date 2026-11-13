@@ -1,5 +1,5 @@
 {
-	"name": "@antelopejs/dms-ai-frontend-vue",
+	"name": "@antelopejs/dms-assistant-frontend-vue",
 	"version": "0.0.1",
 	"private": true,
 	"type": "module",
@@ -12,12 +12,15 @@
 		"build": "pnpm --dir \"${DMS_FRONTEND_WORKSPACE:?Set DMS_FRONTEND_WORKSPACE to the generated Inertia workspace}\" build",
 		"typecheck": "pnpm --dir \"${DMS_FRONTEND_WORKSPACE:?Set DMS_FRONTEND_WORKSPACE to the generated Inertia workspace}\" typecheck",
 		"typecheck:chat": "vue-tsc --noEmit -p tsconfig.chat.json",
+		"verify-source": "ajs dms verify-source --layer \"$PWD/node_modules/@antelopejs/dms/frontend-vue\" --module \"$PWD\"",
 		"format": "prettier --write .",
 		"lint": "eslint . && prettier --check .",
 		"lint:fix": "eslint . --fix && prettier --write .",
-		"test": "vitest run --passWithNoTests"
+		"test": "vitest run --passWithNoTests && vitest run --config builder/vitest.config.ts",
+		"test:components": "vitest run --config builder/tests/components.config.ts"
 	},
 	"dependencies": {
+		"@antelopejs/interface-dms": ">=0.12.0 <1.0.0",
 		"@inertiajs/vue3": "^3.7.0",
 		"@types/markdown-it": "^14.1.2",
 		"dompurify": "^3.2.4",
@@ -25,9 +28,18 @@
 		"vue": "^3.5.18"
 	},
 	"devDependencies": {
+		"@antelopejs/core": "1.21.0",
+		"@antelopejs/dms": ">=0.19.1 <1.0.0",
+		"@antelopejs/dms-frontend": ">=0.10.0 <1.0.0",
+		"@antelopejs/interface-api": ">=0.3.0 <1.0.0",
+		"@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
+		"@antelopejs/interface-data-api": ">=0.6.1 <1.0.0",
+		"@antelopejs/interface-database": ">=0.3.1 <1.0.0",
+		"@antelopejs/interface-database-decorators": ">=0.2.1 <1.0.0",
 		"@eslint/js": "^9.0.0",
 		"@vitejs/plugin-vue": "^6.0.0",
 		"@vitest/runner": "^4.1.5",
+		"@vue/compiler-sfc": "^3.5.18",
 		"@vue/test-utils": "^2.4.6",
 		"eslint": "^9.0.0",
 		"eslint-plugin-vue": "^10.0.0",
@@ -38,7 +50,7 @@
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.0.0",
 		"vite": "^7.3.2",
-		"vitest": "^4.1.5",
+		"vitest": "^4.1.8",
 		"vue-tsc": "^3.1.1"
 	}
 }

@@ -1,14 +1,16 @@
-# dms-ai
+# dms-assistant
 
-An AntelopeJS DMS development assistant: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex. It is published as `@antelopejs/dms-ai`.
+An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the visual page editor, whose every edit is an AST rewrite of the project sources, and the external database connect flow). The module implements `@antelopejs/interface-dms-builder`, a published dependency. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
 
 ## Layout
 
 | Path           | What it is                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------- |
-| `src`          | The DMS module (CommonJS, built to `dist`)                                                              |
+| `src`          | The DMS module (CommonJS, built to `dist`); `construct`, `start` and `destroy` in `src/index.ts` run both parts |
+| `src/builder`  | The builder: its engine, the `interface-dms-builder` implementation, its `/api/builder` routes and, in `src/builder/test`, its mocha specs |
 | `sidecar`      | The local agent process, an ESM workspace package with its own lockfile and tsconfig; ships as `sidecar/dist` |
-| `frontend-vue` | The dashboard layer. ESLint and Prettier own it, not oxlint and oxfmt                                   |
+| `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
+| `frontend-vue/builder` | The builder frontend, set up from `frontend-vue/dms.frontend.ts` and gated by the `dmsBuilder.enabled` option, with its own vitest configs |
 | `playground`   | A DMS project that loads the module; its own lockfile, outside the pnpm workspace                       |
 | `skills`       | Agent skills shipped in the npm package through `antelopeJs.skills`                                     |
 
@@ -22,18 +24,19 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 ## Tests
 
-`pnpm test`, and so `pnpm run checks`, runs `pnpm test:node`: it builds `dist` once and runs every `tests/*.test.cjs` suite except `sidecar-build.test.cjs` against it. Run the tests on the Node version in `.nvmrc`: under Node 26, 51 frontend-vue tests fail.
+`pnpm test`, and so `pnpm run checks`, runs `pnpm test:node`: it builds `dist` once and runs every `tests/*.test.cjs` suite except `sidecar-build.test.cjs`, and every `tests/builder/*.test.cjs` suite, against it. Run the tests on the Node version in `.nvmrc`: under Node 26, 51 frontend-vue tests fail.
 
 `checks` does not run:
 
-- The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test` and `pnpm --dir frontend-vue test`.
+- The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test`, `pnpm --dir frontend-vue test` (the assistant and builder unit suites) and `pnpm --dir frontend-vue test:components` (the builder component suites).
+- The builder engine specs, which take minutes and run in four CI shards: `pnpm test:specs`.
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
-- The full frontend-vue typecheck, which needs a generated DMS frontend workspace: `DMS_FRONTEND_WORKSPACE=<path> pnpm --dir frontend-vue typecheck`. `checks` typechecks only the chat (`typecheck:chat`).
+- The full frontend-vue typecheck: `pnpm --dir frontend-vue verify-source` builds the DMS core layer with this one and runs vue-tsc. `checks` typechecks only the chat (`typecheck:chat`).
 
 ## CI
 
-Branch protection requires the `ubuntu` check. In `.github/workflows/ci.yml` it is the job that fails when `checks` (the shared `ci-node.yml`) or the `vitest` matrix fails, so keep its name.
+Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify` or `engine-specs` fails, so keep both names.
 
 ## Releases
 

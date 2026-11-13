@@ -1,5 +1,7 @@
 # Changelog
 
+`@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
+
 ## v0.10.1
 
 [compare changes](https://github.com/AntelopeJS/dms-ai/compare/v0.10.0...v0.10.1)

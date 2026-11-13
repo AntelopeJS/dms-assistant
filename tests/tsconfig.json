@@ -8,5 +8,5 @@
     "rootDir": "..",
     "rootDirs": ["../dist", "../src"]
   },
-  "include": ["./**/*.cjs"]
+  "include": ["./**/*.cjs", "./**/*.js"]
 }

@@ -370,7 +370,7 @@ const PREVIEW_UNSUPPORTED = {
   error: {
     code: "preview_unsupported",
     detail:
-      "this Builder version cannot preview page removals; update @antelopejs/dms-builder",
+      "this Builder version cannot preview page removals; update @antelopejs/dms-assistant",
   },
 } satisfies JsonValue;
 

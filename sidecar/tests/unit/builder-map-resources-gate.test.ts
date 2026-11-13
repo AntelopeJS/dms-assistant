@@ -125,7 +125,7 @@ describe("builder_map_resources asks before it removes a page", () => {
     const result = await mapResources(old, gate)();
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result.content)).toContain(
-      "this Builder version cannot preview page removals; update @antelopejs/dms-builder",
+      "this Builder version cannot preview page removals; update @antelopejs/dms-assistant",
     );
     expect(gate).not.toHaveBeenCalled();
     expect(calls.map((call) => call.op)).toEqual(["PreviewMapResources"]);

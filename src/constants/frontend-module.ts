@@ -1,7 +1,7 @@
 import type { FrontendBackendProxy } from "@antelopejs/interface-dms/page";
 import { ROUTE_PREFIX } from "./module";
 
-export const FRONTEND_MODULE_NAME = "@antelopejs/dms-ai-frontend-vue";
+export const FRONTEND_MODULE_NAME = "@antelopejs/dms-assistant-frontend-vue";
 export const FRONTEND_MODULE_DIR = "../frontend-vue";
 export const FRONTEND_MODULE_PRIORITY = 100;
 

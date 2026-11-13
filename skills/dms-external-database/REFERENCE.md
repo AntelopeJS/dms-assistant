@@ -15,9 +15,7 @@ integrator gave you:
       "importOverrides": [{ "interface": "@antelopejs/interface-database", "source": "postgres-erp" }] } },
   { "op": "ConfigureModule", "id": "mongodb", "entry": {
       "exportPriority": { "@antelopejs/interface-database": 1 } } },
-  { "op": "ConfigureModule", "id": "dms-builder", "entry": {
-      "importOverrides": [{ "interface": "@antelopejs/interface-database-catalog", "source": "postgres-erp", "id": "erp" }] } },
-  { "op": "ConfigureModule", "id": "dms-ai", "entry": {
+  { "op": "ConfigureModule", "id": "dms-assistant", "entry": {
       "importOverrides": [{ "interface": "@antelopejs/interface-database-catalog", "source": "postgres-erp", "id": "erp" }] } }
 ] }
 ```
@@ -28,7 +26,7 @@ integrator gave you:
   `connection` records that it holds the tables of `erp`.
 - **Step 3** keeps the DMS and its modules on the project's own database. Leave it out if the
   project already pins them.
-- **Steps 4 and 5** give the Builder and you the connection `erp`, the same id for both.
+- **Step 4** gives the Builder and you the connection `erp`: both run in `dms-assistant`.
 
 For MongoDB and RethinkDB, step 1 changes, and the other steps name its id in place of
 `postgres-erp`. The `disabledExports` entry keeps the external instance from ever serving the raw

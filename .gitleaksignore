@@ -1,0 +1,5 @@
+99fee99d52f7570cb47e7b7eca1f3f7a7071154b:sidecar/tests/unit/claude-auto-fallback.test.ts:generic-api-key:22
+b305eafe019bf2c86b62812fcbcc0cd126566e45:sidecar/tests/integration/codex-process-env.test.ts:generic-api-key:23
+e1730c3e6a8d238868ffed0507d4f56af94f39ed:sidecar/tests/integration/codex-process.test.ts:generic-api-key:26
+e1d90ebdbb832b30ae90853dc85e5c3fc1d33999:sidecar/tests/integration/codex-process-group.test.ts:generic-api-key:80
+eadf3ac2fc3966631294ca2b642faf22af02319c:sidecar/tests/integration/codex-permission-profiles.test.ts:generic-api-key:55

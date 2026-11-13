@@ -122,7 +122,6 @@ function loadRoutes() {
         },
       },
     ],
-    ["../builder/presence", { isBuilderAvailable: async () => true }],
     ["../lifecycle/spawn-sidecar", { getSidecarToken: () => SIDECAR_TOKEN }],
   ]);
   installRequireMocks(mocks);

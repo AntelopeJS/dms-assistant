@@ -535,7 +535,7 @@
 			"generation_mode": {
 				"label": "Scope",
 				"description": "What the assistant may change in the project.",
-				"builder_missing": "Needs the dms-builder module, which isn't loaded.",
+				"builder_missing": "Needs the builder, which isn't running.",
 				"safe": {
 					"label": "Safe mode · recommended",
 					"description": "Changes pages, tables and queries through the Builder only. Every change typechecks before it's written; raw file edits and commands are blocked."

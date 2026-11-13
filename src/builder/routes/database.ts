@@ -1,0 +1,245 @@
+import {
+  Controller,
+  Get,
+  HTTPResult,
+  JSONBody,
+  Parameter,
+  Post,
+} from "@antelopejs/interface-api";
+import type { SampleRequest } from "@antelopejs/interface-database-catalog";
+import { AuthTenantOwner } from "@antelopejs/interface-dms/guards";
+import type { User } from "@antelopejs/interface-dms/auth/db";
+import type {
+  AnalyseDatabaseInput,
+  MapResourcesInput,
+  ProjectConfigOpts,
+  ProjectConfigStep,
+} from "@antelopejs/interface-dms-builder";
+import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
+import * as engine from "../implementations/dms-builder";
+import {
+  catalogOf,
+  listCatalogConnections,
+} from "../implementations/dms-builder/engine/catalog-connection";
+import {
+  type DatabasePin,
+  dmsDatabasePin,
+} from "../implementations/dms-builder/engine/database-pin";
+import { configuredModuleIds } from "../implementations/dms-builder/engine/modules";
+import { ownModuleId } from "../implementations/dms-builder/engine/own-connections";
+import {
+  connectionDetails,
+  connectionWiring,
+  isConnectionRefusal,
+  setConnectionUrl,
+} from "../implementations/dms-builder/engine/database-connection";
+import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
+import { latestAnalysis } from "../implementations/dms-builder/engine/analysis-job";
+import {
+  configureProjectWithVariables,
+  type ProjectVariable,
+} from "../implementations/dms-builder/engine/project-env";
+
+const HTTP_NOT_FOUND = 404;
+const HTTP_REFUSED = 422;
+
+interface RemoveConnectionBody {
+  connection: string;
+  dryRun?: boolean;
+}
+
+interface ConnectionUrlBody {
+  connection: string;
+  /** The new URL; with no password, the current one is kept. */
+  url: string;
+}
+
+interface SampleBody extends SampleRequest {
+  connection: string;
+}
+
+interface ProjectBody {
+  steps: ProjectConfigStep[];
+  opts?: ProjectConfigOpts;
+  /** Variables' development values, written into `.env` before the configuration. */
+  variables?: ProjectVariable[];
+}
+
+/** The modules the project's configuration lists, by id, and the pin connecting a database needs. */
+interface ProjectModules {
+  modules: string[];
+  /** This module's id in `antelope.config.ts`, where a catalog connection is declared. */
+  self: string;
+  databasePin?: DatabasePin;
+}
+
+/** One of the builder's catalog connections, with what its provider answers about it. */
+interface ConnectionEntry {
+  id: string;
+  engine?: string;
+  version?: string;
+  database?: string;
+  role?: string;
+  error?: string;
+}
+
+async function connectionEntry(id: string): Promise<ConnectionEntry> {
+  try {
+    const info = await catalogOf(id)!.Info();
+    return { id, ...info };
+  } catch (error) {
+    return {
+      id,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function refused(message: string): HTTPResult {
+  return new HTTPResult(HTTP_REFUSED, { code: "refused", message });
+}
+
+/**
+ * The routes of the builder's *Database* workspace: its catalog connections, the analysis, the
+ * mapping, the project wiring, and the sample of rows. Rows answer the project's owner here and
+ * nowhere else: no interface function of the builder passes them on.
+ */
+export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
+  @Get(ROUTES.databaseConnections)
+  async connections(@AuthTenantOwner() _user: User) {
+    const entries: ConnectionEntry[] = [];
+    for (const id of listCatalogConnections()) {
+      entries.push(await connectionEntry(id));
+    }
+    return entries;
+  }
+
+  @Post(ROUTES.databaseAnalyse)
+  async analyse(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: AnalyseDatabaseInput,
+  ) {
+    return engine.AnalyseDatabase(body);
+  }
+
+  /** One analysis by `id`, or the latest of a `connection`: the running one, or else the last to finish. */
+  @Get(ROUTES.databaseAnalysis)
+  async analysis(
+    @AuthTenantOwner() _user: User,
+    @Parameter("id", "query") id: string | undefined,
+    @Parameter("connection", "query") connection: string | undefined,
+  ) {
+    if (id) {
+      return engine.GetAnalysis(id);
+    }
+    const latest = latestAnalysis(connection ?? "");
+    if (!latest.ok) {
+      return new HTTPResult(HTTP_NOT_FOUND, latest.error);
+    }
+    return latest;
+  }
+
+  @Post(ROUTES.databaseMap)
+  async map(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: MapResourcesInput,
+  ) {
+    return engine.MapResources(body);
+  }
+
+  @Get(ROUTES.databaseMapping)
+  async mapping(
+    @AuthTenantOwner() _user: User,
+    @Parameter("connection", "query") connection: string,
+    @Parameter("module", "query") module: string,
+  ) {
+    return engine.GetMapping(connection, module);
+  }
+
+  @Get(ROUTES.databaseProject)
+  async projectModules(
+    @AuthTenantOwner() _user: User,
+  ): Promise<ProjectModules | HTTPResult> {
+    try {
+      return {
+        modules: configuredModuleIds(),
+        self: ownModuleId(),
+        databasePin: dmsDatabasePin(),
+      };
+    } catch (error) {
+      if (isConnectionRefusal(error)) {
+        return refused(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Post(ROUTES.databaseProject)
+  async project(@AuthTenantOwner() _user: User, @JSONBody() body: ProjectBody) {
+    if (!body.variables?.length || body.opts?.dryRun) {
+      return engine.ConfigureProject(body.steps, body.opts);
+    }
+    return configureProjectWithVariables(body.steps, body.variables);
+  }
+
+  @Get(ROUTES.databaseConnection)
+  async connection(
+    @AuthTenantOwner() _user: User,
+    @Parameter("connection", "query") connection: string,
+  ) {
+    try {
+      const wiring = connectionWiring(connection);
+      if (!wiring) {
+        return new HTTPResult(HTTP_NOT_FOUND, {
+          code: "not_found",
+          ref: connection,
+        });
+      }
+      const details = connectionDetails(wiring);
+      return { wiring, details: details.ok ? details.data : undefined };
+    } catch (error) {
+      if (isConnectionRefusal(error)) {
+        return refused(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Post(ROUTES.databaseConnectionRemove)
+  async removeConnection(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: RemoveConnectionBody,
+  ) {
+    return removeDatabaseConnection(body.connection, {
+      dryRun: body.dryRun,
+    });
+  }
+
+  @Post(ROUTES.databaseConnectionUrl)
+  async connectionUrl(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: ConnectionUrlBody,
+  ) {
+    return setConnectionUrl(body.connection, body.url);
+  }
+
+  @Post(ROUTES.databaseSample)
+  async sample(@AuthTenantOwner() _user: User, @JSONBody() body: SampleBody) {
+    const catalog = catalogOf(body.connection);
+    if (!catalog) {
+      return new HTTPResult(HTTP_NOT_FOUND, {
+        code: "not_found",
+        ref: body.connection,
+      });
+    }
+    try {
+      return await catalog.SampleRows({
+        relation: body.relation,
+        columns: body.columns,
+        limit: body.limit,
+      });
+    } catch (error) {
+      return refused(error instanceof Error ? error.message : String(error));
+    }
+  }
+}

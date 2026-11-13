@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  DMS_MCP_HOLD_CODE,
   DMS_MCP_HOLD_PREVIEW_PREFIX,
   DMS_MCP_HOLD_REFUSAL_SUFFIX,
   DMS_MCP_HOLD_WINDOW_MS,
@@ -38,8 +39,9 @@ interface Hold extends HeldCall {
 /**
  * The DMS MCP's calls held until someone confirms them. The DMS refuses the
  * first such call and runs an identical one repeated within its window, so
- * the chat asks the person before it lets that repeat through. Kept for the
- * whole sidecar, as the DMS keeps them for every session.
+ * the chat asks the person before it lets that repeat through. The DMS keeps
+ * each hold for the MCP session that was refused; the chat keeps them for the
+ * whole sidecar, which can only cost a question, never skip one.
  */
 export interface HeldCalls {
   /** A call is held by its `held` outcome and released once it ran, success or failure. */
@@ -113,16 +115,36 @@ function previewIn(text: string): JsonValue | undefined {
   }
 }
 
-/** The DMS's refusal of a call it holds until someone confirms it, when the tool's answer is one. */
+const HoldCodeSchema = z.object({ code: z.literal(DMS_MCP_HOLD_CODE) });
+
+/**
+ * Whether the answer ends with the DMS's hold code. The DMS sends it as the
+ * last text block, so it is the last line once the blocks are joined, as
+ * Claude hands them over.
+ */
+function endsWithHoldCode(text: string): boolean {
+  const lastLine = text.slice(text.lastIndexOf("\n") + 1);
+  try {
+    return HoldCodeSchema.safeParse(JSON.parse(lastLine)).success;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The DMS's refusal of a call it holds until someone confirms it, when the
+ * tool's answer is one: read from its hold code, or from its prose when the
+ * answer carries no code.
+ */
 export function holdRefusalOf(
   toolName: string,
   answer: Pick<RunnerToolResult, "result">,
 ): HeldCall | undefined {
   if (!isDmsTool(toolName)) return undefined;
   const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
-  const isRefusal = text.startsWith(
-    `${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
-  );
+  const isRefusal =
+    endsWithHoldCode(text) ||
+    text.startsWith(`${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`);
   return isRefusal ? { preview: previewIn(text) } : undefined;
 }
 

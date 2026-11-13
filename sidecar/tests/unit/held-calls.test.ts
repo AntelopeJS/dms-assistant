@@ -5,7 +5,10 @@ import {
   type ToolCallSubject,
 } from "../../src/agent/held-calls.js";
 import type { RunnerToolResult } from "../../src/agent/runner-events.js";
-import { coreConfirmationGate } from "../helpers/core-confirmation-gate.js";
+import {
+  coreConfirmationGate,
+  SESSION,
+} from "../helpers/core-confirmation-gate.js";
 import { playTurn } from "../helpers/turn-events.js";
 
 const DELETE = "mcp__dms__builder_delete_resource";
@@ -45,8 +48,8 @@ function endCall(
   );
 }
 
-function refusalOf(gate: Gate, args: Parameters<Gate["hold"]>[1]): Refusal {
-  const refusal = gate.hold("builder_delete_resource", args);
+function refusalOf(gate: Gate, args: Parameters<Gate["hold"]>[2]): Refusal {
+  const refusal = gate.hold(SESSION, "builder_delete_resource", args);
   if (refusal === undefined) throw new Error("the DMS ran a first call");
   return refusal;
 }
@@ -74,6 +77,43 @@ describe("held calls", () => {
     },
   );
 
+  it.each(Object.entries(AS_REPORTED_BY))(
+    "holds an answer that ends with the DMS's hold code, whatever its prose, as %s reports it (fails a detector that reads only the prose)",
+    (_provider, report) => {
+      const held = createHeldCalls(() => 0);
+      const content = [
+        { type: "text" as const, text: "Reworded: this deletion waits." },
+        {
+          type: "text" as const,
+          text: '{"code":"confirmation_required"}',
+        },
+      ];
+      endCall(held, HELD, { result: report({ content, isError: true }) });
+      expect(held.isHeld(HELD)).toBe(true);
+    },
+  );
+
+  it("holds a refusal that carries no code, by its prose, as a DMS released before the code answers (fails a detector with no prose fallback)", () => {
+    const held = createHeldCalls(() => 0);
+    const prose =
+      "builder_delete_resource was not run: no one has confirmed it yet.";
+    endCall(held, HELD, { result: [{ type: "text", text: prose }] });
+    expect(held.isHeld(HELD)).toBe(true);
+  });
+
+  it.each(['{"ok":true}', '{"code":"not_found"}', "not json"])(
+    "does not hold an answer that ends with %s (fails a detector that holds any JSON ending)",
+    (last) => {
+      const held = createHeldCalls(() => 0);
+      const content = [
+        { type: "text", text: "builder_delete_resource failed." },
+        { type: "text", text: last },
+      ];
+      endCall(held, HELD, { result: content });
+      expect(held.isHeld(HELD)).toBe(false);
+    },
+  );
+
   it("holds every call to the held tool, whatever its arguments, as the DMS drops the keys its tool does not know (fails a hold keyed on the raw arguments)", () => {
     const { held } = heldAfterRefusal();
     expect(held.isHeld({ ...HELD, args: { ...ARGS, force: true } })).toBe(true);
@@ -86,7 +126,9 @@ describe("held calls", () => {
     const other = { toolName: DELETE, args: otherArgs };
     endCall(held, other, { result: refusalOf(gate, otherArgs).content });
     held.observe(HELD, { outcome: "done" });
-    expect(gate.hold("builder_delete_resource", otherArgs)).toBeUndefined();
+    expect(
+      gate.hold(SESSION, "builder_delete_resource", otherArgs),
+    ).toBeUndefined();
     expect(held.isHeld(other)).toBe(true);
   });
 
@@ -134,6 +176,6 @@ describe("held calls", () => {
     const { gate, held } = heldAfterRefusal(() => nowMs);
     nowMs = coreConfirmationGate.REPEAT_CONFIRMATION_WINDOW_MS;
     expect(held.isHeld(HELD)).toBe(true);
-    expect(gate.hold("builder_delete_resource", ARGS)).toBeUndefined();
+    expect(gate.hold(SESSION, "builder_delete_resource", ARGS)).toBeUndefined();
   });
 });

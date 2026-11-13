@@ -20,10 +20,18 @@ const ToolResultSchema = z.object({
 
 const GateSchema = z.object({
   hold: z.function({
-    input: [z.string(), z.json()],
+    input: [z.string(), z.string(), z.json()],
     output: ToolResultSchema.optional(),
   }),
 });
+
+/** The MCP session a test's calls come from: the DMS keeps each hold for one session. */
+export const SESSION = "chat";
+
+/** A tool answer's text blocks joined by lines, as Claude hands them to the chat. */
+export function joinedText(result: z.infer<typeof ToolResultSchema>): string {
+  return result.content.map((block) => block.text).join("\n");
+}
 
 const CoreGateModuleSchema = z.object({
   REPEAT_CONFIRMATION_WINDOW_MS: z.number(),

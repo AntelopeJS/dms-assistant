@@ -9,7 +9,11 @@ import {
   type ScriptedCall,
   writeClaudeScript,
 } from "../helpers/claude-scripts.js";
-import { coreConfirmationGate } from "../helpers/core-confirmation-gate.js";
+import {
+  coreConfirmationGate,
+  joinedText,
+  SESSION,
+} from "../helpers/core-confirmation-gate.js";
 import { CLAUDE_FIXTURE } from "../helpers/provider-fixtures.js";
 import {
   answerPermission,
@@ -31,9 +35,9 @@ const TEST_TIMEOUT_MS = 30_000;
 
 function coreRefusalText(): string {
   const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
-  const text = gate.hold("builder_delete_resource", ARGS)?.content[0]?.text;
-  if (text === undefined) throw new Error("the DMS ran a first call");
-  return text;
+  const refusal = gate.hold(SESSION, "builder_delete_resource", ARGS);
+  if (refusal === undefined) throw new Error("the DMS ran a first call");
+  return joinedText(refusal);
 }
 
 const REFUSED_FIRST: ScriptedCall = {
@@ -130,11 +134,11 @@ describe("a deletion the DMS holds, in a chat turn", () => {
     async () => {
       const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
       const call = (id: string, failure?: string): ScriptedCall => {
-        const refusal = gate.hold("builder_delete_resource", ARGS)?.content[0];
+        const refusal = gate.hold(SESSION, "builder_delete_resource", ARGS);
         const answer =
           refusal === undefined
             ? { text: failure ?? RAN.text, isError: failure !== undefined }
-            : { text: refusal.text, isError: true };
+            : { text: joinedText(refusal), isError: true };
         return { id, name: DELETE, input: ARGS, answer };
       };
       const cards = await cardsOf(
@@ -205,10 +209,10 @@ describe("the card of a call the DMS held", () => {
         { path: "antelope.config.ts", kind: "modify", diff },
       ];
       const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
-      const refusal = gate.hold("builder_configure_project", {
+      const refusal = gate.hold(SESSION, "builder_configure_project", {
         steps,
         plannedChanges,
-      })?.content[0];
+      });
       if (refusal === undefined) throw new Error("the DMS ran a first call");
       const name = "mcp__dms__builder_configure_project";
       const events = await runTurn(
@@ -217,7 +221,7 @@ describe("the card of a call the DMS held", () => {
             id: "first",
             name,
             input: { steps },
-            answer: { text: refusal.text, isError: true },
+            answer: { text: joinedText(refusal), isError: true },
           },
           { id: "repeat", name, input: { steps }, answer: RAN },
         ],

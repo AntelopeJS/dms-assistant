@@ -26,9 +26,14 @@ export const MCP_TOOL_NAME_PREFIX = `mcp__${MCP_SERVER_KEY}__`;
 export const DMS_MCP_SERVER_KEY = "dms";
 export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
 /**
- * How the DMS MCP's answer to a call it holds until someone confirms it
- * continues after the tool's name. The DMS runs an identical call repeated
- * within `DMS_MCP_HOLD_WINDOW_MS`.
+ * The `code` of the JSON text block the DMS MCP ends its answer with when it
+ * holds a call until someone confirms it. The DMS runs an identical call
+ * repeated within `DMS_MCP_HOLD_WINDOW_MS` in the same session.
+ */
+export const DMS_MCP_HOLD_CODE = "confirmation_required";
+/**
+ * How the prose of that answer continues after the tool's name: read only
+ * when an answer carries no code, as a DMS released before the code sends.
  */
 export const DMS_MCP_HOLD_REFUSAL_SUFFIX =
   " was not run: no one has confirmed it yet.";

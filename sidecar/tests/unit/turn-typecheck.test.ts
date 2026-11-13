@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { RunnerEvent } from "../../src/agent/runner-events.js";
 import type { ActiveTurn } from "../../src/server/turn-registry.js";
 import { turnTypecheck } from "../../src/server/turns.js";
-import { coreConfirmationGate } from "../helpers/core-confirmation-gate.js";
+import {
+  coreConfirmationGate,
+  SESSION,
+} from "../helpers/core-confirmation-gate.js";
 import { playTurn } from "../helpers/turn-events.js";
 
 const MODULE_FILE = "/proj/modules/mymod/src/a.ts";
@@ -33,7 +36,7 @@ describe("turnTypecheck", () => {
     const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
     const args = { ref: "orders" };
     const answer = (callId: string): RunnerEvent => {
-      const refusal = gate.hold("builder_delete_resource", args);
+      const refusal = gate.hold(SESSION, "builder_delete_resource", args);
       return {
         type: "tool_result",
         callId,

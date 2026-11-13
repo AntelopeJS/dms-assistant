@@ -1,5 +1,15 @@
 import { Node, type ObjectLiteralExpression } from "ts-morph";
 
+/** Whether `node` is an object literal with no spread, whose every property the builder reads as written. */
+export function isPlainObjectLiteral(
+  node: Node | undefined,
+): node is ObjectLiteralExpression {
+  return (
+    Node.isObjectLiteralExpression(node) &&
+    !node.getProperties().some(Node.isSpreadAssignment)
+  );
+}
+
 /** Whether an object literal may hold `key` where the builder cannot read it: in a spread, or as a shorthand. */
 export function hides(owner: ObjectLiteralExpression, key: string): boolean {
   return owner

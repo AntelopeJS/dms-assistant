@@ -14,7 +14,12 @@ import {
   type SourceFile,
 } from "ts-morph";
 import { VARIABLE_NAME } from "./env-lines";
-import { hides, overridesWrittenAsLiterals } from "./literal-overrides";
+import { heldAt } from "./held-value";
+import {
+  hides,
+  isPlainObjectLiteral,
+  overridesWrittenAsLiterals,
+} from "./literal-overrides";
 import { configObject, propertyKey } from "./modules";
 import { indentationText, resolveProjectRoot } from "./project";
 import { keyText, literalText } from "./project-config-text";
@@ -252,23 +257,20 @@ export function stringOf(node: Node | undefined): string | undefined {
     : undefined;
 }
 
-/** Whether `key` of the object at `path` holds an object literal that keys can be added to: one with no spread. */
-function holdsMergeableObject(
-  draft: ConfigDraft,
-  path: string[],
-  key: string,
-): boolean {
-  const owner = objectAt(draft, path);
-  const existing = owner && propertyNamed(owner, key)?.getInitializer();
-  return (
-    Node.isObjectLiteralExpression(existing) &&
-    !existing.getProperties().some(Node.isSpreadAssignment)
+/** Refuses an object value for `key` of the object at `path`, which starts at a module's entry. */
+function refuseUnreadable(path: string[], key: string): never {
+  const [, module, ...inside] = path;
+  return refuse(
+    `${[...inside, key].join(".")} of module "${module}" is not written as a plain object literal, and writing it again would lose a part: write it as a plain object there, then try again`,
   );
 }
 
 /**
- * Sets `key` on the object at `path`. An object value is merged key by key into an object literal
- * the property already holds, so the keys it does not name stay; any other value replaces it.
+ * Sets `key` on the object at `path`, which starts at a module's entry. An object value is merged
+ * key by key into an object literal the property already holds, so the keys it does not name stay,
+ * and replaces a scalar or an array. It is refused where the property holds an object with a
+ * spread or a value that is not a literal: replacing that would lose what the builder cannot read.
+ * Any other value replaces the property.
  */
 function mergeProperty(
   draft: ConfigDraft,
@@ -276,13 +278,21 @@ function mergeProperty(
   key: string,
   value: ConfigValue,
 ): void {
-  if (isPlainObject(value) && holdsMergeableObject(draft, path, key)) {
-    for (const [nested, item] of Object.entries(value)) {
-      mergeProperty(draft, [...path, key], nested, item);
-    }
+  if (!isPlainObject(value)) {
+    setProperty(draft, path, key, value);
     return;
   }
-  setProperty(draft, path, key, value);
+  const held = heldAt(objectAt(draft, path), key);
+  if (held === "unreadable") {
+    refuseUnreadable(path, key);
+  }
+  if (held === "replace") {
+    setProperty(draft, path, key, value);
+    return;
+  }
+  for (const [nested, item] of Object.entries(value)) {
+    mergeProperty(draft, [...path, key], nested, item);
+  }
 }
 
 function mergeValues(
@@ -540,10 +550,7 @@ export function moduleEntries(
       continue;
     }
     const entry = property.getInitializer();
-    if (
-      Node.isObjectLiteralExpression(entry) &&
-      !entry.getProperties().some(Node.isSpreadAssignment)
-    ) {
+    if (isPlainObjectLiteral(entry)) {
       entries.push([propertyKey(property.getNameNode()), entry]);
     }
   }

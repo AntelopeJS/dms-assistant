@@ -6,7 +6,7 @@
 
 <a href="https://www.npmjs.com/package/@antelopejs/dms-assistant"><img alt="npm" src="https://img.shields.io/npm/v/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="./LICENSE"><img alt="License" src="https://img.shields.io/npm/l/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="https://discord.gg/g4pFt6eXqu"><img alt="Discord" src="https://img.shields.io/badge/Discord-18181B?logo=discord&style=for-the-badge&color=000000" data-illustration></a> <a href="https://dms.antelopejs.com/docs/modules/assistant"><img alt="Documentation" src="https://img.shields.io/badge/Docs-18181B?style=for-the-badge&color=000000" data-illustration></a> <a href="https://github.com/AntelopeJS/dms"><img data-illustration alt="Star AntelopeJS DMS" src="https://img.shields.io/github/stars/AntelopeJS/dms?label=Star%20AntelopeJS%20DMS&style=for-the-badge&labelColor=000000&color=000000&logo=github"></a>
 
-**A development assistant inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard, and the builder that writes its page changes as TypeScript.**
+**A development assistant inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard, with an onboarding that starts a project from scratch or from a database you already run.**
 
 [Documentation](https://dms.antelopejs.com/docs/modules/assistant) · [All modules](https://github.com/AntelopeJS/dms#modules)
 
@@ -51,7 +51,7 @@ ajs project modules remove dms-ai dms-builder
 
 ## Configuration
 
-The assistant's keys stay at the top level of the module's `config`. The builder's keys, which `@antelopejs/dms-builder` read at the top level, move under `builder`. The chat gets its builder tools from the DMS MCP server, so the `dms` module's `mcp.backendUrl` points the server's bridge at the same origin.
+The assistant's keys stay at the top level of the module's `config`. The keys of the database connect routes, which `@antelopejs/dms-builder` read at the top level, move under `builder`. The chat gets its builder tools from the DMS MCP server, so the `dms` module's `mcp.backendUrl` points the server's bridge at the same origin.
 
 ```ts fragment
 // antelope.config.ts
@@ -97,7 +97,7 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 
 <!-- antelopejs-docs-compat:end -->
 
-The module needs a DMS backend in a release that implements the `@antelopejs/interface-dms` range in the table. The dashboard needs an `@antelopejs/dms-frontend` renderer in the range that `engines["@antelopejs/dms-frontend"]` of `frontend-vue/package.json` declares. The `ajs dms` CLI refuses to build the module with a renderer outside that range. The builder's HTTP routes need an API provider, such as `@antelopejs/api`.
+The module needs a DMS backend in a release that implements the `@antelopejs/interface-dms` range in the table. The dashboard needs an `@antelopejs/dms-frontend` renderer in the range that `engines["@antelopejs/dms-frontend"]` of `frontend-vue/package.json` declares. The `ajs dms` CLI refuses to build the module with a renderer outside that range. The database connect routes need an API provider, such as `@antelopejs/api`.
 
 ## Documentation
 
@@ -107,9 +107,10 @@ The module needs a DMS backend in a release that implements the `@antelopejs/int
 - [Usage](https://dms.antelopejs.com/docs/modules/assistant/usage/chat)
 - [Extending](https://dms.antelopejs.com/docs/modules/assistant/extending)
 - [FAQ](https://dms.antelopejs.com/docs/modules/assistant/faq)
-- [Builder](https://dms.antelopejs.com/docs/modules/assistant/builder/introduction): the routes that connect an existing database
+- [Database connection](https://dms.antelopejs.com/docs/modules/assistant/database-connection): the routes that connect an existing database
+- [Builder](https://dms.antelopejs.com/docs/interfaces/builder/introduction), in the DMS docs: the operations behind the builder tools
 
-The guide's sources live in [`docs/`](./docs), the builder's in [`docs/8.builder`](./docs/8.builder). The package ships its agent skills in [`skills/`](./skills): `dms-ai` and `dms-ai-code-mode`. `antelopeJs.skills` declares them. The assistant loads them into its agent after the DMS workflow skills of `@antelopejs/agent-skills`.
+The guide's sources live in [`docs/`](./docs). The package ships its agent skills in [`skills/`](./skills): `dms-ai` and `dms-ai-code-mode`. `antelopeJs.skills` declares them. The assistant loads them into its agent after the DMS workflow skills of `@antelopejs/agent-skills`.
 
 ## Contributing
 

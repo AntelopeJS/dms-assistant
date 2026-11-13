@@ -4,6 +4,7 @@ import {
   DMS_MCP_HOLD_WINDOW_MS,
   DMS_MCP_TOOL_NAME_PREFIX,
 } from "../constants/mcp.js";
+import type { ToolOutcome } from "../constants/audit.js";
 import { type JsonValue, JsonValueSchema } from "../protocol/json.js";
 import type { RunnerToolResult } from "./runner-events.js";
 import { bareToolName } from "./tool-kinds.js";
@@ -12,8 +13,6 @@ export interface ToolCallSubject {
   toolName: string;
   args: JsonValue;
 }
-
-type CallAnswer = Pick<RunnerToolResult, "result" | "isError">;
 
 interface Hold {
   tool: string;
@@ -27,8 +26,8 @@ interface Hold {
  * whole sidecar, as the DMS keeps them for every session.
  */
 export interface HeldCalls {
-  /** A held call is recorded by the DMS's refusal and released once it ran. */
-  observe(call: ToolCallSubject, answer: CallAnswer): void;
+  /** A call is held by its `held` outcome and released once it ran. */
+  observe(call: ToolCallSubject, outcome: ToolOutcome): void;
   /**
    * Whether the call's tool has a held call pending, whatever the call's
    * arguments: the DMS drops the arguments its tool does not know before it
@@ -75,14 +74,19 @@ function callKey(call: ToolCallSubject): string {
   return `${bareToolName(call.toolName)}\u0000${JSON.stringify(withSortedKeys(call.args))}`;
 }
 
-function isDmsTool(call: ToolCallSubject): boolean {
-  return call.toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX);
+function isDmsTool(toolName: string): boolean {
+  return toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX);
 }
 
-function isHoldRefusal(call: ToolCallSubject, answer: CallAnswer): boolean {
+/** Whether a tool's answer is the DMS's refusal of a call it holds until someone confirms it. */
+export function isHoldRefusal(
+  toolName: string,
+  answer: Pick<RunnerToolResult, "result">,
+): boolean {
+  if (!isDmsTool(toolName)) return false;
   const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
   return text.startsWith(
-    `${bareToolName(call.toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
+    `${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
   );
 }
 
@@ -102,21 +106,21 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
     }
   };
   return {
-    observe(call, answer) {
-      if (!isDmsTool(call)) return;
+    observe(call, outcome) {
+      if (!isDmsTool(call.toolName)) return;
       const at = now();
       dropExpired(at);
-      if (isHoldRefusal(call, answer)) {
+      if (outcome === "held") {
         holdByCall.set(callKey(call), {
           tool: bareToolName(call.toolName),
           expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
         });
-      } else if (!answer.isError) {
+      } else if (outcome === "done") {
         holdByCall.delete(callKey(call));
       }
     },
     isHeld(call) {
-      if (!isDmsTool(call)) return false;
+      if (!isDmsTool(call.toolName)) return false;
       dropExpired(now());
       const tool = bareToolName(call.toolName);
       return [...holdByCall.values()].some((hold) => hold.tool === tool);

@@ -8,7 +8,13 @@ export type ProviderName = "claude" | "codex";
 export type ApprovalMode = "normal" | "auto" | "acceptEdits" | "plan";
 export type Scope = "safe" | "vibe";
 
-export type ToolOutcome = "done" | "failed" | "denied" | "blocked" | "stopped";
+export type ToolOutcome =
+	| "done"
+	| "failed"
+	| "denied"
+	| "blocked"
+	| "stopped"
+	| "held";
 
 export type AllowedBy =
 	| "read_auto"

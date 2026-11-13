@@ -28,6 +28,7 @@ const STATE_ICONS: Record<ToolRowState, string> = {
 	blocked: "i-ph-shield-warning",
 	failed: "i-ph-warning-circle",
 	stopped: "i-ph-minus-circle",
+	held: "i-ph-pause-circle",
 };
 
 const isOpen = ref(false);
@@ -194,7 +195,8 @@ function onRowClick(): void {
 	color: var(--ui-error);
 }
 
-.cb-tool.is-blocked .cb-tool__state {
+.cb-tool.is-blocked .cb-tool__state,
+.cb-tool.is-held .cb-tool__state {
 	color: var(--ui-warning);
 }
 

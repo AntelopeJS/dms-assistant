@@ -30,6 +30,7 @@ const STATUS_BY_OUTCOME: Record<ToolOutcome, ToolStatus> = {
 	denied: TOOL_STATUS.ERROR,
 	blocked: TOOL_STATUS.ERROR,
 	stopped: TOOL_STATUS.ERROR,
+	held: TOOL_STATUS.SUCCESS,
 };
 
 export function buildUserMessage(

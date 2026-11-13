@@ -109,7 +109,8 @@
 					"denied": "denied",
 					"blocked": "blocked · safe mode",
 					"failed": "failed",
-					"stopped": "stopped"
+					"stopped": "stopped",
+					"held": "held until you confirm"
 				}
 			},
 			"change": {

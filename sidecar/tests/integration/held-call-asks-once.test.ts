@@ -2,7 +2,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { buildActivityRecords } from "../../src/audit/activity.js";
 import { PERMISSION_DECISIONS } from "../../src/constants/permissions.js";
+import { buildAllowed } from "../../src/metrics/aggregate.js";
 import {
   type ScriptedCall,
   writeClaudeScript,
@@ -16,6 +18,7 @@ import {
   sendHello,
   sendUserMessage,
   startWsHarness,
+  type WireMessage,
   type WsHarness,
 } from "../helpers/ws-harness.js";
 
@@ -52,10 +55,10 @@ describe("a deletion the DMS holds, in a chat turn", () => {
     dir = undefined;
   });
 
-  async function cardsOf(
+  async function runTurn(
     calls: readonly ScriptedCall[],
     decision: string,
-  ): Promise<unknown[][]> {
+  ): Promise<WireMessage[]> {
     dir = await mkdtemp(join(tmpdir(), "dms-ai-held-call-"));
     CLAUDE_FIXTURE.use("plain");
     process.env.MOCK_CLAUDE_SCRIPT = await writeClaudeScript(
@@ -78,6 +81,14 @@ describe("a deletion the DMS holds, in a chat turn", () => {
     sendUserMessage(client, CONVERSATION_ID, "delete the orders table");
     const events = await collected;
     client.close();
+    return events;
+  }
+
+  async function cardsOf(
+    calls: readonly ScriptedCall[],
+    decision: string,
+  ): Promise<unknown[][]> {
+    const events = await runTurn(calls, decision);
     return events
       .filter((msg) => msg.type === "permission_request")
       .map((msg) => [msg.callId, msg.kind]);
@@ -114,6 +125,44 @@ describe("a deletion the DMS holds, in a chat turn", () => {
         PERMISSION_DECISIONS.ALLOW_ONCE,
       );
       expect(cards).toEqual([["repeat-extra-key", "destructive"]]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "shows the refused first call as held, and audits one deletion, the asked one (fails a held call reported or audited as a failure)",
+    async () => {
+      const events = await runTurn(
+        [
+          REFUSED_FIRST,
+          { id: "repeat", name: DELETE, input: ARGS, answer: RAN },
+        ],
+        PERMISSION_DECISIONS.ALLOW_ONCE,
+      );
+      expect(
+        events
+          .filter((msg) => msg.type === "tool_call_end")
+          .map((msg) => [msg.callId, msg.outcome]),
+      ).toEqual([
+        ["first", "held"],
+        ["repeat", "done"],
+      ]);
+      const entries = harness?.conversationStore.entries() ?? [];
+      const records = buildActivityRecords({
+        entries,
+        changeSets: [],
+        pending: [],
+        running: new Set(),
+        hostProjectRoot: "/project",
+      });
+      expect(records.map((r) => [r.tool, r.result, r.isAsked])).toEqual([
+        ["builder_delete_resource", "done", true],
+      ]);
+      const allowed = buildAllowed(
+        { records, changeSets: [], entries },
+        { fromMs: 0, toMs: Number.MAX_SAFE_INTEGER },
+      );
+      expect([allowed.deletions, allowed.deletionsAsked]).toEqual([1, 1]);
     },
     TEST_TIMEOUT_MS,
   );

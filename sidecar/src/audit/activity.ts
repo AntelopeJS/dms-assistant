@@ -135,7 +135,9 @@ function resultOf(
   const decided = RESULT_BY_ALLOWED[allowedBy];
   if (decided !== undefined && result?.outcome !== "stopped") return decided;
   if (result === undefined) return isRunning ? "pending" : "stopped";
-  if (result.outcome !== undefined) return result.outcome;
+  if (result.outcome !== undefined && result.outcome !== "held") {
+    return result.outcome;
+  }
   return result.status === "error" ? "failed" : "done";
 }
 
@@ -327,10 +329,16 @@ function pendingRecord(
   });
 }
 
+/** A call the DMS held changed nothing: its repeat is the action audited. */
+function isHeldByDms(index: ConversationIndex, use: StoredMessage): boolean {
+  const callId = use.callId;
+  return callId !== undefined && index.results.get(callId)?.outcome === "held";
+}
+
 function conversationRecords(input: RowInput): ActivityRecord[] {
   const messages = input.entry.conversation.messages;
   const calls = messages
-    .filter((m) => m.role === "tool_use")
+    .filter((m) => m.role === "tool_use" && !isHeldByDms(input.index, m))
     .map((use) => callRecord(input, use));
   const callIds = new Set(
     messages.filter((m) => m.role === "tool_use").map((m) => m.callId),

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { RunnerEvent } from "../../src/agent/runner-events.js";
 import type { ActiveTurn } from "../../src/server/turn-registry.js";
 import { turnTypecheck } from "../../src/server/turns.js";
+import { coreConfirmationGate } from "../helpers/core-confirmation-gate.js";
 import { playTurn } from "../helpers/turn-events.js";
 
 const MODULE_FILE = "/proj/modules/mymod/src/a.ts";
@@ -25,6 +27,32 @@ describe("turnTypecheck", () => {
     expect(
       turnTypecheck(turn({ builderOps: 2, mutatingCallIds: ["a", "b"] })),
     ).toBe("passed");
+  });
+
+  it("counts a turn whose one deletion the DMS held first as typechecked (fails a held call counted as a mutating one)", () => {
+    const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
+    const args = { ref: "orders" };
+    const answer = (callId: string): RunnerEvent => {
+      const refusal = gate.hold("builder_delete_resource", args);
+      return {
+        type: "tool_result",
+        callId,
+        result: refusal?.content ?? [{ type: "text", text: '{"ok":true}' }],
+        isError: refusal !== undefined,
+      };
+    };
+    const { turn: deleted } = playTurn(
+      ["first", "repeat"].flatMap((callId) => [
+        {
+          type: "tool_use",
+          callId,
+          toolName: "mcp__dms__builder_delete_resource",
+          args,
+        },
+        answer(callId),
+      ]),
+    );
+    expect([deleted.builderOps, turnTypecheck(deleted)]).toEqual([1, "passed"]);
   });
 
   it("keeps skipped when a raw edit or a failed operation took part", () => {

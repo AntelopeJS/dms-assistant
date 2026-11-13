@@ -73,6 +73,31 @@ describe("tool rows and change sets", () => {
 		expect(panel.find(".cb-tools__head").text()).toContain("3 steps");
 	});
 
+	it("draws a call the DMS held as a held step, not a failed one (fails a row that reads the held call's error status)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		await sendMessage(panel, "go");
+		deliver(harness, {
+			type: "tool_call_start",
+			callId: "c0",
+			toolName: "mcp__dms__builder_delete_page",
+			args: { pageRef: "/home" },
+		});
+		deliver(harness, {
+			type: "tool_call_end",
+			callId: "c0",
+			status: "error",
+			result: "builder_delete_page was not run: no one has confirmed it yet.",
+			outcome: "held",
+		});
+		deliver(harness, { type: "run_done" });
+		await nextTick();
+		const row = panel.find(".cb-tool");
+		expect(row.classes()).toContain("is-held");
+		expect(row.text()).toContain("held until you confirm");
+		expect(panel.find(".cb-tools").text()).not.toContain("failed");
+	});
+
 	it("shows the raw JSON of a call on demand", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

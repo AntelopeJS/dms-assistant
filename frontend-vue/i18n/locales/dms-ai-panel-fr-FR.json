@@ -109,7 +109,8 @@
 					"denied": "refusé",
 					"blocked": "bloqué · mode sûr",
 					"failed": "échec",
-					"stopped": "arrêté"
+					"stopped": "arrêté",
+					"held": "retenu jusqu'à votre accord"
 				}
 			},
 			"change": {

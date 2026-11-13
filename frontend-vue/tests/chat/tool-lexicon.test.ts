@@ -112,7 +112,7 @@ describe("the tool lexicon names a call by what it does", () => {
 	});
 });
 
-describe("a tool row is in one of seven states", () => {
+describe("a tool row is in one of eight states", () => {
 	it("takes the sidecar's outcome when there is one", () => {
 		for (const outcome of [
 			"done",
@@ -120,6 +120,7 @@ describe("a tool row is in one of seven states", () => {
 			"denied",
 			"blocked",
 			"stopped",
+			"held",
 		] as const)
 			expect(toolRowState(tool({ outcome, status: "error" }), true, null)).toBe(
 				outcome,

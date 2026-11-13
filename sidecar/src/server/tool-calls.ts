@@ -1,4 +1,4 @@
-import type { HeldCalls } from "../agent/held-calls.js";
+import { type HeldCalls, isHoldRefusal } from "../agent/held-calls.js";
 import type {
   RunnerToolResult,
   RunnerToolUse,
@@ -82,6 +82,7 @@ function decisionOf(
 function outcomeOf(
   ev: RunnerToolResult,
   decision: CallDecision | undefined,
+  toolName: string,
 ): ToolOutcome {
   if (ev.isStopped === true) return "stopped";
   const decided =
@@ -89,6 +90,7 @@ function outcomeOf(
       ? undefined
       : OUTCOME_BY_DECISION[decision.allowedBy];
   if (decided !== undefined) return decided;
+  if (isHoldRefusal(toolName, ev)) return "held";
   return ev.isError ? "failed" : "done";
 }
 
@@ -146,7 +148,12 @@ function trackEnd(
   if (open !== undefined && args.success) {
     services.heldCalls.observe(
       { toolName: open.toolName, args: args.data },
-      ev,
+      outcome,
+    );
+  }
+  if (outcome === "held") {
+    turn.mutatingCallIds = turn.mutatingCallIds.filter(
+      (callId) => callId !== ev.callId,
     );
   }
   if (outcome === "done" && isMutatingBuilderTool(toolName)) turn.builderOps++;
@@ -164,7 +171,7 @@ export function endToolCall(
 ): ToolCallEndEventType {
   const toolName = toolNameOf(services, conversationId, ev.callId);
   const decision = decisionOf(services, conversationId, ev.callId);
-  const outcome = outcomeOf(ev, decision);
+  const outcome = outcomeOf(ev, decision, toolName);
   const allowedBy = decision?.allowedBy ?? defaultAllowedBy(toolName);
   trackEnd(services, services.turns.get(conversationId), ev, toolName, outcome);
   const status = ev.isError ? STATUS.ERROR : STATUS.SUCCESS;

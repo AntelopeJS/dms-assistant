@@ -30,6 +30,7 @@ const SPAWN_TIMEOUT_WITHIN_MS = 8_000;
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-ai-sidecar-"));
 process.chdir(root);
 const lockPath = path.join(root, "node_modules/.cache/dms-ai/sidecar.lock");
+const stopPath = path.join(root, "stop-sidecars");
 /** @type {Set<number>} */
 const startedPids = new Set();
 
@@ -174,26 +175,22 @@ function signal(pids, name) {
 }
 
 /**
- * Stops the sidecar that holds the lock with a graceful exit, which its owner
- * does not respawn, and waits until it has exited.
+ * Asks every stand-in sidecar in `root` for a graceful exit, which its owner
+ * does not respawn, and waits until `pids` have exited.
+ * @param {number[]} pids
  */
-async function shutDownLockHolder() {
-  const lock = readLock();
-  if (lock === null) return;
-  try {
-    await fetch(`http://127.0.0.1:${lock.port}/shutdown`);
-  } catch {
-    return;
-  }
-  await waitFor(() => !isRunning(lock.pid), "the lock holder to exit").catch(
+async function stopSidecars(pids) {
+  fs.writeFileSync(stopPath, "");
+  await waitFor(() => !pids.some(isRunning), "the sidecars to stop").catch(
     () => undefined,
   );
+  fs.rmSync(stopPath, { force: true });
 }
 
 afterEach(async () => {
   const pids = [...startedPids];
   startedPids.clear();
-  await shutDownLockHolder();
+  await stopSidecars(pids);
   signal(pids, "SIGTERM");
   await waitFor(
     () => !pids.some(isRunning),

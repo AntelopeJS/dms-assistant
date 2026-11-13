@@ -6,9 +6,10 @@ const { z } = require("zod");
 /**
  * The lock file this stand-in for the sidecar's entry point claims in its
  * working directory. Like the real sidecar it answers /health, removes the lock
- * and exits gracefully on a shutdown signal. It exits the same way on a request
- * to /shutdown, which Windows needs: a signal there ends a process with exit
- * code 1, which its owner takes for a crash. `FAKE_SIDECAR_MODE=crash` exits
+ * and exits gracefully on a shutdown signal. It exits the same way once a
+ * `stop-sidecars` file appears in its working directory, which Windows needs:
+ * a signal there ends a process with exit code 1, which its owner takes for a
+ * crash and answers with a respawn. `FAKE_SIDECAR_MODE=crash` exits
  * with a failure before it claims the lock, as a sidecar whose build is
  * missing does; `silent` stays up and never claims it, leaving its pid in `silent.pid`
  * for the test to stop.
@@ -22,7 +23,8 @@ const LOCK_PATH = path.join(
 );
 const BUILD_ID_FLAG = "--build-id";
 const SHUTDOWN_SIGNALS = ["SIGTERM", "SIGINT", "SIGHUP"];
-const SHUTDOWN_PATH = "/shutdown";
+const STOP_PATH = path.join(process.cwd(), "stop-sidecars");
+const STOP_POLL_MS = 50;
 const VERSION = "0.0.0";
 const IGNORES_SHUTDOWN = process.env.FAKE_SIDECAR_IGNORE_SHUTDOWN === "1";
 const MODE = process.env.FAKE_SIDECAR_MODE;
@@ -68,10 +70,6 @@ function writeLock(port) {
 
 const server = http.createServer((req, res) => {
   res.setHeader("content-type", "application/json");
-  if (req.url === SHUTDOWN_PATH && !IGNORES_SHUTDOWN) {
-    res.end("{}", shutdown);
-    return;
-  }
   res.end(JSON.stringify({ ok: true, version: VERSION, buildId }));
 });
 if (MODE === "crash") process.exit(1);
@@ -86,4 +84,9 @@ if (MODE === "silent") {
 
 for (const signal of SHUTDOWN_SIGNALS) {
   process.on(signal, IGNORES_SHUTDOWN ? () => undefined : shutdown);
+}
+if (!IGNORES_SHUTDOWN) {
+  setInterval(() => {
+    if (fs.existsSync(STOP_PATH)) shutdown();
+  }, STOP_POLL_MS);
 }

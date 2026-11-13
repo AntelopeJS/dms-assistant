@@ -430,7 +430,7 @@ const BUILDER_TOOLS: Record<string, ToolLexiconEntry> = {
 	builder_configure_project: {
 		verb: "configure_project",
 		icon: ICONS.DATA,
-		target: countOf("steps"),
+		target: none,
 	},
 	builder_map_resources: {
 		verb: "map_tables",

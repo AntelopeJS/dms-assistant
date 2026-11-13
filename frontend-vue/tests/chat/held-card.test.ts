@@ -36,12 +36,20 @@ const OTHER_MAP_REQUEST: PermissionRequestData = {
 
 const CONFIGURE_DIFF = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n@@ -1,3 +1,9 @@\n${"+    dms: { config: { mcp: { enabled: true } } },\n".repeat(6)}`;
 
+const CONFIGURE_STEPS = [
+	{
+		action: "ConfigureModule",
+		module: "@antelopejs/dms",
+		config: { externalConnections: { erp: { access: "read" } } },
+	},
+];
+
 const CONFIGURE_REQUEST: PermissionRequestData = {
 	...OTHER_MAP_REQUEST,
 	requestId: "r7",
 	callId: "c7",
 	toolName: "mcp__dms__builder_configure_project",
-	args: { steps: [] },
+	args: { steps: CONFIGURE_STEPS },
 	summary: "Configure project",
 	preview: {
 		type: "held",
@@ -50,13 +58,7 @@ const CONFIGURE_REQUEST: PermissionRequestData = {
 			plannedChanges: [
 				{ path: "antelope.config.ts", kind: "modify", diff: CONFIGURE_DIFF },
 			],
-			steps: [
-				{
-					action: "ConfigureModule",
-					module: "@antelopejs/dms",
-					config: { externalConnections: { erp: { access: "read" } } },
-				},
-			],
+			steps: CONFIGURE_STEPS,
 		},
 	},
 };
@@ -122,5 +124,10 @@ describe("the card of a configuration change the DMS holds", () => {
 		expect(
 			rows.findAll("dt:not(.is-stacked)").map((node) => node.text()),
 		).toEqual(["steps[0].action", "steps[0].module"]);
+	});
+
+	it("titles the change by its verb alone, with no bare count of its steps (fails a title that appends the number of steps)", () => {
+		const card = mountCard(CONFIGURE_REQUEST, en);
+		expect(card.find(".perm__title").text()).toBe("Configure project");
 	});
 });

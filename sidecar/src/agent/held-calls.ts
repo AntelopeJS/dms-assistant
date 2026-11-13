@@ -115,26 +115,25 @@ function previewIn(text: string): JsonValue | undefined {
   }
 }
 
-const HoldCodeSchema = z.object({ code: z.literal(DMS_MCP_HOLD_CODE) });
+const CodeSchema = z.object({ code: z.string() });
 
 /**
- * Whether the answer ends with the DMS's hold code. The DMS sends it as the
- * last text block, so it is the last line once the blocks are joined, as
- * Claude hands them over.
+ * The code the answer ends with. The DMS sends it as the last text block, so
+ * it is the last line once the blocks are joined, as Claude hands them over.
  */
-function endsWithHoldCode(text: string): boolean {
+function endingCodeOf(text: string): string | undefined {
   const lastLine = text.slice(text.lastIndexOf("\n") + 1);
   try {
-    return HoldCodeSchema.safeParse(JSON.parse(lastLine)).success;
+    return CodeSchema.safeParse(JSON.parse(lastLine)).data?.code;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
 /**
  * The DMS's refusal of a call it holds until someone confirms it, when the
- * tool's answer is one: read from its hold code, or from its prose when the
- * answer carries no code.
+ * tool's answer is one: read from the code it ends with, or from its prose
+ * when it ends with no code at all.
  */
 export function holdRefusalOf(
   toolName: string,
@@ -142,9 +141,13 @@ export function holdRefusalOf(
 ): HeldCall | undefined {
   if (!isDmsTool(toolName)) return undefined;
   const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
+  const code = endingCodeOf(text);
   const isRefusal =
-    endsWithHoldCode(text) ||
-    text.startsWith(`${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`);
+    code === undefined
+      ? text.startsWith(
+          `${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
+        )
+      : code === DMS_MCP_HOLD_CODE;
   return isRefusal ? { preview: previewIn(text) } : undefined;
 }
 

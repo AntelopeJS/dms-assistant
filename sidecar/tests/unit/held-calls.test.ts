@@ -101,6 +101,19 @@ describe("held calls", () => {
     expect(held.isHeld(HELD)).toBe(true);
   });
 
+  it("does not hold the DMS's refusal prose when the answer ends with another code (fails a prose fallback that fires beside a code)", () => {
+    const held = createHeldCalls(() => 0);
+    const prose =
+      "builder_delete_resource was not run: no one has confirmed it yet.";
+    endCall(held, HELD, {
+      result: [
+        { type: "text", text: prose },
+        { type: "text", text: '{"code":"invalid_config"}' },
+      ],
+    });
+    expect(held.isHeld(HELD)).toBe(false);
+  });
+
   it.each(['{"ok":true}', '{"code":"not_found"}', "not json"])(
     "does not hold an answer that ends with %s (fails a detector that holds any JSON ending)",
     (last) => {

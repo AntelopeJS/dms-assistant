@@ -27,7 +27,6 @@ interface TraceEntry {
   disallowedTools?: string[];
 }
 
-/** How the session reaches one MCP server: its transport, and the command of a stdio one. */
 interface TracedMcpServer {
   type: string;
   command?: string;

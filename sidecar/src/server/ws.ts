@@ -107,7 +107,6 @@ export interface AttachWsServerOptions {
   conversationStore: ConversationStore;
   settingsStore?: SettingsStore;
   mcpDeps: AiMcpServerStaticDeps;
-  /** Reads the backend's log, for the safety net's heal notice. */
   logsClient: LogsClient;
   /**
    * What the sidecar's own runtime offers every provider. Neutral: the backends

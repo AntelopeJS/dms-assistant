@@ -9,8 +9,7 @@ export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 /**
  * Mounts the external-database API when the builder is enabled: the routes
  * controller registers its routes as it is decorated, so importing it is what
- * mounts them. The mapping it serves writes queries, so the built-in query
- * templates are registered first.
+ * mounts them.
  */
 export async function construct(config?: DmsBuilderConfig): Promise<void> {
   setModuleConfig(config);

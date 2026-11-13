@@ -141,10 +141,9 @@ function buildDmsMcpServerToml(hostProjectRoot: string): string[] {
  * project's AGENTS.md is not ours to inject, hence `project_doc_max_bytes = 0`.
  * `tool_timeout_sec` is raised on both MCP servers because Codex abandons a tool
  * call after 60 s by default, while ask_user waits on the user and a builder
- * mapping runs for much longer. The DMS MCP starts over the stdio launcher the
- * DMS writes, with the tools the chat serves itself disabled. The `untrusted`
- * project entry keeps the host project's own .codex layers out of the session,
- * mirroring `settingSources: []` on the Claude path.
+ * mapping runs for much longer. The `untrusted` project entry keeps the host
+ * project's own .codex layers out of the session, mirroring
+ * `settingSources: []` on the Claude path.
  */
 export function buildConfigToml(input: CodexConfigInput): string {
   return [

@@ -25,7 +25,7 @@ export const MCP_TOOL_NAME_PREFIX = `mcp__${MCP_SERVER_KEY}__`;
 /** The DMS MCP server of `@antelopejs/dms`: its key in `.mcp.json`, and so its tools' prefix. */
 export const DMS_MCP_SERVER_KEY = "dms";
 export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
-/** How `.mcp.json` starts it: `node` on the stdio launcher the DMS writes under the project root. */
+/** How `.mcp.json` starts the DMS MCP server: `node` on the stdio launcher the DMS writes under the project root. */
 export const DMS_MCP_COMMAND = "node";
 export const DMS_MCP_LAUNCHER_PATH = [
   "node_modules",
@@ -91,7 +91,6 @@ export const DMS_MCP_HIDDEN_TOOL_NAMES: readonly string[] = [
   PREVIEW_BLOCKS_TOOL_NAME,
 ];
 
-/** The chat's own tools, served under `mcp__dms-ai__`. */
 const CHAT_TOOL_NAMES: readonly string[] = [
   ASK_USER_TOOL_NAME,
   GET_CURRENT_PAGE_TOOL_NAME,
@@ -100,7 +99,6 @@ const CHAT_TOOL_NAMES: readonly string[] = [
   PREVIEW_BLOCKS_TOOL_NAME,
 ];
 
-/** The DMS MCP's tools the chat runs without a prompt, served under `mcp__dms__`. */
 const DMS_MCP_AUTO_ALLOW_TOOL_NAMES: readonly string[] = [
   ...BUILDER_TOOL_NAMES,
   ...DATABASE_TOOL_NAMES,
@@ -114,7 +112,7 @@ const DMS_MCP_AUTO_ALLOW_TOOL_NAMES: readonly string[] = [
 /**
  * Explicit allowlist of the MCP tools the chat runs without a permission
  * prompt, by the fully qualified name the agent sees. The DMS MCP itself holds
- * its risky calls for a repeated confirmation. A tool on neither list, a new
+ * its risky calls for a repeated confirmation. A tool outside this set, a new
  * one included, still asks.
  */
 export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set([
@@ -145,19 +143,11 @@ export const MCP_LOOPBACK_HOSTNAMES = [
 
 const MS_PER_SECOND = 1_000;
 
-/**
- * The longest a tool call can wait on the user: an ask_user question, or a
- * prompt left open for the longest permission timeout.
- */
 const LONGEST_USER_WAIT_MS = Math.max(
   QUESTION_TIMEOUT_MS,
   Math.max(...REQUEST_TIMEOUT_MINUTES) * MS_PER_MINUTE,
 );
 
-/**
- * Room left after that wait for the work the call then does (the turn's
- * checkpoint, the builder operation and its typecheck).
- */
 const MCP_TOOL_TIMEOUT_GRACE_MS = 5 * MS_PER_MINUTE;
 
 /**

@@ -74,7 +74,7 @@ function createFixture() {
 
 /**
  * @param {Record<string, string>} modules - Local path of each loaded module by id.
- * @param {string} [workflowSkillsDir] - Where the workflow skills are, when not the installed package's.
+ * @param {string} [workflowSkillsDir]
  */
 function loadCollector(modules, workflowSkillsDir) {
   const filename = require.resolve("../dist/lifecycle/skill-sources.js");

@@ -203,7 +203,6 @@ function isAddressInfo(
 const StringListSchema = z.array(z.string());
 const ExecFailureSchema = z.object({ code: z.number(), stderr: z.string() });
 
-/** The lines of one TOML table, from its header to the blank line that ends it. */
 function tableLines(toml: string, header: string): string[] {
   const lines = toml.split("\n");
   const start = lines.indexOf(header);

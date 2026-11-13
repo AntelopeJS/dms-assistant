@@ -30,7 +30,6 @@ export function toolReachOf(toolName: string): ToolReach | undefined {
   return REACH_BY_BUILTIN_TOOL.get(toolName);
 }
 
-/** The prefixes of the two MCP servers a chat session gets: its own and the DMS MCP. */
 const FIRST_PARTY_MCP_PREFIXES = [
   MCP_TOOL_NAME_PREFIX,
   DMS_MCP_TOOL_NAME_PREFIX,

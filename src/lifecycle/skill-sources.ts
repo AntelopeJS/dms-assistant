@@ -23,11 +23,6 @@ type SkillSourceKey = (source: SkillSource) => string;
 
 const FALLBACK_PLUGIN_NAME = "skills";
 
-/**
- * The DMS workflow skills of the `antelopejs` plugin, under the plugin's own
- * name so their ids match the plugin's. First, so a module's older copy of a
- * workflow skill (core ships `dms-pages`) loses the name to the plugin's.
- */
 const WORKFLOW_SKILLS: SkillSource = {
   module: "antelopejs",
   dir: workflowSkillsDir,

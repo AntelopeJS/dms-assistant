@@ -115,7 +115,6 @@ const DECLINED_ELICITATION: CodexElicitationResponse = {
   _meta: null,
 };
 
-/** A first-party call the person must approve first: a block removal while its setting asks. */
 async function askBeforeMcpCall(
   deps: CodexPermissionDeps,
   decision: ToolDecision,
@@ -135,11 +134,6 @@ async function askBeforeMcpCall(
   return ACCEPTED_ELICITATION;
 }
 
-/**
- * Answers an MCP elicitation, in every mode and scope: Safe and plan modes let
- * the chat's and the DMS MCP's tools run, as on the Claude path. A mutating
- * call waits for the turn's checkpoint first.
- */
 async function answerElicitation(
   deps: CodexPermissionDeps,
   verdict: ElicitationVerdict,

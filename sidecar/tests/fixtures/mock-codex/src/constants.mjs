@@ -74,9 +74,6 @@ export const MCP_CLIENT_VERSION = "0.0.1";
 export const AUTHORIZATION_HEADER = "Authorization";
 export const BEARER_PREFIX = "Bearer ";
 
-/**
- * The index the installed workflow skills, the safe-mode one among them, produce.
- */
 const SAFE_MODE_SKILL_INDEX = {
   data: [
     {

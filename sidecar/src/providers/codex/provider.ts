@@ -294,11 +294,6 @@ function trackTurnId(
   backendRef.current.turnId = params.data.turn.id;
 }
 
-/**
- * The chat's own MCP calls are announced as they start, so a handler such as
- * ask_user can name the call it belongs to (see CallLedger). The DMS MCP's
- * handlers run in the backend and claim nothing.
- */
 function announceToolCall(ctx: ProviderSessionContext, event: RunnerEvent) {
   if (event.type !== "tool_use") return;
   if (!event.toolName.startsWith(MCP_TOOL_NAME_PREFIX)) return;

@@ -19,33 +19,18 @@ import {
 } from "../constants/pages.js";
 import { TYPECHECK_TOOL_NAME } from "../constants/typecheck.js";
 
-/** A DMS MCP tool by the name the agent sees. */
-function dms(toolName: string): string {
+function dmsMcpTool(toolName: string): string {
   return `${DMS_MCP_TOOL_NAME_PREFIX}${toolName}`;
 }
 
-const TYPECHECK = dms(TYPECHECK_TOOL_NAME);
-const QUERY_LOGS = dms(QUERY_LOGS_TOOL_NAME);
-const LIST_PAGES = dms(LIST_PAGES_TOOL_NAME);
-const CATALOG = dms("builder_catalog");
-const ADD_BLOCK = dms("builder_add_block");
-const QUERY_TEMPLATES = dms("builder_query_templates");
-const PREVIEW_QUERY = dms("builder_preview_query");
-const ADD_QUERY = dms("builder_add_query");
-
-/**
- * The system prompt and the two generation-mode descriptions.
- *
- * This is the narrowest guidance surface: it carries DECISION POINTS ONLY —
- * which mechanism suits which situation, and where the mode's boundary lies.
- * Workflow, vocabulary and worked examples belong in a SKILL.md; per-argument
- * facts belong in a tool's schema. Anything the agent can look up at runtime
- * belongs in neither.
- *
- * Every sentence here is in context for every turn of every conversation, so it
- * is the most expensive place to say anything. If a sentence does not change
- * which tool the agent reaches for next, it does not belong here.
- */
+const TYPECHECK = dmsMcpTool(TYPECHECK_TOOL_NAME);
+const QUERY_LOGS = dmsMcpTool(QUERY_LOGS_TOOL_NAME);
+const LIST_PAGES = dmsMcpTool(LIST_PAGES_TOOL_NAME);
+const CATALOG = dmsMcpTool("builder_catalog");
+const ADD_BLOCK = dmsMcpTool("builder_add_block");
+const QUERY_TEMPLATES = dmsMcpTool("builder_query_templates");
+const PREVIEW_QUERY = dmsMcpTool("builder_preview_query");
+const ADD_QUERY = dmsMcpTool("builder_add_query");
 
 const CODE_MODE_DESCRIPTION = `full code access — you may write and edit any files to build or reshape pages, including custom components and logic beyond the Builder's blocks. The DMS MCP's builder tools (${DMS_MCP_TOOL_NAME_PREFIX}builder_…) are available when they fit, but you are not restricted to them. Making a change: first call ${FIND_PAGES_TOOL_NAME} for each file you intend to edit to map it to the pages that render it, and group your edits by page; after editing a module's source, run ${TYPECHECK} on that module and fix every reported error before the page is done — a non-compiling edit makes the host reload fail and the page 404.`;
 

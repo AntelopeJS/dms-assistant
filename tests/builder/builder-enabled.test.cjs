@@ -78,11 +78,6 @@ void test("re-decides when the module is reconfigured", async () => {
 });
 
 /**
- * The builder entry over the real `config.js`: what a deployment sees is that
- * the controller is never loaded. The routes entry is a getter, so the list
- * records the import rather than the mock's creation, after the query
- * templates the mapping routes compile with.
- *
  * @param {boolean} dev
  */
 function bootModule(dev) {

@@ -151,10 +151,6 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
   return { ...base, pathToClaudeCodeExecutable: claudeBinary };
 }
 
-/**
- * The DMS MCP over the stdio launcher the DMS writes, and the chat's own server
- * when the session has one.
- */
 function buildMcpServersMap(
   mcpServer: AiMcpServer | undefined,
   hostProjectRoot: string,
@@ -295,19 +291,6 @@ function allowAutomatically(
   return Promise.resolve(buildAllowResult(input));
 }
 
-/**
- * Builds the permission callback for a session. The SDK's built-in
- * AskUserQuestion cannot render in the chat, so the agent is bounced to our own
- * ask_user MCP tool instead of dead-ending at a permission prompt the host
- * cannot show. The chat's and the DMS MCP's tools (the
- * FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES set) are first-party and driven constantly
- * by the documented workflow, so they are auto-allowed instead of prompting,
- * except a block removal while its setting asks; the DMS MCP holds its own
- * risky calls until the agent repeats them after asking. Read-only
- * inspection of in-workspace files (the project and its sibling local modules)
- * is non-mutating and also auto-allowed. Writes, shell and network tools still
- * prompt.
- */
 function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
   const { ctx } = deps;
   return (toolName, input, options) => {

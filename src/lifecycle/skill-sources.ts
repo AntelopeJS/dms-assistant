@@ -3,6 +3,7 @@ import {
   collectSkillPackages,
   type ModuleRef,
   type SkillPackage,
+  workflowSkillsDir,
 } from "@antelopejs/agent-skills";
 import { Logging } from "@antelopejs/interface-core/logging";
 import { GetModuleInfo, ListModules } from "@antelopejs/interface-core/modules";
@@ -21,6 +22,16 @@ const LocalPathSchema = z.string().min(1);
 type SkillSourceKey = (source: SkillSource) => string;
 
 const FALLBACK_PLUGIN_NAME = "skills";
+
+/**
+ * The DMS workflow skills of the `antelopejs` plugin, under the plugin's own
+ * name so their ids match the plugin's. First, so a module's older copy of a
+ * workflow skill (core ships `dms-pages`) loses the name to the plugin's.
+ */
+const WORKFLOW_SKILLS: SkillSource = {
+  module: "antelopejs",
+  dir: workflowSkillsDir,
+};
 
 function sanitizePluginName(name: string): string {
   const cleaned = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
@@ -111,7 +122,10 @@ async function gather(projectRoot: string): Promise<SkillSource[]> {
     project: projectRoot,
     onWarning: (message) => Logging.Warn(`${SIDECAR_LOG_PREFIX} ${message}`),
   });
-  const byDir = dedupeBy(toSkillSources(skillPackages), (source) => source.dir);
+  const byDir = dedupeBy(
+    [WORKFLOW_SKILLS, ...toSkillSources(skillPackages)],
+    (source) => source.dir,
+  );
   return dedupeBy(
     byDir,
     (source) => source.module,

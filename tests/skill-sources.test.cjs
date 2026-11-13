@@ -5,9 +5,15 @@ const os = require("node:os");
 const path = require("node:path");
 const { test } = require("node:test");
 const { z } = require("zod");
+const agentSkills = require("@antelopejs/agent-skills");
 
 const SKILLS_DIR = "skills";
 const LOADED_MODULE = "loaded-module";
+const WORKFLOW_PLUGIN = "antelopejs";
+const WORKFLOW_SOURCE = {
+  module: WORKFLOW_PLUGIN,
+  dir: agentSkills.workflowSkillsDir,
+};
 
 /**
  * @param {string} dir - Directory of the package, created when missing.
@@ -68,11 +74,16 @@ function createFixture() {
 
 /**
  * @param {Record<string, string>} modules - Local path of each loaded module by id.
+ * @param {string} [workflowSkillsDir] - Where the workflow skills are, when not the installed package's.
  */
-function loadCollector(modules) {
+function loadCollector(modules, workflowSkillsDir) {
   const filename = require.resolve("../dist/lifecycle/skill-sources.js");
   /** @type {Record<string, unknown>} */
   const mocks = {
+    "@antelopejs/agent-skills": {
+      ...agentSkills,
+      workflowSkillsDir: workflowSkillsDir ?? agentSkills.workflowSkillsDir,
+    },
     "@antelopejs/interface-core/logging": {
       Logging: { Warn() {}, Error() {} },
     },
@@ -103,7 +114,7 @@ function loadCollector(modules) {
   }
 }
 
-void test("adds the skills of the project root's dependencies and devDependencies after the loaded modules", async (t) => {
+void test("adds the skills of the project root's dependencies and devDependencies after the workflow skills and the loaded modules", async (t) => {
   const { base, moduleDir, projectDir } = createFixture();
   t.after(() => fs.rmSync(base, { recursive: true, force: true }));
   const { collectSkillSources } = loadCollector({ [LOADED_MODULE]: moduleDir });
@@ -111,6 +122,7 @@ void test("adds the skills of the project root's dependencies and devDependencie
   const sources = await collectSkillSources(projectDir);
 
   assert.deepEqual(sources, [
+    WORKFLOW_SOURCE,
     { module: LOADED_MODULE, dir: path.join(moduleDir, SKILLS_DIR) },
     {
       module: "acme-interface-x",
@@ -144,6 +156,7 @@ void test("takes a loaded module's skills from the loaded copy, not from another
   assert.deepEqual(
     await loadCollector(modules).collectSkillSources(projectDir),
     [
+      WORKFLOW_SOURCE,
       { module: LOADED_MODULE, dir: path.join(moduleDir, SKILLS_DIR) },
       {
         module: "interface-x",
@@ -170,7 +183,7 @@ void test("reads the project root when no module is loaded, as in an embedded ru
 
   assert.deepEqual(
     sources.map((source) => source.module),
-    ["acme-core", "acme-dev-tools", LOADED_MODULE],
+    [WORKFLOW_PLUGIN, "acme-core", "acme-dev-tools", LOADED_MODULE],
   );
 });
 
@@ -183,6 +196,29 @@ void test("keeps the loaded modules' sources when the project root has no packag
 
   assert.deepEqual(
     sources.map((source) => source.module),
-    [LOADED_MODULE, "acme-interface-x"],
+    [WORKFLOW_PLUGIN, LOADED_MODULE, "acme-interface-x"],
+  );
+});
+
+void test("lists the workflow skills once when a project dependency declares their directory too (fails a list that appends them without the directory dedupe)", async (t) => {
+  const { base, moduleDir, projectDir } = createFixture();
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  const shipped = installed(projectDir, "@antelopejs/agent-skills");
+  writePackage(shipped, skillPackage("@antelopejs/agent-skills"));
+  writePackage(projectDir, {
+    name: "project",
+    dependencies: { "@antelopejs/agent-skills": "1" },
+  });
+  const workflowDir = path.join(shipped, SKILLS_DIR);
+  const { collectSkillSources } = loadCollector(
+    { [LOADED_MODULE]: moduleDir },
+    workflowDir,
+  );
+
+  const sources = await collectSkillSources(projectDir);
+
+  assert.deepEqual(
+    sources.filter((source) => source.dir === workflowDir),
+    [{ module: WORKFLOW_PLUGIN, dir: workflowDir }],
   );
 });

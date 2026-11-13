@@ -51,7 +51,10 @@ import { STATE_DIR_SEGMENTS } from "../../constants/paths.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import { readProjectInfo } from "../../host/project-info.js";
 import type { AiMcpServer } from "../../mcp/types.js";
-import { buildSkillCatalog } from "../../skills/build-catalog.js";
+import {
+  buildSkillCatalog,
+  firstOfEachName,
+} from "../../skills/build-catalog.js";
 import { ensurePluginWrapper } from "../../skills/plugin-wrapper.js";
 import { resolveSkillSources } from "../../skills/resolve-sources.js";
 import type { SkillSource } from "../../skills/types.js";
@@ -193,7 +196,7 @@ async function buildSkillLoadout(
       type: "local" as const,
       path: w.pluginPath,
     })),
-    skills: catalog.items.map((i) => i.id),
+    skills: firstOfEachName(catalog.items).map((i) => i.id),
   };
 }
 

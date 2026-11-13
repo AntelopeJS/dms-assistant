@@ -12,7 +12,9 @@ What a page is made of and how to write it belongs to the core skills: **dms-bes
 (blocks described backend-side, custom only for the missing block, `.meta()` on it, design
 fidelity) and **dms-pages** (`PageController`, blocks, the routes that feed them). This skill adds
 what dms-ai changes: its host tools and the live page the user is watching. Without the
-`navigate_to_page` tool you are not inside dms-ai, and this skill does not apply.
+`find_pages_using` tool you are not inside dms-ai, and this skill does not apply. dms-ai's own
+server (`dms-ai`) serves `find_pages_using` and `navigate_to_page`; the DMS MCP (`dms`) serves
+`list_pages`, `typecheck`, `query_logs` and the `builder_*` tools.
 
 Before writing any custom block, run the path *Before any custom block* of **dms-best-practices**.
 

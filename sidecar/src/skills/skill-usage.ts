@@ -8,7 +8,11 @@ import {
 } from "../constants/tool-kinds.js";
 import type { ConversationEntry } from "../state/conversations.js";
 import type { StoredMessage } from "../state/types.js";
-import type { SkillCatalog, SkillCatalogItem } from "./build-catalog.js";
+import {
+  firstOfEachName,
+  type SkillCatalog,
+  type SkillCatalogItem,
+} from "./build-catalog.js";
 import { LOCAL_SKILLS_PROVENANCE } from "./resolve-sources.js";
 
 const MS_PER_DAY = 86_400_000;
@@ -113,10 +117,7 @@ function collectUses(
 function winners(
   items: readonly SkillCatalogItem[],
 ): Map<string, SkillCatalogItem> {
-  const byName = new Map<string, SkillCatalogItem>();
-  for (const item of items)
-    if (!byName.has(item.name)) byName.set(item.name, item);
-  return byName;
+  return new Map(firstOfEachName(items).map((item) => [item.name, item]));
 }
 
 export function enrichSkills(

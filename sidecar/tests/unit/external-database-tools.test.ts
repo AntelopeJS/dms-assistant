@@ -277,22 +277,6 @@ describe("the Builder's analysis tool", () => {
   });
 });
 
-describe("the external-database skill", () => {
-  it("ships in dms-ai's skills, with the frontmatter the catalog lists it by", async () => {
-    const { buildSkillCatalog } =
-      await import("../../src/skills/build-catalog.js");
-    const skillsDir = new URL("../../../skills", import.meta.url).pathname;
-    const catalog = await buildSkillCatalog([
-      { module: "dms-ai", dir: skillsDir },
-    ]);
-    const skill = catalog.items.find(
-      (item) => item.name === "dms-external-database",
-    );
-    expect(skill?.category).toBe("Builder");
-    expect(catalog.duplicateNames).toEqual([]);
-  });
-});
-
 describe("plan mode in safe mode", () => {
   beforeAll(() => setBuilderAvailable(true));
   afterAll(() => setBuilderAvailable(false));

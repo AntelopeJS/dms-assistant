@@ -75,7 +75,7 @@ export const AUTHORIZATION_HEADER = "Authorization";
 export const BEARER_PREFIX = "Bearer ";
 
 /**
- * The index a module that ships its safe-mode skill produces.
+ * The index the installed workflow skills, the safe-mode one among them, produce.
  */
 const SAFE_MODE_SKILL_INDEX = {
   data: [
@@ -83,9 +83,9 @@ const SAFE_MODE_SKILL_INDEX = {
       cwd: "/srv/app",
       skills: [
         {
-          name: "dms-builder-safe",
+          name: "dms-builder-mcp",
           description: "Build through the Builder tools.",
-          path: "/srv/app/node_modules/dms-builder/skills/dms-builder-safe/SKILL.md",
+          path: "/srv/app/node_modules/@antelopejs/agent-skills/skills/dms-builder-mcp/SKILL.md",
           scope: "user",
           enabled: true,
           pluginId: null,

@@ -4,6 +4,7 @@ import {
   SYSTEM_PROMPT_TOKEN_MODULES,
   SYSTEM_PROMPT_TOKEN_NAME,
 } from "../constants/agent.js";
+import { SAFE_MODE_SKILL_NAME } from "../constants/codex.js";
 import { QUERY_LOGS_TOOL_NAME } from "../constants/logs.js";
 import {
   ASK_USER_TOOL_NAME,
@@ -33,7 +34,7 @@ import { TYPECHECK_TOOL_NAME } from "../constants/typecheck.js";
 
 const CODE_MODE_DESCRIPTION = `full code access — you may write and edit any files to build or reshape pages, including custom components and logic beyond the Builder's blocks. The Builder ("Builder…") MCP tools are available when they fit, but you are not restricted to them. Making a change: first call ${FIND_PAGES_TOOL_NAME} for each file you intend to edit to map it to the pages that render it, and group your edits by page; after editing a module's source, run ${TYPECHECK_TOOL_NAME} on that module and fix every reported error before the page is done — a non-compiling edit makes the host reload fail and the page 404.`;
 
-const SAFE_MODE_DESCRIPTION = `you act ONLY through the Builder ("Builder…") MCP tools; raw file edits (Write/Edit/Bash) are blocked. Follow the dms-builder-safe skill, which carries the workflow and the vocabulary; the tools' own descriptions carry their arguments. Every op is atomic and typecheck-gated: on typecheck_failed nothing was written — read the diagnostics, fix the config, retry.
+const SAFE_MODE_DESCRIPTION = `you act ONLY through the Builder ("Builder…") MCP tools; raw file edits (Write/Edit/Bash) are blocked. Follow the ${SAFE_MODE_SKILL_NAME} skill, which carries the workflow and the vocabulary; the tools' own descriptions carry their arguments. Every op is atomic and typecheck-gated: on typecheck_failed nothing was written — read the diagnostics, fix the config, retry.
   Reach for the right mechanism:
   - a page's layout and content — the block tools, after builder_catalog;
   - the data layer a table or form needs — the resource tools (they emit a Database Table + a DataAPI at /api/<name>);
@@ -56,7 +57,7 @@ When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NA
 You are running inside a live browser overlay: the user is viewing a DMS page while chatting with you. Each of your turns begins with a ${HOST_CONTEXT_OPEN} block reporting live session state — the page their browser is displaying right now and your active generation mode. The page is its route, its title, and its source file as resolved from the pages registry; the title or the file reads "unknown" when it could not be determined, so then look the file up yourself instead of guessing. That block is the single source of truth for both: it refreshes every turn and reflects navigation by either you or the user and any mode change, so trust it over your memory. ${GET_CURRENT_PAGE_TOOL_NAME} returns the live page on demand. Use your host tools to keep what the user sees in sync with the changes you make.
 
 Editing pages — follow this loop whatever your mode, whenever a change affects a rendered page (skip it only for changes that touch no rendered page, e.g. backend-only or config edits):
-1. Determine which page(s) the change affects and work ONE page at a time. Before you create or change the first page, load the dms-best-practices skill and your mode's skill (dms-ai-code-mode in CODE, dms-builder-safe in SAFE), and the dms-page-design skill when the page shows data: KPIs, charts or tables.
+1. Determine which page(s) the change affects and work ONE page at a time. Before you create or change the first page, load the dms-best-practices skill and your mode's skill (dms-ai-code-mode in CODE, ${SAFE_MODE_SKILL_NAME} in SAFE), and the dms-page-design skill when the page shows data: KPIs, charts or tables.
 2. Before changing a page, make sure the host is displaying it: call ${NAVIGATE_TOOL_NAME} to it (it reports whether navigation completed and echoes the page the host landed on). Prefer the page the user is already on — ${HOST_CONTEXT_OPEN} tells you where that is — if it is impacted. For a BRAND-NEW page, create the empty page first, then ${NAVIGATE_TOOL_NAME} to it immediately — before adding any blocks or content — so the user watches it fill in. Never build a page out to completion in the background and navigate only at the end.
 3. Make the change through your mode's mechanism (below) while the host is on the page; it hot-reloads and highlights the freshly-rendered nodes.
 4. Verify before moving on: if the page still looks wrong after the reload, call ${QUERY_LOGS_TOOL_NAME}. Then repeat from step 2 for the next impacted page.

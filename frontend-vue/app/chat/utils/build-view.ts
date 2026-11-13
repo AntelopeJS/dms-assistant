@@ -56,10 +56,11 @@ const TODO_STATES: Record<TodoItem["status"], BuildStepState> = {
 function sinceLastRequest(
 	messages: readonly ConversationMessage[],
 ): ConversationMessage[] {
-	const start = messages.findLastIndex(
-		(message) => message.role === MESSAGE_ROLES.USER,
-	);
-	return messages.slice(start + 1);
+	for (let index = messages.length - 1; index >= 0; index -= 1) {
+		if (messages[index].role === MESSAGE_ROLES.USER)
+			return messages.slice(index + 1);
+	}
+	return [...messages];
 }
 
 function isToolCall(message: ConversationMessage): message is ToolCallMessage {

@@ -17,7 +17,7 @@ import {
 const TIMEOUT_MS = 1000;
 const ADMIN_SECRET = secretOf("admin");
 const WRONG_SECRET = secretOf("wrong");
-const ROLES = ["reader", "writer", "inserter", "blind"];
+const ROLES = ["reader", "writer", "inserter", "updater", "deleter", "blind"];
 
 const SETUP = [
   "CREATE TABLE orders (id int PRIMARY KEY, total int)",
@@ -25,10 +25,12 @@ const SETUP = [
   ...ROLES.map(
     (role) => `CREATE ROLE ${role} LOGIN PASSWORD '${secretOf(role)}'`,
   ),
-  "GRANT USAGE ON SCHEMA public TO reader, writer, inserter, blind",
+  `GRANT USAGE ON SCHEMA public TO ${ROLES.join(", ")}`,
   "GRANT SELECT ON ALL TABLES IN SCHEMA public TO reader",
   "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO writer",
   "GRANT INSERT ON orders TO inserter",
+  "GRANT UPDATE ON notes TO updater",
+  "GRANT DELETE ON notes TO deleter",
 ];
 
 const suite = dockerAvailable ? describe : describe.skip;
@@ -111,6 +113,13 @@ suite(`checking a PostgreSQL database live${LIVE_SUITE_NOTE}`, function () {
       canWrite: true,
     });
     expect(answer.reason).to.be.a("string");
+  });
+
+  it("answers write access to a role that may only UPDATE, and to one that may only DELETE", async () => {
+    for (const role of ["updater", "deleter"]) {
+      const answer = await checkDatabase("postgres", urlOf(role), TIMEOUT_MS);
+      expect(answer).to.include({ user: role, canRead: false, canWrite: true });
+    }
   });
 
   it("answers no access, with a reason, to a role that sees tables and may use none", async () => {

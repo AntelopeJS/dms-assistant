@@ -15,6 +15,7 @@ const {
   readLockFile,
   readPidFile,
 } = require("./helpers/process-state.cjs");
+const { processGroupTest } = require("./helpers/platform-tests.cjs");
 
 const SIDECAR_OWNER_KEY = Symbol.for("@antelopejs/dms-ai/sidecar-owner");
 const BACKEND_PATH = path.resolve(__dirname, "helpers/sidecar-backend.cjs");
@@ -29,6 +30,7 @@ const SPAWN_TIMEOUT_WITHIN_MS = 8_000;
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-ai-sidecar-"));
 process.chdir(root);
 const lockPath = path.join(root, "node_modules/.cache/dms-ai/sidecar.lock");
+const stopPath = path.join(root, "stop-sidecars");
 /** @type {Set<number>} */
 const startedPids = new Set();
 
@@ -172,9 +174,23 @@ function signal(pids, name) {
   }
 }
 
+/**
+ * Asks every stand-in sidecar in `root` for a graceful exit, which its owner
+ * does not respawn, and waits until `pids` have exited.
+ * @param {number[]} pids
+ */
+async function stopSidecars(pids) {
+  fs.writeFileSync(stopPath, "");
+  await waitFor(() => !pids.some(isRunning), "the sidecars to stop").catch(
+    () => undefined,
+  );
+  fs.rmSync(stopPath, { force: true });
+}
+
 afterEach(async () => {
   const pids = [...startedPids];
   startedPids.clear();
+  await stopSidecars(pids);
   signal(pids, "SIGTERM");
   await waitFor(
     () => !pids.some(isRunning),
@@ -237,23 +253,26 @@ void test("a leftover sidecar that ignores SIGTERM is killed", async () => {
   await waitFor(() => !isRunning(leftoverPid), "the leftover to be killed");
 });
 
-void test("stopping the backend with Ctrl+C stops its sidecar", async () => {
-  const backend = spawn(process.execPath, [BACKEND_PATH], {
-    cwd: root,
-    detached: true,
-    stdio: ["ignore", "pipe", "inherit"],
-  });
-  const backendPid = backend.pid;
-  assert.ok(backendPid !== undefined, "the backend started");
-  track(backendPid);
-  await events.once(backend.stdout, "data");
-  const lock = readLock();
-  assert.ok(lock, "the sidecar claimed the lock");
-  const sidecarPid = track(lock.pid);
-  process.kill(-backendPid, "SIGINT");
-  await waitFor(() => !isRunning(sidecarPid), "the sidecar to stop");
-  assert.equal(readLock(), null);
-});
+void processGroupTest(
+  "stopping the backend with Ctrl+C stops its sidecar",
+  async () => {
+    const backend = spawn(process.execPath, [BACKEND_PATH], {
+      cwd: root,
+      detached: true,
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+    const backendPid = backend.pid;
+    assert.ok(backendPid !== undefined, "the backend started");
+    track(backendPid);
+    await events.once(backend.stdout, "data");
+    const lock = readLock();
+    assert.ok(lock, "the sidecar claimed the lock");
+    const sidecarPid = track(lock.pid);
+    process.kill(-backendPid, "SIGINT");
+    await waitFor(() => !isRunning(sidecarPid), "the sidecar to stop");
+    assert.equal(readLock(), null);
+  },
+);
 
 void test("a sidecar that exits before it claims the lock is given up on, not waited for", async () => {
   await withFakeMode("crash", async () => {

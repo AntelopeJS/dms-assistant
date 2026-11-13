@@ -2,12 +2,14 @@
 import { computed, ref, watch } from "vue";
 import { useBuilderApi } from "../../../builder/app/runtime/api";
 import {
+	type ConnectionAccess,
 	type DatabaseEngine,
 	ENGINES,
 	engineOfScheme,
 } from "../../../builder/app/runtime/database-connect";
 import { useChatI18n } from "../../chat/composables/useChatI18n";
 import {
+	CONNECTABLE_ENGINES,
 	type UrlProblem,
 	useDatabaseConnect,
 } from "../../onboarding/connect-database";
@@ -19,20 +21,21 @@ import { useOnboarding } from "../../onboarding/runtime";
 import OnboardingFrame from "./OnboardingFrame.vue";
 
 /**
- * "Start from an existing database": the engine, one connection URL, then the live checks while
- * the connection is written into the project and analysed. The analysis opens once it is ready.
+ * "Start from an existing database": the engine, one connection URL, then the live checks before
+ * anything is written, the access when the account can write, and the analysis, which opens once
+ * it is ready.
  */
-const ENGINE_ICONS: Record<DatabaseEngine, string> = {
+const ENGINE_ICONS: Partial<Record<DatabaseEngine, string>> = {
 	postgres: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
 	rethinkdb: "i-ph-circles-three",
 };
+const DEFAULT_ENGINE_ICON = "i-ph-database";
 
-const PLACEHOLDERS: Record<DatabaseEngine, string> = {
-	postgres: "postgres://user:password@host:5432/shop",
-	mongodb: "mongodb://user:password@host:27017/shop",
-	rethinkdb: "rethinkdb://user:password@host:28015/shop",
-};
+function placeholder(engine: DatabaseEngine): string {
+	const { schemes, port } = ENGINES[engine];
+	return `${schemes[0] ?? `${engine}:`}//user:password@host:${port}/shop`;
+}
 
 const STATUS_ICONS: Record<CheckStatus, { name: string; tone: string }> = {
 	pending: { name: "i-ph-circle", tone: "text-dimmed" },
@@ -48,9 +51,25 @@ const STATUS_TONES: Record<CheckStatus, string> = {
 	failed: "text-error",
 };
 
-const ENGINE_LIST = Object.keys(ENGINES).filter(
-	(engine): engine is DatabaseEngine => engine in ENGINE_ICONS,
-);
+const ACCESS_OPTIONS: readonly {
+	value: ConnectionAccess;
+	icon: string;
+	label: string;
+	hint: string;
+}[] = [
+	{
+		value: "read",
+		icon: "i-ph-eye",
+		label: "dms_ai.views.onboarding.database.access_read",
+		hint: "dms_ai.views.onboarding.database.access_read_hint",
+	},
+	{
+		value: "read-write",
+		icon: "i-ph-pencil-simple",
+		label: "dms_ai.views.onboarding.database.access_write",
+		hint: "dms_ai.views.onboarding.database.access_write_hint",
+	},
+];
 
 const onboarding = useOnboarding();
 const { t } = useChatI18n();
@@ -59,12 +78,15 @@ const database = useDatabaseConnect(useBuilderApi());
 const engine = ref<DatabaseEngine>("postgres");
 const url = ref("");
 const urlProblem = ref<UrlProblem | null>(null);
+const access = ref<ConnectionAccess>("read");
 
-const submitted = computed(() => database.phase.value.kind !== "form");
+const choosing = computed(() => database.phase.value.kind === "choosing");
 const stuck = computed(() =>
 	database.checks.value.some((check) => check.status === "failed"),
 );
-const busy = computed(() => submitted.value && !stuck.value);
+const busy = computed(
+	() => database.phase.value.kind !== "form" && !choosing.value && !stuck.value,
+);
 
 function checkText(check: ConnectCheck): string {
 	switch (check.key) {
@@ -83,11 +105,26 @@ function checkText(check: ConnectCheck): string {
 						ms: check.latencyMs,
 					});
 		case "signed-in":
+			if (check.status === "failed") {
+				return t("dms_ai.views.onboarding.database.signed_in_failed", {
+					error: check.error ?? "",
+				});
+			}
+			if (check.status !== "done") {
+				return t("dms_ai.views.onboarding.database.signed_in_pending");
+			}
 			return check.user === undefined
-				? t("dms_ai.views.onboarding.database.signed_in_pending")
+				? t("dms_ai.views.onboarding.database.signed_in_no_user")
 				: t("dms_ai.views.onboarding.database.signed_in", { user: check.user });
 		case "read":
-			return t("dms_ai.views.onboarding.database.read");
+			if (check.status === "failed") {
+				return t("dms_ai.views.onboarding.database.read_failed", {
+					error: check.error ?? "",
+				});
+			}
+			return check.canWrite
+				? t("dms_ai.views.onboarding.database.read_write")
+				: t("dms_ai.views.onboarding.database.read");
 		case "schema":
 			if (check.problem === "empty") {
 				return t("dms_ai.views.onboarding.database.empty");
@@ -121,7 +158,13 @@ const urlHint = computed(() => {
 	});
 });
 
+function pickEngine(option: DatabaseEngine): void {
+	if (choosing.value) database.reset();
+	engine.value = option;
+}
+
 function editUrl(value: string): void {
+	if (choosing.value) database.reset();
 	url.value = value;
 	urlProblem.value = null;
 	const scheme = /^([a-z]+):\/\//i.exec(value.trim())?.[1];
@@ -130,10 +173,15 @@ function editUrl(value: string): void {
 }
 
 async function connect(): Promise<void> {
+	if (choosing.value) {
+		await database.choose(access.value);
+		return;
+	}
 	urlProblem.value = await database.connect(engine.value, url.value);
 }
 
 watch(database.phase, (phase) => {
+	if (phase.kind === "choosing") access.value = "read";
 	if (phase.kind !== "analysed") return;
 	onboarding.send({
 		type: "analysed",
@@ -150,18 +198,18 @@ watch(database.phase, (phase) => {
 	>
 		<div class="mt-5 flex flex-wrap gap-2" role="radiogroup">
 			<UButton
-				v-for="option in ENGINE_LIST"
+				v-for="option in CONNECTABLE_ENGINES"
 				:key="option"
 				role="radio"
 				:aria-checked="engine === option"
-				:icon="ENGINE_ICONS[option]"
+				:icon="ENGINE_ICONS[option] ?? DEFAULT_ENGINE_ICON"
 				:label="ENGINES[option].label"
 				size="sm"
 				:color="engine === option ? 'primary' : 'neutral'"
 				:variant="engine === option ? 'soft' : 'outline'"
 				:class="engine === option && 'ring-primary ring-1 ring-inset'"
 				:disabled="busy"
-				@click="engine = option"
+				@click="pickEngine(option)"
 			/>
 		</div>
 		<UFormField
@@ -171,7 +219,7 @@ watch(database.phase, (phase) => {
 		>
 			<UInput
 				:model-value="url"
-				:placeholder="PLACEHOLDERS[engine]"
+				:placeholder="placeholder(engine)"
 				autocomplete="off"
 				spellcheck="false"
 				size="lg"
@@ -203,6 +251,40 @@ watch(database.phase, (phase) => {
 				{{ checkText(check) }}
 			</li>
 		</ul>
+		<fieldset v-if="choosing" class="mt-4" data-access-choice>
+			<legend class="text-highlighted mb-2 text-[13px] font-semibold">
+				{{ t("dms_ai.views.onboarding.database.access_title") }}
+			</legend>
+			<div class="grid gap-2 sm:grid-cols-2" role="radiogroup">
+				<button
+					v-for="option in ACCESS_OPTIONS"
+					:key="option.value"
+					type="button"
+					role="radio"
+					:aria-checked="access === option.value"
+					:data-access="option.value"
+					class="focus-visible:ring-primary flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2"
+					:class="
+						access === option.value
+							? 'border-primary bg-primary/10 ring-primary ring-1 ring-inset'
+							: 'border-default hover:bg-elevated/60'
+					"
+					@click="access = option.value"
+				>
+					<UIcon
+						:name="option.icon"
+						class="mt-0.5 size-4 shrink-0"
+						:class="access === option.value ? 'text-primary' : 'text-muted'"
+					/>
+					<span class="min-w-0">
+						<span class="text-highlighted block text-[13px] font-semibold">
+							{{ t(option.label) }}
+						</span>
+						<span class="text-muted block text-xs">{{ t(option.hint) }}</span>
+					</span>
+				</button>
+			</div>
+		</fieldset>
 		<p
 			v-if="database.refusal.value"
 			class="text-error mt-3 text-xs"

@@ -180,6 +180,20 @@ export interface DatabaseConnection {
 	error?: string
 }
 
+/** What `POST /database/connections/check` found of a URL, before anything is written. */
+export interface DatabaseAccess {
+	/** A server answered, even to refuse the sign-in. */
+	reachable: boolean
+	/** The round trip of the first query the signed-in account made; absent when it did not sign in. */
+	latencyMs?: number
+	/** The account the server reports. */
+	user?: string
+	canRead: boolean
+	canWrite: boolean
+	/** Why the database cannot be read, in a sentence that never holds the URL or the password. */
+	reason?: string
+}
+
 export interface SampledText {
 	text: string
 	truncated: boolean

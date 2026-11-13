@@ -135,6 +135,11 @@
 					"mockups": "Maquettes",
 					"pages": "{count} page | {count} pages",
 					"from": "par {source}",
+					"sources": {
+						"chat": "le chat",
+						"claude_code": "Claude Code",
+						"codex": "Codex"
+					},
 					"comments": "{count} commentaire ouvert | {count} commentaires ouverts",
 					"built": "Construite",
 					"draft": "Brouillon",
@@ -234,7 +239,7 @@
 					"scratch_title": "Partir de zéro",
 					"scratch_text": "Décrivez votre produit. Nous esquissons une maquette vivante que vous affinez avant que quoi que ce soit ne soit construit.",
 					"database_title": "Partir d’une base de données existante",
-					"database_text": "Connectez PostgreSQL, MongoDB ou RethinkDB. Nous lisons le schéma et proposons les écrans.",
+					"database_text": "Connectez {engines}. Nous lisons le schéma et proposons les écrans.",
 					"explore": "Je vais d’abord explorer"
 				},
 				"scratch": {
@@ -262,7 +267,16 @@
 					"unreachable": "Serveur injoignable : {error}",
 					"signed_in": "Connecté en tant que {user}",
 					"signed_in_pending": "Connexion",
+					"signed_in_no_user": "Connecté, sans compte requis",
+					"signed_in_failed": "Non connecté : {error}",
 					"read": "Accès en lecture",
+					"read_write": "Accès en lecture et en écriture",
+					"read_failed": "Pas d’accès en lecture : {error}",
+					"access_title": "Que peut faire le DMS avec cette base ?",
+					"access_read": "Lecture seule",
+					"access_read_hint": "Parcourir le schéma et les lignes. Le DMS n’écrit rien.",
+					"access_write": "Lecture et écriture",
+					"access_write_hint": "Modifier des lignes depuis la page Base de données. Ce compte peut écrire.",
 					"schema_running": "Lecture du schéma…",
 					"schema_done": "Schéma lu",
 					"schema_failed": "Le schéma n’a pas pu être lu : {error}",

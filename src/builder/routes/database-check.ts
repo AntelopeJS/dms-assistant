@@ -5,6 +5,7 @@ import {
   type DatabaseAccess,
   DATABASE_ENGINES,
   type DatabaseEngine,
+  ENGINE_SCHEMES,
 } from "../implementations/dms-builder/engine/database-access";
 import { checkDatabase } from "../implementations/dms-builder/engine/database-check";
 
@@ -12,19 +13,9 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_FORBIDDEN = 403;
 const SCHEME = /^([a-z][a-z0-9+.-]*:)\/\//i;
 
-/**
- * The schemes of each engine's URLs. Mirrored in `ENGINES` of
- * `frontend-vue/builder/app/runtime/database-connect.ts`.
- */
-const SCHEMES: Record<DatabaseEngine, readonly string[]> = {
-  postgres: ["postgres:", "postgresql:"],
-  mongodb: ["mongodb:"],
-  rethinkdb: ["rethinkdb:"],
-};
-
 function isUrlOf(engine: DatabaseEngine, url: string): boolean {
   const scheme = SCHEME.exec(url)?.[1]?.toLowerCase();
-  return scheme !== undefined && SCHEMES[engine].includes(scheme);
+  return scheme !== undefined && ENGINE_SCHEMES[engine].includes(scheme);
 }
 
 const CheckBodySchema = z

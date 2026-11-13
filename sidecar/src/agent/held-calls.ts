@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   DMS_MCP_HOLD_CODE,
+  DMS_MCP_HOLD_CONSUMED_CODE,
   DMS_MCP_HOLD_PREVIEW_PREFIX,
   DMS_MCP_HOLD_REFUSAL_SUFFIX,
   DMS_MCP_HOLD_WINDOW_MS,
@@ -34,10 +35,14 @@ export type HoldMatch =
   | ({ match: "same_call" } & HeldCall)
   | { match: "same_tool" };
 
-/** How a call ended, as the held calls read it: a held one with its preview. */
+/**
+ * How a call ended, as the held calls read it: a held one with its preview, a
+ * failed one with whether the DMS says it used its hold first.
+ */
 export type CallEnd =
   | ({ outcome: "held" } & HeldCall)
-  | { outcome: Exclude<ToolOutcome, "held"> };
+  | { outcome: "failed"; isHoldConsumed: boolean }
+  | { outcome: Exclude<ToolOutcome, "held" | "failed"> };
 
 interface Hold extends HeldCall {
   conversationId: string;
@@ -162,25 +167,35 @@ export function holdRefusalOf(
   return isRefusal ? { preview: previewIn(text) } : undefined;
 }
 
-const RELEASED_BY_OUTCOME: Record<Exclude<ToolOutcome, "held">, boolean> = {
-  done: true,
-  failed: false,
-  denied: false,
-  blocked: false,
-  stopped: false,
-};
+/**
+ * Whether a failed call's answer ends with the DMS's code saying the call
+ * passed its gate, so used its hold, before it failed.
+ */
+export function isHoldConsumedBy(
+  toolName: string,
+  answer: Pick<RunnerToolResult, "result">,
+): boolean {
+  if (!isDmsTool(toolName)) return false;
+  const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
+  return endingCodeOf(text) === DMS_MCP_HOLD_CONSUMED_CODE;
+}
+
+function releasesHold(end: CallEnd): boolean {
+  if (end.outcome === "done") return true;
+  return end.outcome === "failed" && end.isHoldConsumed;
+}
 
 /**
  * The held calls of every conversation. A refused call stays held for the
  * DMS's whole window, counted from when its refusal arrived, so never for
- * less time than the DMS holds it, and only a success with the same
- * arguments releases it. When the chat cannot tell whether the DMS still
- * holds a call, it asks once more: that costs a question, never a missing one.
+ * less time than the DMS holds it. Only a run with the same arguments that
+ * succeeded, or that failed after the DMS says it used its hold, releases it.
+ * When the chat cannot tell whether the DMS still holds a call, it asks once
+ * more: that costs a question, never a missing one.
  *
- * - A run that fails keeps its hold, as the DMS runs some of its work, such as
- *   a preview, before its gate, and a failure reads the same on either side of
- *   it. After a failure past the gate, the next identical call is asked, the
- *   DMS refuses it, and its repeat is asked again.
+ * - A run that fails with no word that the DMS used its hold keeps it: the DMS
+ *   runs some of its work, such as a preview, before its gate, and keeps its
+ *   hold when that fails.
  * - A repeat with a key the DMS's tool drops runs on the DMS's hold, but the
  *   chat's hold stays for the rest of the window, so the tool's later calls
  *   are asked on their first call too. Releasing the held calls whose
@@ -224,7 +239,7 @@ export function createHeldCalls(now: () => number = Date.now): HeldCalls {
           preview: end.preview,
           expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
         });
-      } else if (RELEASED_BY_OUTCOME[end.outcome]) {
+      } else if (releasesHold(end)) {
         holdByCall.delete(key);
       }
     },

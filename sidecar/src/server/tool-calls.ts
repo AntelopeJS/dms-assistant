@@ -2,6 +2,7 @@ import {
   type CallEnd,
   type HeldCalls,
   holdRefusalOf,
+  isHoldConsumedBy,
 } from "../agent/held-calls.js";
 import type {
   RunnerToolResult,
@@ -60,7 +61,7 @@ const DEFAULT_ALLOWED_BY: readonly AllowedByMatcher[] = [
 const FALLBACK_ALLOWED_BY: AllowedBy = "read_auto";
 
 const OUTCOME_BY_DECISION: Partial<
-  Record<AllowedBy, Exclude<ToolOutcome, "held">>
+  Record<AllowedBy, Extract<ToolOutcome, "blocked" | "denied">>
 > = {
   blocked: "blocked",
   denied: "denied",
@@ -98,7 +99,8 @@ function endOf(
   if (decided !== undefined) return { outcome: decided };
   const held = holdRefusalOf(toolName, ev);
   if (held !== undefined) return { outcome: "held", ...held };
-  return { outcome: ev.isError ? "failed" : "done" };
+  if (!ev.isError) return { outcome: "done" };
+  return { outcome: "failed", isHoldConsumed: isHoldConsumedBy(toolName, ev) };
 }
 
 /** Persists a call as it starts and tracks it on the running turn. */

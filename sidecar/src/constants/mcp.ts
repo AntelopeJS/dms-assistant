@@ -32,6 +32,12 @@ export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
  */
 export const DMS_MCP_HOLD_CODE = "confirmation_required";
 /**
+ * The `code` of the JSON text block the DMS MCP ends a held call's answer
+ * with when the call passed the DMS's gate, so used its hold, and then
+ * failed. A failure before the gate carries no code and leaves the hold.
+ */
+export const DMS_MCP_HOLD_CONSUMED_CODE = "confirmation_consumed";
+/**
  * How the prose of that answer continues after the tool's name: read only
  * when an answer carries no code, as a DMS released before the code sends.
  */

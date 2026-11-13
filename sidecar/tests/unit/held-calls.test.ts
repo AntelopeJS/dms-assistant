@@ -224,11 +224,16 @@ describe("held calls, once held", () => {
     expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
   });
 
-  it.each(["failed", "denied", "blocked", "stopped"] as const)(
-    "keeps the call held after it ended %s, which may have stopped before the DMS's gate (fails a release that lets the next identical call run unasked)",
-    (outcome) => {
+  it.each([
+    { outcome: "failed", isHoldConsumed: false },
+    { outcome: "denied" },
+    { outcome: "blocked" },
+    { outcome: "stopped" },
+  ] as const)(
+    "keeps the call held after it ended $outcome with no word that the DMS used its hold, which may have stopped before the DMS's gate (fails a release that lets the next identical call run unasked)",
+    (end) => {
       const { held } = heldAfterRefusal();
-      held.observe(TURN_CONVERSATION_ID, HELD, { outcome });
+      held.observe(TURN_CONVERSATION_ID, HELD, end);
       expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
     },
   );
@@ -239,5 +244,30 @@ describe("held calls, once held", () => {
     nowMs = coreConfirmationGate.REPEAT_CONFIRMATION_WINDOW_MS;
     expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
     expect(gate.hold(SESSION, "builder_delete_resource", ARGS)).toBeUndefined();
+  });
+});
+
+describe("held calls, after a failed run", () => {
+  it("releases the call once its run failed with the DMS's word that it used its hold (fails a hold kept after a failure past the gate, which asks twice on the retry)", () => {
+    const { held } = heldAfterRefusal();
+    const builderError = '{"ok":false,"error":{"code":"conflict"}}';
+    endCall(held, HELD, {
+      result: [
+        { type: "text", text: builderError },
+        { type: "text", text: '{"code":"confirmation_consumed"}' },
+      ],
+    });
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(false);
+  });
+
+  it("keeps the call held when its run failed with another code, as a failure before the DMS's gate carries none (fails a release on any failure)", () => {
+    const { held } = heldAfterRefusal();
+    endCall(held, HELD, {
+      result: [
+        { type: "text", text: "Preview failed: the catalog is unreachable." },
+        { type: "text", text: '{"code":"unavailable"}' },
+      ],
+    });
+    expect(held.isHeld(TURN_CONVERSATION_ID, HELD)).toBe(true);
   });
 });

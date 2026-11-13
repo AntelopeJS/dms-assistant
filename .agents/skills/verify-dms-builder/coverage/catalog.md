@@ -12,4 +12,4 @@ Docs: `3.catalog.md`. Journeys: `journeys/catalog.mjs`.
 | interface-dms-builder/docs/3.catalog.md:193 | reservedFieldNames lists the names a field may not take | same | the first eight documented names; the resource refusals are in resources |
 | interface-dms-builder/docs/3.catalog.md:25 | The catalog is cached; a full RefreshSourceIndex drops it, a page-scoped one does not | same | generatedAt is stable across reads and a page refresh and changes after a full refresh |
 | interface-dms-builder/docs/3.catalog.md:207 | ListDataSources returns declared data sources | same | an array; Not driven: the playground declares no data source, so no entry is read |
-| interface-dms-builder/docs/3.catalog.md:105 | ConfigSchema and ImportRef.targetFile shapes | - | Not driven: the schema vocabulary is read by the editor; targetFile is exercised by TableView controller emission (blocks) |
+| interface-dms-builder/docs/3.catalog.md:105 | ConfigSchema and ImportRef.targetFile shapes | - | Not driven: the schema vocabulary is read by clients; targetFile is exercised by TableView controller emission (blocks) |

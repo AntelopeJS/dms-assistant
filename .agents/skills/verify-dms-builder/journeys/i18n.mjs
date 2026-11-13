@@ -31,7 +31,7 @@ function keysOf(value, prefix = "") {
 export const journeys = guarded([
   {
     id: "english-and-french-catalogs-carry-the-same-keys-under-dms-builder",
-    title: "builder-en-GB.json and builder-fr-FR.json both sit under the dms_builder namespace with the same keys, the header button label is one of them, and a message reads the same placeholders in both",
+    title: "builder-en-GB.json and builder-fr-FR.json both sit under the dms_builder namespace with the same keys, and a message reads the same placeholders in both",
     entryPoint: "frontend-vue/i18n/locales",
     async run(/** @type {Ctx} */ ctx) {
       const en = catalog(ctx, "builder-en-GB.json");
@@ -41,7 +41,6 @@ export const journeys = guarded([
       await ctx.verify("the catalogs", [
         check("both hold only the dms_builder namespace", Object.keys(en).join() === "dms_builder" && Object.keys(fr).join() === "dms_builder", [Object.keys(en), Object.keys(fr)]),
         check("the same keys in both languages", enKeys.join("|") === frKeys.join("|"), { onlyEn: enKeys.filter((key) => !frKeys.includes(key)).slice(0, 5), onlyFr: frKeys.filter((key) => !enKeys.includes(key)).slice(0, 5) }),
-        check("the header button label key exists in both", enKeys.includes("action.edit_page") && frKeys.includes("action.edit_page"), enKeys.filter((key) => key.startsWith("action")).slice(0, 5)),
         check("no message holds an @", enKeys.every((key) => !String(key).includes("@")), enKeys.length),
       ]);
       const placeholders = (/** @type {Record<string, unknown>} */ catalogue, /** @type {string} */ key) => {

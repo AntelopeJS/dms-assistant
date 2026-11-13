@@ -1,6 +1,6 @@
 ---
 name: verify-dms-builder
-description: "Drive the AntelopeJS dms-builder module (the page editor in the dashboard, pages and menu, tables, data sources, the /api/builder HTTP API and the @antelopejs/interface-dms-builder operations) the way a tenant owner and another module do, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-builder works before merge, or to verify a PR."
+description: "Drive the AntelopeJS dms-builder module (pages and menu, tables, data sources, the /api/builder HTTP API and the @antelopejs/interface-dms-builder operations) the way a tenant owner's HTTP client and another module do, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-builder works before merge, or to verify a PR."
 ---
 
 # Verify dms-builder
@@ -78,7 +78,6 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 - In a development dashboard dms-assistant's onboarding popup covers every page until onboarding is done. `guarded` ticks its "Don't show on startup" once per browser before any page script runs; verify-dms-ai drives the popup itself.
 - The page files the builder writes are not served until the project is compiled and the backend restarted, which `ajs project dev -w` does on its own; journeys that need the rendered page call `rebuild`.
-- A frontend is built once: the dashboard keeps its builder button after the backend turns the builder off, so the button's absence is Not driven; the routes' 404 is driven.
 - `CreatePage` places a page at `<category-folder>/<name>/page.ts` when a barrel sits beside the category's file, and at `src/<name>.ts` otherwise; journeys create a category first when they need the folder form.
 - `ResourceSummary.fieldCount` counts the generated `_id`.
 - Known findings at the integration head, each a failing journey with an issue draft: `queries/preview-validates-parameters-as-add-query-does` (PreviewQuery accepts an undeclared parameter, dms-builder#150).
@@ -88,9 +87,6 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 List these under `notVerified` in the judgement of every verdict; the per-feature `coverage/` tables carry the rest.
 
 - connecting an external database, analysing it, mapping its relations and the module changes that follow (`AnalyseDatabase`, `MapResources`, `ConfigureProject`, `AddModule`, `CreateLocalModule`, `ConfigureTableView`): the run has no catalog provider and no external database, so only the empty and refusal paths are driven;
-- the builder button's absence under `ajs project start` (the dashboard is built once, see Gotchas);
-- pointer drag and drop of a block, the canvas zoom and width, and the pixels of the preview: the accessibility tree does not carry them;
-- `Cmd` in place of `Ctrl`: the run's browser is Chromium on Linux;
 - `module` placement of pages, categories and resources in another project module: the playground has one module.
 
 ## Feature map

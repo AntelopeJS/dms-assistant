@@ -77,17 +77,11 @@ export const journeys = guarded([
   },
   {
     id: "the-builder-follows-api-enabled-and-the-start-mode",
-    title: "Under ajs project start the builder is off unless api.enabled is true: with it forced on the routes answer, left unset or forced off they answer 404 and the page header shows no builder button",
-    entryPoint: "GET /api/builder/status, the page header",
+    title: "Under ajs project start the builder is off unless api.enabled is true: with it forced on the routes answer, left unset or forced off they answer 404 and the dashboard still serves the page",
+    entryPoint: "GET /api/builder/status, GET /api/builder/pages",
     async run(/** @type {Ctx} */ ctx) {
       const on = await builder(ctx, "status with api.enabled true", "GET", "/status");
-      const tab = await ctx.tab();
-      await tab.signIn("admin");
-      await tab.goto(BOARD);
-      await ctx.verify("forced on: the routes answer and the page has the button", [
-        check("status 200", on.status === 200, on.status),
-        tab.visible({ role: "button", name: "Builder — edit this page" }, { timeoutMs: 30_000 }),
-      ]);
+      await ctx.verify("forced on: the routes answer", [check("status 200", on.status === 200, on.status)]);
       for (const mode of ["follow-dev", "off"]) {
         await withConfig(ctx, { VERIFY_BUILDER_API: mode }, async () => {
           await ctx.verify(`${mode}: signed in again`, [check("the admin session survives a restart", (await ctx.api("a session read", { method: "GET", path: "/api/auth/me" })).status !== 0, "me")]);
@@ -130,7 +124,7 @@ export const journeys = guarded([
       const version = text(read.body, "data", "version");
       const blocks = list(read.body, "data", "blocks").map((node) => blockDraft(node));
       const revenue = blocks.find((block) => pick(block, "config", "title") === "Revenue");
-      await ctx.verify("the editor's view of the board", [check("a version and a Revenue card", version !== "" && revenue !== undefined, read.body)], { critical: true });
+      await ctx.verify("the board's structure", [check("a version and a Revenue card", version !== "" && revenue !== undefined, read.body)], { critical: true });
       if (revenue && isRow(revenue.config)) revenue.config.title = "Route title";
       const draft = { blocks };
       const stale = await builder(ctx, "save on a stale version", "POST", "/page/blocks", { body: { page: BOARD, draft, expectedVersion: "0000000000000000" } });

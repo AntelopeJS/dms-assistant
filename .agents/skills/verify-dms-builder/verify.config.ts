@@ -69,7 +69,7 @@ const config: VerifyConfig = {
     `${MODULE}/frontend-vue/pnpm-lock.yaml`,
   ],
   smoke: "smoke",
-  smokeJourney: "onboard, open the Board page in the builder, retitle its Revenue card, save, and read the new title back from the page source and the structure API",
+  smokeJourney: "onboard, retitle the Board page's Revenue card through POST /api/builder/page/blocks, and read the new title back from the page source, the structure API and the rebuilt page",
   doors: {
     data: {
       globs: [

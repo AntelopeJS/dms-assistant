@@ -17,7 +17,7 @@ Who may call the `/api/builder/database` routes, and the options that switch the
 
 ## Sub-features
 
-- `every-route-needs-a-tenant-owner`: anonymous requests and a member who is not the owner are refused on all thirteen routes, the owner reaches them, and a refused request writes nothing.
+- `every-route-needs-a-tenant-owner`: anonymous requests and a member who is not the owner are refused on all fourteen routes, the owner reaches them, and a refused request writes nothing.
 - `the-routes-follow-api-enabled-and-the-start-mode`: under `ajs project start` the routes answer only with `builder.api.enabled` true; left unset or false they answer 404 and the dashboard still serves its page.
 - `project-root-decides-where-the-connect-flow-writes`: a dry run of `ConfigureProject` names the configuration file under `builder.projectRoot`, and a relative root resolves against the process working directory.
 

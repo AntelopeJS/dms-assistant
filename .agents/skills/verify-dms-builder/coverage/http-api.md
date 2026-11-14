@@ -4,7 +4,7 @@ Docs: `docs/8.database-connection.md`. Journeys: `journeys/http-api.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |
-| docs/8.database-connection.md:9 | Every route requires an authenticated tenant owner | every-route-needs-a-tenant-owner | anonymous and a member get 401 or 403 on all thirteen routes, the owner reaches the twelve it can; a refused request leaves `antelope.config.ts` unchanged |
+| docs/8.database-connection.md:9 | Every route requires an authenticated tenant owner | every-route-needs-a-tenant-owner | anonymous and a member get 401 or 403 on all fourteen routes, the owner reaches the thirteen it can; a refused request leaves `antelope.config.ts` unchanged |
 | docs/8.database-connection.md:18 | `builder.api.enabled` mounts the routes, or keeps them off | the-routes-follow-api-enabled-and-the-start-mode | forced on under `start`: connections 200; forced off: 404 |
 | docs/8.database-connection.md:46 | `ajs project start` leaves the routes off: they answer 404 | same | with `api.enabled` unset (the module's default) connections and project answer 404 and the Board page still renders |
 | docs/8.database-connection.md:41 | When `api.enabled` is unset the routes follow the core's development flag | same | the `start` side. Not driven: the `dev` side with the option unset, because the playground forces the option on in every other journey |

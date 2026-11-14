@@ -129,8 +129,27 @@ async function readAnalysis(
 	}
 }
 
-/** Reads the three answers the screen derives from. A request that failed counts as reloading. */
+async function readReloadDue(api: ReturnType<typeof useBuilderApi>): Promise<boolean | Unreachable> {
+	try {
+		return (await api.reloadDue()).due
+	} catch {
+		return UNREACHABLE
+	}
+}
+
+/**
+ * Reads the three answers the screen derives from. A request that failed counts as reloading. While
+ * the project's `.env` changed since the running project loaded it, the connection it serves is the
+ * old `.env`'s: it counts as not loaded yet, and its analysis as none.
+ */
 export async function readBuild(api: ReturnType<typeof useBuilderApi>, connection: string): Promise<BuildAnswers> {
+	const due = await readReloadDue(api)
+	if (due === UNREACHABLE) {
+		return { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
+	}
+	if (due) {
+		return { ...(await readDeclared(api, connection)), listed: null, analysis: null }
+	}
 	const [wiring, listed, analysis] = await Promise.all([
 		readDeclared(api, connection),
 		readListed(api, connection),

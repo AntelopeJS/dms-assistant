@@ -87,7 +87,7 @@ export interface DatabaseConnect {
 	 * read-only, or keeps the access an earlier visit wrote, then followed until its analysis is
 	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
 	 * URL, it follows the written connection again without writing; with another URL for the same
-	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
+	 * database, it writes only the new URL, and follows the connection once the project loaded it. Answers to an attempt that a later `connect`, `reset` or
 	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
 	 * until its analysis is ready, the project's connection or analysis fails, the database has no
 	 * table, the project no longer declares it, its time to be followed again runs out, or a later

@@ -1,8 +1,10 @@
 import {
   type DmsBuilderConfig,
   isBuilderEnabled,
+  projectEnvFile,
   setModuleConfig,
 } from "./config";
+import { rememberLoadedEnv } from "./reload";
 
 export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 
@@ -14,5 +16,6 @@ export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 export async function construct(config?: DmsBuilderConfig): Promise<void> {
   setModuleConfig(config);
   if (!(await isBuilderEnabled())) return;
+  await rememberLoadedEnv(await projectEnvFile());
   await import("./routes");
 }

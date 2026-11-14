@@ -86,6 +86,7 @@ export function fakeBuilder(overrides: Record<string, unknown> = {}) {
 		latestAnalysis: async () =>
 			analysis === null ? { ok: false } : { ok: true, data: analysis },
 		analyseDatabase,
+		reloadDue: async () => ({ due: false }),
 		...overrides,
 	};
 	return {

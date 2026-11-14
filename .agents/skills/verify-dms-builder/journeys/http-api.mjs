@@ -30,6 +30,7 @@ const ROUTES = [
   { method: "POST", path: "/database/connection/remove", body: { connection: "nope", dryRun: true }, ownerAnswered: true },
   { method: "POST", path: "/database/connection/url", body: { connection: "nope", url: "postgres://u:p@h/db" }, ownerAnswered: true },
   { method: "POST", path: "/database/sample", body: { connection: "nope", relation: "orders", columns: ["id"], limit: 5 }, ownerAnswered: true },
+  { method: "GET", path: "/database/reload", ownerAnswered: true },
 ];
 
 export const journeys = guarded([

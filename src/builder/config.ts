@@ -1,3 +1,4 @@
+import path from "node:path";
 import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { builderEnabled } from "./frontend-module";
 
@@ -48,4 +49,10 @@ async function resolveEnabled(): Promise<boolean> {
 export function isBuilderEnabled(): Promise<boolean> {
   enabled ??= resolveEnabled();
   return enabled;
+}
+
+/** The `.env` of the project, the file the core loads at start and watches under `ajs project dev -w`. */
+export async function projectEnvFile(): Promise<string> {
+  const { projectPath } = await GetRuntimeInfo();
+  return path.join(path.resolve(projectPath), ".env");
 }

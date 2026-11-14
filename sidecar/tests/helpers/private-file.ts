@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { stat } from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
 import { expect } from "vitest";
 import { z } from "zod";
@@ -42,7 +43,13 @@ async function readWindowsAcl(
   file: string,
 ): Promise<z.infer<typeof aclSchema>> {
   const { stdout } = await execFileAsync(
-    "powershell.exe",
+    path.win32.join(
+      process.env.SystemRoot ?? "C:\\Windows",
+      "System32",
+      "WindowsPowerShell",
+      "v1.0",
+      "powershell.exe",
+    ),
     ["-NoProfile", "-NonInteractive", "-Command", READ_ACL],
     { env: { ...process.env, [ACL_FILE_ENV]: file }, windowsHide: true },
   );

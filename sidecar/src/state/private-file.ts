@@ -10,12 +10,23 @@ const execFileAsync = promisify(execFile);
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PRIVATE_FILE_MODE = 0o600;
 const SID_PATTERN = /S-1-[0-9-]+/;
+const SYSTEM_ROOT_ENV = "SystemRoot";
+const DEFAULT_SYSTEM_ROOT = "C:\\Windows";
+
+/**
+ * A Windows tool by its full path: a PATH lookup can find a namesake first,
+ * such as the coreutils `whoami` that Git for Windows puts on PATH.
+ */
+function systemTool(name: string): string {
+  const root = process.env[SYSTEM_ROOT_ENV] ?? DEFAULT_SYSTEM_ROOT;
+  return path.win32.join(root, "System32", name);
+}
 
 let currentUserSid: Promise<string> | undefined;
 
 async function readCurrentUserSid(): Promise<string> {
   const { stdout } = await execFileAsync(
-    "whoami",
+    systemTool("whoami.exe"),
     ["/user", "/fo", "csv", "/nh"],
     { windowsHide: true },
   );
@@ -44,7 +55,7 @@ async function restrictToCurrentUser(file: string): Promise<void> {
   }
   const sid = await lookUpCurrentUserSid();
   await execFileAsync(
-    "icacls",
+    systemTool("icacls.exe"),
     [file, "/inheritance:r", "/grant:r", `*${sid}:F`],
     { windowsHide: true },
   );

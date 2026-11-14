@@ -5,7 +5,6 @@ import type { DmsBuilderConfig } from "./builder/config";
 export interface AIConfig {
   /** Origin the sidecar reaches the DMS backend on, flags and all. */
   backendUrl?: string;
-  /** The builder's own settings: the source root it rewrites and whether its API and editor are on. */
   builder?: DmsBuilderConfig;
 }
 
@@ -13,7 +12,6 @@ const OriginSchema = z.string().trim().min(1);
 
 /** The builder keys this module understands; a value of the wrong type leaves that key on its default. */
 const BuilderConfigSchema = z.object({
-  projectRoot: z.string().optional().catch(undefined),
   api: z
     .object({ enabled: z.boolean().optional().catch(undefined) })
     .optional()

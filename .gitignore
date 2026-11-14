@@ -10,6 +10,4 @@ sidecar/.state/
 .idea/
 # Written by the module when the playground runs
 playground/.mcp.json
-# Fixture apps the builder specs write and remove
-.test-app-*/
 *.tsbuildinfo

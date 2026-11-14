@@ -93,9 +93,6 @@ function bootModule(dev) {
   const loadedRoutes = [];
   const mocks = {
     ...runtimeMock,
-    "./implementations/dms-builder/engine/query-template-emit": {
-      registerBuiltinQueryTemplates: () => loadedRoutes.push("templates"),
-    },
     "./config": loadModule(distFile("config.js"), runtimeMock, exposesConfig),
   };
   Object.defineProperty(mocks, "./routes", {
@@ -115,14 +112,15 @@ void test("mounts no routes when the project does not run in development", async
   assert.deepEqual(booted.loadedRoutes, []);
 });
 
-void test("mounts the routes in development, once the query templates are registered (fails routes that map with an empty template registry)", async () => {
+/** Fails on a module that keeps the routes off in development. */
+void test("mounts the routes in development", async () => {
   const booted = bootModule(true);
   await booted.index.construct();
-  assert.deepEqual(booted.loadedRoutes, ["templates", "./routes"]);
+  assert.deepEqual(booted.loadedRoutes, ["./routes"]);
 });
 
 void test("mounts the routes when an override enables the builder outside development", async () => {
   const booted = bootModule(false);
   await booted.index.construct({ api: { enabled: true } });
-  assert.deepEqual(booted.loadedRoutes, ["templates", "./routes"]);
+  assert.deepEqual(booted.loadedRoutes, ["./routes"]);
 });

@@ -1,23 +1,15 @@
 ---
 covers:
-  - src/builder/routes/database-check.ts
-  - src/builder/implementations/dms-builder/engine/access-mongodb.ts
-  - src/builder/implementations/dms-builder/engine/access-postgres.ts
-  - src/builder/implementations/dms-builder/engine/database-access.ts
-  - src/builder/implementations/dms-builder/engine/database-check.ts
-  - src/builder/implementations/dms-builder/engine/probe-client.ts
-  - src/builder/implementations/dms-builder/engine/probe-connections.ts
-  - src/builder/implementations/dms-builder/engine/probe-mongodb.ts
-  - src/builder/implementations/dms-builder/engine/probe-postgres.ts
-  - src/builder/implementations/dms-builder/engine/probe-rethinkdb.ts
-  - src/builder/implementations/dms-builder/engine/rethinkdb-client.ts
+  - src/builder/routes/database.ts
+  - src/builder/refusal.ts
+  - src/builder/dms-answer.ts
 docs:
   - docs/8.database-connection.md
 ---
 
 # Connection check
 
-`POST /api/builder/database/connections/check`: the live test of a database before the connection is written. It opens the database itself with the engine's client library, for the owner and in development only.
+`POST /api/builder/database/connections/check`: the live test of a database before the connection is written. The route asks `CheckDatabaseConnection` of `@antelopejs/dms`, which opens the database with the engine's client library, for the owner and in development only.
 
 ## Sub-features
 

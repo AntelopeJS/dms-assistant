@@ -14,8 +14,5 @@ export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 export async function construct(config?: DmsBuilderConfig): Promise<void> {
   setModuleConfig(config);
   if (!(await isBuilderEnabled())) return;
-  const { registerBuiltinQueryTemplates } =
-    await import("./implementations/dms-builder/engine/query-template-emit");
-  registerBuiltinQueryTemplates();
   await import("./routes");
 }

@@ -258,6 +258,8 @@ function loadModule(dev) {
   const listeners = [];
   /** @type {string[]} */
   const synced = [];
+  /** @type {string[]} */
+  const moved = [];
   const restore = interceptRequire(
     {
       "@antelopejs/interface-core/logging": { Logging: { Error() {} } },
@@ -283,6 +285,12 @@ function loadModule(dev) {
           synced.push(root);
         },
       },
+      "./lifecycle/builder-settings-move": {
+        /** @param {string} projectPath */
+        moveLegacyBuilderSettings: async (projectPath) => {
+          moved.push(projectPath);
+        },
+      },
       "./logging/log-buffer": { startLogCapture() {} },
       "./frontend-module": { frontendModule: () => ({}) },
       "./config": require("../dist/config.js"),
@@ -292,7 +300,7 @@ function loadModule(dev) {
   );
   try {
     delete require.cache[require.resolve("../dist/index.js")];
-    return { ...require("../dist/index.js"), listeners, synced };
+    return { ...require("../dist/index.js"), listeners, synced, moved };
   } finally {
     restore();
   }
@@ -309,4 +317,22 @@ void test("the step runs in development once every module started, after core's 
   await production.construct({});
   await production.start();
   assert.equal(production.listeners.length, 0);
+});
+
+/**
+ * Fails on a move of the builder settings that runs before every module started, runs in
+ * production, or resolves legacy folders against anything but the project's folder.
+ */
+void test("the builder settings move runs in development once every module started, and not in production", async () => {
+  const dev = loadModule(true);
+  await dev.construct({});
+  await dev.start();
+  assert.deepEqual(dev.moved, []);
+  for (const listener of dev.listeners) listener();
+  assert.deepEqual(dev.moved, [dir]);
+  const production = loadModule(false);
+  await production.construct({});
+  await production.start();
+  for (const listener of production.listeners) listener();
+  assert.deepEqual(production.moved, []);
 });

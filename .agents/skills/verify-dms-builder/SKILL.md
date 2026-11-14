@@ -28,7 +28,7 @@ RUN=$($C up --prepare --skill "$PWD/.agents/skills/verify-dms-builder" --base or
 - the checkout is laid out again under `$RUN/root` and the playground copied without `node_modules`, so the sources the builder rewrites, `.antelope/` and the build are the run's own;
 - the API, the dashboard and the mail sink get free ports from the kernel, `HOME` is `$RUN/home`, and the run holds its own `DMS_SETUP_TOKEN` that `onboard` sends with the first registration;
 - a `mongod` the run owns serves `verify_<run>` databases;
-- the backend runs `ajs project start -e docs` with `api.enabled` forced on (`VERIFY_BUILDER_API`, see `playground/antelope.config.ts`), because the builder is off under `start` otherwise.
+- the backend runs `ajs project start -e docs` with the builder forced on, because it is off under `start` otherwise. `builder.enabled` on the `dms` entry serves the operations, and `builder.api.enabled` on `dms-assistant` mounts the routes (`VERIFY_BUILDER_API`, see `playground/antelope.config.ts`).
 
 The playground (`playground/src`) is the repository playground's Board page, `orders` table and 18 seeded orders, plus a fixture module under `/verify-builder`: `POST /member` makes a member with a role. The run has no external database and no catalog provider: the journeys call the routes the way the onboarding popup's client does.
 
@@ -49,7 +49,7 @@ $C journey "$RUN" database [journey-id...]
 
 - Each feature file in [features/](features/README.md) lists its source globs (`covers:`), its docs pages (`docs:`) and its journeys; [coverage/](coverage) holds one table per feature with every documented behaviour, its catching check or its `Not driven` reason. Journeys are in `journeys/<feature>.mjs`; helpers are `builder.mjs` (API, project files, `withConfig`, `member`) and `guard.mjs`.
 - A journey starts on an empty database with the owner onboarded and the backend restarted on it. A journey that sends a write reads it back through a second view: the project files, the project listing, or the answer of a dry run. The routes write the playground's `antelope.config.ts` and `.env` only for a real connection, so every journey leaves them as they were, and checks that. A journey with `backend: "dev"` runs its backend under `ajs project dev`, which the connection check needs.
-- `withConfig(ctx, { VERIFY_BUILDER_*: … }, body)` restarts the backend with `api.enabled` (`VERIFY_BUILDER_API=off|follow-dev`) or `projectRoot` (`VERIFY_BUILDER_PROJECT_ROOT`) set and restarts it again without them.
+- `withConfig(ctx, { VERIFY_BUILDER_*: … }, body)` restarts the backend with `dms-assistant`'s `builder.api.enabled` (`VERIFY_BUILDER_API=off|follow-dev`) or the `dms` entry's `builder.projectRoot` (`VERIFY_BUILDER_PROJECT_ROOT`) set and restarts it again without them.
 - To look at the product yourself: `$C onboard "$RUN"`, `$C browser "$RUN" login`, `goto --path`, `snapshot`, `click --role --name`, `fill`, `press`, `screenshot`, `$C api "$RUN" <method> <path> [--as anon] [--body <json>]`, `$C reset "$RUN"`. Each writes its evidence under `$RUN/evidence/`.
 
 ## Evidence

@@ -15,8 +15,8 @@ function builderApi(): { enabled: boolean } | undefined {
 
 /**
  * The folder the builder edits: the playground itself, or the path
- * `VERIFY_BUILDER_PROJECT_ROOT` names (resolved by the module against the
- * process working directory when relative).
+ * `VERIFY_BUILDER_PROJECT_ROOT` names (resolved by `@antelopejs/dms` against
+ * the process working directory when relative).
  */
 function projectRoot(): string {
   return process.env.VERIFY_BUILDER_PROJECT_ROOT ?? __dirname;
@@ -36,7 +36,7 @@ export default defineConfig({
     },
     "dms-assistant": {
       source: { type: "local", path: "../../../.." },
-      config: { builder: { projectRoot: projectRoot(), api: builderApi() } },
+      config: { builder: { api: builderApi() } },
     },
     dms: {
       source: {
@@ -59,6 +59,7 @@ export default defineConfig({
         },
         frontend: { bootstrapSecret: process.env.DMS_BOOTSTRAP_SECRET },
         docsPreview: true,
+        builder: { enabled: true, projectRoot: projectRoot() },
       },
     },
     mongodb: {

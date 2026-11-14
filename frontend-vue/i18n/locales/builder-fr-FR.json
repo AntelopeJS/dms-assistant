@@ -114,7 +114,6 @@
 				"missing_tables": "un module des tables",
 				"missing_variable": "une variable",
 				"missing_database_variable": "une variable pour la base de données",
-				"missing_version": "une version du package",
 				"refusal_typecheck": "Le projet ne passe pas la vérification des types : {found}",
 				"refusal_not_found": "{ref} est introuvable",
 				"refusal_blocked": "Encore utilisé par {modules}"
@@ -155,7 +154,9 @@
 				"postgres_account": "Un rôle avec SELECT sur les schémas à associer, et des droits d’écriture uniquement là où les pages modifient les données.",
 				"mongodb_account": "Un utilisateur avec le rôle intégré read, et des droits d’écriture uniquement sur les collections que les pages modifient.",
 				"rethinkdb_account": "Un utilisateur avec la permission de lecture sur la base de données, et d’écriture uniquement sur les tables que les pages modifient.",
-				"not_url": "ce n’est pas une URL {engine}"
+				"not_url": "ce n’est pas une URL {engine}",
+				"unavailable": "{engine} : aucun pilote ne fonctionne encore avec interface-database {version}.",
+				"unresolved": "{engine} : ce projet ne résout aucune version d’interface-database, aucun pilote ne peut donc être choisi."
 			},
 			"proposal": {
 				"saved_in": "enregistré dans le module {module}",

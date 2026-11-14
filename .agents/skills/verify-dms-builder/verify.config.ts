@@ -21,7 +21,6 @@ export interface VerifyConfig {
 }
 
 const SKILL = ".agents/skills/verify-dms-builder";
-const ENGINE = "src/builder/implementations/dms-builder/engine";
 
 const config: VerifyConfig = {
   playground: `${SKILL}/playground`,
@@ -36,16 +35,8 @@ const config: VerifyConfig = {
   smoke: "smoke",
   smokeJourney: "onboard, list the catalog connections and read the project's modules through /api/builder/database as the owner, and see an anonymous request refused",
   doors: {
-    data: {
-      globs: [`${ENGINE}/database-connection-remove.ts`, `${ENGINE}/project-config-remove.ts`],
-      funnels: [],
-      why: "removing a connection takes its modules and their entries out of the project's sources, which a revert of the module does not bring back",
-    },
-    format: {
-      globs: [`${ENGINE}/emit.ts`, `${ENGINE}/resource-emit.ts`, `${ENGINE}/resource-emit-types.ts`, `${ENGINE}/query-emit.ts`, `${ENGINE}/query-template-emit.ts`],
-      funnels: [],
-      why: "the source that mapping a database writes into a project is read back by the project's own build and by the DMS builder that edits it next",
-    },
+    data: null,
+    format: null,
     contract: {
       globs: ["src/builder/routes/**", "src/builder/constants/routes.ts", "src/builder/config.ts", "frontend-vue/builder/app/runtime/database-types.ts"],
       funnels: [],

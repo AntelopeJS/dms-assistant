@@ -156,7 +156,8 @@ void test("an explicit builder.api.enabled overrides the development default", a
   );
 });
 
-void test("constructs the builder with its own config, never the assistant keys", async () => {
+/** Fails on a module that passes the builder the assistant's keys, or builder.projectRoot. */
+void test("constructs the builder with its own config, never the assistant keys or projectRoot", async () => {
   /** @type {unknown[]} */
   const builders = [];
   /** @type {unknown[]} */
@@ -167,9 +168,7 @@ void test("constructs the builder with its own config, never the assistant keys"
     builder: { projectRoot: "/app/src", api: { enabled: "yes" } },
   });
   await loaded.start();
-  assert.deepEqual(builders, [
-    { projectRoot: "/app/src", api: { enabled: undefined } },
-  ]);
+  assert.deepEqual(builders, [{ api: { enabled: undefined } }]);
   assert.deepEqual(sidecars, [
     {
       hostProjectRoot: process.cwd(),

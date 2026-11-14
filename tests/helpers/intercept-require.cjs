@@ -3,6 +3,13 @@ const { z } = require("zod");
 
 const RequireMethod = z.instanceof(Function);
 
+/** A mock that makes its specifier fail to resolve, as a package the project does not install. */
+const NOT_INSTALLED = Symbol("not installed");
+
+class ModuleNotFound extends Error {
+  code = "MODULE_NOT_FOUND";
+}
+
 /**
  * Makes the requires of the modules loaded from now on resolve to the mocks.
  *
@@ -21,6 +28,9 @@ function interceptRequire(mocks, stubUnmocked, testModule) {
    * @returns {unknown} The mock of the specifier, else the module it resolves to.
    */
   Module.prototype.require = function (request) {
+    if (mocks[request] === NOT_INSTALLED) {
+      throw new ModuleNotFound(`Cannot find module '${request}'`);
+    }
     return (
       mocks[request] ??
       (stubUnmocked && this !== testModule
@@ -35,4 +45,4 @@ function interceptRequire(mocks, stubUnmocked, testModule) {
   };
 }
 
-module.exports = { interceptRequire };
+module.exports = { interceptRequire, NOT_INSTALLED };

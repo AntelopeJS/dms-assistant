@@ -29,6 +29,7 @@ import type {
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
+import { tabAnalysisLead } from "./analysis-lead";
 import type { ConnectMemory } from "./connect-memory";
 import {
 	canConnect,
@@ -183,9 +184,14 @@ export function useDatabaseConnect(
 	let generation = RESUMED_LOOP;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
+	const lead = tabAnalysisLead();
 
 	function current(loop: number): boolean {
 		return !disposed && loop === generation;
+	}
+
+	async function leads(connection: string, loop: number): Promise<boolean> {
+		return (await lead.take(connection)) && current(loop);
 	}
 
 	async function checkAccess(
@@ -241,9 +247,14 @@ export function useDatabaseConnect(
 		);
 		view.value = next;
 		if (next.schemas && !analysing && next.job !== answeredSchemas) {
+			if (!(await leads(connection, loop))) return next;
 			answeredSchemas = next.job;
 			await analyse(connection, module, loop, preferredSchemas(next.schemas));
-		} else if (next.needsAnalysis && !analysing) {
+		} else if (
+			next.needsAnalysis &&
+			!analysing &&
+			(await leads(connection, loop))
+		) {
 			await analyse(connection, module, loop);
 		}
 		return next;
@@ -254,14 +265,26 @@ export function useDatabaseConnect(
 		module: string,
 		loop: number,
 	): Promise<void> {
+		if (await keepsFollowing(connection, module, loop)) {
+			timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
+		} else if (current(loop)) {
+			lead.release();
+		}
+	}
+
+	async function keepsFollowing(
+		connection: string,
+		module: string,
+		loop: number,
+	): Promise<boolean> {
 		let next: BuildView | null;
 		try {
 			next = await followBuild(connection, module, loop);
 		} catch (error) {
 			if (current(loop)) failure.value = api.failure(error).detail;
-			return;
+			return false;
 		}
-		if (next === null || !current(loop)) return;
+		if (next === null || !current(loop)) return false;
 		const expired =
 			loop === RESUMED_LOOP &&
 			resumeUntil !== undefined &&
@@ -269,12 +292,12 @@ export function useDatabaseConnect(
 		if (next.undeclared || expired) {
 			memory.clear();
 			phase.value = { kind: "form" };
-			return;
+			return false;
 		}
 		if (next.fork && next.job) {
 			memory.clear();
 			phase.value = { kind: "analysed", connection, module };
-			return;
+			return false;
 		}
 		if (
 			next.connectionError !== undefined ||
@@ -282,10 +305,9 @@ export function useDatabaseConnect(
 			next.empty
 		) {
 			memory.clear();
-			return;
+			return false;
 		}
-		if (next.gaveUp || failure.value !== null) return;
-		timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
+		return !next.gaveUp && failure.value === null;
 	}
 
 	async function write(
@@ -341,6 +363,7 @@ export function useDatabaseConnect(
 
 	function stop(): { loop: number; attempt: string } {
 		if (timer !== undefined) clearTimeout(timer);
+		lead.release();
 		generation += 1;
 		const attempt = memory.begin();
 		checked = undefined;
@@ -420,6 +443,7 @@ export function useDatabaseConnect(
 	onBeforeUnmount(() => {
 		disposed = true;
 		if (timer !== undefined) clearTimeout(timer);
+		lead.release();
 	});
 
 	if (remembered !== null) {

@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-	type BuildAnswers,
-	buildState,
-	forkSummary,
-	forkText,
-	preferredSchemas,
-	RELOAD_LIMIT_MS,
-	UNREACHABLE,
-} from '../app/runtime/database-build'
+import { buildState, preferredSchemas } from '../app/runtime/database-build'
 import type {
 	AnalysisState,
 	DatabaseConnection,
@@ -15,6 +7,10 @@ import type {
 	OpenItem,
 	ProposedResource,
 } from '../app/runtime/database-types'
+
+type BuildAnswers = Parameters<typeof buildState>[0]
+
+const THREE_MINUTES_MS = 3 * 60 * 1000
 
 function proposed<T>(value: T) {
 	return { value, rule: 'R1', kind: 'default' as const }
@@ -82,7 +78,7 @@ function statuses(answers: BuildAnswers, reloadingFor = 0): string[] {
 
 describe('the build steps, derived from the three answers', () => {
 	it('reads a failed request as the project reloading', () => {
-		const answers: BuildAnswers = { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
+		const answers: BuildAnswers = { declared: 'unreachable', listed: 'unreachable', analysis: 'unreachable' }
 		expect(statuses(answers)).toEqual(['done', 'running', 'pending', 'pending'])
 		expect(buildState(answers).reloading).toBe(true)
 	})
@@ -163,9 +159,9 @@ describe('the build steps, derived from the three answers', () => {
 	})
 
 	it('fails the reload after 3 minutes with how to restart by hand, and not before', () => {
-		const answers: BuildAnswers = { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
-		expect(buildState(answers, RELOAD_LIMIT_MS - 1).steps[1]?.status).toBe('running')
-		const late = buildState(answers, RELOAD_LIMIT_MS)
+		const answers: BuildAnswers = { declared: 'unreachable', listed: 'unreachable', analysis: 'unreachable' }
+		expect(buildState(answers, THREE_MINUTES_MS - 1).steps[1]?.status).toBe('running')
+		const late = buildState(answers, THREE_MINUTES_MS)
 		expect(late.gaveUp).toBe(true)
 		expect(late.steps[1]).toMatchObject({ status: 'failed' })
 		expect(late.steps[1]?.detail).toContain('Restart it by hand')
@@ -177,6 +173,9 @@ describe('the build steps, derived from the three answers', () => {
 })
 
 describe('the fork summary', () => {
+	const fork = (proposal: MappingProposal) =>
+		buildState({ declared: true, listed: LISTED, analysis: job('done', proposal) }).fork
+
 	it('counts a purpose item as a table, and its own questions with the open items', () => {
 		const withQuestions: MappingProposal = {
 			...SEED,
@@ -184,16 +183,12 @@ describe('the fork summary', () => {
 				entry.kind === 'purpose' ? { ...entry, open: [item('label:order_items', 'label')] } : entry,
 			),
 		}
-		expect(forkSummary(withQuestions)).toEqual({ tables: 8, pages: 5, stats: 2, questions: 4 })
+		expect(fork(withQuestions)).toEqual({ tables: 8, pages: 5, stats: 2, questions: 4 })
 	})
 
 	it('counts field-type items as questions', () => {
 		const typed = { ...SEED, open: [...SEED.open, item('field-type:orders.total', 'field-type')] }
-		expect(forkSummary(typed).questions).toBe(4)
-	})
-
-	it('reads as the design words it', () => {
-		expect(forkText(forkSummary(SEED))).toBe('8 tables: 5 pages, 2 for statistics, 3 questions')
+		expect(fork(typed)?.questions).toBe(4)
 	})
 })
 

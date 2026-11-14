@@ -2,20 +2,9 @@ import type { OpenItem } from './database-types'
 import { t } from './i18n'
 
 /**
- * What the analysis and the database drivers word in English, read in the active locale. A
- * question the builder can rebuild from its item, a driver's lossy-reading reason and a column
- * trait are translated; any other text the server sends is shown as sent.
+ * What the analysis words in English, read in the active locale. A question the builder can
+ * rebuild from its item is translated; any other text the server sends is shown as sent.
  */
-
-const LOSSY_READINGS: ReadonlyArray<readonly [reason: string, key: string]> = [
-	['a bigint beyond 2^53 loses precision as a number; declare it string to read it exactly', 'bigint'],
-	['a numeric loses precision as a number; declare it string to read it exactly', 'numeric'],
-	['a real widened to a number is not the decimal it was written as', 'real'],
-	['microseconds are truncated to milliseconds', 'microseconds'],
-	['json is read as jsonb: duplicate keys, key order and whitespace are not kept', 'json'],
-]
-
-const TIMESTAMP_PREFIX = 'a timestamp without time zone is read as UTC; '
 
 /** The schemas question counts the tables its options stand for, as `schema (count)` titles. */
 function tablesBehind(item: OpenItem): number {
@@ -35,14 +24,4 @@ export function questionText(item: OpenItem): string {
 		default:
 			return item.question
 	}
-}
-
-/** A driver's reason a declaration does not round-trip, in the active locale when it is a known one. */
-export function lossyText(reason: string): string {
-	const known = LOSSY_READINGS.find(([text]) => text === reason)
-	if (known) return t(`database.server.lossy.${known[1]}`)
-	if (reason.startsWith(TIMESTAMP_PREFIX)) {
-		return t('database.server.lossy.timestamp', { rest: lossyText(reason.slice(TIMESTAMP_PREFIX.length)) })
-	}
-	return reason
 }

@@ -4,19 +4,18 @@
  * connection's latest analysis. A closed tab or a reload of the project resumes where things stand.
  */
 import type { useBuilderApi } from './api'
-import { analysisSummary } from './analysis-summary'
 import { questionText } from './database-server-text'
 import { t } from './i18n'
 import type { AnalysisState, DatabaseConnection, MappingProposal, OpenItem } from './database-types'
 
 /** How long the screen waits for the project to come back before it says how to restart by hand. */
-export const RELOAD_LIMIT_MS = 3 * 60 * 1000
+const RELOAD_LIMIT_MS = 3 * 60 * 1000
 
-export type StepStatus = 'pending' | 'running' | 'done' | 'failed'
+type StepStatus = 'pending' | 'running' | 'done' | 'failed'
 
-export type StepKey = 'add' | 'reload' | 'connect' | 'read'
+type StepKey = 'add' | 'reload' | 'connect' | 'read'
 
-export interface BuildStep {
+interface BuildStep {
 	key: StepKey
 	title: string
 	status: StepStatus
@@ -24,12 +23,12 @@ export interface BuildStep {
 }
 
 /** What could not be read because the project was down: it counts as reloading. */
-export const UNREACHABLE = 'unreachable'
+const UNREACHABLE = 'unreachable'
 
 type Unreachable = typeof UNREACHABLE
 
 /** The three answers the screen derives from, each one possibly lost to a reload. */
-export interface BuildAnswers {
+interface BuildAnswers {
 	/** Whether the configuration declares the connection (`GET /database/connection`). */
 	declared: boolean | Unreachable
 	/** The variable holding its URL, when the configuration declares it. */
@@ -41,7 +40,7 @@ export interface BuildAnswers {
 }
 
 /** What the fork says of a proposal: "8 tables: 5 pages, 2 for statistics, 3 questions". */
-export interface ForkSummary {
+interface ForkSummary {
 	tables: number
 	pages: number
 	stats: number
@@ -67,8 +66,6 @@ export interface BuildView {
 	/** The analysis job the fork and *Review it myself* stand on. */
 	job?: string
 	fork?: ForkSummary
-	/** The finished analysis, for the hand-off to the assistant. */
-	proposal?: MappingProposal
 }
 
 interface FetchFailure {
@@ -126,7 +123,7 @@ export async function readBuild(api: ReturnType<typeof useBuilderApi>, connectio
 }
 
 /** The questions a purpose item carries count beside it, as the workspace asks them. */
-export function forkSummary(proposal: MappingProposal): ForkSummary {
+function forkSummary(proposal: MappingProposal): ForkSummary {
 	const asked = proposal.open.filter((item) => item.kind !== 'schemas')
 	const purposes = asked.filter((item) => item.kind === 'purpose' && item.resource)
 	return {
@@ -135,16 +132,6 @@ export function forkSummary(proposal: MappingProposal): ForkSummary {
 		stats: proposal.resources.filter((resource) => !resource.tableView.value).length,
 		questions: asked.length + purposes.reduce((count, item) => count + (item.open?.length ?? 0), 0),
 	}
-}
-
-/** "8 tables: 5 pages, 2 for statistics, 3 questions". */
-export function forkText(summary: ForkSummary): string {
-	return t('database.build.fork', {
-		tables: t('database.build.tables', {}, summary.tables),
-		pages: t('database.build.pages', {}, summary.pages),
-		stats: summary.stats,
-		questions: t('database.build.questions', {}, summary.questions),
-	})
 }
 
 function step(key: StepKey, title: string, status: StepStatus, detail = ''): BuildStep {
@@ -249,15 +236,7 @@ export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
 		analysisFailed: !!analysis && analysis.status !== 'running' && !analysis.proposal,
 		job: analysis?.id,
 		fork: summary && summary.tables > 0 ? summary : undefined,
-		proposal: summary && summary.tables > 0 ? proposal : undefined,
 	}
-}
-
-/** The message *Let the assistant finish* sends, and *Copy prompt* copies: the skills, the connection and its tables module. */
-export function assistantMessage(connection: string, module: string, proposal?: MappingProposal): string {
-	const head = `Use dms-external-database on connection ${connection}, module ${module}. The connection is live and analysed: settle the open items, map the tables, and plan analytics pages from the data with dms-page-design.`
-	if (!proposal) return head
-	return `${head} The summary below is the analysis; plan from it and probe only what it leaves out, instead of reading the proposal again table by table.\n\n${analysisSummary(proposal)}`
 }
 
 /** The schemas the question pre-checks: `public`, or else the one with the most tables. */

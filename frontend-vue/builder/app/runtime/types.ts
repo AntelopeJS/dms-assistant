@@ -1,9 +1,9 @@
-export interface ValidationIssue {
+interface ValidationIssue {
 	pointer: string
 	message: string
 }
 
-export interface TypecheckError {
+interface TypecheckError {
 	file: string
 	line: number
 	message: string
@@ -19,7 +19,7 @@ export type BuilderError =
 	| { code: 'stale'; ref: string; currentVersion: string }
 	| { code: 'typecheck_failed'; diagnostics: TypecheckError[] }
 
-export interface FileChange {
+interface FileChange {
 	path: string
 	kind: string
 	diff: string
@@ -29,7 +29,7 @@ export interface FileChange {
  * Something an operation that went through still wants said: a column stored
  * as a string, a query kept because a block reads it, a route that moved.
  */
-export interface OpWarning {
+interface OpWarning {
 	code: string
 	message: string
 }

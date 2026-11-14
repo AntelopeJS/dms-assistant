@@ -9,9 +9,9 @@ import { useDmsApp } from '#dms/frontend-module'
  * back through the host's composer. English is the fallback locale: a key a
  * translation lacks still reads as English.
  */
-export const I18N_NAMESPACE = 'dms_builder'
+const I18N_NAMESPACE = 'dms_builder'
 
-export type MessageParams = Record<string, unknown>
+type MessageParams = Record<string, unknown>
 
 /**
  * A builder message in the active locale. `count` picks the plural form of a

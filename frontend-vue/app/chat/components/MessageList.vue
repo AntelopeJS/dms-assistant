@@ -109,7 +109,7 @@ const elapsedLabel = computed(() =>
 );
 const quietLabel = computed<string>(() => {
 	if (!isAgentQuiet(props.progress, props.nowMs)) return "";
-	return t("dms_ai.panel.activity.quiet", {
+	return t("dms_assistant.panel.activity.quiet", {
 		time: formatClock(agentQuietMs(props.progress, props.nowMs)),
 	});
 });
@@ -117,9 +117,9 @@ const quietLabel = computed<string>(() => {
 function dayLabel(dayMs: number): string {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
-	if (dayMs === today.getTime()) return t("dms_ai.common.today");
+	if (dayMs === today.getTime()) return t("dms_assistant.common.today");
 	if (dayMs === today.getTime() - MS_PER_DAY)
-		return t("dms_ai.common.yesterday");
+		return t("dms_assistant.common.yesterday");
 	return new Date(dayMs).toLocaleDateString(locale.value, {
 		weekday: "short",
 		day: "numeric",
@@ -248,8 +248,8 @@ async function copyAnswer(content: string): Promise<void> {
 						variant="ghost"
 						square
 						icon="i-ph-copy"
-						:aria-label="t('dms_ai.panel.copy_answer')"
-						:title="t('dms_ai.panel.copy_answer')"
+						:aria-label="t('dms_assistant.panel.copy_answer')"
+						:title="t('dms_assistant.panel.copy_answer')"
 						@click="copyAnswer(item.message.content)"
 					/>
 					<span class="cb-ai__meta">
@@ -330,7 +330,7 @@ async function copyAnswer(content: string): Promise<void> {
 				<UIcon name="i-ph-wifi-slash" class="run-stalled__icon" />
 				<span>
 					{{
-						t("dms_ai.panel.activity.stalled", {
+						t("dms_assistant.panel.activity.stalled", {
 							time: formatClock(stalledForMs),
 						})
 					}}
@@ -339,14 +339,14 @@ async function copyAnswer(content: string): Promise<void> {
 					size="xs"
 					color="neutral"
 					variant="outline"
-					:label="t('dms_ai.panel.connection.reconnect')"
+					:label="t('dms_assistant.panel.connection.reconnect')"
 					@click="emit('reconnect')"
 				/>
 				<UButton
 					size="xs"
 					color="neutral"
 					variant="ghost"
-					:label="t('dms_ai.panel.composer.stop')"
+					:label="t('dms_assistant.panel.composer.stop')"
 					@click="emit('stop')"
 				/>
 			</div>
@@ -528,7 +528,7 @@ async function copyAnswer(content: string): Promise<void> {
 	height: 6px;
 	border-radius: 50%;
 	background: var(--ai);
-	animation: dms-ai-bounce 1.1s ease-in-out infinite;
+	animation: dms-assistant-bounce 1.1s ease-in-out infinite;
 }
 
 .cb-thinking__dots i:nth-child(2) {
@@ -573,7 +573,7 @@ async function copyAnswer(content: string): Promise<void> {
 	flex: 1 1 180px;
 }
 
-@keyframes dms-ai-bounce {
+@keyframes dms-assistant-bounce {
 	0%,
 	80%,
 	100% {

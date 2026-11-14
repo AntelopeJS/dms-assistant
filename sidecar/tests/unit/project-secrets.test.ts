@@ -70,7 +70,7 @@ describe("reachesSecretFile", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-reaches-secret-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-reaches-secret-"));
     await writeFile(join(dir, ".env"), "TOKEN=canary\n");
     await writeFile(join(dir, ".env.example"), "TOKEN=\n");
     await writeFile(join(dir, "notes.txt"), "plain\n");

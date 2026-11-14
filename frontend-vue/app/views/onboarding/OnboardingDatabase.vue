@@ -57,14 +57,14 @@ const ACCESS_OPTIONS: readonly {
 	{
 		value: "read",
 		icon: "i-ph-eye",
-		label: "dms_ai.views.onboarding.database.access_read",
-		hint: "dms_ai.views.onboarding.database.access_read_hint",
+		label: "dms_assistant.views.onboarding.database.access_read",
+		hint: "dms_assistant.views.onboarding.database.access_read_hint",
 	},
 	{
 		value: "read-write",
 		icon: "i-ph-pencil-simple",
-		label: "dms_ai.views.onboarding.database.access_write",
-		hint: "dms_ai.views.onboarding.database.access_write_hint",
+		label: "dms_assistant.views.onboarding.database.access_write",
+		hint: "dms_assistant.views.onboarding.database.access_write_hint",
 	},
 ];
 
@@ -105,57 +105,59 @@ function checkText(check: ConnectCheck): string {
 	switch (check.key) {
 		case "reachable":
 			if (check.status === "running") {
-				return t("dms_ai.views.onboarding.database.reachable_running");
+				return t("dms_assistant.views.onboarding.database.reachable_running");
 			}
 			if (check.status === "failed") {
-				return t("dms_ai.views.onboarding.database.unreachable", {
+				return t("dms_assistant.views.onboarding.database.unreachable", {
 					error: check.error ?? "",
 				});
 			}
 			return check.latencyMs === undefined
-				? t("dms_ai.views.onboarding.database.reachable")
-				: t("dms_ai.views.onboarding.database.reachable_latency", {
+				? t("dms_assistant.views.onboarding.database.reachable")
+				: t("dms_assistant.views.onboarding.database.reachable_latency", {
 						ms: check.latencyMs,
 					});
 		case "signed-in":
 			if (check.status === "failed") {
-				return t("dms_ai.views.onboarding.database.signed_in_failed", {
+				return t("dms_assistant.views.onboarding.database.signed_in_failed", {
 					error: check.error ?? "",
 				});
 			}
 			if (check.status !== "done") {
-				return t("dms_ai.views.onboarding.database.signed_in_pending");
+				return t("dms_assistant.views.onboarding.database.signed_in_pending");
 			}
 			return check.user === undefined
-				? t("dms_ai.views.onboarding.database.signed_in_no_user")
-				: t("dms_ai.views.onboarding.database.signed_in", { user: check.user });
+				? t("dms_assistant.views.onboarding.database.signed_in_no_user")
+				: t("dms_assistant.views.onboarding.database.signed_in", {
+						user: check.user,
+					});
 		case "read":
 			if (check.status === "failed") {
-				return t("dms_ai.views.onboarding.database.read_failed", {
+				return t("dms_assistant.views.onboarding.database.read_failed", {
 					error: check.error ?? "",
 				});
 			}
 			return check.canWrite
-				? t("dms_ai.views.onboarding.database.read_write")
-				: t("dms_ai.views.onboarding.database.read");
+				? t("dms_assistant.views.onboarding.database.read_write")
+				: t("dms_assistant.views.onboarding.database.read");
 		case "schema":
 			if (check.problem === "empty") {
-				return t("dms_ai.views.onboarding.database.empty");
+				return t("dms_assistant.views.onboarding.database.empty");
 			}
 			if (check.problem === "gave-up") {
-				return t("dms_ai.views.onboarding.database.gave_up");
+				return t("dms_assistant.views.onboarding.database.gave_up");
 			}
 			if (check.restart) {
-				return t("dms_ai.views.onboarding.database.restart");
+				return t("dms_assistant.views.onboarding.database.restart");
 			}
 			if (check.problem === "failed") {
-				return t("dms_ai.views.onboarding.database.schema_failed", {
+				return t("dms_assistant.views.onboarding.database.schema_failed", {
 					error: check.error ?? "",
 				});
 			}
 			return check.status === "done"
-				? t("dms_ai.views.onboarding.database.schema_done")
-				: t("dms_ai.views.onboarding.database.schema_running");
+				? t("dms_assistant.views.onboarding.database.schema_done")
+				: t("dms_assistant.views.onboarding.database.schema_running");
 	}
 }
 
@@ -164,12 +166,12 @@ const urlHint = computed(() => {
 	if (problem === null) return null;
 	if (problem.kind === "invalid") return problem.message;
 	if (problem.kind === "no-database") {
-		return t("dms_ai.views.onboarding.database.no_database");
+		return t("dms_assistant.views.onboarding.database.no_database");
 	}
 	if (problem.kind === "no-name") {
-		return t("dms_ai.views.onboarding.database.no_name");
+		return t("dms_assistant.views.onboarding.database.no_name");
 	}
-	return t("dms_ai.views.onboarding.database.unreadable", {
+	return t("dms_assistant.views.onboarding.database.unreadable", {
 		engine: ENGINES[engine.value].label,
 	});
 });
@@ -213,8 +215,8 @@ watch(database.phase, (phase) => {
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.database.title')"
-		:lede="t('dms_ai.views.onboarding.database.lede')"
+		:title="t('dms_assistant.views.onboarding.database.title')"
+		:lede="t('dms_assistant.views.onboarding.database.lede')"
 	>
 		<div class="mt-5 flex flex-wrap gap-2" role="radiogroup">
 			<UButton
@@ -242,7 +244,7 @@ watch(database.phase, (phase) => {
 			{{ unavailableReason(option, project?.interfaceDatabase) }}
 		</p>
 		<UFormField
-			:label="t('dms_ai.views.onboarding.database.url')"
+			:label="t('dms_assistant.views.onboarding.database.url')"
 			class="mt-4"
 			:error="urlHint ?? false"
 		>
@@ -282,7 +284,7 @@ watch(database.phase, (phase) => {
 		</ul>
 		<fieldset v-if="choosing" class="mt-4" data-access-choice>
 			<legend class="text-highlighted mb-2 text-[13px] font-semibold">
-				{{ t("dms_ai.views.onboarding.database.access_title") }}
+				{{ t("dms_assistant.views.onboarding.database.access_title") }}
 			</legend>
 			<div class="grid gap-2 sm:grid-cols-2" role="radiogroup">
 				<button
@@ -323,11 +325,11 @@ watch(database.phase, (phase) => {
 		</p>
 		<p class="text-dimmed mt-4 flex items-center gap-1.5 text-xs">
 			<UIcon name="i-ph-lock-simple" class="size-3.5 shrink-0" />
-			{{ t("dms_ai.views.onboarding.database.stored") }}
+			{{ t("dms_assistant.views.onboarding.database.stored") }}
 		</p>
 		<template #footer>
 			<UButton
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -335,7 +337,7 @@ watch(database.phase, (phase) => {
 			/>
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.database.connect')"
+				:label="t('dms_assistant.views.onboarding.database.connect')"
 				trailing-icon="i-ph-arrow-right"
 				:disabled="!canConnect"
 				:loading="busy"

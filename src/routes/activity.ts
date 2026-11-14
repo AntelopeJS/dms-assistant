@@ -26,7 +26,7 @@ import { ACTIVITY_PAGE_ANSWER, ACTIVITY_ROW_ANSWER } from "./sidecar-answers";
 import { findLoggedTool } from "../vocabulary";
 
 const ACTIVITY_PATH = "/activity";
-const EXPORT_FILE_PREFIX = "dms-ai-activity";
+const EXPORT_FILE_PREFIX = "dms-assistant-activity";
 const ISO_DAY_LENGTH = 10;
 
 const FILTERS: FilterMappings = {

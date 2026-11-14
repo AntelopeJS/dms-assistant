@@ -25,7 +25,7 @@ export const CHECKPOINT_EXCLUDES: readonly string[] = [
   ".git/",
 ];
 
-export const CHECKPOINT_REF_PREFIX = "refs/dms-ai/";
+export const CHECKPOINT_REF_PREFIX = "refs/dms-assistant/";
 export const BEFORE_REF_SUFFIX = "/before";
 export const AFTER_REF_SUFFIX = "/after";
 

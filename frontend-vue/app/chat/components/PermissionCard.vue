@@ -128,7 +128,7 @@ defineExpose({ allow, deny });
 				size="sm"
 				color="error"
 				variant="subtle"
-				:label="t('dms_ai.panel.approvals.data_loss')"
+				:label="t('dms_assistant.panel.approvals.data_loss')"
 			/>
 			<UButton
 				v-if="!isFocused"
@@ -137,7 +137,7 @@ defineExpose({ allow, deny });
 				variant="outline"
 				@click="emit('focus')"
 			>
-				{{ t("dms_ai.panel.approvals.review") }}
+				{{ t("dms_assistant.panel.approvals.review") }}
 				<UKbd value="J" size="sm" />
 			</UButton>
 		</div>
@@ -166,9 +166,9 @@ defineExpose({ allow, deny });
 				</dl>
 				<label v-if="confirmText" class="perm__confirm">
 					<span>
-						{{ t("dms_ai.panel.approvals.type_to_confirm_before") }}
+						{{ t("dms_assistant.panel.approvals.type_to_confirm_before") }}
 						<code class="inline-code">{{ confirmText }}</code>
-						{{ t("dms_ai.panel.approvals.type_to_confirm_after") }}
+						{{ t("dms_assistant.panel.approvals.type_to_confirm_after") }}
 					</span>
 					<UInput
 						v-model="typedName"
@@ -185,7 +185,7 @@ defineExpose({ allow, deny });
 				v-if="!request.alwaysAsk && scopes.length > 0"
 				class="perm__scope"
 				role="radiogroup"
-				:aria-label="t('dms_ai.panel.approvals.scope_label')"
+				:aria-label="t('dms_assistant.panel.approvals.scope_label')"
 			>
 				<label class="scope-opt">
 					<input v-model="scope" type="radio" :value="ONCE_SCOPE" />
@@ -194,7 +194,7 @@ defineExpose({ allow, deny });
 				<label v-for="option in scopes" :key="option.id" class="scope-opt">
 					<input v-model="scope" type="radio" :value="option.id" />
 					<span class="scope-opt__label">{{ option.label }}</span>
-					<small>{{ t("dms_ai.panel.approvals.this_chat") }}</small>
+					<small>{{ t("dms_assistant.panel.approvals.this_chat") }}</small>
 				</label>
 			</div>
 			<div v-if="isSuggesting" class="perm__suggest">
@@ -203,7 +203,7 @@ defineExpose({ allow, deny });
 					:rows="2"
 					autoresize
 					:maxlength="FEEDBACK_MAX_CHARS"
-					:placeholder="t('dms_ai.panel.approvals.suggest_placeholder')"
+					:placeholder="t('dms_assistant.panel.approvals.suggest_placeholder')"
 					class="w-full"
 				/>
 				<div class="perm__suggest-row">
@@ -211,7 +211,7 @@ defineExpose({ allow, deny });
 						size="xs"
 						color="neutral"
 						variant="ghost"
-						:label="t('dms_ai.common.cancel')"
+						:label="t('dms_assistant.common.cancel')"
 						@click="isSuggesting = false"
 					/>
 					<UButton
@@ -219,7 +219,7 @@ defineExpose({ allow, deny });
 						color="neutral"
 						variant="outline"
 						:disabled="feedback.trim() === ''"
-						:label="t('dms_ai.panel.approvals.send_suggestion')"
+						:label="t('dms_assistant.panel.approvals.send_suggestion')"
 						@click="sendSuggestion"
 					/>
 				</div>
@@ -232,7 +232,7 @@ defineExpose({ allow, deny });
 					color="neutral"
 					variant="ghost"
 					icon="i-ph-chat-circle-dots"
-					:label="t('dms_ai.panel.approvals.suggest')"
+					:label="t('dms_assistant.panel.approvals.suggest')"
 					@click="isSuggesting = true"
 				/>
 				<span class="perm__spacer" />
@@ -243,7 +243,7 @@ defineExpose({ allow, deny });
 					class="perm__deny"
 					@click="deny"
 				>
-					{{ t("dms_ai.panel.approvals.deny") }}
+					{{ t("dms_assistant.panel.approvals.deny") }}
 					<UKbd value="N" size="sm" />
 				</UButton>
 				<UButton

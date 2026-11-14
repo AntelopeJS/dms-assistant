@@ -20,7 +20,7 @@ function waitForPort(child) {
     /** @param {Buffer} chunk */
     const onData = (chunk) => {
       output += chunk.toString();
-      const match = output.match(/DMS_AI_SIDECAR_PORT=(\d+)/);
+      const match = output.match(/DMS_ASSISTANT_SIDECAR_PORT=(\d+)/);
       if (match) resolve(Number(match[1]));
     };
     child.stdout.on("data", onData);
@@ -53,7 +53,9 @@ function requestHealth(port) {
 
 void test("built sidecar starts and serves health", async () => {
   assert.equal(existsSync(sidecarEntry), true);
-  const stateRoot = await mkdtemp(path.join(tmpdir(), "dms-ai-sidecar-"));
+  const stateRoot = await mkdtemp(
+    path.join(tmpdir(), "dms-assistant-sidecar-"),
+  );
   const child = spawn(
     process.execPath,
     [sidecarEntry, "--port", "0", "--root", stateRoot],

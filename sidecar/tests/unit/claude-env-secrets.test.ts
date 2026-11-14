@@ -6,7 +6,7 @@ import { CLAUDE_MCP_TOOL_TIMEOUT_ENV_VAR } from "../../src/constants/claude.js";
 import { MCP_TOOL_TIMEOUT_MS } from "../../src/constants/mcp.js";
 import { buildClaudeEnv } from "../../src/providers/claude/config.js";
 
-const TMP_PREFIX = "dms-ai-claude-env-";
+const TMP_PREFIX = "dms-assistant-claude-env-";
 const CANARY_URL = "postgres://shop:canary-password-7f3a@db.example/shop";
 
 const BASE_ENV = {

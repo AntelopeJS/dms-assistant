@@ -138,7 +138,7 @@ describe("synthesized events", () => {
         item: {
           type: "mcpToolCall",
           id: "call_1",
-          server: "dms-ai",
+          server: "dms-assistant",
           tool: "builder_catalog",
           status: "inProgress",
           arguments: {},
@@ -152,7 +152,7 @@ describe("synthesized events", () => {
     });
   });
 
-  it("names another server's tool by that server, not as a dms-ai tool", () => {
+  it("names another server's tool by that server, not as a dms-assistant tool", () => {
     const events = createCodexAdapter().handle({
       method: "item/started",
       params: {

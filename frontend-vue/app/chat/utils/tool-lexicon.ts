@@ -1,6 +1,6 @@
 /**
  * The chat's tool lexicon: every tool the agents call (Claude built-ins, the
- * Codex items the sidecar maps onto them, dms-ai's MCP tools and the
+ * Codex items the sidecar maps onto them, dms-assistant's MCP tools and the
  * Builder's) as a translated verb, an icon and a target read from its
  * arguments, so a row reads "Add block · Top customers · TopListCard" rather
  * than a tool name and a JSON blob.
@@ -19,7 +19,7 @@ const DEFAULT_ICON = "i-ph-wrench";
 type TargetReader = (args: Record<string, unknown>) => string;
 
 interface ToolLexiconEntry {
-	/** Key under `dms_ai.tools.*`. */
+	/** Key under `dms_assistant.tools.*`. */
 	verb: string;
 	icon: string;
 	target: TargetReader;
@@ -107,7 +107,7 @@ const none: TargetReader = () => "";
 const TOOL_QUERY_PREFIX = /^select:/;
 const TOOL_LIST_SEPARATOR = ",";
 
-/** "select:mcp__dms-ai__list_pages,…" → "list_pages, …". */
+/** "select:mcp__dms-assistant__list_pages,…" → "list_pages, …". */
 const toolQuery: TargetReader = (args) =>
 	readString(args, "query")
 		.replace(TOOL_QUERY_PREFIX, "")
@@ -585,7 +585,7 @@ export function toolVerb(
 	translate: (key: string) => string,
 ): string {
 	if (description.verbKey === null) return description.fallbackVerb;
-	return translate(`dms_ai.tools.${description.verbKey}`);
+	return translate(`dms_assistant.tools.${description.verbKey}`);
 }
 
 /** One argument of a call, as the expanded row lists it. */

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readProjectInfo } from "../../src/host/project-info.js";
 
-const TMP_PREFIX = "dms-ai-pinfo-";
+const TMP_PREFIX = "dms-assistant-pinfo-";
 const PACKAGE_FILENAME = "package.json";
 const NON_EXISTENT_PATH = "/this/path/does/not/exist/anywhere";
 const FALLBACK_NAME = "unknown";
@@ -19,7 +19,7 @@ const SAMPLE_PACKAGE = {
     zod: "^3.0.0",
   },
   devDependencies: {
-    "@antelopejs/dms-ai": "^0.1.0",
+    "@antelopejs/dms-assistant": "^0.1.0",
     typescript: "^5.0.0",
   },
 };
@@ -27,7 +27,7 @@ const SAMPLE_PACKAGE = {
 const EXPECTED_MODULES = [
   "@antelopejs/api",
   "@antelopejs/database-postgres",
-  "@antelopejs/dms-ai",
+  "@antelopejs/dms-assistant",
 ];
 
 interface Harness {

@@ -5,7 +5,7 @@ import type {
 import { isJsonBody, type JsonBody } from "../sidecar/json-body";
 
 /**
- * What dms-ai answers in interface-dms's shapes, which do not promise JSON:
+ * What dms-assistant answers in interface-dms's shapes, which do not promise JSON:
  * a banner action may open a component whose serialized props are open.
  */
 export type DmsContent = BannerContent | { items: KeyValueListItem[] };

@@ -48,7 +48,7 @@ function installed(root, name) {
  */
 function createFixture() {
   const base = fs.realpathSync(
-    fs.mkdtempSync(path.join(os.tmpdir(), "dms-ai-skill-sources-")),
+    fs.mkdtempSync(path.join(os.tmpdir(), "dms-assistant-skill-sources-")),
   );
   const moduleDir = path.join(base, "cache", LOADED_MODULE);
   const projectDir = path.join(base, "project");

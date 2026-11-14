@@ -2,7 +2,7 @@
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import OnboardingDatabase from "../app/views/onboarding/OnboardingDatabase.vue";
-import views from "../i18n/locales/dms-ai-views-en-GB.json";
+import views from "../i18n/locales/dms-assistant-views-en-GB.json";
 import {
 	createOnboardingHarness,
 	ONBOARDING_STUBS,
@@ -64,7 +64,7 @@ function button(picker: VueWrapper, label: string): HTMLButtonElement {
 }
 
 function connectButton(picker: VueWrapper): HTMLButtonElement {
-	return button(picker, views.dms_ai.views.onboarding.database.connect);
+	return button(picker, views.dms_assistant.views.onboarding.database.connect);
 }
 
 afterEach(() => {

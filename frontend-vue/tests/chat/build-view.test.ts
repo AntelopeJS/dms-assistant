@@ -58,7 +58,7 @@ describe("the build dialog's view of a build turn", () => {
 				},
 			],
 		});
-		const call = tool("c1", "mcp__dms-ai__builder_page_structure", {
+		const call = tool("c1", "mcp__dms-assistant__builder_page_structure", {
 			page: "/rentals",
 		});
 		const withTodos = buildView(BIKES, [request, call, todos], true);
@@ -86,8 +86,10 @@ describe("the build dialog's view of a build turn", () => {
 			BIKES,
 			[
 				request,
-				tool("c1", "mcp__dms-ai__builder_add_block", { page: "/rentals#grid" }),
-				tool("c2", "mcp__dms-ai__navigate", { page: "/elsewhere" }),
+				tool("c1", "mcp__dms-assistant__builder_add_block", {
+					page: "/rentals#grid",
+				}),
+				tool("c2", "mcp__dms-assistant__navigate", { page: "/elsewhere" }),
 			],
 			false,
 		);
@@ -124,7 +126,7 @@ describe("the build dialog's view of a build turn", () => {
 		const failing = verify(false, ["the table drew no rows"]);
 		const failed = buildView(
 			BIKES,
-			[request, failing, tool("c9", "mcp__dms-ai__builder_refresh", {})],
+			[request, failing, tool("c9", "mcp__dms-assistant__builder_refresh", {})],
 			false,
 		);
 		expect(failed.outcome).toBe("failed");
@@ -158,7 +160,9 @@ describe("the build dialog's view of a build turn", () => {
 			{ mockup: "bikes", pageRef: "/shop/board" },
 			[
 				request,
-				tool("c1", "mcp__dms-ai__builder_add_block", { page: "/rentals#grid" }),
+				tool("c1", "mcp__dms-assistant__builder_add_block", {
+					page: "/rentals#grid",
+				}),
 			],
 			false,
 		);

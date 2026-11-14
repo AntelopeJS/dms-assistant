@@ -41,14 +41,16 @@ export function useChangeSetActions(): ChangeSetActions {
 				body: {},
 			});
 			toast.add({
-				title: t("dms_ai.views.toast.redone", { number: changeSet.number }),
+				title: t("dms_assistant.views.toast.redone", {
+					number: changeSet.number,
+				}),
 				color: AI_COLOR,
 				icon: "i-ph-arrow-clockwise",
 			});
 			await refreshPageBlocks();
 		} catch (error) {
 			presentError(error, {
-				fallbackKey: `dms_ai.views.${classifyFailure(error)}.description`,
+				fallbackKey: `dms_assistant.views.${classifyFailure(error)}.description`,
 			});
 		} finally {
 			isBusy.value = false;
@@ -65,13 +67,19 @@ export function useChangeSetActions(): ChangeSetActions {
 		);
 		const count = result.undone.length;
 		toast.add({
-			title: t("dms_ai.views.toast.undone", { number: changeSet.number }),
-			description: t("dms_ai.views.toast.undone_description", { count }, count),
+			title: t("dms_assistant.views.toast.undone", {
+				number: changeSet.number,
+			}),
+			description: t(
+				"dms_assistant.views.toast.undone_description",
+				{ count },
+				count,
+			),
 			color: AI_COLOR,
 			icon: "i-ph-arrow-counter-clockwise",
 			actions: [
 				{
-					label: t("dms_ai.views.changes.redo"),
+					label: t("dms_assistant.views.changes.redo"),
 					icon: "i-ph-arrow-clockwise",
 					color: "neutral",
 					variant: "outline",

@@ -20,7 +20,8 @@ export interface ChatI18n {
 	locale: Readonly<Ref<string>>;
 }
 
-export const CHAT_I18N_KEY: InjectionKey<ChatI18n> = Symbol("dms-ai:i18n");
+export const CHAT_I18N_KEY: InjectionKey<ChatI18n> =
+	Symbol("dms-assistant:i18n");
 
 const FALLBACK_LOCALE = "en-GB";
 

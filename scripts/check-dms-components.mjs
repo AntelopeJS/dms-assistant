@@ -13,7 +13,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const FRONTEND = path.join(ROOT, "frontend-vue");
 const DMS_PREFIX = "Dms";
-const MODULE_PREFIX = "DmsAi";
+const MODULE_PREFIX = "DmsAssistant";
 const VUE_FILE = /\.vue$/;
 const TAG = /<(Dms[A-Z][A-Za-z0-9]*|dms-[a-z0-9]+(?:-[a-z0-9]+)*)(?=[\s/>])/g;
 

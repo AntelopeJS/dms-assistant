@@ -51,7 +51,7 @@ describe("the launcher icon", () => {
 		expect(wrapper.find(".u-icon").attributes("data-name")).toBe(
 			"i-ph-sparkle",
 		);
-		expect(wrapper.find(".dms-ai-launcher__dot").exists()).toBe(true);
+		expect(wrapper.find(".dms-assistant-launcher__dot").exists()).toBe(true);
 	});
 
 	it("draws the plain sparkle before the session exists", async () => {

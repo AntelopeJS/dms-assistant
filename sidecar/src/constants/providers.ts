@@ -6,7 +6,7 @@ export const PROVIDER_UNAVAILABLE_REASONS = {
   CLAUDE_SDK_MISSING:
     "The Claude agent SDK is not installed alongside the sidecar.",
   CODEX_CLI_MISSING:
-    "Install @openai/codex, at the exact version dms-ai pins, to enable this provider.",
+    "Install @openai/codex, at the exact version dms-assistant pins, to enable this provider.",
   /**
    * Codex versions the app-server protocol by binary and ships about ten
    * releases a month, so the mismatch is the expected state after any upgrade.

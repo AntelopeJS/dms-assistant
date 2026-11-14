@@ -68,7 +68,7 @@ export function useClaudeTurnRunner(): TurnFixture {
   };
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-auto-review-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-auto-review-"));
     traceFile = join(dir, "trace.jsonl");
     process.env.MOCK_CLAUDE = "1";
     process.env.MOCK_CLAUDE_TRACE = traceFile;

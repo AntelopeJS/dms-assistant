@@ -76,7 +76,7 @@ function buildContext(directory: string) {
 }
 
 async function startServer() {
-  const directory = await mkdtemp(join(tmpdir(), "dms-ai-auth-"));
+  const directory = await mkdtemp(join(tmpdir(), "dms-assistant-auth-"));
   const context = buildContext(directory);
   const { server, port } = await createHttpServer({
     ...context,
@@ -184,7 +184,7 @@ describe("sidecar client authentication", () => {
   it("rejects the socket without the Bearer credential, even with cookies, query tokens or the retired subprotocol", async () => {
     const attempts = [
       { protocol: undefined, headers: { Cookie: `token=${CLIENT_TOKEN}` } },
-      { protocol: `dms-ai.${CLIENT_TOKEN}`, headers: {} },
+      { protocol: `dms-assistant.${CLIENT_TOKEN}`, headers: {} },
       { protocol: undefined, headers: { Authorization: "Bearer wrong" } },
     ];
     for (const { protocol, headers } of attempts) {

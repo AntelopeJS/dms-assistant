@@ -14,7 +14,7 @@ beforeAll(() => setBuilderAvailable(true));
 afterAll(() => setBuilderAvailable(false));
 
 const ELICITATION_METHOD = "mcpServer/elicitation/request";
-const DMS_AI_SERVER = "dms-ai";
+const DMS_ASSISTANT_SERVER = "dms-assistant";
 const DMS_SERVER = "dms";
 const OTHER_SERVER = "other";
 const ACCEPTED = { action: "accept", content: {}, _meta: null };
@@ -95,7 +95,7 @@ function elicitation(params: Record<string, JsonValue>) {
 
 const PAGE_CALL = {
   id: "call_page",
-  server: DMS_AI_SERVER,
+  server: DMS_ASSISTANT_SERVER,
   tool: "get_current_page",
   arguments: {},
 };
@@ -124,7 +124,7 @@ const CELLS = MODES.flatMap((mode) =>
   SCOPES.map((generationMode) => ({ mode, generationMode })),
 );
 
-describe("a dms-ai tool's call consent", () => {
+describe("a dms-assistant tool's call consent", () => {
   it.each(CELLS)(
     "is accepted in $mode, $generationMode, for a read and a Builder write",
     async (cell) => {
@@ -132,7 +132,7 @@ describe("a dms-ai tool's call consent", () => {
       const { handler, decisions } = setup(settings, [PAGE_CALL, CREATE_CALL]);
       expect(
         await handler.handle(
-          toolConsent(DMS_AI_SERVER, "get_current_page", {}),
+          toolConsent(DMS_ASSISTANT_SERVER, "get_current_page", {}),
         ),
       ).toEqual(ACCEPTED);
       expect(
@@ -143,7 +143,7 @@ describe("a dms-ai tool's call consent", () => {
       expect(decisions).toEqual([
         {
           callId: "call_page",
-          toolName: "mcp__dms-ai__get_current_page",
+          toolName: "mcp__dms-assistant__get_current_page",
           allowedBy: "read_auto",
         },
         {
@@ -207,7 +207,9 @@ describe("a DMS MCP call the chat holds", () => {
       [PAGE_CALL, CREATE_CALL],
       beforeMutation,
     );
-    await handler.handle(toolConsent(DMS_AI_SERVER, "get_current_page", {}));
+    await handler.handle(
+      toolConsent(DMS_ASSISTANT_SERVER, "get_current_page", {}),
+    );
     expect(beforeMutation).not.toHaveBeenCalled();
     await handler
       .handle(
@@ -328,7 +330,7 @@ describe("the repeat of a call the DMS holds", () => {
 });
 
 describe("an elicitation the sidecar declines", () => {
-  it("declines another server's tool, even one named like a dms-ai tool", async () => {
+  it("declines another server's tool, even one named like a dms-assistant tool", async () => {
     const { handler, decisions } = setup(TURN_SETTINGS, [OTHER_CALL]);
     const consent = toolConsent(
       OTHER_SERVER,
@@ -345,11 +347,13 @@ describe("an elicitation the sidecar declines", () => {
     ]);
   });
 
-  it("declines a dms-ai consent once the turn is interrupted", async () => {
+  it("declines a dms-assistant consent once the turn is interrupted", async () => {
     const { handler, decisions } = setup(TURN_SETTINGS, [PAGE_CALL]);
     handler.cancelPending();
     expect(
-      await handler.handle(toolConsent(DMS_AI_SERVER, "get_current_page", {})),
+      await handler.handle(
+        toolConsent(DMS_ASSISTANT_SERVER, "get_current_page", {}),
+      ),
     ).toEqual(DECLINED);
     expect(decisions).toEqual([]);
   });
@@ -357,7 +361,9 @@ describe("an elicitation the sidecar declines", () => {
   it("declines a consent no started call matches", async () => {
     const { handler } = setup(TURN_SETTINGS, []);
     expect(
-      await handler.handle(toolConsent(DMS_AI_SERVER, "get_current_page", {})),
+      await handler.handle(
+        toolConsent(DMS_ASSISTANT_SERVER, "get_current_page", {}),
+      ),
     ).toEqual(DECLINED);
   });
 
@@ -411,11 +417,11 @@ describe("an elicitation the sidecar declines", () => {
         challenge: "c",
       },
     },
-  ])("declines $label from dms-ai's own server", async ({ params }) => {
+  ])("declines $label from dms-assistant's own server", async ({ params }) => {
     const { handler, decisions } = setup(TURN_SETTINGS, [PAGE_CALL]);
     expect(
       await handler.handle(
-        elicitation({ serverName: DMS_AI_SERVER, ...params }),
+        elicitation({ serverName: DMS_ASSISTANT_SERVER, ...params }),
       ),
     ).toEqual(DECLINED);
     expect(decisions).toEqual([]);

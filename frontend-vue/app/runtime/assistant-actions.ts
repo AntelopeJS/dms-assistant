@@ -4,8 +4,8 @@ import type {
 } from "./assistant-session";
 
 /**
- * The assistant as another module's layer may use it, without depending on dms-ai: injected under
- * {@link ASSISTANT_ACTIONS_KEY} with a `null` default, which is what a project without dms-ai, or
+ * The assistant as another module's layer may use it, without depending on dms-assistant: injected under
+ * {@link ASSISTANT_ACTIONS_KEY} with a `null` default, which is what a project without dms-assistant, or
  * outside development, answers.
  */
 export interface PublicAssistantActions {
@@ -25,9 +25,11 @@ export interface PublicAssistantActions {
 
 /**
  * The global key of {@link PublicAssistantActions}: `Symbol.for` resolves to the same symbol in
- * every layer, so another module's layer injects it without importing dms-ai.
+ * every layer, so another module's layer injects it without importing dms-assistant.
  */
-export const ASSISTANT_ACTIONS_KEY = Symbol.for("dms-ai:assistant-actions");
+export const ASSISTANT_ACTIONS_KEY = Symbol.for(
+	"dms-assistant:assistant-actions",
+);
 
 /** The public actions over the tab's assistant session, which may not run yet, or ever. */
 export function publicAssistantActions(

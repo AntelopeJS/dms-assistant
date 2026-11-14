@@ -32,7 +32,7 @@ const currentLabel = computed(() => active.value?.activeForm ?? "");
 </script>
 
 <template>
-	<section class="cb-steps" :aria-label="t('dms_ai.panel.steps.title')">
+	<section class="cb-steps" :aria-label="t('dms_assistant.panel.steps.title')">
 		<button
 			type="button"
 			class="cb-steps__head"
@@ -40,7 +40,7 @@ const currentLabel = computed(() => active.value?.activeForm ?? "");
 			@click="isOpen = !isOpen"
 		>
 			<UIcon name="i-ph-list-checks" class="cb-steps__icon" />
-			<b>{{ t("dms_ai.panel.steps.title") }}</b>
+			<b>{{ t("dms_assistant.panel.steps.title") }}</b>
 			<span class="cb-steps__current">{{ currentLabel }}</span>
 			<span class="cb-steps__num">{{ doneCount }}/{{ todos.length }}</span>
 			<UIcon

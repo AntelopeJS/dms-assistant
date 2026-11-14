@@ -69,24 +69,25 @@ const SCOPES: readonly Scope[] = ["safe", "vibe"];
 const MODE_LOOKS: Record<ApprovalMode, ModeLook> = {
 	normal: {
 		icon: "i-ph-hand-palm",
-		labelKey: "dms_ai.common.mode.normal",
-		descriptionKey: "dms_ai.panel.composer.mode_desc.normal",
+		labelKey: "dms_assistant.common.mode.normal",
+		descriptionKey: "dms_assistant.panel.composer.mode_desc.normal",
 	},
 	auto: {
 		icon: "i-ph-seal-check",
-		labelKey: "dms_ai.common.mode.auto",
-		descriptionKey: "dms_ai.panel.composer.mode_desc.auto",
+		labelKey: "dms_assistant.common.mode.auto",
+		descriptionKey: "dms_assistant.panel.composer.mode_desc.auto",
 	},
 	acceptEdits: {
 		icon: "i-ph-pencil-simple-line",
-		labelKey: "dms_ai.common.mode.acceptEdits",
-		descriptionKey: "dms_ai.panel.composer.mode_desc.acceptEdits",
-		codexDescriptionKey: "dms_ai.panel.composer.mode_desc.acceptEdits_codex",
+		labelKey: "dms_assistant.common.mode.acceptEdits",
+		descriptionKey: "dms_assistant.panel.composer.mode_desc.acceptEdits",
+		codexDescriptionKey:
+			"dms_assistant.panel.composer.mode_desc.acceptEdits_codex",
 	},
 	plan: {
 		icon: "i-ph-list-checks",
-		labelKey: "dms_ai.common.mode.plan",
-		descriptionKey: "dms_ai.panel.composer.mode_desc.plan",
+		labelKey: "dms_assistant.common.mode.plan",
+		descriptionKey: "dms_assistant.panel.composer.mode_desc.plan",
 	},
 };
 const SCOPE_ICONS: Record<Scope, string> = {
@@ -120,11 +121,11 @@ watch(
 
 const scopeItems = computed(() =>
 	SCOPES.map((scope) => ({
-		label: t(`dms_ai.common.scope.${scope}`),
+		label: t(`dms_assistant.common.scope.${scope}`),
 		description: t(
 			scope === "safe" && !props.builderAvailable
-				? "dms_ai.panel.composer.scope_desc.safe_unavailable"
-				: `dms_ai.panel.composer.scope_desc.${scope}`,
+				? "dms_assistant.panel.composer.scope_desc.safe_unavailable"
+				: `dms_assistant.panel.composer.scope_desc.${scope}`,
 		),
 		icon: SCOPE_ICONS[scope],
 		type: "checkbox" as const,
@@ -141,7 +142,12 @@ function modeDescriptionKey(look: ModeLook): string {
 }
 
 const modeItems = computed(() => [
-	[{ type: "label" as const, label: t("dms_ai.panel.composer.mode_menu") }],
+	[
+		{
+			type: "label" as const,
+			label: t("dms_assistant.panel.composer.mode_menu"),
+		},
+	],
 	MODES_BY_PROVIDER[props.provider].map((mode) => ({
 		label: t(MODE_LOOKS[mode].labelKey),
 		description: t(modeDescriptionKey(MODE_LOOKS[mode])),
@@ -152,7 +158,7 @@ const modeItems = computed(() => [
 	})),
 	[
 		{
-			label: t("dms_ai.panel.composer.default_mode"),
+			label: t("dms_assistant.panel.composer.default_mode"),
 			icon: "i-ph-gear-six",
 			onSelect: (): void => emit("openSettings"),
 		},
@@ -238,7 +244,7 @@ defineExpose({
 					{{ block.type ? `${block.type} · ${block.path}` : block.path }}
 					<button
 						type="button"
-						:aria-label="t('dms_ai.panel.composer.remove_block')"
+						:aria-label="t('dms_assistant.panel.composer.remove_block')"
 						@click="emit('removeBlock')"
 					>
 						<UIcon name="i-ph-x" />
@@ -247,13 +253,13 @@ defineExpose({
 				<span
 					v-if="page && pageLabel && isPageIncluded"
 					class="att is-page"
-					:title="t('dms_ai.panel.composer.page_chip_hint')"
+					:title="t('dms_assistant.panel.composer.page_chip_hint')"
 				>
 					<UIcon name="i-ph-browser" />
 					{{ pageLabel }}
 					<button
 						type="button"
-						:aria-label="t('dms_ai.panel.composer.remove_page')"
+						:aria-label="t('dms_assistant.panel.composer.remove_page')"
 						@click="isPageIncluded = false"
 					>
 						<UIcon name="i-ph-x" />
@@ -272,7 +278,7 @@ defineExpose({
 					<button
 						type="button"
 						:aria-label="
-							t('dms_ai.panel.composer.remove_file', { name: att.name })
+							t('dms_assistant.panel.composer.remove_file', { name: att.name })
 						"
 						@click="files.remove(att.id)"
 					>
@@ -284,14 +290,14 @@ defineExpose({
 				{{ files.error.value }}
 			</p>
 			<p v-if="files.isDragging.value" class="cb-input__drop">
-				{{ t("dms_ai.panel.composer.drop_files") }}
+				{{ t("dms_assistant.panel.composer.drop_files") }}
 			</p>
 			<textarea
 				ref="textareaRef"
 				v-model="draft"
 				rows="1"
 				:placeholder="placeholder"
-				:aria-label="t('dms_ai.panel.composer.aria')"
+				:aria-label="t('dms_assistant.panel.composer.aria')"
 				:disabled="isDisabled"
 				@keydown="onKeydown"
 				@input="autoGrow"
@@ -307,8 +313,8 @@ defineExpose({
 					square
 					icon="i-ph-paperclip"
 					:disabled="isDisabled"
-					:aria-label="t('dms_ai.panel.composer.attach')"
-					:title="t('dms_ai.panel.composer.attach')"
+					:aria-label="t('dms_assistant.panel.composer.attach')"
+					:title="t('dms_assistant.panel.composer.attach')"
 					@click="fileInputRef?.click()"
 				/>
 				<UDropdownMenu
@@ -320,11 +326,13 @@ defineExpose({
 						class="cb-mode-btn"
 						:class="{ 'is-safe': mode.generationMode === 'safe' }"
 						:title="
-							t(`dms_ai.panel.composer.scope_desc.${mode.generationMode}`)
+							t(
+								`dms_assistant.panel.composer.scope_desc.${mode.generationMode}`,
+							)
 						"
 					>
 						<UIcon :name="SCOPE_ICONS[mode.generationMode]" />
-						{{ t(`dms_ai.common.scope.${mode.generationMode}`) }}
+						{{ t(`dms_assistant.common.scope.${mode.generationMode}`) }}
 						<UIcon name="i-ph-caret-down" />
 					</button>
 				</UDropdownMenu>
@@ -347,8 +355,8 @@ defineExpose({
 					square
 					icon="i-ph-stop"
 					class="cb-send composer-stop"
-					:aria-label="t('dms_ai.panel.composer.stop')"
-					:title="t('dms_ai.panel.composer.stop_hint')"
+					:aria-label="t('dms_assistant.panel.composer.stop')"
+					:title="t('dms_assistant.panel.composer.stop_hint')"
 					@click="emit('stop')"
 				/>
 				<UButton
@@ -359,12 +367,12 @@ defineExpose({
 					:icon="isRunning ? 'i-ph-queue' : 'i-ph-arrow-up'"
 					class="cb-send composer-send"
 					:disabled="isSendDisabled"
-					:aria-label="t('dms_ai.panel.composer.send')"
+					:aria-label="t('dms_assistant.panel.composer.send')"
 					:title="
 						t(
 							isRunning
-								? 'dms_ai.panel.composer.queue_hint'
-								: 'dms_ai.panel.composer.send',
+								? 'dms_assistant.panel.composer.queue_hint'
+								: 'dms_assistant.panel.composer.send',
 						)
 					"
 				/>
@@ -385,22 +393,22 @@ defineExpose({
 				{{
 					t(
 						isRunning
-							? "dms_ai.panel.composer.hint_queue"
-							: "dms_ai.panel.composer.hint_send",
+							? "dms_assistant.panel.composer.hint_queue"
+							: "dms_assistant.panel.composer.hint_send",
 					)
 				}}
 			</span>
 			<span>
 				<UKbd value="⇧↵" size="sm" />
-				{{ t("dms_ai.panel.composer.hint_newline") }}
+				{{ t("dms_assistant.panel.composer.hint_newline") }}
 			</span>
 			<span v-if="isRunning">
 				<UKbd value="esc" size="sm" />
-				{{ t("dms_ai.panel.composer.hint_stop") }}
+				{{ t("dms_assistant.panel.composer.hint_stop") }}
 			</span>
 			<span v-else>
 				<UKbd :value="historyKbd" size="sm" />
-				{{ t("dms_ai.panel.composer.hint_history") }}
+				{{ t("dms_assistant.panel.composer.hint_history") }}
 			</span>
 			<span class="cb-composer__usage">{{ usageLabel }}</span>
 		</div>

@@ -22,7 +22,7 @@ interface SidecarInfo {
 
 export interface SidecarStatusController {
 	// Runs the first probe. Returns false when the assistant should not be shown
-	// at all — the dms-ai backend route is absent (probe unreachable) or spawning
+	// at all — the dms-assistant backend route is absent (probe unreachable) or spawning
 	// is disabled for this process — so the caller skips injection entirely.
 	init: () => Promise<boolean>;
 	getStatus: () => SidecarStatus;

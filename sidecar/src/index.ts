@@ -190,7 +190,7 @@ function buildDefaults(): ParsedArgs {
   };
 }
 
-/** Exported for the unit test that pins the flags the dms-ai module passes. */
+/** Exported for the unit test that pins the flags the dms-assistant module passes. */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const acc = buildDefaults();
   for (let i = 0; i < argv.length; i++) {
@@ -296,9 +296,9 @@ async function buildSettingsStore(root: string): Promise<SettingsStore> {
 }
 
 function logStartup(args: ParsedArgs, port: number): void {
-  console.log(`DMS_AI_SIDECAR_PORT=${port}`);
-  console.log(`DMS_AI_SIDECAR_ROOT=${args.root}`);
-  console.log(`DMS_AI_SIDECAR_BACKEND_URL=${args.backendUrl}`);
+  console.log(`DMS_ASSISTANT_SIDECAR_PORT=${port}`);
+  console.log(`DMS_ASSISTANT_SIDECAR_ROOT=${args.root}`);
+  console.log(`DMS_ASSISTANT_SIDECAR_BACKEND_URL=${args.backendUrl}`);
 }
 
 /** Everything the WebSocket stack is wired from. */

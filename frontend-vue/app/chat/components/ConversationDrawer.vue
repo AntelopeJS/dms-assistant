@@ -48,7 +48,7 @@ watch(
 );
 
 function groupLabel(key: string, count: number): string {
-	return t(`dms_ai.panel.drawer.group_${key}`, { count });
+	return t(`dms_assistant.panel.drawer.group_${key}`, { count });
 }
 
 function time(item: ConversationSummary): string {
@@ -56,25 +56,31 @@ function time(item: ConversationSummary): string {
 		item.updatedAtMs,
 		props.nowMs,
 		locale.value,
-		t("dms_ai.common.now"),
+		t("dms_assistant.common.now"),
 	);
 }
 
 // Files still changed first; a chat whose changes were all undone says so.
 function changesLabel(files: number, undone: number): string {
-	if (files > 0) return t("dms_ai.panel.drawer.files", { count: files }, files);
+	if (files > 0)
+		return t("dms_assistant.panel.drawer.files", { count: files }, files);
 	if (undone > 0)
-		return t("dms_ai.panel.drawer.files_undone", { count: undone }, undone);
-	return t("dms_ai.panel.drawer.no_changes");
+		return t(
+			"dms_assistant.panel.drawer.files_undone",
+			{ count: undone },
+			undone,
+		);
+	return t("dms_assistant.panel.drawer.no_changes");
 }
 
 function meta(item: ConversationSummary): string[] {
 	const parts: string[] = [];
 	parts.push(changesLabel(item.filesChanged ?? 0, item.filesUndone ?? 0));
-	if (item.provider === "codex") parts.push(t("dms_ai.common.agent.codex"));
+	if (item.provider === "codex")
+		parts.push(t("dms_assistant.common.agent.codex"));
 	if ((item.totalTokens ?? 0) > 0)
 		parts.push(
-			t("dms_ai.panel.drawer.tokens", {
+			t("dms_assistant.panel.drawer.tokens", {
 				count: formatTokens(item.totalTokens ?? 0),
 			}),
 		);
@@ -117,15 +123,15 @@ function onKeydown(event: KeyboardEvent): void {
 		<aside
 			class="cb-drawer"
 			role="dialog"
-			:aria-label="t('dms_ai.panel.drawer.title')"
+			:aria-label="t('dms_assistant.panel.drawer.title')"
 		>
 			<div class="cb-drawer__head">
-				<h3>{{ t("dms_ai.panel.drawer.title") }}</h3>
+				<h3>{{ t("dms_assistant.panel.drawer.title") }}</h3>
 				<UButton
 					size="xs"
 					color="secondary"
 					icon="i-ph-plus"
-					:label="t('dms_ai.panel.drawer.new')"
+					:label="t('dms_assistant.panel.drawer.new')"
 					@click="emit('new')"
 				/>
 				<UButton
@@ -134,7 +140,7 @@ function onKeydown(event: KeyboardEvent): void {
 					variant="ghost"
 					square
 					icon="i-ph-x"
-					:aria-label="t('dms_ai.common.close')"
+					:aria-label="t('dms_assistant.common.close')"
 					@click="emit('close')"
 				/>
 			</div>
@@ -145,14 +151,14 @@ function onKeydown(event: KeyboardEvent): void {
 						ref="searchEl"
 						v-model="search"
 						type="search"
-						:placeholder="t('dms_ai.panel.drawer.search')"
-						:aria-label="t('dms_ai.panel.drawer.search')"
+						:placeholder="t('dms_assistant.panel.drawer.search')"
+						:aria-label="t('dms_assistant.panel.drawer.search')"
 					/>
 					<UKbd :value="SEARCH_KEY" size="sm" />
 				</div>
 				<div class="cb-drawer__list">
 					<p v-if="groups.length === 0" class="cb-drawer__none">
-						{{ t("dms_ai.panel.drawer.no_match") }}
+						{{ t("dms_assistant.panel.drawer.no_match") }}
 					</p>
 					<template v-for="group in groups" :key="group.key">
 						<span class="cb-drawer__group">
@@ -177,7 +183,7 @@ function onKeydown(event: KeyboardEvent): void {
 									:data-mode="item.generationMode ?? 'safe'"
 								/>
 								<span class="convo__title">
-									{{ item.title || t("dms_ai.panel.new_conversation") }}
+									{{ item.title || t("dms_assistant.panel.new_conversation") }}
 								</span>
 								<span class="convo__time">{{ time(item) }}</span>
 								<span class="convo__meta">
@@ -188,7 +194,7 @@ function onKeydown(event: KeyboardEvent): void {
 										<UIcon name="i-ph-hand-palm" />
 										{{
 											t(
-												"dms_ai.panel.drawer.approvals_waiting",
+												"dms_assistant.panel.drawer.approvals_waiting",
 												{ count: item.pendingApprovals ?? 0 },
 												item.pendingApprovals ?? 0,
 											)
@@ -199,11 +205,11 @@ function onKeydown(event: KeyboardEvent): void {
 										class="convo__wait"
 									>
 										<UIcon name="i-ph-question" />
-										{{ t("dms_ai.panel.drawer.question_waiting") }}
+										{{ t("dms_assistant.panel.drawer.question_waiting") }}
 									</span>
 									<span v-else-if="item.isRunning" class="convo__run">
 										<span class="spin-ai" />
-										{{ t("dms_ai.panel.drawer.working") }}
+										{{ t("dms_assistant.panel.drawer.working") }}
 									</span>
 									<template v-for="(part, index) in meta(item)" :key="index">
 										<span class="convo__sep">·</span>
@@ -218,8 +224,8 @@ function onKeydown(event: KeyboardEvent): void {
 								square
 								icon="i-ph-trash"
 								class="convo__delete"
-								:aria-label="t('dms_ai.panel.drawer.delete')"
-								:title="t('dms_ai.panel.drawer.delete')"
+								:aria-label="t('dms_assistant.panel.drawer.delete')"
+								:title="t('dms_assistant.panel.drawer.delete')"
 								@click="requestDelete(item)"
 							/>
 						</div>
@@ -230,15 +236,15 @@ function onKeydown(event: KeyboardEvent): void {
 				<DmsEmptyState
 					icon="i-ph-sparkle"
 					tone="secondary"
-					:title="t('dms_ai.panel.drawer.empty_title')"
-					:description="t('dms_ai.panel.drawer.empty_text')"
+					:title="t('dms_assistant.panel.drawer.empty_title')"
+					:description="t('dms_assistant.panel.drawer.empty_text')"
 				>
 					<template #actions>
 						<UButton
 							size="sm"
 							color="secondary"
 							icon="i-ph-plus"
-							:label="t('dms_ai.panel.drawer.start')"
+							:label="t('dms_assistant.panel.drawer.start')"
 							@click="emit('new')"
 						/>
 					</template>
@@ -247,13 +253,13 @@ function onKeydown(event: KeyboardEvent): void {
 		</aside>
 		<UModal
 			:open="confirming !== null"
-			:title="t('dms_ai.panel.drawer.confirm_title')"
+			:title="t('dms_assistant.panel.drawer.confirm_title')"
 			@update:open="onConfirmOpenChange"
 		>
 			<template #body>
 				<p class="cb-drawer__confirm">
 					{{
-						t("dms_ai.panel.drawer.confirm_text", {
+						t("dms_assistant.panel.drawer.confirm_text", {
 							title: confirming?.title ?? "",
 						})
 					}}
@@ -264,12 +270,12 @@ function onKeydown(event: KeyboardEvent): void {
 					<UButton
 						color="neutral"
 						variant="outline"
-						:label="t('dms_ai.common.cancel')"
+						:label="t('dms_assistant.common.cancel')"
 						@click="confirming = null"
 					/>
 					<UButton
 						color="error"
-						:label="t('dms_ai.panel.drawer.confirm_action')"
+						:label="t('dms_assistant.panel.drawer.confirm_action')"
 						@click="confirmDelete"
 					/>
 				</div>

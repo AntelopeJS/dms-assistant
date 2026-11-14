@@ -34,13 +34,13 @@ describe("parseTscOutput", () => {
 
 describe("resolveModuleRootForFile", () => {
   const project = resolve("/proj");
-  const dmsAi = join(project, "modules", "dms-ai");
-  const roots = [project, dmsAi];
+  const dmsAssistant = join(project, "modules", "dms-assistant");
+  const roots = [project, dmsAssistant];
 
   it("maps a file to the deepest containing root", () => {
-    expect(resolveModuleRootForFile(join(dmsAi, "src", "x.ts"), roots)).toBe(
-      dmsAi,
-    );
+    expect(
+      resolveModuleRootForFile(join(dmsAssistant, "src", "x.ts"), roots),
+    ).toBe(dmsAssistant);
   });
 
   it("maps a host file to the host root", () => {
@@ -58,7 +58,7 @@ describe("runTypecheck", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-tsc-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-tsc-"));
   });
 
   afterEach(async () => {

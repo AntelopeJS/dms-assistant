@@ -62,7 +62,7 @@ async function runTurn(
   calls: readonly ScriptedCall[],
   decision: string,
 ): Promise<WireMessage[]> {
-  dir = await mkdtemp(join(tmpdir(), "dms-ai-held-call-"));
+  dir = await mkdtemp(join(tmpdir(), "dms-assistant-held-call-"));
   CLAUDE_FIXTURE.use("plain");
   process.env.MOCK_CLAUDE_SCRIPT = await writeClaudeScript(dir, "held", calls);
   harness = await startWsHarness({ provider: "claude" });

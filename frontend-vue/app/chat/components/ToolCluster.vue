@@ -122,9 +122,9 @@ function phrase(tool: ToolCallMessage): string {
 
 const title = computed(() =>
 	tone.value === "run"
-		? t("dms_ai.panel.tool.using")
+		? t("dms_assistant.panel.tool.using")
 		: t(
-				"dms_ai.panel.tool.used",
+				"dms_assistant.panel.tool.used",
 				{ count: props.tools.length },
 				props.tools.length,
 			),
@@ -175,7 +175,7 @@ function toggle(): void {
 				class="cb-tools__more"
 				@click="showAll = true"
 			>
-				{{ t("dms_ai.panel.tool.earlier", { count: hiddenCount }) }}
+				{{ t("dms_assistant.panel.tool.earlier", { count: hiddenCount }) }}
 			</button>
 			<ToolRow
 				v-for="view in visible"

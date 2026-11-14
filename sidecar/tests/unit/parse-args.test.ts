@@ -4,7 +4,7 @@ import { parseArgs } from "../../src/index.js";
 const BACKEND_URL = "http://127.0.0.1:41234";
 
 describe("parseArgs", () => {
-  it("takes the backend origin the dms-ai module passes", () => {
+  it("takes the backend origin the dms-assistant module passes", () => {
     const args = parseArgs(["--backend-url", BACKEND_URL]);
     expect(args.backendUrl).toBe(BACKEND_URL);
   });

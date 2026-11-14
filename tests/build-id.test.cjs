@@ -39,7 +39,9 @@ function touchAll(distDir, files, mtime) {
 
 /** @param {(distDir: string) => void} run - The body, given a dist directory in a temporary root. */
 function withDist(run) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-ai-build-id-"));
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "dms-assistant-build-id-"),
+  );
   try {
     run(path.join(root, "dist"));
   } finally {

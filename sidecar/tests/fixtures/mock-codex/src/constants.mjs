@@ -11,7 +11,7 @@ export const SCRIPT_SEPARATOR = ",";
 export const TRACE_ENV_VAR = "MOCK_CODEX_TRACE";
 export const DELAY_ENV_VAR = "MOCK_CODEX_DELAY_MS";
 export const VERSION_ENV_VAR = "MOCK_CODEX_VERSION";
-export const MCP_TOKEN_ENV_VAR = "DMS_AI_MCP_TOKEN";
+export const MCP_TOKEN_ENV_VAR = "DMS_ASSISTANT_MCP_TOKEN";
 export const CODEX_HOME_ENV_VAR = "CODEX_HOME";
 
 /**

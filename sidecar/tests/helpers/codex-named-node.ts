@@ -13,7 +13,7 @@ const CODEX_NAMED_NODE = "codex.exe";
  */
 export function useCodexNamedNode(): () => void {
   if (process.platform !== "win32") return () => {};
-  const dir = mkdtempSync(path.join(tmpdir(), "dms-ai-codex-node-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "dms-assistant-codex-node-"));
   const node = path.join(dir, CODEX_NAMED_NODE);
   copyFileSync(process.execPath, node);
   process.env[MOCK_CODEX_NODE_ENV] = node;

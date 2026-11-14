@@ -1,5 +1,5 @@
 /**
- * Only reached when the sidecar is launched by hand, outside the dms-ai
+ * Only reached when the sidecar is launched by hand, outside the dms-assistant
  * module: the module passes `--backend-url` whenever its `backendUrl` config
  * key is set, and leaving it unset is what keeps a project that never
  * configured it on this value.

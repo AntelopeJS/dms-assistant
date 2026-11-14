@@ -19,9 +19,9 @@ const ENGINE_ICONS: Record<string, string> = {
 };
 
 const SOURCE_KEYS: Record<MockupSource, string> = {
-	chat: "dms_ai.views.onboarding.continue.sources.chat",
-	"claude-code": "dms_ai.views.onboarding.continue.sources.claude_code",
-	codex: "dms_ai.views.onboarding.continue.sources.codex",
+	chat: "dms_assistant.views.onboarding.continue.sources.chat",
+	"claude-code": "dms_assistant.views.onboarding.continue.sources.claude_code",
+	codex: "dms_assistant.views.onboarding.continue.sources.codex",
 };
 
 const onboarding = useOnboarding();
@@ -34,18 +34,18 @@ const mockups = computed(() => content.value.mockups.slice(0, MOCKUPS_SHOWN));
 function mockupDetail(mockup: Mockup): string {
 	return [
 		t(
-			"dms_ai.views.onboarding.continue.pages",
+			"dms_assistant.views.onboarding.continue.pages",
 			{ count: mockup.pages },
 			mockup.pages,
 		),
 		mockup.source === undefined
 			? undefined
-			: t("dms_ai.views.onboarding.continue.from", {
+			: t("dms_assistant.views.onboarding.continue.from", {
 					source: t(SOURCE_KEYS[mockup.source]),
 				}),
 		mockup.openComments
 			? t(
-					"dms_ai.views.onboarding.continue.comments",
+					"dms_assistant.views.onboarding.continue.comments",
 					{ count: mockup.openComments },
 					mockup.openComments,
 				)
@@ -61,12 +61,12 @@ function openMockup(mockup: Mockup): void {
 </script>
 
 <template>
-	<OnboardingFrame :title="t('dms_ai.views.onboarding.continue.title')">
+	<OnboardingFrame :title="t('dms_assistant.views.onboarding.continue.title')">
 		<section v-if="last" class="mt-5">
 			<h3
 				class="text-muted mb-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
 			>
-				{{ t("dms_ai.views.onboarding.continue.pick_up") }}
+				{{ t("dms_assistant.views.onboarding.continue.pick_up") }}
 			</h3>
 			<div
 				class="border-default flex items-center gap-3 rounded-xl border px-3 py-2.5"
@@ -83,14 +83,14 @@ function openMockup(mockup: Mockup): void {
 					</p>
 					<p class="text-muted text-xs">
 						{{
-							t("dms_ai.views.onboarding.continue.chat", {
+							t("dms_assistant.views.onboarding.continue.chat", {
 								when: relativeTime(last.updatedAtMs, Date.now(), locale),
 							})
 						}}
 					</p>
 				</div>
 				<UButton
-					:label="t('dms_ai.views.onboarding.continue.resume')"
+					:label="t('dms_assistant.views.onboarding.continue.resume')"
 					color="neutral"
 					variant="outline"
 					size="sm"
@@ -103,7 +103,7 @@ function openMockup(mockup: Mockup): void {
 			<h3
 				class="text-muted mb-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
 			>
-				{{ t("dms_ai.views.onboarding.continue.mockups") }}
+				{{ t("dms_assistant.views.onboarding.continue.mockups") }}
 			</h3>
 			<ul class="flex flex-col gap-2">
 				<li v-for="mockup in mockups" :key="mockup.name">
@@ -132,14 +132,14 @@ function openMockup(mockup: Mockup): void {
 							color="success"
 							variant="soft"
 							size="sm"
-							:label="t('dms_ai.views.onboarding.continue.built')"
+							:label="t('dms_assistant.views.onboarding.continue.built')"
 						/>
 						<UBadge
 							v-else
 							color="neutral"
 							variant="soft"
 							size="sm"
-							:label="t('dms_ai.views.onboarding.continue.draft')"
+							:label="t('dms_assistant.views.onboarding.continue.draft')"
 						/>
 						<UIcon
 							name="i-ph-caret-right"
@@ -155,14 +155,14 @@ function openMockup(mockup: Mockup): void {
 			<h3
 				class="text-muted mb-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
 			>
-				{{ t("dms_ai.views.onboarding.continue.databases") }}
+				{{ t("dms_assistant.views.onboarding.continue.databases") }}
 			</h3>
 			<div class="flex flex-wrap gap-1.5">
 				<UBadge
 					color="neutral"
 					variant="soft"
 					icon="i-ph-database"
-					:label="t('dms_ai.views.onboarding.continue.project')"
+					:label="t('dms_assistant.views.onboarding.continue.project')"
 				/>
 				<UBadge
 					v-for="database in content.databases"
@@ -171,7 +171,7 @@ function openMockup(mockup: Mockup): void {
 					variant="soft"
 					:icon="ENGINE_ICONS[database.engine ?? ''] ?? 'i-ph-database'"
 					:label="
-						t('dms_ai.views.onboarding.continue.external', {
+						t('dms_assistant.views.onboarding.continue.external', {
 							name: database.id,
 						})
 					"
@@ -183,7 +183,7 @@ function openMockup(mockup: Mockup): void {
 			<OnboardingDontShow />
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.continue.new_scratch')"
+				:label="t('dms_assistant.views.onboarding.continue.new_scratch')"
 				icon="i-ph-plus"
 				color="neutral"
 				variant="ghost"
@@ -191,7 +191,7 @@ function openMockup(mockup: Mockup): void {
 			/>
 			<UButton
 				v-if="onboarding.canConnectDatabase"
-				:label="t('dms_ai.views.onboarding.continue.connect')"
+				:label="t('dms_assistant.views.onboarding.continue.connect')"
 				icon="i-ph-database"
 				color="neutral"
 				variant="ghost"

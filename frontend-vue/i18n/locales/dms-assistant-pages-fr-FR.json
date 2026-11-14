@@ -1,0 +1,404 @@
+{
+	"dms_assistant": {
+		"module": {
+			"title": "Assistant",
+			"description": "L'assistant IA : ses réglages, ce que vous pouvez annuler et ce qu'il a fait"
+		},
+		"pages": {
+			"changes": {
+				"title": "Modifications",
+				"description": "Chaque tour qui a touché le projet, enregistré comme un lot de modifications à relire et annuler"
+			},
+			"activity": {
+				"title": "Activité",
+				"description": "Journal d'audit de chaque outil utilisé par l'assistant, de qui l'a autorisé et de son résultat"
+			},
+			"settings": {
+				"title": "Réglages",
+				"description": "Valeurs par défaut des nouvelles conversations. Les changements s'enregistrent au fur et à mesure"
+			}
+		},
+		"blocks": {
+			"changes": {
+				"view": {
+					"name": "Lots de modifications",
+					"description": "Les lots de modifications, leurs diffs, et l'annulation avec son aperçu"
+				}
+			},
+			"activity": {
+				"toolbar": {
+					"name": "Barre d'outils",
+					"description": "Quand le journal d'audit a été lu, un rafraîchissement et la période"
+				},
+				"period": {
+					"name": "Période",
+					"description": "Choisit la période couverte par le journal d'audit"
+				},
+				"log": {
+					"name": "Journal d'audit",
+					"description": "Chaque appel d'outil, comment il a été autorisé et son résultat"
+				},
+				"detail": {
+					"name": "Détail d'une action",
+					"description": "Un appel d'outil : ses arguments, ses décisions et son diff"
+				}
+			},
+			"settings": {
+				"chatgpt": {
+					"name": "Compte ChatGPT",
+					"description": "Le compte ChatGPT sur lequel tourne Codex, avec connexion et déconnexion"
+				},
+				"form": {
+					"name": "Réglages de l'assistant",
+					"description": "Valeurs par défaut de l'IA et du Builder"
+				},
+				"usage": {
+					"name": "Consommation",
+					"description": "Les tokens utilisés par les conversations",
+					"title": "Consommation",
+					"caption": "Comptés par conversation. Votre fournisseur les facture."
+				},
+				"usage_chart": {
+					"name": "Tokens par jour",
+					"description": "Tokens utilisés par jour sur les 14 derniers jours",
+					"title": "Tokens · 14 derniers jours",
+					"caption": "Tokens utilisés par jour"
+				},
+				"usage_summary": {
+					"name": "Totaux de consommation",
+					"description": "Tokens, conversations et la conversation la plus gourmande",
+					"title": "14 derniers jours"
+				},
+				"usage_chart_series": {
+					"name": "Barres du graphique des tokens",
+					"description": "Le graphique en colonnes dessiné dans la carte des tokens"
+				},
+				"status_banner": {
+					"name": "Alerte de l'assistant",
+					"description": "Signale l'assistant hors ligne, l'échec de son dernier tour ou des demandes qui vous attendent"
+				}
+			}
+		},
+		"activity": {
+			"export": "Exporter en CSV",
+			"search": "Rechercher outils, fichiers, pages",
+			"count": "{count} action | {count} actions",
+			"columns": {
+				"time": "Heure",
+				"action": "Action",
+				"allowed": "Autorisation",
+				"result": "Résultat",
+				"conversation": "Conversation",
+				"duration": "Durée",
+				"category": "Catégorie",
+				"agent": "Agent",
+				"read_only": "Lecture seule"
+			},
+			"tabs": {
+				"all": "Tout",
+				"changed": "Fichiers modifiés",
+				"asked": "Demandées",
+				"denied": "Refusées ou bloquées",
+				"failed": "En échec",
+				"held": "Retenues par le DMS"
+			},
+			"quick": {
+				"tool": "Outil",
+				"agent": "Agent",
+				"read_only": "Lecture seule"
+			},
+			"read_only": {
+				"hide": "Masquer la lecture seule",
+				"show": "Afficher la lecture seule"
+			},
+			"detail": {
+				"open": "Détails",
+				"title": "Détail de l'action"
+			},
+			"empty": {
+				"title": "Aucune activité pour l'instant",
+				"description": "Chaque outil utilisé par l'assistant arrive ici, avec qui l'a autorisé et son résultat."
+			},
+			"offline": {
+				"title": "Impossible de joindre l'assistant",
+				"description": "Le journal vient de l'assistant, qui ne tourne pas. Ce n'est pas un journal vide."
+			},
+			"category": {
+				"changed": "Fichiers modifiés",
+				"asked": "Demandées",
+				"denied": "Refusées ou bloquées",
+				"failed": "En échec",
+				"held": "Retenues par le DMS"
+			},
+			"agent": {
+				"claude": "Claude Code",
+				"codex": "Codex"
+			},
+			"allowed_by": {
+				"read_auto": "Lecture seule, automatique",
+				"builder_auto": "Builder, automatique",
+				"approved": "Autorisée par vous",
+				"rule": "Autorisée par une règle",
+				"full_auto": "Automatique complet",
+				"auto_approved": "Autorisé par la revue automatique",
+				"auto_denied": "Bloqué par la revue automatique",
+				"blocked": "Bloquée · mode sûr",
+				"denied": "Refusée par vous",
+				"expired": "Expirée"
+			},
+			"result": {
+				"done": "Terminée",
+				"pending": "En attente",
+				"failed": "En échec",
+				"denied": "Non exécutée",
+				"blocked": "Bloquée",
+				"stopped": "Arrêtée",
+				"expired": "Expirée",
+				"held": "Retenue par le DMS"
+			},
+			"tools": {
+				"Read": "Lire un fichier",
+				"Write": "Écrire un fichier",
+				"Edit": "Modifier un fichier",
+				"MultiEdit": "Modifier un fichier (plusieurs modifications)",
+				"NotebookEdit": "Modifier un notebook",
+				"Bash": "Lancer une commande",
+				"Glob": "Trouver des fichiers",
+				"Grep": "Chercher dans le code",
+				"LS": "Lister un dossier",
+				"WebFetch": "Lire une page web",
+				"WebSearch": "Chercher sur le web",
+				"TodoWrite": "Mettre à jour les étapes",
+				"Task": "Lancer un sous-agent",
+				"ExitPlanMode": "Proposer un plan",
+				"get_current_page": "Lire la page affichée",
+				"navigate_to_page": "Ouvrir une page",
+				"find_pages_using": "Trouver les pages qui utilisent",
+				"list_pages": "Lister les pages",
+				"ask_user": "Vous poser une question",
+				"typecheck": "Vérifier les types",
+				"query_logs": "Lire les logs",
+				"builder_catalog": "Lire le catalogue de blocs",
+				"builder_list_pages": "Lister les pages Builder",
+				"builder_page_structure": "Lire une page",
+				"builder_create_page": "Créer une page",
+				"builder_configure_page": "Configurer une page",
+				"builder_compose_page": "Composer une page",
+				"builder_configure_table_view": "Configurer une vue tableau",
+				"builder_delete_page": "Supprimer une page",
+				"builder_add_block": "Ajouter un bloc",
+				"builder_configure_block": "Configurer un bloc",
+				"builder_move_block": "Déplacer un bloc",
+				"builder_remove_block": "Retirer un bloc",
+				"builder_create_category": "Créer une catégorie",
+				"builder_configure_category": "Configurer une catégorie",
+				"builder_delete_category": "Supprimer une catégorie",
+				"builder_refresh": "Rafraîchir le Builder",
+				"builder_create_resource": "Créer une table",
+				"builder_delete_resource": "Supprimer une table",
+				"builder_list_resources": "Lister les tables",
+				"builder_resource_structure": "Lire une table",
+				"builder_add_field": "Ajouter un champ",
+				"builder_configure_field": "Configurer un champ",
+				"builder_remove_field": "Retirer un champ",
+				"builder_query_templates": "Lire les modèles de requêtes",
+				"builder_add_query": "Ajouter une requête",
+				"builder_preview_query": "Aperçu de la requête",
+				"builder_configure_query": "Configurer une requête",
+				"builder_remove_query": "Retirer une requête",
+				"UndoChangeSet": "Annuler un lot de modifications",
+				"RedoChangeSet": "Rétablir un lot de modifications",
+				"ToolSearch": "Charger des outils",
+				"Skill": "Utiliser une skill",
+				"AskUserQuestion": "Vous demander (intégré)"
+			}
+		},
+		"changes_table": {
+			"undo_confirm": {
+				"title": "Annuler le lot n°{number} ?",
+				"description": "Remet le fichier dans l'état d'avant ce lot, puis recharge la page. | Remet {count} fichiers dans l'état d'avant ce lot, puis recharge la page.",
+				"description_conflict": "Remet le fichier dans l'état d'avant ce lot. Un lot plus récent touche le même fichier. | Remet {count} fichiers dans l'état d'avant ce lot. Un lot plus récent touche les mêmes fichiers.",
+				"description_conflicts": "Remet le fichier dans l'état d'avant ce lot. {conflicts} lots plus récents touchent le même fichier. | Remet {count} fichiers dans l'état d'avant ce lot. {conflicts} lots plus récents touchent les mêmes fichiers.",
+				"confirm": "Annuler",
+				"include_later": "Annuler aussi les lots plus récents",
+				"include_later_hint": "Sans risque : annuler ce lot seul garde leurs lignes et peut ne plus compiler."
+			}
+		},
+		"settings": {
+			"hints": {
+				"next_turn": "S'applique aux nouveaux tours. Les conversations ouvertes perdent la mémoire de l'agent ; les transcriptions restent.",
+				"next_message": "S'applique dès le prochain message",
+				"new_conversations": "S'applique aux nouvelles conversations"
+			},
+			"sections": {
+				"ai": {
+					"label": "IA",
+					"description": "Quel agent répond, comment il réfléchit et ce qu'il peut faire sans demander."
+				},
+				"builder": {
+					"label": "Builder",
+					"description": "S'applique uniquement en développement."
+				}
+			},
+			"provider": {
+				"label": "Agent de code",
+				"description": "Tourne sur cette machine, dans le dossier du projet. Votre code ne part que chez le fournisseur choisi ; un agent en panne ne bascule jamais sur l'autre.",
+				"unavailable": "Non configuré sur cette machine",
+				"codex_not_signed_in": "Connectez-vous avec ChatGPT ci-dessous pour utiliser Codex avec votre forfait ChatGPT.",
+				"claude": {
+					"label": "Claude Code",
+					"description": "Anthropic · modèle choisi par Claude Code"
+				},
+				"codex": {
+					"label": "Codex",
+					"description": "OpenAI · utilise votre forfait ChatGPT, une fois connecté ci-dessous"
+				}
+			},
+			"chatgpt": {
+				"signed_out": {
+					"title": "Utilisez Codex avec votre forfait ChatGPT",
+					"description": "Connectez-vous avec ChatGPT pour utiliser ici l'usage Codex de votre forfait, sans clé d'API. Si le DMS tourne sur une autre machine, la page où OpenAI vous renvoie ne chargera pas : collez son adresse avec « Coller l'adresse de retour ».",
+					"action": "Se connecter avec ChatGPT"
+				},
+				"signed_in": {
+					"title": "Codex utilise le forfait ChatGPT de {email}",
+					"description": "Son usage compte dans les limites de votre forfait, que vous pouvez plafonner par app dans les réglages de ChatGPT.",
+					"action": "Se déconnecter"
+				},
+				"sign_out_confirm": {
+					"title": "Se déconnecter de ChatGPT ?",
+					"description": "Codex ne fonctionnera plus sur aucun projet DMS de cette machine tant que vous ne vous reconnecterez pas. Pour retirer complètement dms-assistant de votre compte ChatGPT, déconnectez-le dans les réglages de ChatGPT."
+				},
+				"signed_out_toast": "Déconnecté de ChatGPT",
+				"paste": {
+					"action": "Coller l'adresse de retour",
+					"title": "Terminer la connexion à ChatGPT",
+					"description": "Après votre autorisation, OpenAI vous a envoyé vers une adresse commençant par http://127.0.0.1 qui n'a pas pu charger. Copiez cette adresse complète depuis la barre d'adresse et collez-la ici. Elle ne sert qu'une fois, dans les 10 minutes.",
+					"field": "Adresse de retour",
+					"confirm": "Terminer la connexion",
+					"success": "Connecté avec ChatGPT"
+				}
+			},
+			"thinking": {
+				"label": "Réflexion",
+				"description": "Combien de temps l'agent réfléchit avant d'agir. Plus de réflexion est plus lent et consomme plus de tokens.",
+				"options": {
+					"off": "Désactivée",
+					"low": "Faible",
+					"medium": "Moyenne",
+					"high": "Élevée"
+				}
+			},
+			"claude_model": {
+				"label": "Modèle Claude",
+				"description": "Le modèle sur lequel tourne Claude Code. La réflexion règle son niveau d'effort."
+			},
+			"default_mode_claude": {
+				"label": "Mode par défaut avec Claude Code",
+				"description": "Ce que Claude Code peut faire sans vous demander d'abord. La revue automatique est le choix recommandé."
+			},
+			"default_mode_codex": {
+				"label": "Mode par défaut avec Codex",
+				"description": "Ce que Codex peut faire sans vous demander d'abord. Codex n'a pas de revue automatique."
+			},
+			"mode": {
+				"normal": {
+					"label": "Demander d'abord",
+					"description": "Demande avant toute modification en dehors du Builder et avant chaque commande, même en lecture seule."
+				},
+				"auto": {
+					"label": "Revue automatique",
+					"description": "Un contrôle de sécurité approuve les modifications de fichiers courantes et l'accès au web. Les commandes shell, les fichiers de dépendances, les hooks git et les suppressions demandent encore votre accord. Sur un modèle ou une offre qui ne la permet pas, l'assistant demande avant d'agir."
+				},
+				"acceptEdits": {
+					"label": "Accepter les modifications",
+					"description": "Applique les modifications de fichiers, sauf les fichiers de dépendances et les hooks git. Demande pour le reste, chaque commande comprise.",
+					"description_codex": "Avec Codex, fonctionne comme Demander d'abord : demande avant chaque modification de fichier, fichiers de dépendances et hooks git compris, et avant toute commande qui écrit."
+				},
+				"plan": {
+					"label": "Plan seulement",
+					"description": "Lit et propose. Ne modifie rien."
+				}
+			},
+			"always_ask": {
+				"label": "Toujours demander pour",
+				"description": "Ces opérations demandent dans tous les modes."
+			},
+			"always_ask_deletions": {
+				"label": "Supprimer des pages, tables, champs ou requêtes",
+				"description": "Verrouillé. La conversation demande votre approbation sur une carte avant chacune.",
+				"locked": "Supprimer des pages, tables, champs ou requêtes · verrouillé"
+			},
+			"always_ask_dependencies": {
+				"label": "Ajouter ou retirer des dépendances",
+				"description": "Installations et suppressions de paquets lancées par une commande."
+			},
+			"always_ask_block_removal": {
+				"label": "Retirer ou déplacer des blocs du Builder",
+				"description": "Même quand les autres opérations du Builder sont automatiques."
+			},
+			"unanswered": {
+				"label": "Demandes sans réponse",
+				"description": "Ce qui arrive à une demande à laquelle personne ne répond."
+			},
+			"request_timeout": {
+				"label": "Refuser après",
+				"options": {
+					"5": "5 minutes",
+					"15": "15 minutes",
+					"30": "30 minutes"
+				}
+			},
+			"notify_requests": {
+				"label": "Me prévenir dans le DMS",
+				"description": "Affiche une notification quand une demande arrive alors que le panneau de l'assistant est fermé."
+			},
+			"allow_local_skills": {
+				"title": "Skills de la machine",
+				"label": "Utiliser les skills de la machine",
+				"description": "Ajoute les skills de ~/.claude/skills sur cette machine. Elles ne sont partagées ni avec l'équipe ni avec les autres environnements."
+			},
+			"checkpoint_retention": {
+				"label": "Historique des annulations",
+				"description": "Au-delà, les lots de modifications ne peuvent plus être annulés.",
+				"options": {
+					"7": "Garder 7 jours",
+					"30": "Garder 30 jours",
+					"90": "Garder 90 jours"
+				}
+			},
+			"usage": {
+				"series": "Tokens",
+				"total_tokens": "Tokens",
+				"conversations": "Conversations",
+				"top_conversation": "Conversation la plus gourmande",
+				"top_tokens": "{count} token | {count} tokens"
+			},
+			"safe_mode": {
+				"label": "Mode sûr",
+				"description": "Uniquement des modifications de pages et de données, via les outils du DMS",
+				"builder_missing": "Nécessite le builder, qui n'est pas lancé."
+			}
+		},
+		"status": {
+			"banner": {
+				"offline": {
+					"title": "L'assistant est hors ligne",
+					"description": "Son sidecar ne tourne pas. Redémarrez-le pour utiliser à nouveau l'assistant.",
+					"disabled": "Son sidecar est désactivé dans la configuration de ce module.",
+					"restart": "Redémarrer l'assistant",
+					"restarted": "Assistant redémarré"
+				},
+				"last_error": {
+					"title": "Le dernier tour de l'assistant a échoué",
+					"description": "{error}",
+					"action": "Ouvrir l'activité"
+				},
+				"waiting": {
+					"title": "{count} demande vous attend | {count} demandes vous attendent",
+					"description": "Ouvrez l'assistant pour répondre : le bouton de l'en-tête, ou ⌘⇧K."
+				}
+			}
+		}
+	}
+}

@@ -62,7 +62,7 @@ function widgetFor(needsAttention: boolean): AppWidget {
 	const widget: AppWidget = {
 		id: WIDGET_ID,
 		icon: LAUNCHER_ICON,
-		label: "$dms_ai.views.onboarding.widget.label",
+		label: "$dms_assistant.views.onboarding.widget.label",
 		body: ONBOARDING_WIDGET_COMPONENT_NAME,
 		onSelectEvent: ONBOARDING_SELECTED_STATE_KEY,
 	};

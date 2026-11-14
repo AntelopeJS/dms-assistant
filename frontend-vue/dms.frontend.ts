@@ -20,8 +20,8 @@ function componentName(path: string): string {
 
 const frontendModule: DmsFrontendModule = {
 	// Put in front of every name registered below: StatusCard.vue registers as
-	// DmsAiStatusCard, the name the backend's CustomComponent() sends.
-	componentPrefix: "DmsAi",
+	// DmsAssistantStatusCard, the name the backend's CustomComponent() sends.
+	componentPrefix: "DmsAssistant",
 	setup(sdk) {
 		Object.entries(components)
 			.sort(([left], [right]) => left.localeCompare(right))

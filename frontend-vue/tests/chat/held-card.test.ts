@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import PermissionCard from "../../app/chat/components/PermissionCard.vue";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import type { PermissionRequestData } from "../../app/chat/types/permission";
-import en from "../../i18n/locales/dms-ai-panel-en-GB.json";
-import fr from "../../i18n/locales/dms-ai-panel-fr-FR.json";
+import en from "../../i18n/locales/dms-assistant-panel-en-GB.json";
+import fr from "../../i18n/locales/dms-assistant-panel-fr-FR.json";
 import { createTestI18n } from "../support/i18n";
 import { PANEL_STUBS } from "../support/stubs";
 

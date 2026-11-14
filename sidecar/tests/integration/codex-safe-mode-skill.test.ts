@@ -99,7 +99,7 @@ describe("codex safe-mode skill guard", () => {
   }
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-safe-skill-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-safe-skill-"));
     setBuilderAvailable(true);
     CODEX_FIXTURE.use("simple");
     warn = vi.spyOn(console, "warn");

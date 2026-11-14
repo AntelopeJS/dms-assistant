@@ -177,7 +177,7 @@ describe('the wiring of a database', () => {
 	})
 
 	it('never carries the connection details into the configuration', () => {
-		expect(JSON.stringify(connectSteps(form(), project({ modules: ['dms-ai'] }), POSTGRES_DRIVER))).not.toMatch(
+		expect(JSON.stringify(connectSteps(form(), project({ modules: ['dms-assistant'] }), POSTGRES_DRIVER))).not.toMatch(
 			/s3cret|db\.example|postgres:\/\//,
 		)
 	})

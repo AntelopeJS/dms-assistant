@@ -4,13 +4,13 @@ description: Decision log of the AI assistant v2 redesign, sections 1 to 6. Scop
 mode: explanation
 ---
 
-This is the decision log behind the v2 redesign of `@antelopejs/dms-ai`. It was written as a "grill me" session where the same author asks the hard questions and answers each one with a recommendation, then follows it. Read it next to the diff. Every non-obvious choice in the pull request traces back to one answer below.
+This is the decision log behind the v2 redesign of the assistant. It was written as a "grill me" session where the same author asks the hard questions and answers each one with a recommendation, then follows it. Read it next to the diff. Every non-obvious choice in the pull request traces back to one answer below.
 
 Inputs:
 
 - The `dms` 0.6.0 and `interface-dms` 0.4.0 releases (the v2 design port, `dms#119`, and its breaking release, `dms#166`).
 - The `dms-frontend` 0.5.0 release (component prefixes, no private components, `dms-frontend#103`) and the 0.4.0 release (opt-in auto-imports, `dms-frontend#101`).
-- The v2 design mockup, `modules/ai/*` (Overview, Changes, Activity, Skills, Settings, and the assistant panel states), and its UX review of `dms-ai`, findings AI-01 to AI-19.
+- The v2 design mockup, `modules/ai/*` (Overview, Changes, Activity, Skills, Settings, and the assistant panel states), and its UX review of `dms-assistant`, findings AI-01 to AI-19.
 
 Each answer is tagged **Decision**. Where an answer narrows the mockup, it says so and why.
 
@@ -54,7 +54,7 @@ The mockup's module navigation is Overview, Changes, Activity, Skills, Settings.
 
 Names no longer drop a leading `Dms`, and a module declares a `componentPrefix`.
 
-**Decision.** `componentPrefix: "DmsAi"` in `dms.frontend.ts`, and `registerComponent(name)` with the bare file name. The registered names stay `DmsAi<File>`, so the backend's `CustomComponent("DmsAi…")` strings are unchanged. Components we render ourselves use the public `Dms*` components of the DMS by their full names.
+**Decision.** `componentPrefix: "DmsAssistant"` in `dms.frontend.ts`, and `registerComponent(name)` with the bare file name. The registered names stay `DmsAssistant<File>`, so the backend's `CustomComponent("DmsAssistant…")` strings are unchanged. Components we render ourselves use the public `Dms*` components of the DMS by their full names.
 
 ### Q6. `dms-frontend` 0.4 made auto-imports opt-in. What breaks?
 
@@ -82,13 +82,13 @@ Checked against the 0.3 to 0.4 migration guide. `KpiCard`, `ChartCard`, `TopList
 
 Every page derives a permission from its id, every top-level component from its field key, and every `.child()` from its child id. `.meta({ name, icon, description })` titles them.
 
-**Decision.** Every component that the role editor lists carries `.meta()` with `$dms_ai.*` i18n keys for `name` and `description`, and an icon. Custom components and built-in blocks alike carry it, so the role editor never shows a raw field key.
+**Decision.** Every component that the role editor lists carries `.meta()` with `$dms_assistant.*` i18n keys for `name` and `description`, and an icon. Custom components and built-in blocks alike carry it, so the role editor never shows a raw field key.
 
 ### Q10. The module had no i18n at all. Do we translate everything?
 
 The DMS ships `en` and `fr`, and every string in page metadata can be a `$` key.
 
-**Decision.** Yes, `en` and `fr`, under the `dms_ai` namespace, in `frontend-vue/i18n/locales/dms-ai-{en-GB,fr-FR}.json`. Backend metadata uses `$dms_ai.…` keys. Vue components use `useI18n().t("dms_ai.…")`. The agent's own output is not translated.
+**Decision.** Yes, `en` and `fr`, under the `dms_assistant` namespace, in `frontend-vue/i18n/locales/dms-assistant-{en-GB,fr-FR}.json`. Backend metadata uses `$dms_assistant.…` keys. Vue components use `useI18n().t("dms_assistant.…")`. The agent's own output is not translated.
 
 ### Q11. Who can open the pages?
 
@@ -116,7 +116,7 @@ Source tables give search, sort, tabs with counters, quick filters, paging, row 
 
 Plain string cells are not translated. Select columns map a value to an option label, and option labels go through `processI18n`.
 
-**Decision.** Enumerations (tool, how it was allowed, result, scope, source) are `SelectType` columns whose options are `$dms_ai.*` keys, drawn as status pills with a tone. The route answers the raw value. Free text (the target, a conversation title) stays a string.
+**Decision.** Enumerations (tool, how it was allowed, result, scope, source) are `SelectType` columns whose options are `$dms_assistant.*` keys, drawn as status pills with a tone. The route answers the raw value. Free text (the target, a conversation title) stays a string.
 
 ### Q15. Overview, what is on it?
 
@@ -125,7 +125,7 @@ The mockup has a period selector, an assistant status hero with "Open assistant"
 **Decision.**
 
 - `PeriodSelector` (24h, 7d, 30d, default 7d, compare with the previous period).
-- `DmsAiStatusCard` (custom), with the live state of the sidecar, the agent, the default scope and approval mode, Builder presence, pending approvals, "Open assistant" and "Settings".
+- `DmsAssistantStatusCard` (custom), with the live state of the sidecar, the agent, the default scope and approval mode, Builder presence, pending approvals, "Open assistant" and "Settings".
 - Four `KpiCard` blocks on `/ai/metrics/kpi/{actions,change-sets,approved,undone}`.
 - `ChartCard` (area, datetime, comparison) on `/ai/metrics/series`.
 - "How actions were allowed", a `TopListCard` on `/ai/metrics/allowed` (one row per way, with a count). The "Deletions always asked: 2 of 2" line is its description.
@@ -136,15 +136,15 @@ The mockup has a period selector, an assistant status hero with "Open assistant"
 
 The mockup is a master-detail. A change set list sits on the left, the selected set's diff on the right, and Undo previews conflicts in a dialog.
 
-**Decision.** One custom component, `DmsAiChangesView`, built on the public `DmsMasterDetail`, `DmsEmptyState`, `DmsKeyValueList` and `DmsStatusPill` of the DMS, a `DmsConfirmModal`-style modal and Nuxt UI. The list filters All, Safe or Code with `DmsSegmentedControl`. A diff viewer (`DiffView`) is internal to the module. `?set=<id>` deep-links a change set (the panel's "Review diff" opens it).
+**Decision.** One custom component, `DmsAssistantChangesView`, built on the public `DmsMasterDetail`, `DmsEmptyState`, `DmsKeyValueList` and `DmsStatusPill` of the DMS, a `DmsConfirmModal`-style modal and Nuxt UI. The list filters All, Safe or Code with `DmsSegmentedControl`. A diff viewer (`DiffView`) is internal to the module. `?set=<id>` deep-links a change set (the panel's "Review diff" opens it).
 
 ### Q17. Activity, what are the tabs and the "Allowed" column?
 
-**Decision.** A source table on `/ai/activity`. Its tabs are All, Changed files, Asked you, Denied or blocked, and Failed, each a filter on a `category` column. It has quick filters on tool, agent and conversation, and a "Hide read-only" toggle as a quick filter. Its columns are Time, Action, Target, Allowed, Result, Conversation and Duration, with 25 rows a page and "Load more". The row detail opens `DmsAiActivityDetail` in a drawer (named arguments, decision trail, diff produced, raw JSON toggle, "Open conversation", "View change set"), with J and K and `?record=` deep links. "Export CSV" is a header button calling `/ai/activity/export.csv`.
+**Decision.** A source table on `/ai/activity`. Its tabs are All, Changed files, Asked you, Denied or blocked, and Failed, each a filter on a `category` column. It has quick filters on tool, agent and conversation, and a "Hide read-only" toggle as a quick filter. Its columns are Time, Action, Target, Allowed, Result, Conversation and Duration, with 25 rows a page and "Load more". The row detail opens `DmsAssistantActivityDetail` in a drawer (named arguments, decision trail, diff produced, raw JSON toggle, "Open conversation", "View change set"), with J and K and `?record=` deep links. "Export CSV" is a header button calling `/ai/activity/export.csv`.
 
 ### Q18. Skills, table or cards?
 
-**Decision.** A source table on `/ai/skills/catalog` with the cards display only. `DmsAiSkillCard` draws each card on `DmsRecordCard`, with the source, the tags, the uses in 30 days, and a "Shadowed" badge and dimming for an ignored duplicate. The tabs are All, Modules and Local. The detail opens `DmsAiSkillDetail` in a drawer (source, uses, last use, SKILL.md rendered, Copy). The duplicate warning is `DmsAiSkillConflicts`, a custom banner fed by the same route, because the `Banner` block is static. A header button links to Settings › Skills.
+**Decision.** A source table on `/ai/skills/catalog` with the cards display only. `DmsAssistantSkillCard` draws each card on `DmsRecordCard`, with the source, the tags, the uses in 30 days, and a "Shadowed" badge and dimming for an ignored duplicate. The tabs are All, Modules and Local. The detail opens `DmsAssistantSkillDetail` in a drawer (source, uses, last use, SKILL.md rendered, Copy). The duplicate warning is `DmsAssistantSkillConflicts`, a custom banner fed by the same route, because the `Banner` block is static. A header button links to Settings › Skills.
 
 ### Q19. Settings, a custom view or a form?
 
@@ -224,7 +224,7 @@ Today it is denied after 5 minutes, silently, and the stale card stays (AI-07).
 
 Edits and Builder operations write straight to disk, and nothing records what a turn changed (AI-02). Shell commands in Code mode can change any file.
 
-**Decision.** A shadow git repository in the sidecar state directory (`node_modules/.cache/dms-ai/checkpoints.git`). Its work tree is the project root, and it honours the project's `.gitignore` plus `node_modules`, `dist`, `.antelope` and `.git`. Before the first mutating tool of a turn, the sidecar snapshots the work tree (`git add -A` into the shadow index, then `write-tree`). At the end of the turn it snapshots again. The change set is the tree diff. It is stored with its id, the conversation, the request, the agent, the scope, who asked, the files with their line counts, the typecheck outcome, and whether it is an auto-fix. A turn that changed nothing records nothing.
+**Decision.** A shadow git repository in the sidecar state directory (`node_modules/.cache/dms-assistant/checkpoints.git`). Its work tree is the project root, and it honours the project's `.gitignore` plus `node_modules`, `dist`, `.antelope` and `.git`. Before the first mutating tool of a turn, the sidecar snapshots the work tree (`git add -A` into the shadow index, then `write-tree`). At the end of the turn it snapshots again. The change set is the tree diff. It is stored with its id, the conversation, the request, the agent, the scope, who asked, the files with their line counts, the typecheck outcome, and whether it is an auto-fix. A turn that changed nothing records nothing.
 
 If `git` is not on `PATH`, change sets are off and the Changes page says why.
 

@@ -1,6 +1,6 @@
 import type { ToolEntry } from "./types";
 
-const MCP_TOOL_PREFIXES = ["mcp__dms-ai__", "mcp__dms__"] as const;
+const MCP_TOOL_PREFIXES = ["mcp__dms-assistant__", "mcp__dms__"] as const;
 
 /** The agents' built-in tools, by the name they are logged under. */
 const BUILTIN_TOOLS = {

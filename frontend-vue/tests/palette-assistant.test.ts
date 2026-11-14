@@ -56,9 +56,9 @@ describe("the assistant's registrations in the dashboard", () => {
 		const { t } = createTestI18n();
 		const panel = assistantSidePanel();
 		expect(panel).toMatchObject({
-			id: "dms-ai:assistant",
-			component: "DmsAiChatPanel",
-			ariaLabel: "$dms_ai.panel.launcher",
+			id: "dms-assistant:assistant",
+			component: "DmsAssistantChatPanel",
+			ariaLabel: "$dms_assistant.panel.launcher",
 		});
 		expect(panel.minWidth).toBeLessThan(panel.defaultWidth);
 		expect(panel.defaultWidth).toBeLessThan(panel.maxWidth);
@@ -73,7 +73,7 @@ describe("the assistant's registrations in the dashboard", () => {
 		const connected = launcherAction(t, "connected");
 		expect(connected).toMatchObject({
 			icon: "i-ph-sparkle",
-			iconComponent: "DmsAiLauncherIcon",
+			iconComponent: "DmsAssistantLauncherIcon",
 		});
 		expect(connected.label).toMatch(/^Assistant \(.+K\)$/);
 		const labels = (
@@ -96,10 +96,10 @@ describe("the assistant's registrations in the dashboard", () => {
 		});
 		const assistant = paletteAssistant(t, page);
 		expect(assistant).toMatchObject({
-			id: "dms-ai:assistant",
-			answerComponent: "DmsAiPaletteAnswer",
-			label: "$dms_ai.panel.palette.assistant",
-			placeholder: "$dms_ai.panel.palette.placeholder",
+			id: "dms-assistant:assistant",
+			answerComponent: "DmsAssistantPaletteAnswer",
+			label: "$dms_assistant.panel.palette.assistant",
+			placeholder: "$dms_assistant.panel.palette.placeholder",
 		});
 		expect(assistant.suggestions().map((item) => item.label)).toEqual([
 			"Explain what Sales overview shows",

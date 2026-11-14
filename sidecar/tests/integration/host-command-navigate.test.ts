@@ -26,7 +26,7 @@ const CLIENT_TOKEN = "host-navigation-test-credential";
 const TEST_HOST_ROOT = "/tmp";
 const WS_PATH = "/ws";
 const WS_HOST = "127.0.0.1";
-const TMP_PREFIX = "dms-ai-host-cmd-navigate-";
+const TMP_PREFIX = "dms-assistant-host-cmd-navigate-";
 const STATE_FILE_NAME_TEST = "state.json";
 const SETTLE_DELAY_MS = 50;
 const NAVIGATE_TARGET = "/dashboard/settings";
@@ -67,7 +67,7 @@ async function startTestServer(): Promise<ServerHandle> {
   };
   const ws = attachWsServer(server, {
     providerRuntime: {
-      stateDir: join(tmpdir(), "dms-ai-ws-stub"),
+      stateDir: join(tmpdir(), "dms-assistant-ws-stub"),
       mcpHttpRegistry: createMcpHttpRegistry(),
       getMcpUrl: () => "http://127.0.0.1:1/mcp",
     },

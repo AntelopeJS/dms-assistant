@@ -13,10 +13,10 @@ const { t } = useChatI18n();
 const description = ref("");
 
 const suggestions = computed(() => [
-	t("dms_ai.views.onboarding.scratch.suggestion_crm"),
-	t("dms_ai.views.onboarding.scratch.suggestion_inventory"),
-	t("dms_ai.views.onboarding.scratch.suggestion_events"),
-	t("dms_ai.views.onboarding.scratch.suggestion_support"),
+	t("dms_assistant.views.onboarding.scratch.suggestion_crm"),
+	t("dms_assistant.views.onboarding.scratch.suggestion_inventory"),
+	t("dms_assistant.views.onboarding.scratch.suggestion_events"),
+	t("dms_assistant.views.onboarding.scratch.suggestion_support"),
 ]);
 
 const provider = computed(() => onboarding.state.value?.provider ?? "claude");
@@ -30,15 +30,15 @@ function start(): void {
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.scratch.title')"
-		:lede="t('dms_ai.views.onboarding.scratch.lede')"
+		:title="t('dms_assistant.views.onboarding.scratch.title')"
+		:lede="t('dms_assistant.views.onboarding.scratch.lede')"
 	>
 		<div
 			class="border-default bg-elevated/40 focus-within:border-secondary focus-within:ring-secondary mt-5 rounded-xl border focus-within:ring-1"
 		>
 			<UTextarea
 				v-model="description"
-				:placeholder="t('dms_ai.views.onboarding.scratch.placeholder')"
+				:placeholder="t('dms_assistant.views.onboarding.scratch.placeholder')"
 				:rows="3"
 				autoresize
 				:maxrows="8"
@@ -76,7 +76,7 @@ function start(): void {
 		</div>
 		<template #footer>
 			<UButton
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -84,7 +84,7 @@ function start(): void {
 			/>
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.scratch.start')"
+				:label="t('dms_assistant.views.onboarding.scratch.start')"
 				icon="i-ph-sparkle"
 				color="secondary"
 				:disabled="isEmpty"

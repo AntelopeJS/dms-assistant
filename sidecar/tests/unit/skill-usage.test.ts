@@ -19,7 +19,7 @@ function item(provenance: string, name: string) {
 
 const CATALOG: SkillCatalog = {
   items: [
-    item("@antelopejs/dms-ai", "page-builder"),
+    item("@antelopejs/dms-assistant", "page-builder"),
     item("local", "page-builder"),
     item("local", "other"),
   ],
@@ -36,7 +36,7 @@ const ENTRY: ConversationEntry = {
       {
         role: "tool_use",
         toolName: "Skill",
-        content: JSON.stringify({ skill: "dms-ai:page-builder" }),
+        content: JSON.stringify({ skill: "dms-assistant:page-builder" }),
         timestampMs: NOW - DAY_MS,
       },
       {
@@ -63,12 +63,12 @@ describe("skill usage", () => {
       lastConversationId: "c1",
       isShadowed: false,
       source: "module",
-      origin: "@antelopejs/dms-ai",
+      origin: "@antelopejs/dms-assistant",
     });
     expect(winner?.lastUsedAtMs).toBe(NOW - DAY_MS);
     expect(shadowed).toMatchObject({
       isShadowed: true,
-      shadowedBy: "@antelopejs/dms-ai:page-builder",
+      shadowedBy: "@antelopejs/dms-assistant:page-builder",
       source: "local",
       origin: "~/.claude/skills",
     });
@@ -79,7 +79,7 @@ describe("skill usage", () => {
     expect(skillConflicts(CATALOG)).toEqual([
       {
         name: "page-builder",
-        winner: { source: "module", origin: "@antelopejs/dms-ai" },
+        winner: { source: "module", origin: "@antelopejs/dms-assistant" },
         ignored: [{ source: "local", origin: "~/.claude/skills" }],
       },
     ]);

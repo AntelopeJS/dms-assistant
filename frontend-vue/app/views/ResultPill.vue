@@ -17,9 +17,11 @@ const { t } = useI18n();
 
 const label = computed(() => {
 	if (props.result === "done" && props.changeSetNumber !== undefined) {
-		return t("dms_ai.views.result.applied", { number: props.changeSetNumber });
+		return t("dms_assistant.views.result.applied", {
+			number: props.changeSetNumber,
+		});
 	}
-	const base = t(`dms_ai.views.result.${props.result}`);
+	const base = t(`dms_assistant.views.result.${props.result}`);
 	return props.detail ? `${base} · ${props.detail}` : base;
 });
 </script>

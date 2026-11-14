@@ -14,7 +14,7 @@ const { t } = useI18n();
 	<div class="text-muted flex items-center justify-between gap-3 text-xs">
 		<span class="font-mono tabular-nums">
 			{{
-				t("dms_ai.views.common.position", {
+				t("dms_assistant.views.common.position", {
 					index: props.navigation.index + 1,
 					total: props.navigation.total,
 				})
@@ -29,7 +29,7 @@ const { t } = useI18n();
 				variant="outline"
 				size="xs"
 				square
-				:aria-label="t('dms_ai.views.common.previous')"
+				:aria-label="t('dms_assistant.views.common.previous')"
 				:disabled="!props.navigation.hasPrev"
 				@click="props.navigation.prev()"
 			/>
@@ -39,7 +39,7 @@ const { t } = useI18n();
 				variant="outline"
 				size="xs"
 				square
-				:aria-label="t('dms_ai.views.common.next')"
+				:aria-label="t('dms_assistant.views.common.next')"
 				:disabled="!props.navigation.hasNext"
 				@click="props.navigation.next()"
 			/>

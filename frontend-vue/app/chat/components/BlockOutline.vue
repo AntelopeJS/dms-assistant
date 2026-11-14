@@ -63,10 +63,10 @@ const style = computed(() =>
 
 <template>
 	<Teleport to="body">
-		<Transition name="dms-ai-outline">
+		<Transition name="dms-assistant-outline">
 			<div
 				v-if="style"
-				class="dms-ai-chat-tokens dms-ai-outline"
+				class="dms-assistant-chat-tokens dms-assistant-outline"
 				:style="style"
 				aria-hidden="true"
 			/>
@@ -75,7 +75,7 @@ const style = computed(() =>
 </template>
 
 <style scoped>
-.dms-ai-outline {
+.dms-assistant-outline {
 	position: fixed;
 	z-index: 30;
 	border-radius: 12px;
@@ -90,20 +90,20 @@ const style = computed(() =>
 		height 160ms ease;
 }
 
-.dms-ai-outline-enter-active,
-.dms-ai-outline-leave-active {
+.dms-assistant-outline-enter-active,
+.dms-assistant-outline-leave-active {
 	transition: opacity 200ms ease;
 }
 
-.dms-ai-outline-enter-from,
-.dms-ai-outline-leave-to {
+.dms-assistant-outline-enter-from,
+.dms-assistant-outline-leave-to {
 	opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.dms-ai-outline,
-	.dms-ai-outline-enter-active,
-	.dms-ai-outline-leave-active {
+	.dms-assistant-outline,
+	.dms-assistant-outline-enter-active,
+	.dms-assistant-outline-leave-active {
 		transition: none;
 	}
 }

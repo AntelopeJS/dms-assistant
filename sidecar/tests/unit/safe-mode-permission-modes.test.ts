@@ -25,7 +25,7 @@ import {
 } from "../helpers/provider-fixtures.js";
 
 const SCRIPTS = resolve(import.meta.dirname, "../fixtures/mock-claude/scripts");
-const TMP_PREFIX = "dms-ai-safe-mode-";
+const TMP_PREFIX = "dms-assistant-safe-mode-";
 const CONVERSATION_ID = "conv-safe-mode";
 const PROMPT_TIMEOUT_MS = 100;
 const TURN_TIMEOUT_MS = 10_000;

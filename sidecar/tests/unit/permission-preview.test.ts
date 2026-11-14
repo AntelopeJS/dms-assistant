@@ -60,7 +60,7 @@ describe("permission previews and rules", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "dms-ai-preview-"));
+    root = await mkdtemp(join(tmpdir(), "dms-assistant-preview-"));
     await writeFile(
       join(root, "page.ts"),
       "const a = 1;\nconst b = 2;\nconst c = 3;\n",

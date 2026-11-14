@@ -8,7 +8,7 @@ An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant
 | -------------- | ------------------------------------------------------------------------------------------------------- |
 | `src`          | The DMS module (CommonJS, built to `dist`); `construct`, `start` and `destroy` in `src/index.ts` run both parts |
 | `src/builder`  | The external database connect routes under `/api/builder/database`, which call the operations of `@antelopejs/interface-dms-builder` |
-| `sidecar`      | The local agent process, an ESM workspace package with its own lockfile and tsconfig; ships as `sidecar/dist`. Its `dms-ai` MCP server holds only the chat's tools. Every session also gets the `dms` MCP server of `@antelopejs/dms` |
+| `sidecar`      | The local agent process, an ESM workspace package with its own lockfile and tsconfig; ships as `sidecar/dist`. Its `dms-assistant` MCP server holds only the chat's tools. Every session also gets the `dms` MCP server of `@antelopejs/dms` |
 | `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
 | `frontend-vue/builder` | The client and types of the builder's `/api/builder/database` routes and the builder's message catalog, with its own vitest config. The builder has no editor UI: pages change through the AI and the mockup flow |
 | `playground`   | A DMS project that loads the module; its own lockfile, outside the pnpm workspace                       |
@@ -60,7 +60,7 @@ Finish every change with `pnpm run checks`. It runs typecheck, lint, format, kni
 - `pnpm exec oxlint <files>` and `pnpm exec oxfmt <files>` on the files you changed.
 - Run one test file instead of the whole suite. In a module that tests with `ajs module test`, run `pnpm run build`, then `pnpm exec ajs module test . -f dist/<path>.test.js`. Repeat `-f` for more files.
 
-Prove a change works with the verification skill in [`.agents/skills/verify-dms-ai/SKILL.md`](.agents/skills/verify-dms-ai/SKILL.md) before you call it done.
+Prove a change works with the verification skill in [`.agents/skills/verify-dms-assistant/SKILL.md`](.agents/skills/verify-dms-assistant/SKILL.md) before you call it done.
 
 The tools enforce most rules, listed in the table at the end. The sections below hold the rules no tool checks.
 

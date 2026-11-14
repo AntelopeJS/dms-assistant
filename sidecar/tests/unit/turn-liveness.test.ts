@@ -14,7 +14,7 @@ import {
 import { buildRunner, type RunnerHandle } from "../helpers/provider-runner.js";
 
 const CONVERSATION_ID = "conv-liveness-1";
-const TMP_PREFIX = "dms-ai-liveness-";
+const TMP_PREFIX = "dms-assistant-liveness-";
 /**
  * Shorter than the silent step each script replays (16 events 50 ms apart),
  * longer than the gap between two of its events.

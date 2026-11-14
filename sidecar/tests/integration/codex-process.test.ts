@@ -32,7 +32,7 @@ import {
 import { readRecordedPids } from "../helpers/codex-pids.js";
 
 const installation = resolveCodexInstallation();
-const TMP_PREFIX = "dms-ai-codex-";
+const TMP_PREFIX = "dms-assistant-codex-";
 const MCP_URL = "http://127.0.0.1:1/mcp";
 const FAKE_TOKEN = "0123456789abcdef";
 const CONVERSATION = "conv-codex-proc";
@@ -93,7 +93,7 @@ describe.skipIf(installation === undefined)("codex app-server process", () => {
         {
           clientInfo: {
             name: CODEX_CLIENT_NAME,
-            title: "dms-ai",
+            title: "dms-assistant",
             version: "0.0.1",
           },
           capabilities: null,
@@ -136,7 +136,7 @@ describe.skipIf(installation === undefined)("codex app-server process", () => {
       await running.client.request("initialize", {
         clientInfo: {
           name: CODEX_CLIENT_NAME,
-          title: "dms-ai",
+          title: "dms-assistant",
           version: "0.0.1",
         },
         capabilities: null,

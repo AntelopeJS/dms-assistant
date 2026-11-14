@@ -15,7 +15,7 @@ import {
 import { CHANGE_SET, DIFF_REQUEST } from "./support/panel-fixtures";
 
 beforeEach(() => {
-	localStorage.setItem("dms-ai-conversation-id", CONVERSATION_ID);
+	localStorage.setItem("dms-assistant-conversation-id", CONVERSATION_ID);
 });
 
 afterEach(() => {
@@ -134,7 +134,7 @@ describe("tool rows and change sets", () => {
 		deliver(harness, {
 			type: "tool_call_start",
 			callId: "c0",
-			toolName: "mcp__dms-ai__builder_add_block",
+			toolName: "mcp__dms-assistant__builder_add_block",
 			args: { name: "Top customers", type: "TopListCard" },
 		});
 		deliver(harness, {

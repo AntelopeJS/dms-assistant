@@ -34,16 +34,16 @@ export const TODO_STATUS = {
 	COMPLETED: "completed",
 } as const;
 
-export const STORAGE_CONVERSATION_ID_KEY = "dms-ai-conversation-id";
+export const STORAGE_CONVERSATION_ID_KEY = "dms-assistant-conversation-id";
 
 export const SEND_HOTKEY = "Enter";
 export const NEWLINE_HOTKEY_MODIFIER = "shiftKey";
 
 /** Translation keys of the errors the chat itself raises. */
 export const LOCAL_ERROR_KEYS = {
-	NOT_SENT: "dms_ai.panel.errors.not_sent",
-	RETRY_NEEDS_FILES: "dms_ai.panel.errors.retry_needs_files",
-	STOP_NOT_DELIVERED: "dms_ai.panel.errors.stop_not_delivered",
+	NOT_SENT: "dms_assistant.panel.errors.not_sent",
+	RETRY_NEEDS_FILES: "dms_assistant.panel.errors.retry_needs_files",
+	STOP_NOT_DELIVERED: "dms_assistant.panel.errors.stop_not_delivered",
 } as const;
 
 /**

@@ -59,7 +59,7 @@ describe("chat transport", () => {
 
 	it("publishes nothing on the window: no other document borrows it any more", () => {
 		hub();
-		expect(Reflect.has(globalThis, "dmsAiChatTransport")).toBe(false);
+		expect(Reflect.has(globalThis, "dmsAssistantChatTransport")).toBe(false);
 	});
 });
 

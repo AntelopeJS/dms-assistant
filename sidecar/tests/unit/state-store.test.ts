@@ -6,7 +6,7 @@ import { STATE_INITIAL } from "../../src/constants/state.js";
 import { createConversationStore } from "../../src/state/conversations.js";
 import { createStore } from "../../src/state/store.js";
 
-const TMP_PREFIX = "dms-ai-state-";
+const TMP_PREFIX = "dms-assistant-state-";
 const STATE_FILE = "state.json";
 const FILE_ENCODING = "utf8";
 
@@ -128,8 +128,8 @@ describe("stored tool names", () => {
           createdAtMs: 1,
           updatedAtMs: 2,
           messages: [
-            call("mcp__dms-ai__BuilderDeletePage"),
-            call("mcp__dms-ai__Typecheck"),
+            call("mcp__dms-assistant__BuilderDeletePage"),
+            call("mcp__dms-assistant__Typecheck"),
             call("Read"),
             call("mcp__other__GetCurrentPage"),
             call("BuilderDeletePage"),
@@ -153,8 +153,8 @@ describe("stored tool names", () => {
       "conv-1"
     ]!;
     expect(messages.map((message) => message.toolName)).toEqual([
-      "mcp__dms-ai__BuilderDeletePage",
-      "mcp__dms-ai__Typecheck",
+      "mcp__dms-assistant__BuilderDeletePage",
+      "mcp__dms-assistant__Typecheck",
       "Read",
       "mcp__other__GetCurrentPage",
       "BuilderDeletePage",

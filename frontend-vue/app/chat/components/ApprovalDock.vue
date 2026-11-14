@@ -64,8 +64,8 @@ const countdown = computed<string>(() => {
 const denyAllLabel = computed(() =>
 	t(
 		props.requests.length === 2
-			? "dms_ai.panel.approvals.deny_both"
-			: "dms_ai.panel.approvals.deny_all",
+			? "dms_assistant.panel.approvals.deny_both"
+			: "dms_assistant.panel.approvals.deny_all",
 	),
 );
 
@@ -151,14 +151,14 @@ defineExpose({ focusRequest });
 			class="cb-approve"
 			role="alertdialog"
 			tabindex="-1"
-			:aria-label="t('dms_ai.panel.approvals.aria')"
+			:aria-label="t('dms_assistant.panel.approvals.aria')"
 			@keydown="onKeydown"
 		>
 			<div class="cb-approve__head">
 				<UIcon name="i-ph-hand-palm" class="cb-approve__icon" />
 				<span class="cb-approve__eyebrow">
 					{{
-						t("dms_ai.panel.approvals.heading", {
+						t("dms_assistant.panel.approvals.heading", {
 							index: focusedIndex + 1,
 							total: requests.length,
 						})
@@ -168,11 +168,15 @@ defineExpose({ focusRequest });
 					v-if="countdown"
 					class="cb-approve__timer"
 					:title="
-						t('dms_ai.panel.approvals.timer_hint', { minutes: timeoutMinutes })
+						t('dms_assistant.panel.approvals.timer_hint', {
+							minutes: timeoutMinutes,
+						})
 					"
 				>
 					<UIcon name="i-ph-timer" />
-					{{ t("dms_ai.panel.approvals.denies_in", { time: countdown }) }}
+					{{
+						t("dms_assistant.panel.approvals.denies_in", { time: countdown })
+					}}
 				</span>
 			</div>
 			<PermissionCard
@@ -206,7 +210,7 @@ defineExpose({ focusRequest });
 						icon="i-ph-key"
 						:label="
 							t(
-								'dms_ai.panel.rules.count',
+								'dms_assistant.panel.rules.count',
 								{ count: rules.length },
 								rules.length,
 							)
@@ -227,7 +231,7 @@ defineExpose({ focusRequest });
 			<div class="cb-expired__body">
 				<div class="cb-expired__title">
 					{{
-						t("dms_ai.panel.approvals.expired_title", {
+						t("dms_assistant.panel.approvals.expired_title", {
 							tool: expiredVerb(request),
 						})
 					}}
@@ -235,7 +239,7 @@ defineExpose({ focusRequest });
 				<div class="cb-expired__sub">{{ request.summary }}</div>
 				<p class="cb-expired__text">
 					{{
-						t("dms_ai.panel.approvals.expired_text", {
+						t("dms_assistant.panel.approvals.expired_text", {
 							minutes: timeoutMinutes,
 						})
 					}}
@@ -246,14 +250,14 @@ defineExpose({ focusRequest });
 						color="neutral"
 						variant="outline"
 						icon="i-ph-arrows-clockwise"
-						:label="t('dms_ai.panel.approvals.ask_again')"
+						:label="t('dms_assistant.panel.approvals.ask_again')"
 						@click="emit('askAgain', request)"
 					/>
 					<UButton
 						size="xs"
 						color="neutral"
 						variant="ghost"
-						:label="t('dms_ai.common.dismiss')"
+						:label="t('dms_assistant.common.dismiss')"
 						@click="emit('dismissExpired', request.requestId)"
 					/>
 				</div>

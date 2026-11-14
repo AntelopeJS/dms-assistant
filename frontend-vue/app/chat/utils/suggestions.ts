@@ -17,17 +17,17 @@ const MODULE_PAGE = /^\/modules\/[^/]+/;
 const PAGE_SUGGESTIONS: readonly PageSuggestion[] = [
 	{
 		icon: "i-ph-squares-four",
-		textKey: "dms_ai.panel.empty.suggest.add_chart",
+		textKey: "dms_assistant.panel.empty.suggest.add_chart",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-funnel",
-		textKey: "dms_ai.panel.empty.suggest.add_filter",
+		textKey: "dms_assistant.panel.empty.suggest.add_filter",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-question",
-		textKey: "dms_ai.panel.empty.suggest.explain",
+		textKey: "dms_assistant.panel.empty.suggest.explain",
 		isReadOnly: true,
 	},
 ];
@@ -35,17 +35,17 @@ const PAGE_SUGGESTIONS: readonly PageSuggestion[] = [
 const HOME_SUGGESTIONS: readonly PageSuggestion[] = [
 	{
 		icon: "i-ph-folder-simple-plus",
-		textKey: "dms_ai.panel.empty.suggest.create_page",
+		textKey: "dms_assistant.panel.empty.suggest.create_page",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-table",
-		textKey: "dms_ai.panel.empty.suggest.create_table",
+		textKey: "dms_assistant.panel.empty.suggest.create_table",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-question",
-		textKey: "dms_ai.panel.empty.suggest.explain_project",
+		textKey: "dms_assistant.panel.empty.suggest.explain_project",
 		isReadOnly: true,
 	},
 ];
@@ -53,17 +53,17 @@ const HOME_SUGGESTIONS: readonly PageSuggestion[] = [
 const MODULE_SUGGESTIONS: readonly PageSuggestion[] = [
 	{
 		icon: "i-ph-squares-four",
-		textKey: "dms_ai.panel.empty.suggest.add_block",
+		textKey: "dms_assistant.panel.empty.suggest.add_block",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-pencil-simple-line",
-		textKey: "dms_ai.panel.empty.suggest.rename",
+		textKey: "dms_assistant.panel.empty.suggest.rename",
 		isReadOnly: false,
 	},
 	{
 		icon: "i-ph-question",
-		textKey: "dms_ai.panel.empty.suggest.explain",
+		textKey: "dms_assistant.panel.empty.suggest.explain",
 		isReadOnly: true,
 	},
 ];

@@ -17,7 +17,7 @@ const {
 } = require("./helpers/process-state.cjs");
 const { processGroupTest } = require("./helpers/platform-tests.cjs");
 
-const SIDECAR_OWNER_KEY = Symbol.for("@antelopejs/dms-ai/sidecar-owner");
+const SIDECAR_OWNER_KEY = Symbol.for("@antelopejs/dms-assistant/sidecar-owner");
 const BACKEND_PATH = path.resolve(__dirname, "helpers/sidecar-backend.cjs");
 const INITIAL_BUILD_ID = build.id;
 const REBUILT_BUILD_ID = "build-2";
@@ -27,9 +27,12 @@ const ANSWER_WITHIN_MS = 2_500;
 const SPAWN_TIMEOUT_WITHIN_MS = 8_000;
 
 /** The sidecar works in the backend's working directory, where it keeps its lock. */
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-ai-sidecar-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "dms-assistant-sidecar-"));
 process.chdir(root);
-const lockPath = path.join(root, "node_modules/.cache/dms-ai/sidecar.lock");
+const lockPath = path.join(
+  root,
+  "node_modules/.cache/dms-assistant/sidecar.lock",
+);
 const stopPath = path.join(root, "stop-sidecars");
 /** @type {Set<number>} */
 const startedPids = new Set();

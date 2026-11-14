@@ -41,15 +41,15 @@ const stepCount = computed(
 				{{
 					stepCount > 0
 						? t(
-								"dms_ai.panel.plan.title_steps",
+								"dms_assistant.panel.plan.title_steps",
 								{ count: stepCount },
 								stepCount,
 							)
-						: t("dms_ai.panel.plan.title")
+						: t("dms_assistant.panel.plan.title")
 				}}
 			</span>
 			<span class="cb-plan__note">
-				{{ t("dms_ai.panel.plan.nothing_changed") }}
+				{{ t("dms_assistant.panel.plan.nothing_changed") }}
 			</span>
 		</div>
 		<MarkdownContent class="cb-plan__body cb-md" :content="plan" />
@@ -58,14 +58,14 @@ const stepCount = computed(
 				size="xs"
 				color="neutral"
 				variant="outline"
-				:label="t('dms_ai.panel.plan.edit')"
+				:label="t('dms_assistant.panel.plan.edit')"
 				@click="emit('edit')"
 			/>
 			<UButton
 				size="xs"
 				color="secondary"
 				icon="i-ph-play"
-				:label="t('dms_ai.panel.plan.run')"
+				:label="t('dms_assistant.panel.plan.run')"
 				@click="emit('run')"
 			/>
 		</div>

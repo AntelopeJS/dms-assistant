@@ -21,7 +21,7 @@ import {
 } from "../helpers/provider-fixtures.js";
 
 const SCRIPTS = resolve(import.meta.dirname, "../fixtures/mock-claude/scripts");
-const TMP_PREFIX = "dms-ai-secret-guard-";
+const TMP_PREFIX = "dms-assistant-secret-guard-";
 const CONVERSATION_ID = "conv-secret-guard";
 const PROMPT_TIMEOUT_MS = 100;
 const TURN_TIMEOUT_MS = 10_000;

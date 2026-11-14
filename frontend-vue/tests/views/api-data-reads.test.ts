@@ -346,7 +346,7 @@ describe("changes view", () => {
 				.findAllComponents({ name: "UButton" })
 				.find(
 					(button) =>
-						button.vm.$attrs.label === "dms_ai.views.common.load_more",
+						button.vm.$attrs.label === "dms_assistant.views.common.load_more",
 				);
 		loadMoreButton()!.vm.$emit("click");
 		await flushPromises();
@@ -402,7 +402,10 @@ describe("change set panel", () => {
 		expect(reads).toEqual([{ url: "/ai/changes/cs-1" }]);
 		const redo = wrapper
 			.findAllComponents({ name: "UButton" })
-			.find((button) => button.vm.$attrs.label === "dms_ai.views.changes.redo");
+			.find(
+				(button) =>
+					button.vm.$attrs.label === "dms_assistant.views.changes.redo",
+			);
 		redo!.vm.$emit("click");
 		await flushPromises();
 		expect(authFetch).toHaveBeenCalledWith("/ai/changes/cs-1/redo", {
@@ -434,7 +437,8 @@ describe("change set actions", () => {
 			wrapper
 				.findAllComponents({ name: "UButton" })
 				.find(
-					(button) => button.vm.$attrs.label === "dms_ai.views.changes.redo",
+					(button) =>
+						button.vm.$attrs.label === "dms_assistant.views.changes.redo",
 				)!;
 		redo().vm.$emit("click");
 		await flushPromises();

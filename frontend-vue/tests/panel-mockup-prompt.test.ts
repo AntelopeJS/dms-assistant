@@ -33,7 +33,7 @@ function dispatch(detail: unknown): CustomEvent {
 }
 
 beforeEach(() => {
-	localStorage.setItem("dms-ai-conversation-id", CONVERSATION_ID);
+	localStorage.setItem("dms-assistant-conversation-id", CONVERSATION_ID);
 });
 
 afterEach(() => {
@@ -225,7 +225,7 @@ describe("building a mockup", () => {
 			conversationId,
 			type: "tool_call_start",
 			callId: "c0",
-			toolName: "mcp__dms-ai__builder_create_page",
+			toolName: "mcp__dms-assistant__builder_create_page",
 			args: { name: "rentals", displayName: "Rentals", category: "shop" },
 		});
 		await nextTick();

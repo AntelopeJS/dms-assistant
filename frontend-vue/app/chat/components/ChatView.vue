@@ -172,8 +172,8 @@ const mockup = useMockupIntents({
 	requestBuild: (target) =>
 		sendUserMessage(
 			target.pageRef === undefined
-				? t("dms_ai.panel.build.message", { mockup: target.mockup })
-				: t("dms_ai.panel.build.message_into", {
+				? t("dms_assistant.panel.build.message", { mockup: target.mockup })
+				: t("dms_assistant.panel.build.message_into", {
 						mockup: target.mockup,
 						page: target.pageRef,
 					}),
@@ -188,7 +188,7 @@ const outlinedBlock = computed(() =>
 	),
 );
 const agentName = computed(() =>
-	t(`dms_ai.common.agent.${settings.value.provider}`),
+	t(`dms_assistant.common.agent.${settings.value.provider}`),
 );
 const providerProblem = computed(
 	() => settings.value.providers[settings.value.provider]?.available === false,
@@ -197,7 +197,7 @@ const providerProblem = computed(
 const title = computed(
 	() =>
 		list.conversations.value.find((item) => item.id === activeId.value)
-			?.title || t("dms_ai.panel.new_conversation"),
+			?.title || t("dms_assistant.panel.new_conversation"),
 );
 
 const status = computed<PanelStatusKind>(() => {
@@ -223,22 +223,27 @@ const statusLabel = computed<string>(() =>
 );
 
 const usageLabel = computed<string>(() => {
-	if (!isConnected.value) return t("dms_ai.panel.composer.usage_offline");
+	if (!isConnected.value)
+		return t("dms_assistant.panel.composer.usage_offline");
 	const tokens = conversation.totalTokens.value;
 	if (tokens === null || tokens === 0) {
 		return conversation.messages.value.length === 0
-			? t("dms_ai.panel.composer.usage_new")
+			? t("dms_assistant.panel.composer.usage_new")
 			: "";
 	}
-	return t("dms_ai.panel.composer.usage", { count: formatTokens(tokens) });
+	return t("dms_assistant.panel.composer.usage", {
+		count: formatTokens(tokens),
+	});
 });
 
 const placeholder = computed<string>(() => {
-	if (!isConnected.value) return t("dms_ai.panel.composer.placeholder_offline");
+	if (!isConnected.value)
+		return t("dms_assistant.panel.composer.placeholder_offline");
 	if (questions.queue.value.length > 0)
-		return t("dms_ai.panel.composer.placeholder_question");
-	if (isRunning.value) return t("dms_ai.panel.composer.placeholder_running");
-	return t("dms_ai.panel.composer.placeholder_idle");
+		return t("dms_assistant.panel.composer.placeholder_question");
+	if (isRunning.value)
+		return t("dms_assistant.panel.composer.placeholder_running");
+	return t("dms_assistant.panel.composer.placeholder_idle");
 });
 
 const isEmpty = computed(
@@ -320,7 +325,9 @@ function stopAutoFix(): void {
 }
 
 function askAgain(summary: string): void {
-	sendUserMessage(t("dms_ai.panel.approvals.ask_again_message", { summary }));
+	sendUserMessage(
+		t("dms_assistant.panel.approvals.ask_again_message", { summary }),
+	);
 }
 
 function askAgainExpired(request: ExpiredRequest): void {
@@ -337,7 +344,7 @@ function runPlan(): void {
 		permissions.respond(planRequest.requestId, { decision: "allow_once" });
 		return;
 	}
-	sendUserMessage(t("dms_ai.panel.plan.go_ahead"));
+	sendUserMessage(t("dms_assistant.panel.plan.go_ahead"));
 }
 
 function setDraft(text: string): void {
@@ -505,7 +512,7 @@ onBeforeUnmount(() => {
 				@stop-auto-fix="stopAutoFix"
 				@ask-again="askAgain"
 				@run-plan="runPlan"
-				@edit-plan="setDraft(t('dms_ai.panel.plan.edit_prefix'))"
+				@edit-plan="setDraft(t('dms_assistant.panel.plan.edit_prefix'))"
 			/>
 			<ProviderNotice
 				v-if="providerProblem"
@@ -584,7 +591,7 @@ onBeforeUnmount(() => {
 			<UIcon name="i-ph-trash" class="cb-toast__icon" />
 			<span class="cb-toast__text">
 				{{
-					t("dms_ai.panel.drawer.deleted", {
+					t("dms_assistant.panel.drawer.deleted", {
 						title: list.pendingDelete.value.title,
 					})
 				}}
@@ -593,7 +600,7 @@ onBeforeUnmount(() => {
 				size="xs"
 				color="neutral"
 				variant="outline"
-				:label="t('dms_ai.common.undo')"
+				:label="t('dms_assistant.common.undo')"
 				@click="list.undoRemove(list.pendingDelete.value.id)"
 			/>
 		</div>
@@ -666,88 +673,4 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<style>
-/*
- * The panel's tokens, aliases of the dashboard's: violet (Nuxt UI
- * `secondary`, tinted by the DMS's assistant tokens) is the AI colour,
- * everything else follows the DMS surfaces in light and dark alike. Shared
- * bits the panel's pieces draw are here too.
- */
-.chat-view,
-.dms-ai-chat-tokens {
-	--ai: var(--ui-secondary);
-	--ai-tint: var(--dms-assistant-tint);
-	--ai-line: var(--dms-assistant-line);
-	--ai-bg-hover: var(--ui-bg-elevated);
-	--ai-radius-sm: 8px;
-	--ai-radius-md: 10px;
-	--ai-font-mono: var(
-		--font-mono,
-		ui-monospace,
-		SFMono-Regular,
-		Menlo,
-		Monaco,
-		Consolas,
-		"Liberation Mono",
-		monospace
-	);
-}
-
-.chat-view {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-	background: var(--dms-bg-sidebar, var(--ui-bg));
-	color: var(--ui-text);
-	font-size: 13px;
-}
-
-.chat-view .plus,
-.dms-ai-chat-tokens .plus {
-	color: var(--ui-success);
-	font: 600 11.5px var(--ai-font-mono);
-}
-
-.chat-view .minus,
-.dms-ai-chat-tokens .minus {
-	color: var(--ui-error);
-	font: 600 11.5px var(--ai-font-mono);
-}
-
-.chat-view .inline-code,
-.dms-ai-chat-tokens .inline-code,
-.chat-view .cb-md code,
-.dms-ai-chat-tokens .cb-md code {
-	padding: 1px 5px;
-	border-radius: 4px;
-	background: var(--ui-bg-accented);
-	color: var(--ui-text-highlighted);
-	font: 500 12px var(--ai-font-mono);
-}
-
-.chat-view .spin-ai,
-.dms-ai-chat-tokens .spin-ai {
-	display: inline-block;
-	width: 12px;
-	height: 12px;
-	flex: none;
-	border: 1.5px solid var(--ai);
-	border-right-color: transparent;
-	border-radius: 50%;
-	animation: dms-ai-spin 0.8s linear infinite;
-}
-
-@keyframes dms-ai-spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.chat-view .spin-ai,
-	.dms-ai-chat-tokens .spin-ai {
-		animation-duration: 2.4s;
-	}
-}
-</style>
+<style src="./chat-tokens.css"></style>

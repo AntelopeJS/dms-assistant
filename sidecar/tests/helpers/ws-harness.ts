@@ -46,7 +46,7 @@ import { buildInertStaticMcpDeps } from "./provider-runner.js";
 
 export const CLIENT_TOKEN = "ws-harness-test-credential";
 
-const TMP_PREFIX = "dms-ai-harness-";
+const TMP_PREFIX = "dms-assistant-harness-";
 export const STATE_FILE = "state.json";
 const ARBITRARY_PORT = 0;
 const WS_HOST = "127.0.0.1";
@@ -126,7 +126,7 @@ function assertProviderReachable(provider: ProviderName): void {
 const ASK_FIRST_ON_BOTH: DefaultModes = { claude: "normal", codex: "normal" };
 
 const PROJECT_DIR = "project";
-const PROJECT_STATE_SEGMENTS = ["node_modules", ".cache", "dms-ai"];
+const PROJECT_STATE_SEGMENTS = ["node_modules", ".cache", "dms-assistant"];
 const RETENTION_DAYS = 30;
 
 async function startProjectCheckpoints(root: string): Promise<Checkpoints> {

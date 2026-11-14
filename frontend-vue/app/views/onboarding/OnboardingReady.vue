@@ -31,8 +31,8 @@ async function useLogin(): Promise<void> {
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.ready.title')"
-		:lede="t('dms_ai.views.onboarding.ready.lede')"
+		:title="t('dms_assistant.views.onboarding.ready.title')"
+		:lede="t('dms_assistant.views.onboarding.ready.lede')"
 	>
 		<template #lead>
 			<DmsIconWell
@@ -60,12 +60,12 @@ async function useLogin(): Promise<void> {
 				color="success"
 				variant="soft"
 				icon="i-ph-check-bold"
-				:label="t('dms_ai.views.onboarding.ready.works')"
+				:label="t('dms_assistant.views.onboarding.ready.works')"
 			/>
 		</div>
 		<div class="mt-3">
 			<UButton
-				:label="t('dms_ai.views.onboarding.ready.other')"
+				:label="t('dms_assistant.views.onboarding.ready.other')"
 				variant="link"
 				class="px-0"
 				@click="onboarding.send({ type: 'choose-another' })"
@@ -75,7 +75,7 @@ async function useLogin(): Promise<void> {
 			<OnboardingDontShow />
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.ready.use')"
+				:label="t('dms_assistant.views.onboarding.ready.use')"
 				trailing-icon="i-ph-arrow-right"
 				:loading="busy"
 				@click="useLogin"

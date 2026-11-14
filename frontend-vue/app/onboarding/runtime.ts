@@ -10,17 +10,17 @@ export const ONBOARDING_CONTROLLER_KEY: InjectionKey<OnboardingRef> = Symbol(
 	"dms-assistant:onboarding-controller",
 );
 
-/** The overlay component the plugin registers, the module's `DmsAi` prefix included. */
-export const ONBOARDING_COMPONENT_NAME = "DmsAiOnboarding";
+/** The overlay component the plugin registers, the module's `DmsAssistant` prefix included. */
+export const ONBOARDING_COMPONENT_NAME = "DmsAssistantOnboarding";
 
 /** The card the DMS widget dock unfolds from the assistant's chip. */
-export const ONBOARDING_WIDGET_COMPONENT_NAME = "DmsAiOnboardingWidget";
+export const ONBOARDING_WIDGET_COMPONENT_NAME = "DmsAssistantOnboardingWidget";
 
 /** The tab's onboarding controller, for a view the overlay draws once it exists. */
 export function useOnboarding(): OnboardingController {
 	const controller = inject(ONBOARDING_CONTROLLER_KEY, null)?.value;
 	if (controller === null || controller === undefined) {
-		throw new Error("An onboarding view renders inside DmsAiOnboarding");
+		throw new Error("An onboarding view renders inside DmsAssistantOnboarding");
 	}
 	return controller;
 }

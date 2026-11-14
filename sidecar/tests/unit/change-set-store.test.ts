@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createChangeSetStore } from "../../src/state/change-sets.js";
 import type { ChangeSetRecord } from "../../src/state/types.js";
 
-const TMP_PREFIX = "dms-ai-change-sets-";
+const TMP_PREFIX = "dms-assistant-change-sets-";
 const FILE_ENCODING = "utf8";
 
 const RECORD: ChangeSetRecord = {

@@ -3,7 +3,7 @@ import { buildSystemPrompt } from "../../src/agent/system-prompt.js";
 import { SAFE_MODE_SKILL_NAME } from "../../src/constants/codex.js";
 
 const BEST_PRACTICES_SKILL = "dms-best-practices";
-const CODE_MODE_SKILL = "dms-ai-code-mode";
+const CODE_MODE_SKILL = "dms-assistant-code-mode";
 
 describe("system prompt", () => {
   const prompt = buildSystemPrompt({ hostProjectRoot: "/srv/app" });

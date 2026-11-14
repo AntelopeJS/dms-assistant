@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CODEX_HOME_DIR_NAME } from "../../src/constants/codex.js";
 import { codexHomeFor } from "../../src/providers/codex/process.js";
 
-const STATE_DIR = path.resolve("/var/lib/dms-ai");
+const STATE_DIR = path.resolve("/var/lib/dms-assistant");
 const HOME_ROOT = path.join(STATE_DIR, CODEX_HOME_DIR_NAME);
 
 describe("codex home placement", () => {

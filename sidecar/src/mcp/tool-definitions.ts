@@ -7,7 +7,7 @@ import { buildPreviewBlocksTool } from "./tools/preview-blocks.js";
 import type { AiMcpServerDeps } from "./types.js";
 
 /**
- * The tools of the chat's own `dms-ai` MCP server. Every other MCP tool the
+ * The tools of the chat's own `dms-assistant` MCP server. Every other MCP tool the
  * agent sees comes from the DMS MCP server.
  */
 export function buildToolDefinitions(

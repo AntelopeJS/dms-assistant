@@ -41,7 +41,7 @@ export function useTemporaryConfigHome(): () => void {
     name,
     value: process.env[name],
   }));
-  const home = mkdtempSync(path.join(tmpdir(), "dms-ai-config-"));
+  const home = mkdtempSync(path.join(tmpdir(), "dms-assistant-config-"));
   for (const name of CONFIG_HOME_ENVS) process.env[name] = home;
   return () => {
     for (const { name, value } of saved) {

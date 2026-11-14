@@ -19,13 +19,13 @@ describe("call ledger", () => {
     ledger.announce(
       CONVERSATION_ID,
       "toolu_1",
-      "mcp__dms-ai__builder_delete_page",
+      "mcp__dms-assistant__builder_delete_page",
       { pageRef: "/a" },
     );
     ledger.announce(
       CONVERSATION_ID,
       "toolu_2",
-      "mcp__dms-ai__builder_delete_page",
+      "mcp__dms-assistant__builder_delete_page",
       { pageRef: "/b" },
     );
     expect(

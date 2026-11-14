@@ -67,7 +67,7 @@ function isTerminal(msg: WireMessage): boolean {
 
 describe.each(PROVIDER_FIXTURES)("recipe — session on $name", (fixture) => {
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-recipe-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-recipe-"));
   });
 
   afterEach(async () => {
@@ -359,7 +359,7 @@ function registerCodexTraceCases(): void {
 
 describe("recipe — session on codex only", () => {
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-recipe-codex-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-recipe-codex-"));
   });
 
   afterEach(async () => {

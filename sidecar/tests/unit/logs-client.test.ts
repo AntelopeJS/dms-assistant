@@ -58,7 +58,9 @@ describe("createLogsClient", () => {
       fetchImpl,
     });
     await client.getLogs({});
-    expect(new Headers(seenHeaders).get("x-dms-ai-token")).toBe("secret-123");
+    expect(new Headers(seenHeaders).get("x-dms-assistant-token")).toBe(
+      "secret-123",
+    );
   });
 
   it("returns [] on a non-ok response", async () => {

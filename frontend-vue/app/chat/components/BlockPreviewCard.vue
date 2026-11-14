@@ -38,17 +38,17 @@ const meta = computed<string>(() => {
 	const parts = [
 		typesLabel.value,
 		blocks > 0
-			? t("dms_ai.panel.preview.blocks", { count: blocks }, blocks)
+			? t("dms_assistant.panel.preview.blocks", { count: blocks }, blocks)
 			: "",
 		variants > 0
 			? t(
-					"dms_ai.panel.preview.variants",
+					"dms_assistant.panel.preview.variants",
 					{ count: variants + 1 },
 					variants + 1,
 				)
 			: "",
-		isSketched.value ? t("dms_ai.panel.preview.with_sketch") : "",
-		props.reference ? t("dms_ai.panel.preview.with_mockup") : "",
+		isSketched.value ? t("dms_assistant.panel.preview.with_sketch") : "",
+		props.reference ? t("dms_assistant.panel.preview.with_mockup") : "",
 	];
 	return parts.filter((part) => part !== "").join(META_SEPARATOR);
 });
@@ -56,14 +56,16 @@ const meta = computed<string>(() => {
 
 <template>
 	<div class="bp">
-		<span class="bp__who">✦ {{ t("dms_ai.panel.preview.eyebrow") }}</span>
+		<span class="bp__who">
+			✦ {{ t("dms_assistant.panel.preview.eyebrow") }}
+		</span>
 		<button
 			type="button"
 			class="bp-card"
 			aria-haspopup="dialog"
 			:aria-expanded="isOpen"
 			:aria-label="
-				t('dms_ai.panel.preview.open_aria', { title: preview.title })
+				t('dms_assistant.panel.preview.open_aria', { title: preview.title })
 			"
 			@click="isOpen = true"
 		>
@@ -73,7 +75,7 @@ const meta = computed<string>(() => {
 				<span class="bp-card__meta">{{ meta }}</span>
 				<span class="bp-card__open">
 					<UIcon name="i-ph-frame-corners" class="bp-card__open-icon" />
-					{{ t("dms_ai.panel.preview.open") }}
+					{{ t("dms_assistant.panel.preview.open") }}
 				</span>
 			</span>
 		</button>

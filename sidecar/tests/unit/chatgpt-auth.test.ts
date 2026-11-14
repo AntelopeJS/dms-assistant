@@ -159,7 +159,7 @@ describe("access token", () => {
     await expectReadableByOwnerOnly(chatGptAuthFile());
   });
 
-  it("stores the sign-in in the dms-assistant folder of the config home (fails a store that keeps the dms-ai folder)", async () => {
+  it("stores the sign-in in the dms-assistant folder of the config home (fails a store that keeps the dms-assistant folder)", async () => {
     await writeAuthRecord(signedInRecord());
     await expectReadableByOwnerOnly(
       path.join(
@@ -293,7 +293,7 @@ describe("sign-in", () => {
     const { authorize } = await startFromSettings();
     const query = authorize.searchParams;
     expect(query.get("client_id")).toBe("dynamic_agent_client");
-    expect(query.get("agent_name_hint")).toBe("antelopejs_dms_ai");
+    expect(query.get("agent_name_hint")).toBe("antelopejs_dms_assistant");
     expect(query.get("ext_agent_host_id")).toBe(readAuthRecord()?.hostId);
     expect(query.get("redirect_uri")).toBe(
       `http://127.0.0.1:${PORT}/auth/chatgpt/callback`,

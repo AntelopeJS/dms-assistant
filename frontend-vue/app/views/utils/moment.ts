@@ -70,8 +70,8 @@ function formatDay(ms: number, options: MomentOptions): string {
 }
 
 const RECENT_DAY_KEYS: Record<number, string> = {
-	0: "dms_ai.views.moment.today",
-	1: "dms_ai.views.moment.yesterday",
+	0: "dms_assistant.views.moment.today",
+	1: "dms_assistant.views.moment.yesterday",
 };
 
 /**

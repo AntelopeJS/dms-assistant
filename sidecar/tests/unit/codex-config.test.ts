@@ -130,12 +130,12 @@ describe("config.toml", () => {
   const toml = buildConfigToml(CONFIG_INPUT);
 
   it("declares the MCP server at process level", () => {
-    expect(toml).toContain("[mcp_servers.dms-ai]");
+    expect(toml).toContain("[mcp_servers.dms-assistant]");
     expect(toml).toContain('url = "http://127.0.0.1:4321/mcp"');
   });
 
   it("starts the DMS MCP over its launcher with the chat's navigate_to_page and preview_blocks hidden (fails a config without the server, one that does not name the chat as its client, or one that shows the agent two tools of one name)", () => {
-    const chat = tableLines(toml, "[mcp_servers.dms-ai]");
+    const chat = tableLines(toml, "[mcp_servers.dms-assistant]");
     expect(tableLines(toml, "[mcp_servers.dms]")).toEqual([
       'command = "node"',
       `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}, "--client=chat"]`,
@@ -145,7 +145,7 @@ describe("config.toml", () => {
   });
 
   it("passes the bearer through an env var, never the file", () => {
-    expect(toml).toContain('bearer_token_env_var = "DMS_AI_MCP_TOKEN"');
+    expect(toml).toContain('bearer_token_env_var = "DMS_ASSISTANT_MCP_TOKEN"');
     expect(toml).not.toContain("bearer_token =");
   });
 

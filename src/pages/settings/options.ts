@@ -3,7 +3,7 @@ import { i18nKey, type VocabularyOption } from "../../vocabulary";
 
 const SECTION = I18N_SECTIONS.SETTINGS;
 
-/** A settings text, under `$dms_ai.settings`. */
+/** A settings text, under `$dms_assistant.settings`. */
 export function settingsText(...segments: string[]): string {
   return i18nKey(SECTION, ...segments);
 }

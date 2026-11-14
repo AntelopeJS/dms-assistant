@@ -48,11 +48,11 @@ const stateLabel = computed<string>(() => {
 		return duration === null ? "" : formatDuration(duration);
 	}
 	if (props.state === "waiting" && props.waiting !== null)
-		return t("dms_ai.panel.tool.waiting_position", {
+		return t("dms_assistant.panel.tool.waiting_position", {
 			index: props.waiting.index + 1,
 			total: props.waiting.total,
 		});
-	return t(`dms_ai.panel.tool.state.${props.state}`);
+	return t(`dms_assistant.panel.tool.state.${props.state}`);
 });
 
 function onRowClick(): void {
@@ -99,8 +99,8 @@ function onRowClick(): void {
 					icon="i-ph-brackets-curly"
 					:label="
 						isRaw
-							? t('dms_ai.panel.tool.named_args')
-							: t('dms_ai.panel.tool.raw_json')
+							? t('dms_assistant.panel.tool.named_args')
+							: t('dms_assistant.panel.tool.raw_json')
 					"
 					@click="isRaw = !isRaw"
 				/>

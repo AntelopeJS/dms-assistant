@@ -31,10 +31,10 @@ const STATE_ICONS: Record<Exclude<BuildStepState, "running">, string> = {
 };
 
 const TITLE_KEYS: Record<BuildOutcome, string> = {
-	running: "dms_ai.panel.build.title",
-	built: "dms_ai.panel.build.title_done",
-	failed: "dms_ai.panel.build.title_failed",
-	stopped: "dms_ai.panel.build.title_stopped",
+	running: "dms_assistant.panel.build.title",
+	built: "dms_assistant.panel.build.title_done",
+	failed: "dms_assistant.panel.build.title_failed",
+	stopped: "dms_assistant.panel.build.title_stopped",
 };
 
 const title = computed(() =>
@@ -60,13 +60,16 @@ function onOpenChange(isOpen: boolean): void {
 	<UModal
 		:open="true"
 		:title="title"
-		:description="t('dms_ai.panel.build.description')"
+		:description="t('dms_assistant.panel.build.description')"
 		:ui="{ content: 'sm:max-w-2xl' }"
 		@update:open="onOpenChange"
 	>
 		<template #body>
-			<div class="dms-ai-chat-tokens cb-build">
-				<ol class="cb-build__steps" :aria-label="t('dms_ai.panel.build.steps')">
+			<div class="dms-assistant-chat-tokens cb-build">
+				<ol
+					class="cb-build__steps"
+					:aria-label="t('dms_assistant.panel.build.steps')"
+				>
 					<li
 						v-for="step in view.steps"
 						:key="step.key"
@@ -88,16 +91,16 @@ function onOpenChange(isOpen: boolean): void {
 					<li v-if="view.steps.length === 0" class="cb-build__step">
 						<span class="spin-ai" aria-hidden="true" />
 						<span class="cb-build__label">
-							{{ t("dms_ai.panel.build.starting") }}
+							{{ t("dms_assistant.panel.build.starting") }}
 						</span>
 					</li>
 				</ol>
 				<section
 					v-if="view.failures.length > 0"
 					class="cb-build__failures"
-					:aria-label="t('dms_ai.panel.build.failures')"
+					:aria-label="t('dms_assistant.panel.build.failures')"
 				>
-					<b>{{ t("dms_ai.panel.build.failures") }}</b>
+					<b>{{ t("dms_assistant.panel.build.failures") }}</b>
 					<ul>
 						<li v-for="failure in view.failures" :key="failure">
 							{{ failure }}
@@ -117,21 +120,21 @@ function onOpenChange(isOpen: boolean): void {
 					v-if="view.outcome === 'running'"
 					color="neutral"
 					variant="ghost"
-					:label="t('dms_ai.panel.build.background')"
+					:label="t('dms_assistant.panel.build.background')"
 					@click="emit('background')"
 				/>
 				<UButton
 					v-else
 					color="neutral"
 					variant="ghost"
-					:label="t('dms_ai.panel.build.close')"
+					:label="t('dms_assistant.panel.build.close')"
 					@click="emit('background')"
 				/>
 				<UButton
 					color="primary"
 					icon="i-ph-arrow-square-out"
 					:disabled="view.outcome !== 'built' || view.pagePath === null"
-					:label="t('dms_ai.panel.build.open_pages')"
+					:label="t('dms_assistant.panel.build.open_pages')"
 					@click="openPages"
 				/>
 			</div>

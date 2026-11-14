@@ -7,7 +7,7 @@ import {
   scanImports,
 } from "../../src/pages/imports-scanner.js";
 
-const TMP_PREFIX = "dms-ai-scanner-";
+const TMP_PREFIX = "dms-assistant-scanner-";
 
 interface Harness {
   dir: string;

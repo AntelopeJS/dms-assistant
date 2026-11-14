@@ -21,15 +21,16 @@ const emit = defineEmits<Emits>();
 const { t } = useChatI18n();
 
 const LABEL_KEYS: Record<ConnectionStatus, string> = {
-	[CONNECTION_STATUSES.CONNECTING]: "dms_ai.panel.connection.connecting",
+	[CONNECTION_STATUSES.CONNECTING]: "dms_assistant.panel.connection.connecting",
 	[CONNECTION_STATUSES.CONNECTED]: "",
-	[CONNECTION_STATUSES.RECONNECTING]: "dms_ai.panel.connection.lost",
-	[CONNECTION_STATUSES.DISCONNECTED]: "dms_ai.panel.connection.disconnected",
+	[CONNECTION_STATUSES.RECONNECTING]: "dms_assistant.panel.connection.lost",
+	[CONNECTION_STATUSES.DISCONNECTED]:
+		"dms_assistant.panel.connection.disconnected",
 };
 
 const labelKey = computed<string>(() =>
 	props.isReviving
-		? "dms_ai.panel.connection.reviving"
+		? "dms_assistant.panel.connection.reviving"
 		: LABEL_KEYS[props.status],
 );
 </script>
@@ -48,7 +49,7 @@ const labelKey = computed<string>(() =>
 			size="xs"
 			color="neutral"
 			variant="outline"
-			:label="t('dms_ai.panel.connection.retry_now')"
+			:label="t('dms_assistant.panel.connection.retry_now')"
 			@click="emit('reconnect')"
 		/>
 	</div>

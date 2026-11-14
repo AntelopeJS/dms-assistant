@@ -53,26 +53,26 @@ function factsOf(set: ChangeSetSummary): Fact[] {
 	return [
 		{
 			id: "asked",
-			label: t("dms_ai.views.changes.asked_by"),
-			value: set.askedBy ?? t("dms_ai.views.common.unknown"),
+			label: t("dms_assistant.views.changes.asked_by"),
+			value: set.askedBy ?? t("dms_assistant.views.common.unknown"),
 		},
 		{
 			id: "agent",
-			label: t("dms_ai.views.changes.agent_scope"),
-			value: `${t(`dms_ai.views.agent.${set.agent}`)} · ${t(`dms_ai.views.scope.${set.scope}`)}`,
+			label: t("dms_assistant.views.changes.agent_scope"),
+			value: `${t(`dms_assistant.views.agent.${set.agent}`)} · ${t(`dms_assistant.views.scope.${set.scope}`)}`,
 		},
 		{
 			id: "approvals",
-			label: t("dms_ai.views.changes.approvals"),
-			value: t("dms_ai.views.changes.approvals_value", {
+			label: t("dms_assistant.views.changes.approvals"),
+			value: t("dms_assistant.views.changes.approvals_value", {
 				needed: set.approvalsNeeded,
 				ops: set.builderOps,
 			}),
 		},
 		{
 			id: "checks",
-			label: t("dms_ai.views.changes.checks"),
-			value: t(`dms_ai.views.typecheck.${set.typecheck}`),
+			label: t("dms_assistant.views.changes.checks"),
+			value: t(`dms_assistant.views.typecheck.${set.typecheck}`),
 			tone: TYPECHECK_FACT_TONES[set.typecheck],
 		},
 	];
@@ -82,11 +82,11 @@ const facts = computed(() => (changeSet.value ? factsOf(changeSet.value) : []));
 
 const undoneNote = computed(() => {
 	const set = changeSet.value;
-	if (!set?.stateChangedAtMs) return t("dms_ai.views.changes.undone");
+	if (!set?.stateChangedAtMs) return t("dms_assistant.views.changes.undone");
 	const params = { time: moment(set.stateChangedAtMs), by: set.stateChangedBy };
 	return set.stateChangedBy
-		? t("dms_ai.views.changes.undone_at_by", params)
-		: t("dms_ai.views.changes.undone_at", params);
+		? t("dms_assistant.views.changes.undone_at_by", params)
+		: t("dms_assistant.views.changes.undone_at", params);
 });
 
 const footNote = computed(() => {
@@ -94,8 +94,8 @@ const footNote = computed(() => {
 	if (!set) return "";
 	const count = set.files.length;
 	return isUndone.value
-		? t("dms_ai.views.changes.redo_note", { count }, count)
-		: t("dms_ai.views.changes.undo_note", { count }, count);
+		? t("dms_assistant.views.changes.redo_note", { count }, count)
+		: t("dms_assistant.views.changes.undo_note", { count }, count);
 });
 
 function openPage(): void {
@@ -116,7 +116,7 @@ function openPage(): void {
 		v-else-if="!changeSet"
 		class="flex flex-col gap-3 p-5"
 		:aria-busy="true"
-		:aria-label="t('dms_ai.views.common.loading')"
+		:aria-label="t('dms_assistant.views.common.loading')"
 	>
 		<USkeleton class="h-3 w-48" />
 		<USkeleton class="h-5 w-72" />
@@ -131,7 +131,7 @@ function openPage(): void {
 				>
 					✦
 					{{
-						t("dms_ai.views.changes.eyebrow", {
+						t("dms_assistant.views.changes.eyebrow", {
 							number: changeSet.number,
 							time: moment(changeSet.createdAtMs),
 						})
@@ -151,7 +151,7 @@ function openPage(): void {
 					color="neutral"
 					variant="ghost"
 					size="sm"
-					:label="t('dms_ai.views.changes.conversation')"
+					:label="t('dms_assistant.views.changes.conversation')"
 					@click="assistant.openConversation(changeSet.conversationId)"
 				/>
 				<UButton
@@ -160,7 +160,7 @@ function openPage(): void {
 					color="neutral"
 					variant="outline"
 					size="sm"
-					:label="t('dms_ai.views.changes.open_page')"
+					:label="t('dms_assistant.views.changes.open_page')"
 					@click="openPage"
 				/>
 				<UButton
@@ -170,7 +170,7 @@ function openPage(): void {
 					variant="outline"
 					size="sm"
 					:loading="actions.isBusy.value"
-					:label="t('dms_ai.views.changes.redo')"
+					:label="t('dms_assistant.views.changes.redo')"
 					@click="actions.redo(changeSet)"
 				/>
 				<UButton
@@ -180,7 +180,7 @@ function openPage(): void {
 					variant="outline"
 					size="sm"
 					:loading="actions.isBusy.value"
-					:label="t('dms_ai.views.changes.undo')"
+					:label="t('dms_assistant.views.changes.undo')"
 					@click="actions.undo(changeSet)"
 				/>
 			</div>
@@ -200,7 +200,7 @@ function openPage(): void {
 				v-if="changeSet.overlapped"
 				size="sm"
 				tone="warning"
-				:title="t('dms_ai.views.changes.overlapped')"
+				:title="t('dms_assistant.views.changes.overlapped')"
 			/>
 		</div>
 		<div class="border-default border-t px-5">

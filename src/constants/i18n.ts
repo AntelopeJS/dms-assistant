@@ -1,5 +1,5 @@
 /** The `$` sentinel and namespace every backend label of the module uses. */
-export const I18N_PREFIX = "$dms_ai";
+export const I18N_PREFIX = "$dms_assistant";
 
 export const I18N_SECTIONS = {
   MODULE: "module",

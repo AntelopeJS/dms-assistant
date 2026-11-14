@@ -3,7 +3,7 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import ProviderNotice from "../../app/chat/components/ProviderNotice.vue";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
-import fr from "../../i18n/locales/dms-ai-panel-fr-FR.json";
+import fr from "../../i18n/locales/dms-assistant-panel-fr-FR.json";
 import { createTestI18n } from "../support/i18n";
 import { PANEL_STUBS } from "../support/stubs";
 

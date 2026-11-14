@@ -37,8 +37,8 @@ const FILE_ICONS: Record<string, string> = {
 	json: "i-ph-brackets-curly",
 };
 const STATUS_BADGES: Partial<Record<ChangeFileStatus, string>> = {
-	added: "dms_ai.views.diff.new",
-	deleted: "dms_ai.views.diff.deleted",
+	added: "dms_assistant.views.diff.new",
+	deleted: "dms_assistant.views.diff.deleted",
 };
 const STATUS_BADGE_TONES: Partial<Record<ChangeFileStatus, string>> = {
 	added: "success",
@@ -168,8 +168,8 @@ function toggle(view: FileView): void {
 					:aria-label="
 						t(
 							isExpanded(view)
-								? 'dms_ai.views.diff.collapse'
-								: 'dms_ai.views.diff.expand',
+								? 'dms_assistant.views.diff.collapse'
+								: 'dms_assistant.views.diff.expand',
 							{ path: view.file.path },
 						)
 					"
@@ -178,13 +178,13 @@ function toggle(view: FileView): void {
 			</header>
 			<template v-if="isExpanded(view)">
 				<p v-if="view.file.isBinary" class="text-muted px-3 py-2 font-sans">
-					{{ t("dms_ai.views.diff.binary") }}
+					{{ t("dms_assistant.views.diff.binary") }}
 				</p>
 				<p
 					v-else-if="view.lines.length === 0"
 					class="text-muted px-3 py-2 font-sans"
 				>
-					{{ t("dms_ai.views.diff.no_lines") }}
+					{{ t("dms_assistant.views.diff.no_lines") }}
 				</p>
 				<div v-else class="overflow-x-auto py-1" role="table">
 					<div

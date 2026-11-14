@@ -37,7 +37,7 @@ const tabs = computed<BlockPreviewTab[]>(() => previewTabs(props.preview));
 const tabItems = computed<TabItem[]>(() =>
 	tabs.value.map((tab) => ({
 		value: tab.value,
-		label: tab.label ?? t("dms_ai.panel.preview.proposed"),
+		label: tab.label ?? t("dms_assistant.panel.preview.proposed"),
 	})),
 );
 const activeView = computed<BlockPreviewTab>(
@@ -56,7 +56,8 @@ const sketchTree = computed<PreviewNode | null>(() =>
 		: sketchNode(activeView.value.sketch),
 );
 const mockupLabel = computed<string>(
-	() => props.preview.reference?.caption ?? t("dms_ai.panel.preview.mockup"),
+	() =>
+		props.preview.reference?.caption ?? t("dms_assistant.panel.preview.mockup"),
 );
 
 watch(open, (isOpen) => {
@@ -72,7 +73,7 @@ watch(open, (isOpen) => {
 		:ui="MODAL_UI"
 	>
 		<template #body>
-			<div class="dms-ai-chat-tokens bp-modal">
+			<div class="dms-assistant-chat-tokens bp-modal">
 				<UTabs
 					v-if="tabItems.length > 1"
 					v-model="activeTab"
@@ -80,7 +81,7 @@ watch(open, (isOpen) => {
 					:content="false"
 					variant="link"
 					size="sm"
-					:aria-label="t('dms_ai.panel.preview.variants_aria')"
+					:aria-label="t('dms_assistant.panel.preview.variants_aria')"
 				/>
 				<div class="bp-modal__panes" :class="{ 'is-split': paneCount > 1 }">
 					<figure v-if="reference" class="bp-pane">
@@ -103,14 +104,14 @@ watch(open, (isOpen) => {
 							/>
 							<div v-else-if="reference.kind === 'link'" class="bp-pane__note">
 								<UIcon name="i-ph-image-broken" class="bp-pane__note-icon" />
-								<p>{{ t("dms_ai.panel.preview.mockup_external") }}</p>
+								<p>{{ t("dms_assistant.panel.preview.mockup_external") }}</p>
 								<a
 									:href="reference.href"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="bp-pane__link"
 								>
-									{{ t("dms_ai.panel.preview.mockup_open") }}
+									{{ t("dms_assistant.panel.preview.mockup_open") }}
 									<UIcon name="i-ph-arrow-square-out" />
 								</a>
 							</div>
@@ -118,7 +119,7 @@ watch(open, (isOpen) => {
 								<UIcon name="i-ph-image-broken" class="bp-pane__note-icon" />
 								<p>
 									{{
-										t("dms_ai.panel.preview.mockup_missing", {
+										t("dms_assistant.panel.preview.mockup_missing", {
 											name: reference.name,
 										})
 									}}
@@ -129,10 +130,10 @@ watch(open, (isOpen) => {
 					<section
 						v-if="activeView.tree"
 						class="bp-pane"
-						:aria-label="t('dms_ai.panel.preview.dms_blocks')"
+						:aria-label="t('dms_assistant.panel.preview.dms_blocks')"
 					>
 						<span class="bp-pane__label">
-							{{ t("dms_ai.panel.preview.dms_blocks") }}
+							{{ t("dms_assistant.panel.preview.dms_blocks") }}
 						</span>
 						<div class="bp-pane__stage">
 							<component
@@ -144,10 +145,10 @@ watch(open, (isOpen) => {
 							<div v-else class="bp-fallback">
 								<p class="bp-fallback__title">
 									<UIcon name="i-ph-info" />
-									{{ t("dms_ai.panel.preview.fallback_title") }}
+									{{ t("dms_assistant.panel.preview.fallback_title") }}
 								</p>
 								<p class="bp-fallback__body">
-									{{ t("dms_ai.panel.preview.fallback_body") }}
+									{{ t("dms_assistant.panel.preview.fallback_body") }}
 								</p>
 								<pre
 									class="bp-fallback__json"
@@ -158,11 +159,11 @@ watch(open, (isOpen) => {
 					<section
 						v-if="sketchTree"
 						class="bp-pane bp-pane--sketch"
-						:aria-label="t('dms_ai.panel.preview.custom_sketch')"
+						:aria-label="t('dms_assistant.panel.preview.custom_sketch')"
 					>
 						<span class="bp-pane__label bp-pane__label--sketch">
 							<UIcon name="i-ph-pencil-simple-line" />
-							{{ t("dms_ai.panel.preview.custom_sketch") }}
+							{{ t("dms_assistant.panel.preview.custom_sketch") }}
 						</span>
 						<div class="bp-pane__sketch">
 							<component
@@ -175,7 +176,7 @@ watch(open, (isOpen) => {
 							<div v-else class="bp-fallback">
 								<p class="bp-fallback__title">
 									<UIcon name="i-ph-info" />
-									{{ t("dms_ai.panel.preview.fallback_title") }}
+									{{ t("dms_assistant.panel.preview.fallback_title") }}
 								</p>
 								<pre
 									class="bp-fallback__json"

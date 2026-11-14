@@ -23,7 +23,7 @@ const CLIENT_TOKEN = "host-state-test-credential";
 const TEST_HOST_ROOT = "/tmp";
 const WS_PATH = "/ws";
 const WS_HOST = "127.0.0.1";
-const TMP_PREFIX = "dms-ai-host-state-";
+const TMP_PREFIX = "dms-assistant-host-state-";
 const STATE_FILE_NAME_TEST = "state.json";
 const SETTLE_DELAY_MS = 50;
 const ABOUT_FILE = "pages/about.vue";
@@ -70,7 +70,7 @@ async function startTestServer(): Promise<ServerHandle> {
   };
   const ws = attachWsServer(server, {
     providerRuntime: {
-      stateDir: join(tmpdir(), "dms-ai-ws-stub"),
+      stateDir: join(tmpdir(), "dms-assistant-ws-stub"),
       mcpHttpRegistry: createMcpHttpRegistry(),
       getMcpUrl: () => "http://127.0.0.1:1/mcp",
     },

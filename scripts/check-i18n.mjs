@@ -12,7 +12,7 @@ const PANEL_NAMESPACES = ["panel", "tools", "common"];
 
 /** Keys built at run time from a value, each with every value it can take. */
 const PANEL_DYNAMIC_FAMILIES = {
-  "dms_ai.panel.tool.state": [
+  "dms_assistant.panel.tool.state": [
     "done",
     "running",
     "waiting",
@@ -21,25 +21,25 @@ const PANEL_DYNAMIC_FAMILIES = {
     "failed",
     "stopped",
   ],
-  "dms_ai.panel.change.status": ["added", "modified", "deleted"],
-  "dms_ai.panel.change.typecheck": ["passed", "failed", "skipped"],
-  "dms_ai.common.scope": ["safe", "vibe"],
-  "dms_ai.common.agent": ["claude", "codex"],
-  "dms_ai.panel.composer.scope_desc": ["safe", "vibe"],
-  "dms_ai.panel.drawer": [
+  "dms_assistant.panel.change.status": ["added", "modified", "deleted"],
+  "dms_assistant.panel.change.typecheck": ["passed", "failed", "skipped"],
+  "dms_assistant.common.scope": ["safe", "vibe"],
+  "dms_assistant.common.agent": ["claude", "codex"],
+  "dms_assistant.panel.composer.scope_desc": ["safe", "vibe"],
+  "dms_assistant.panel.drawer": [
     "group_active",
     "group_today",
     "group_week",
     "group_older",
   ],
-  "dms_ai.panel.empty": ["text_safe", "text_vibe"],
-  "dms_ai.panel.approvals": [
+  "dms_assistant.panel.empty": ["text_safe", "text_vibe"],
+  "dms_assistant.panel.approvals": [
     "why_deletes_data",
     "why_removes_code",
     "effect_adds_dependency",
     "effect_removes_dependency",
   ],
-  "dms_ai.panel.rules": [
+  "dms_assistant.panel.rules": [
     "kind_file",
     "kind_directory",
     "kind_command",
@@ -48,7 +48,7 @@ const PANEL_DYNAMIC_FAMILIES = {
 };
 
 const VIEWS_DYNAMIC_FAMILIES = {
-  "dms_ai.views.allowed": [
+  "dms_assistant.views.allowed": [
     "read_auto",
     "builder_auto",
     "approved",
@@ -78,7 +78,7 @@ const VIEWS_DYNAMIC_FAMILIES = {
 const SURFACES = [
   {
     name: "panel",
-    locale: "dms-ai-panel",
+    locale: "dms-assistant-panel",
     sources: [
       "app/chat",
       "app/runtime",
@@ -87,17 +87,17 @@ const SURFACES = [
     ],
     excluded: [],
     literalKey:
-      /["'`](dms_ai\.(?:panel|tools|common)\.[A-Za-z0-9_.]+[A-Za-z0-9_])["'`]/g,
+      /["'`](dms_assistant\.(?:panel|tools|common)\.[A-Za-z0-9_.]+[A-Za-z0-9_])["'`]/g,
     dynamicFamilies: PANEL_DYNAMIC_FAMILIES,
-    extraKeys: TOOL_VERB_KEYS.map((verb) => `dms_ai.tools.${verb}`),
+    extraKeys: TOOL_VERB_KEYS.map((verb) => `dms_assistant.tools.${verb}`),
     namespaces: PANEL_NAMESPACES,
   },
   {
     name: "views",
-    locale: "dms-ai-views",
+    locale: "dms-assistant-views",
     sources: ["app/components", "app/views"],
     excluded: ["ChatPanel.vue"],
-    literalKey: /["'`](dms_ai\.views\.[A-Za-z0-9_.]+[A-Za-z0-9_])["'`]/g,
+    literalKey: /["'`](dms_assistant\.views\.[A-Za-z0-9_.]+[A-Za-z0-9_])["'`]/g,
     dynamicFamilies: VIEWS_DYNAMIC_FAMILIES,
     extraKeys: [],
     namespaces: undefined,
@@ -213,10 +213,10 @@ function problems(surface) {
       found.push(`${surface.name}: ${key} is used but not translated`);
   }
   if (surface.namespaces !== undefined) {
-    const owned = Object.keys(en.dms_ai).sort(byName).join();
+    const owned = Object.keys(en.dms_assistant).sort(byName).join();
     if (owned !== [...surface.namespaces].sort(byName).join()) {
       found.push(
-        `${surface.name}: dms_ai holds ${owned}, not ${surface.namespaces.join()}`,
+        `${surface.name}: dms_assistant holds ${owned}, not ${surface.namespaces.join()}`,
       );
     }
   }

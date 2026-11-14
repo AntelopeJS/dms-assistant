@@ -3,7 +3,7 @@ import type {
 	ChatI18n,
 	TranslateParams,
 } from "../../app/chat/composables/useChatI18n";
-import en from "../../i18n/locales/dms-ai-panel-en-GB.json";
+import en from "../../i18n/locales/dms-assistant-panel-en-GB.json";
 
 type Messages = Record<string, unknown>;
 

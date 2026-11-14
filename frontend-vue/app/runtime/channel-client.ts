@@ -222,7 +222,7 @@ function reconnectNow(state: ClientState): void {
  * and the chat's frames alike, and sequential POSTs to send. Browsers keep at
  * most six HTTP/1.1 connections per origin, so a tab holds one such stream and
  * only while it needs it: the caller starts and stops it. While started, any
- * end of the stream — a sidecar that went down, a hot reload of dms-ai, a
+ * end of the stream — a sidecar that went down, a hot reload of dms-assistant, a
  * network drop — reconnects with backoff, and each new connection is announced
  * through `onReady` so the caller identifies itself again.
  */

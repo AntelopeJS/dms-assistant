@@ -21,7 +21,7 @@ describe("isAutoAllowedRead", () => {
     expect(
       isAutoAllowedRead(
         "Read",
-        { file_path: "/work/dms/modules/dms-ai/src/x.ts" },
+        { file_path: "/work/dms/modules/dms-assistant/src/x.ts" },
         ROOTS,
         CWD,
       ),
@@ -89,11 +89,11 @@ describe("isAutoAllowedRead", () => {
 describe("resolveReadRoots", () => {
   it("includes the host project plus every supplied module root", () => {
     const roots = resolveReadRoots("/work/app", [
-      "/work/modules/dms-ai",
+      "/work/modules/dms-assistant",
       "/work/modules/dms-base",
     ]);
     expect(roots).toContain(resolve("/work/app"));
-    expect(roots).toContain(resolve("/work/modules/dms-ai"));
+    expect(roots).toContain(resolve("/work/modules/dms-assistant"));
     expect(roots).toContain(resolve("/work/modules/dms-base"));
   });
 

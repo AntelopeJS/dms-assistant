@@ -1,5 +1,5 @@
 /**
- * The screenshots of the dms-ai docs, taken on the Helio demo. The onboarding
+ * The screenshots of the dms-assistant docs, taken on the Helio demo. The onboarding
  * runs first and creates the owner every other scene is signed in as.
  */
 export default [

@@ -16,7 +16,7 @@ export class AIChangesPage extends PageController(
   pageMenu(PAGE_IDS.CHANGES, "i-ph-git-diff", PAGE_ORDER.CHANGES),
   DefaultLayout(),
 ) {
-  static changes = CustomComponent("DmsAiChangesView").meta(
+  static changes = CustomComponent("DmsAssistantChangesView").meta(
     blockMeta("changes.view", "i-ph-git-diff"),
   );
 }

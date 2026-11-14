@@ -20,10 +20,10 @@ const ACCOUNT_NAMES: Record<ProviderName, string> = {
 };
 
 const SOURCE_KEYS: Record<LoginSource, string> = {
-	env: "dms_ai.views.onboarding.login.source_env",
-	saved: "dms_ai.views.onboarding.login.source_saved",
-	"claude-cli": "dms_ai.views.onboarding.login.source_claude_cli",
-	chatgpt: "dms_ai.views.onboarding.login.source_chatgpt",
+	env: "dms_assistant.views.onboarding.login.source_env",
+	saved: "dms_assistant.views.onboarding.login.source_saved",
+	"claude-cli": "dms_assistant.views.onboarding.login.source_claude_cli",
+	chatgpt: "dms_assistant.views.onboarding.login.source_chatgpt",
 };
 
 /** A plan as the sidecar spells it, as a person reads it: `max` is Max. */
@@ -43,7 +43,7 @@ export function loginTitle(
 	const name = PROVIDER_NAMES[provider];
 	return plan === undefined
 		? name
-		: t("dms_ai.views.onboarding.login.with_plan", { name, plan });
+		: t("dms_assistant.views.onboarding.login.with_plan", { name, plan });
 }
 
 /** "owner@example.com · found in ~/.claude": who, and where the login comes from. */
@@ -51,7 +51,7 @@ export function loginDetail(t: Translate, login: FoundLogin): string {
 	const source = t(SOURCE_KEYS[login.source]);
 	return login.email === undefined
 		? source
-		: t("dms_ai.views.onboarding.login.detail", {
+		: t("dms_assistant.views.onboarding.login.detail", {
 				email: login.email,
 				source,
 			});

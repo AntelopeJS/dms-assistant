@@ -12,7 +12,7 @@ describe("the secret file hook on links", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-secret-hook-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-secret-hook-"));
     await writeFile(join(dir, ".env"), "TOKEN=canary\n");
     await writeFile(join(dir, ".env.example"), "TOKEN=\n");
     await symlink(".env", join(dir, "config.txt"));

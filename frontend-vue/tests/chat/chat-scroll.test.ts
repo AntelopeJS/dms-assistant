@@ -63,7 +63,7 @@ async function growTranscript(chat: OpenChat, rows: number): Promise<void> {
 }
 
 beforeEach(() => {
-	localStorage.setItem("dms-ai-conversation-id", CONVERSATION_ID);
+	localStorage.setItem("dms-assistant-conversation-id", CONVERSATION_ID);
 });
 
 afterEach(() => {

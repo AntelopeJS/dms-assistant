@@ -11,22 +11,22 @@ const { t } = useChatI18n();
 
 const steps = computed(() => [
 	{
-		title: t("dms_ai.views.onboarding.welcome.ai_title"),
-		text: t("dms_ai.views.onboarding.welcome.ai_text"),
+		title: t("dms_assistant.views.onboarding.welcome.ai_title"),
+		text: t("dms_assistant.views.onboarding.welcome.ai_text"),
 	},
 	{
-		title: t("dms_ai.views.onboarding.welcome.start_title"),
-		text: t("dms_ai.views.onboarding.welcome.start_text"),
+		title: t("dms_assistant.views.onboarding.welcome.start_title"),
+		text: t("dms_assistant.views.onboarding.welcome.start_text"),
 	},
 	{
-		title: t("dms_ai.views.onboarding.welcome.shape_title"),
-		text: t("dms_ai.views.onboarding.welcome.shape_text"),
+		title: t("dms_assistant.views.onboarding.welcome.shape_title"),
+		text: t("dms_assistant.views.onboarding.welcome.shape_text"),
 	},
 ]);
 </script>
 
 <template>
-	<OnboardingFrame :title="t('dms_ai.views.onboarding.welcome.title')">
+	<OnboardingFrame :title="t('dms_assistant.views.onboarding.welcome.title')">
 		<template #lead>
 			<DmsIconWell
 				icon="i-ph-sparkle"
@@ -36,9 +36,9 @@ const steps = computed(() => [
 			/>
 		</template>
 		<template #lede>
-			{{ t("dms_ai.views.onboarding.welcome.lede_before") }}
+			{{ t("dms_assistant.views.onboarding.welcome.lede_before") }}
 			<UIcon name="i-ph-sparkle" class="text-secondary size-4 align-[-3px]" />
-			{{ t("dms_ai.views.onboarding.welcome.lede_after") }}
+			{{ t("dms_assistant.views.onboarding.welcome.lede_after") }}
 		</template>
 		<ol class="mt-6 flex flex-col gap-4">
 			<li v-for="(step, index) in steps" :key="index" class="flex gap-3.5">
@@ -60,13 +60,13 @@ const steps = computed(() => [
 			<OnboardingDontShow />
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.welcome.skip')"
+				:label="t('dms_assistant.views.onboarding.welcome.skip')"
 				color="neutral"
 				variant="ghost"
 				@click="onboarding.close()"
 			/>
 			<UButton
-				:label="t('dms_ai.views.onboarding.welcome.get_started')"
+				:label="t('dms_assistant.views.onboarding.welcome.get_started')"
 				trailing-icon="i-ph-arrow-right"
 				@click="onboarding.send({ type: 'get-started' })"
 			/>

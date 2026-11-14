@@ -105,7 +105,7 @@ const ENTRY: ConversationEntry = {
       },
       ...call(
         "b1",
-        "mcp__dms-ai__builder_add_block",
+        "mcp__dms-assistant__builder_add_block",
         { page: "/p" },
         { outcome: "done", allowedBy: "builder_auto" },
       ),
@@ -118,7 +118,7 @@ const ENTRY: ConversationEntry = {
       {
         role: "permission",
         content: "",
-        toolName: "mcp__dms-ai__builder_delete_page",
+        toolName: "mcp__dms-assistant__builder_delete_page",
         requestId: "q1",
         decision: "denied",
         allowedBy: "expired",
@@ -250,7 +250,7 @@ describe("changed category", () => {
     ).toEqual(["changed"]);
     expect(
       categoryOf(
-        "mcp__dms-ai__builder_add_block",
+        "mcp__dms-assistant__builder_add_block",
         { page: "/p" },
         { outcome: "done", allowedBy: "builder_auto" },
       ),
@@ -260,7 +260,7 @@ describe("changed category", () => {
   it("leaves out a failed Builder op, even inside a change set", () => {
     expect(
       categoryOf(
-        "mcp__dms-ai__builder_add_block",
+        "mcp__dms-assistant__builder_add_block",
         { page: "/p" },
         {
           outcome: "failed",

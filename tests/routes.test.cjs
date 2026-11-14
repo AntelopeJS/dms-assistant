@@ -95,7 +95,7 @@ void test("composes the biggest conversation's token count in the reader's langu
     "14",
   );
   assert.deepEqual(summary.items.at(-1).detail, {
-    key: "$dms_ai.settings.usage.top_tokens",
+    key: "$dms_assistant.settings.usage.top_tokens",
     params: { count: { type: "count", value: 31250 } },
   });
 });
@@ -310,10 +310,10 @@ void test("asks Undo's confirmation with the later change sets it collides with"
     "set-1",
   );
   assert.ok(!(dialog instanceof HTTPResult));
-  assert.equal(dialog.title, "$dms_ai.changes_table.undo_confirm.title");
+  assert.equal(dialog.title, "$dms_assistant.changes_table.undo_confirm.title");
   assert.equal(
     dialog.description,
-    "$dms_ai.changes_table.undo_confirm.description_conflict",
+    "$dms_assistant.changes_table.undo_confirm.description_conflict",
   );
   assert.deepEqual(dialog.params, { count: 2, conflicts: 1 });
   assert.deepEqual(dialog.impact, [

@@ -14,7 +14,7 @@ describe("a private file", () => {
   let file: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(path.join(tmpdir(), "dms-ai-private-"));
+    root = await mkdtemp(path.join(tmpdir(), "dms-assistant-private-"));
     directory = path.join(root, "private");
     file = path.join(directory, "secret.json");
   });

@@ -23,7 +23,7 @@ describe("a conversation's owner in the stored state", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-owner-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-owner-"));
   });
 
   afterEach(async () => {

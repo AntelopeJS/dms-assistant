@@ -31,8 +31,8 @@ const text = computed(() =>
 const title = computed(() =>
 	t(
 		props.error.isLocal === true
-			? "dms_ai.panel.errors.local_title"
-			: "dms_ai.panel.errors.turn_title",
+			? "dms_assistant.panel.errors.local_title"
+			: "dms_assistant.panel.errors.turn_title",
 	),
 );
 
@@ -66,7 +66,7 @@ onBeforeUnmount(() => {
 					color="neutral"
 					variant="outline"
 					icon="i-ph-arrows-clockwise"
-					:label="t('dms_ai.panel.errors.retry_turn')"
+					:label="t('dms_assistant.panel.errors.retry_turn')"
 					@click="emit('retry')"
 				/>
 				<UButton
@@ -78,8 +78,8 @@ onBeforeUnmount(() => {
 					:label="
 						t(
 							isCopied
-								? 'dms_ai.common.copied'
-								: 'dms_ai.panel.errors.copy_details',
+								? 'dms_assistant.common.copied'
+								: 'dms_assistant.panel.errors.copy_details',
 						)
 					"
 					@click="copyDetails"

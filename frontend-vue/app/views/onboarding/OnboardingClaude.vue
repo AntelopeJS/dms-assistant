@@ -20,10 +20,10 @@ const COMMAND = "claude setup-token";
 const CHECK_DELAY_MS = 400;
 
 const PROBLEMS: Record<ClaudeTokenProblem, string> = {
-	rejected: "dms_ai.views.onboarding.claude.rejected",
-	unreachable: "dms_ai.views.onboarding.claude.unreachable",
-	malformed: "dms_ai.views.onboarding.claude.malformed",
-	unsaved: "dms_ai.views.onboarding.claude.unsaved",
+	rejected: "dms_assistant.views.onboarding.claude.rejected",
+	unreachable: "dms_assistant.views.onboarding.claude.unreachable",
+	malformed: "dms_assistant.views.onboarding.claude.malformed",
+	unsaved: "dms_assistant.views.onboarding.claude.unsaved",
 };
 
 const onboarding = useOnboarding();
@@ -41,13 +41,13 @@ const hint = computed(() => {
 	if (current.kind === "checking") {
 		return {
 			tone: "text-muted",
-			text: t("dms_ai.views.onboarding.claude.checking"),
+			text: t("dms_assistant.views.onboarding.claude.checking"),
 		};
 	}
 	if (current.kind === "ok") {
 		return {
 			tone: "text-success",
-			text: t("dms_ai.views.onboarding.claude.connected", {
+			text: t("dms_assistant.views.onboarding.claude.connected", {
 				who: current.who,
 			}),
 		};
@@ -112,8 +112,8 @@ onBeforeUnmount(() => {
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.claude.title')"
-		:lede="t('dms_ai.views.onboarding.claude.lede')"
+		:title="t('dms_assistant.views.onboarding.claude.title')"
+		:lede="t('dms_assistant.views.onboarding.claude.lede')"
 	>
 		<template #lead>
 			<UBadge
@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
 				</span>
 				<div class="min-w-0 flex-1">
 					<p class="text-highlighted mb-2 text-[13px] font-semibold">
-						{{ t("dms_ai.views.onboarding.claude.run") }}
+						{{ t("dms_assistant.views.onboarding.claude.run") }}
 					</p>
 					<div
 						class="border-default bg-elevated/60 text-highlighted flex h-10 items-center gap-2 rounded-lg border pe-1.5 ps-3 font-mono text-[13px]"
@@ -154,8 +154,8 @@ onBeforeUnmount(() => {
 							:icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'"
 							:label="
 								copied
-									? t('dms_ai.views.onboarding.claude.copied')
-									: t('dms_ai.views.onboarding.claude.copy')
+									? t('dms_assistant.views.onboarding.claude.copied')
+									: t('dms_assistant.views.onboarding.claude.copy')
 							"
 							@click="copy"
 						/>
@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 				</span>
 				<div class="min-w-0 flex-1">
 					<p class="text-highlighted mb-2 text-[13px] font-semibold">
-						{{ t("dms_ai.views.onboarding.claude.paste") }}
+						{{ t("dms_assistant.views.onboarding.claude.paste") }}
 					</p>
 					<UInput
 						:model-value="token"
@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
 		</ol>
 		<template #footer>
 			<UButton
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
 			/>
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.proceed')"
+				:label="t('dms_assistant.views.onboarding.proceed')"
 				trailing-icon="i-ph-arrow-right"
 				:disabled="phase.kind !== 'ok'"
 				:loading="busy"

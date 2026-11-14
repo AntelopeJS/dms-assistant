@@ -56,7 +56,7 @@ export const CODEX_VERSION_PATTERN = /(\d+\.\d+\.\d+)\s*$/;
  * whichever provider ran it.
  */
 export const CODEX_MCP_SERVER_ID = MCP_SERVER_KEY;
-export const CODEX_MCP_TOKEN_ENV_VAR = "DMS_AI_MCP_TOKEN";
+export const CODEX_MCP_TOKEN_ENV_VAR = "DMS_ASSISTANT_MCP_TOKEN";
 export const CODEX_HOME_ENV_VAR = "CODEX_HOME";
 export const CODEX_HOME_DIR_NAME = "codex-home";
 export const CODEX_CONFIG_FILE_NAME = "config.toml";
@@ -75,7 +75,7 @@ export const CODEX_MODEL_PROVIDER_WIRE_API = "responses";
  * Identifies this client in the thread's originator and user agent, and in
  * OpenAI's compliance logs.
  */
-export const CODEX_CLIENT_NAME = "antelopejs_dms_ai";
+export const CODEX_CLIENT_NAME = "antelopejs_dms_assistant";
 
 /**
  * Fails the spawn on an unknown config key instead of silently ignoring it —
@@ -225,7 +225,7 @@ export const CODEX_SKILLS_EXTRA_ROOTS_METHOD = "skills/extraRoots/set";
 export const CODEX_SKILLS_LIST_METHOD = "skills/list";
 export const CODEX_SKILLS_CONFIG_WRITE_METHOD = "skills/config/write";
 export const CODEX_CLIENT_VERSION = "0.0.1";
-export const CODEX_CLIENT_TITLE = "dms-ai";
+export const CODEX_CLIENT_TITLE = "dms-assistant";
 
 /**
  * `experimentalApi` unlocks the `permissions` field of `thread/start` and
@@ -252,7 +252,8 @@ export const CODEX_VERSION_MISMATCH_MESSAGE =
  * from. Named after what it waives, so a stale value in a shell profile reads
  * as the risk it is.
  */
-export const CODEX_VERSION_WAIVER_ENV = "DMS_AI_CODEX_ALLOW_VERSION_MISMATCH";
+export const CODEX_VERSION_WAIVER_ENV =
+  "DMS_ASSISTANT_CODEX_ALLOW_VERSION_MISMATCH";
 export const CODEX_VERSION_WAIVER_ENABLED = "1";
 
 /**

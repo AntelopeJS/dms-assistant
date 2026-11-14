@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 
 export const SIDECAR_PACKAGE_JSON = resolve(here, "../../package.json");
-export const STATE_DIR_SEGMENTS = ["node_modules", ".cache", "dms-ai"] as const;
+export const STATE_DIR_SEGMENTS = [
+  "node_modules",
+  ".cache",
+  "dms-assistant",
+] as const;
 
 /**
  * A client-chosen identifier becomes a directory name through safeDirSegment:

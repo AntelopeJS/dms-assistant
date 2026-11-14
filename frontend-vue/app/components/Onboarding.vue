@@ -47,7 +47,7 @@ function toggle(open: boolean): void {
 	<UModal
 		v-if="controller && view"
 		:open="controller.isOpen.value"
-		:title="t('dms_ai.views.onboarding.widget.label')"
+		:title="t('dms_assistant.views.onboarding.widget.label')"
 		:content="{ onInteractOutside: keepOpen }"
 		:ui="{
 			content:
@@ -62,7 +62,7 @@ function toggle(open: boolean): void {
 					class="flex gap-1.5"
 					role="img"
 					:aria-label="
-						t('dms_ai.views.onboarding.progress', { step: progress + 1 })
+						t('dms_assistant.views.onboarding.progress', { step: progress + 1 })
 					"
 				>
 					<span
@@ -77,7 +77,7 @@ function toggle(open: boolean): void {
 					color="neutral"
 					variant="ghost"
 					size="sm"
-					:aria-label="t('dms_ai.views.onboarding.close')"
+					:aria-label="t('dms_assistant.views.onboarding.close')"
 					@click="controller.close()"
 				/>
 			</div>

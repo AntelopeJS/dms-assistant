@@ -95,7 +95,9 @@ describe("held calls, per conversation", () => {
   it(
     "asks before a repeat the DMS runs on its conversation's hold, after another conversation ran the same call (fails a hold the chat keeps for the whole sidecar)",
     async () => {
-      dir = await mkdtemp(join(tmpdir(), "dms-ai-held-per-conversation-"));
+      dir = await mkdtemp(
+        join(tmpdir(), "dms-assistant-held-per-conversation-"),
+      );
       CLAUDE_FIXTURE.use("plain");
       harness = await startWsHarness({ provider: "claude" });
       const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);

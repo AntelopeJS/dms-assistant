@@ -6,7 +6,6 @@ import { construct as constructBuilder } from "./builder";
 import { closeAllBridges } from "./channels/registry";
 import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
-import { moveLegacyBuilderSettings } from "./lifecycle/builder-settings-move";
 import { collectModuleRoots } from "./lifecycle/module-roots";
 import { syncProjectMcpJson } from "./lifecycle/project-mcp-json";
 import { collectSkillSources } from "./lifecycle/skill-sources";
@@ -36,7 +35,6 @@ export async function start() {
   if (dev) {
     Events.ModulesStarted.register(() => {
       void syncProjectMcpJson(projectPath);
-      void moveLegacyBuilderSettings(projectPath);
     });
   }
   await AddFrontendModule(frontendModule(getConfig(), { dev }));

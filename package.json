@@ -118,14 +118,10 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@openai/codex": "0.166.0",
-    "typescript": ">=5.0.0"
+    "@openai/codex": "0.166.0"
   },
   "peerDependenciesMeta": {
     "@openai/codex": {
-      "optional": true
-    },
-    "typescript": {
       "optional": true
     }
   },

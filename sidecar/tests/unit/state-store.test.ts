@@ -102,7 +102,7 @@ describe("state file parsing", () => {
   });
 });
 
-describe("tool names recorded before the snake_case rename", () => {
+describe("stored tool names", () => {
   let dir: string;
   let filePath: string;
 
@@ -115,8 +115,8 @@ describe("tool names recorded before the snake_case rename", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("reads them under their current names, leaving other tools alone", async () => {
-    const legacy = (toolName: string) => ({
+  it("reads every tool name as written, the CamelCase ones included", async () => {
+    const call = (toolName: string) => ({
       role: "tool_use",
       content: "{}",
       toolName,
@@ -128,11 +128,11 @@ describe("tool names recorded before the snake_case rename", () => {
           createdAtMs: 1,
           updatedAtMs: 2,
           messages: [
-            legacy("mcp__dms-ai__BuilderDeletePage"),
-            legacy("mcp__dms-ai__Typecheck"),
-            legacy("Read"),
-            legacy("mcp__other__GetCurrentPage"),
-            legacy("BuilderDeletePage"),
+            call("mcp__dms-ai__BuilderDeletePage"),
+            call("mcp__dms-ai__Typecheck"),
+            call("Read"),
+            call("mcp__other__GetCurrentPage"),
+            call("BuilderDeletePage"),
             {
               role: "notice",
               content: "",
@@ -153,15 +153,15 @@ describe("tool names recorded before the snake_case rename", () => {
       "conv-1"
     ]!;
     expect(messages.map((message) => message.toolName)).toEqual([
-      "mcp__dms-ai__builder_delete_page",
-      "mcp__dms-ai__typecheck",
+      "mcp__dms-ai__BuilderDeletePage",
+      "mcp__dms-ai__Typecheck",
       "Read",
       "mcp__other__GetCurrentPage",
-      "builder_delete_page",
+      "BuilderDeletePage",
       undefined,
     ]);
     expect(messages[5]?.notice).toMatchObject({
-      toolName: "builder_remove_field",
+      toolName: "BuilderRemoveField",
     });
   });
 });

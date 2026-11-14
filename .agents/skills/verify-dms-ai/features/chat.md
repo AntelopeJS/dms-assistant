@@ -35,7 +35,6 @@ covers:
   - sidecar/src/state/conversations.ts
   - sidecar/src/state/host-state.ts
   - sidecar/src/state/store.ts
-  - sidecar/src/state/legacy-tool-names.ts
   - sidecar/src/state/types.ts
   - sidecar/src/state/safe-segment.ts
   - sidecar/src/builder/**

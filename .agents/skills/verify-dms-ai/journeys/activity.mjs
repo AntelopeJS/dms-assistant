@@ -4,7 +4,6 @@ import { MS_DAY } from "../seed.mjs";
 import { windowStart } from "../windows.mjs";
 import { CSV_HEADER, log, sorted, seedSample } from "./activity/helpers.mjs";
 import { exportJourneys } from "./activity/export.mjs";
-import { legacyJourneys } from "./activity/legacy.mjs";
 import { heldJourneys } from "./activity/held.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -221,6 +220,5 @@ export const journeys = guarded([
     },
   },
   ...exportJourneys,
-  ...legacyJourneys,
   ...heldJourneys,
 ]);

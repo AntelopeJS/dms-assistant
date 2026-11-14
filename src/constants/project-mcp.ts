@@ -1,7 +1,4 @@
 export const PROJECT_MCP_JSON_FILE_NAME = ".mcp.json";
-export const PREVIOUS_VERSION_MCP_SERVER_KEY = "dms-ai";
-export const PREVIOUS_VERSION_MCP_LAUNCHER =
-  "node_modules/.cache/dms-ai/mcp-bridge.cjs";
 /** The server `@antelopejs/dms` adds to `.mcp.json`, as it writes it. */
 export const DMS_MCP_SERVER_KEY = "dms";
 /** The launcher `@antelopejs/dms` writes under the project root, unless it refuses to write the bridge. */

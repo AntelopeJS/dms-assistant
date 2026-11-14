@@ -11,8 +11,6 @@ import {
   MCP_JSON_INDENT,
   MCP_JSON_PRINT_WIDTH,
   PROJECT_MCP_JSON_FILE_NAME,
-  PREVIOUS_VERSION_MCP_LAUNCHER,
-  PREVIOUS_VERSION_MCP_SERVER_KEY,
 } from "../constants/project-mcp";
 import {
   MODULE_ROOTS_TIMEOUT_MS,
@@ -21,7 +19,6 @@ import {
 
 const JsonObjectSchema = z.record(z.string(), z.json());
 type JsonObject = z.infer<typeof JsonObjectSchema>;
-type JsonValue = JsonObject[string];
 
 type McpJsonState =
   | { kind: "missing" }
@@ -30,7 +27,6 @@ type McpJsonState =
 
 const MissingFileSchema = z.object({ code: z.literal("ENOENT") });
 const PackageNameSchema = z.object({ name: z.string() });
-const LauncherArgsSchema = z.looseObject({ args: z.array(z.unknown()) });
 
 /**
  * The `mcp` config `@antelopejs/dms` accepts. Any other shape turns its MCP
@@ -156,56 +152,6 @@ async function readMcpJson(filePath: string): Promise<McpJsonState> {
   }
 }
 
-function isPreviousVersionEntry(
-  key: string,
-  entry: JsonValue,
-  projectRoot: string,
-): boolean {
-  if (key !== PREVIOUS_VERSION_MCP_SERVER_KEY) return false;
-  const launcher = path.resolve(projectRoot, PREVIOUS_VERSION_MCP_LAUNCHER);
-  const args = LauncherArgsSchema.safeParse(entry).data?.args ?? [];
-  return args.some((arg) => {
-    const text = z.string().safeParse(arg);
-    return text.success && path.resolve(projectRoot, text.data) === launcher;
-  });
-}
-
-interface ServerChanges {
-  servers: JsonObject;
-  removedPreviousVersion: boolean;
-  addedDms: boolean;
-}
-
-function changeServers(
-  servers: JsonObject,
-  projectRoot: string,
-  addsDms: boolean,
-): ServerChanges {
-  const entries = Object.entries(servers);
-  const kept = entries.filter(
-    ([key, entry]) => !isPreviousVersionEntry(key, entry, projectRoot),
-  );
-  const addedDms = addsDms && !Object.hasOwn(servers, DMS_MCP_SERVER_KEY);
-  const next: [string, JsonValue][] = addedDms
-    ? [...kept, [DMS_MCP_SERVER_KEY, DMS_MCP_SERVER_ENTRY]]
-    : kept;
-  return {
-    servers: Object.fromEntries(next),
-    removedPreviousVersion: kept.length < entries.length,
-    addedDms,
-  };
-}
-
-function changeNotice(changes: ServerChanges): string {
-  const parts = [
-    changes.removedPreviousVersion
-      ? `removed the ${PREVIOUS_VERSION_MCP_SERVER_KEY} server, whose launcher loads a bridge this version no longer ships`
-      : "",
-    changes.addedDms ? `added the ${DMS_MCP_SERVER_KEY} server` : "",
-  ].filter((part) => part !== "");
-  return `${SIDECAR_LOG_PREFIX} ${PROJECT_MCP_JSON_FILE_NAME}: ${parts.join(" and ")}.`;
-}
-
 async function syncFile(projectRoot: string, addsDms: boolean): Promise<void> {
   const filePath = path.join(projectRoot, PROJECT_MCP_JSON_FILE_NAME);
   const state = await readMcpJson(filePath);
@@ -217,22 +163,24 @@ async function syncFile(projectRoot: string, addsDms: boolean): Promise<void> {
   }
   const file = state.kind === "present" ? state.file : {};
   const servers = state.kind === "present" ? state.servers : {};
-  const changes = changeServers(servers, projectRoot, addsDms);
-  if (!changes.removedPreviousVersion && !changes.addedDms) return;
-  const next = { ...file, mcpServers: changes.servers };
+  if (!addsDms || Object.hasOwn(servers, DMS_MCP_SERVER_KEY)) return;
+  const next = {
+    ...file,
+    mcpServers: { ...servers, [DMS_MCP_SERVER_KEY]: DMS_MCP_SERVER_ENTRY },
+  };
   await writeFile(filePath, `${formatMcpJson(next)}\n`);
-  Logging.Info(changeNotice(changes));
+  Logging.Info(
+    `${SIDECAR_LOG_PREFIX} ${PROJECT_MCP_JSON_FILE_NAME}: added the ${DMS_MCP_SERVER_KEY} server.`,
+  );
 }
 
 /**
- * Brings the project's `.mcp.json` to this version: it removes the `dms-ai`
- * server the previous version added, whose launcher needs a bridge that is
- * gone, and adds the `dms` server of `@antelopejs/dms` when that module
- * writes one, its launcher is there and the server is missing. Every other
- * server and key is kept as it is, and a file that already matches is not
- * written. A file that is not a JSON object with an object of servers is left
- * alone with a warning. Running it again changes nothing, so it runs on every
- * start.
+ * Adds the `dms` server of `@antelopejs/dms` to the project's `.mcp.json`
+ * when that module writes one, its launcher is there and the server is
+ * missing. Every other server and key is kept as it is, and a file that
+ * already holds a `dms` server is not written. A file that is not a JSON
+ * object with an object of servers is left alone with a warning. Running it
+ * again changes nothing, so it runs on every start.
  */
 export async function syncProjectMcpJson(projectRoot: string): Promise<void> {
   try {

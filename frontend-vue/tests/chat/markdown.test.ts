@@ -38,20 +38,28 @@ const ALLOWED_ELEMENTS = new Set([
 const ALLOWED_ATTRIBUTES = new Set(["href", "title", "target", "rel", "start"]);
 const SAFE_HREF = /^(?:https?:|mailto:|\/(?![/\\])|#)/i;
 
-function renderInDocument(source: string): HTMLElement {
+/** The rendered fragments as the page shows them, inserted as clones. */
+function inserted(...fragments: DocumentFragment[]): HTMLElement {
 	const host = document.createElement("div");
-	host.innerHTML = renderMarkdown(source);
+	host.append(...fragments.map((fragment) => fragment.cloneNode(true)));
 	return host;
 }
 
+function serialized(...fragments: DocumentFragment[]): string {
+	return inserted(...fragments).innerHTML;
+}
+
+function renderInDocument(source: string): HTMLElement {
+	return inserted(renderMarkdown(source));
+}
+
 /**
- * Walks what the browser would build from the HTML: whatever the model wrote,
- * only allowed elements and attributes, and links that cannot run code. What
- * was refused stays on screen as text, which is harmless.
+ * Walks what the page would show: whatever the model wrote, only allowed
+ * elements and attributes, and links that cannot run code. What was refused
+ * stays on screen as text, which is harmless.
  */
-function expectHarmless(html: string): void {
-	const host = document.createElement("div");
-	host.innerHTML = html;
+function expectHarmless(...fragments: DocumentFragment[]): void {
+	const host = inserted(...fragments);
 	for (const element of host.querySelectorAll("*")) {
 		expect(ALLOWED_ELEMENTS.has(element.localName), element.localName).toBe(
 			true,
@@ -207,7 +215,7 @@ describe("a streaming answer renders incrementally", () => {
 
 	function streamInChunks(text: string, size: number) {
 		const incremental = createIncrementalMarkdown();
-		let last = { settled: [] as readonly string[], open: "" };
+		let last = incremental.render("");
 		for (let end = size; end < text.length + size; end += size) {
 			last = incremental.render(text.slice(0, Math.min(end, text.length)));
 		}
@@ -217,7 +225,9 @@ describe("a streaming answer renders incrementally", () => {
 	for (const size of [1, 3, 7, 50]) {
 		it(`ends with what a whole render gives, in chunks of ${size}`, () => {
 			const { settled, open } = streamInChunks(ANSWER, size);
-			expect([...settled, open].join("")).toBe(renderMarkdown(ANSWER));
+			expect(serialized(...settled, open)).toBe(
+				serialized(renderMarkdown(ANSWER)),
+			);
 		});
 	}
 
@@ -225,9 +235,11 @@ describe("a streaming answer renders incrementally", () => {
 		const incremental = createIncrementalMarkdown();
 		const first = incremental.render("Settled paragraph.\n\nOpen");
 		const later = incremental.render("Settled paragraph.\n\nOpen and growing");
-		expect(first.settled).toEqual(["<p>Settled paragraph.</p>\n"]);
+		expect(first.settled.map((block) => serialized(block))).toEqual([
+			"<p>Settled paragraph.</p>\n",
+		]);
 		expect(later.settled[0]).toBe(first.settled[0]);
-		expect(later.open).toBe("<p>Open and growing</p>\n");
+		expect(serialized(later.open)).toBe("<p>Open and growing</p>\n");
 	});
 
 	it("keeps a code block open until its fence closes", () => {
@@ -238,15 +250,17 @@ describe("a streaming answer renders incrementally", () => {
 			"```ts\nconst a = 1;\n\nconst b = 2;\n```\n\nAfter.",
 		);
 		expect(closed.settled).toHaveLength(1);
-		expect(closed.settled[0]).toContain("const b = 2;");
-		expect(closed.open).toBe("<p>After.</p>\n");
+		expect(serialized(...closed.settled)).toContain("const b = 2;");
+		expect(serialized(closed.open)).toBe("<p>After.</p>\n");
 	});
 
 	it("starts over when the text is replaced rather than extended", () => {
 		const incremental = createIncrementalMarkdown();
 		incremental.render("One.\n\nTwo");
 		const replaced = incremental.render("Other.\n\nText");
-		expect(replaced.settled).toEqual(["<p>Other.</p>\n"]);
+		expect(replaced.settled.map((block) => serialized(block))).toEqual([
+			"<p>Other.</p>\n",
+		]);
 	});
 
 	it("sanitizes what it renders incrementally too", () => {
@@ -254,7 +268,7 @@ describe("a streaming answer renders incrementally", () => {
 		const { settled, open } = incremental.render(
 			"[x](javascript:alert(1))\n\n![y](https://attacker.example/?q=1)",
 		);
-		expectHarmless([...settled, open].join(""));
+		expectHarmless(...settled, open);
 	});
 
 	it("keeps its work per chunk bounded by the last block, not the whole answer", () => {
@@ -266,7 +280,7 @@ describe("a streaming answer renders incrementally", () => {
 		let renderedChars = 0;
 		for (let end = 40; end <= paragraphs.length; end += 40) {
 			const { open } = incremental.render(paragraphs.slice(0, end));
-			renderedChars += open.length;
+			renderedChars += serialized(open).length;
 		}
 		expect(renderedChars).toBeLessThan(paragraphs.length * 5);
 	});
@@ -297,9 +311,7 @@ describe("a document reflows its hard-wrapped lines", () => {
 	].join("\n");
 
 	function renderSkill(): HTMLElement {
-		const host = document.createElement("div");
-		host.innerHTML = renderDocument(SKILL);
-		return host;
+		return inserted(renderDocument(SKILL));
 	}
 
 	it("joins a paragraph's lines with spaces, not line breaks", () => {
@@ -324,13 +336,12 @@ describe("a document reflows its hard-wrapped lines", () => {
 	});
 
 	it("still honours a hard break written in the source", () => {
-		const host = document.createElement("div");
-		host.innerHTML = renderDocument("first  \nsecond");
+		const host = inserted(renderDocument("first  \nsecond"));
 		expect(host.querySelector("br")).not.toBeNull();
 	});
 
 	it("leaves chat messages breaking on every newline", () => {
-		expect(renderMarkdown("one\ntwo")).toContain("<br>");
+		expect(serialized(renderMarkdown("one\ntwo"))).toContain("<br>");
 	});
 
 	it("sanitizes like a chat message", () => {

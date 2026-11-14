@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { defineComponent, h, shallowRef } from "vue";
+import { shallowRef } from "vue";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import type { OnboardingApi } from "../../app/onboarding/api";
 import { NO_CONTENT, type ProjectContent } from "../../app/onboarding/content";
@@ -18,6 +18,9 @@ import type {
 import { ONBOARDING_CONTROLLER_KEY } from "../../app/onboarding/runtime";
 import views from "../../i18n/locales/dms-ai-views-en-GB.json";
 import { createTestI18n } from "./i18n";
+import { OnboardingModal } from "./stand-ins/OnboardingModal";
+import { UCheckbox } from "./stand-ins/UCheckbox";
+import { UFormField } from "./stand-ins/UFormField";
 import { PANEL_STUBS } from "./stubs";
 
 export const SIGNED_OUT: ProviderLogin = { status: "signed-out" };
@@ -135,52 +138,11 @@ export function createOnboardingHarness(
 	};
 }
 
-/** A modal that draws its content in place while open. */
-const UModal = defineComponent({
-	name: "UModal",
-	props: { open: { type: Boolean, default: false } },
-	setup(props, { slots }) {
-		return () =>
-			props.open
-				? h("div", { class: "u-modal", role: "dialog" }, slots.content?.())
-				: null;
-	},
-});
-
-const UCheckbox = defineComponent({
-	name: "UCheckbox",
-	props: {
-		modelValue: { type: Boolean, default: false },
-		label: { type: String, default: "" },
-	},
-	emits: ["update:modelValue"],
-	setup:
-		(props, { emit }) =>
-		() =>
-			h("label", [
-				h("input", {
-					type: "checkbox",
-					checked: props.modelValue,
-					onChange: (event: Event) =>
-						emit(
-							"update:modelValue",
-							(event.target as HTMLInputElement).checked,
-						),
-				}),
-				props.label,
-			]),
-});
-
 /** The Nuxt UI and DMS components the onboarding draws, as light stand-ins. */
 export const ONBOARDING_STUBS = {
 	...PANEL_STUBS,
-	UModal,
+	UModal: OnboardingModal,
 	UCheckbox,
-	UFormField: defineComponent({
-		setup:
-			(_, { slots }) =>
-			() =>
-				h("div", slots.default?.()),
-	}),
+	UFormField,
 	DmsIconWell: true,
 };

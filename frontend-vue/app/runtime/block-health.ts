@@ -36,8 +36,12 @@ export interface PageBlocks {
 	blocks: ReportedBlock[];
 }
 
+const KNOWN_STATES: ReadonlySet<string | null> = new Set<string | null>(
+	BLOCK_STATES,
+);
+
 function isBlockState(value: string | null): value is BlockState {
-	return BLOCK_STATES.some((state) => state === value);
+	return KNOWN_STATES.has(value);
 }
 
 function isReported(block: BlockFact): block is ReportedBlock {

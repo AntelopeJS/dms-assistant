@@ -108,7 +108,7 @@ export function includeResource(draft: MappingDraft, relation: string, include: 
 	}
 	resource.include = include
 	if (include) {
-		delete draft.excluded[relation]
+		draft.excluded = Object.fromEntries(Object.entries(draft.excluded).filter(([key]) => key !== relation))
 	} else {
 		draft.excluded[relation] = 'decided against in the builder'
 	}

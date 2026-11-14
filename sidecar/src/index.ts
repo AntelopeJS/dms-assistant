@@ -198,12 +198,12 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     if (flag === undefined) continue;
     const parser = ARG_PARSERS.get(flag);
     if (parser === undefined) {
-      console.error(`[dms-ai] unknown arg: ${flag}`);
+      console.error(`[dms-assistant] unknown arg: ${flag}`);
       continue;
     }
     const next = argv[i + 1];
     if (next === undefined) {
-      throw new Error(`[dms-ai] missing value for: ${flag}`);
+      throw new Error(`[dms-assistant] missing value for: ${flag}`);
     }
     parser(next, acc);
     i++;

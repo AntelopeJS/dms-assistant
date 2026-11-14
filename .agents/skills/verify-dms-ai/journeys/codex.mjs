@@ -70,7 +70,7 @@ export const journeys = guarded([
         same("with a message", results.filter(([, , message]) => message === ""), []),
         same("the first says what to paste", results[0][2], "Paste the whole address of the page OpenAI sent you to, starting with http://127.0.0.1."),
       ]);
-      const authFile = `${ctx.state.home}/.config/dms-ai/chatgpt-auth.json`;
+      const authFile = `${ctx.state.home}/.config/dms-assistant/chatgpt-auth.json`;
       const banner = await ai(ctx, "banner", "GET", "/codex/account/banner");
       const logout = await ai(ctx, "sign out while signed out", "POST", "/codex/logout");
       const settings = await ai(ctx, "settings", "GET", "/settings");

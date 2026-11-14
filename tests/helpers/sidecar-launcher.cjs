@@ -4,7 +4,7 @@ const { pathToFileURL } = require("node:url");
 
 const DIST_DIR = path.resolve(__dirname, "../../dist");
 const FAKE_SIDECAR_PATH = path.resolve(__dirname, "fake-sidecar.cjs");
-const SIDECAR_BIN_REQUEST = "@antelopejs/dms-ai-sidecar/dist/index.js";
+const SIDECAR_BIN_REQUEST = "@antelopejs/dms-assistant-sidecar/dist/index.js";
 const SILENT_LOGGING = { Logging: { Info() {}, Warn() {}, Error() {} } };
 /**
  * The launcher's five-second grace before SIGKILL, shortened: the case of a

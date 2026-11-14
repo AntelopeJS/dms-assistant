@@ -1,9 +1,9 @@
-export const SIDECAR_BIN_NAME = "dms-ai-sidecar";
+export const SIDECAR_BIN_NAME = "dms-assistant-sidecar";
 export const SIDECAR_SPAWN_TIMEOUT_MS = 10_000;
 export const SIDECAR_RESPAWN_MAX = 3;
 export const SIDECAR_RESPAWN_WINDOW_MS = 60_000;
 export const SIDECAR_RESPAWN_DELAY_MS = 500;
-export const SIDECAR_LOG_PREFIX = "[dms-ai]";
+export const SIDECAR_LOG_PREFIX = "[dms-assistant]";
 export const SIDECAR_DISABLED_FLAG = "0";
 export const SIDECAR_ENV_DISABLE_KEY = "DMS_AI";
 export const SIDECAR_DIST_REL = "../../sidecar/dist/index.js";

@@ -1,9 +1,9 @@
 {
-  "name": "@antelopejs/dms-ai-sidecar",
+  "name": "@antelopejs/dms-assistant-sidecar",
   "version": "0.0.1",
   "private": true,
   "bin": {
-    "dms-ai-sidecar": "dist/index.js"
+    "dms-assistant-sidecar": "dist/index.js"
   },
   "type": "module",
   "main": "dist/index.js",

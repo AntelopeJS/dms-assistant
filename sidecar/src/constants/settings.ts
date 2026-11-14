@@ -2,7 +2,7 @@ import type { AppSettings } from "../state/settings-types.js";
 import { DEFAULT_PROVIDER_NAME } from "../state/types.js";
 
 export const SETTINGS_FILE_NAME = "settings.json";
-export const SETTINGS_LOG_PREFIX = "[dms-ai sidecar settings]";
+export const SETTINGS_LOG_PREFIX = "[dms-assistant sidecar settings]";
 
 export const DEFAULT_CLAUDE_MODEL = "claude-opus-5-5";
 

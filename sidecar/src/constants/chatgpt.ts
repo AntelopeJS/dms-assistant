@@ -77,7 +77,7 @@ export const CHATGPT_TERMINAL_REFRESH_ERRORS: readonly string[] = [
  * machine, and a 30-day refresh token stays out of the project tree (and out
  * of anything it gets copied into).
  */
-export const CHATGPT_CONFIG_DIR_NAME = "dms-ai";
+export const CHATGPT_CONFIG_DIR_NAME = "dms-assistant";
 export const CHATGPT_AUTH_FILE_NAME = "chatgpt-auth.json";
 export const CHATGPT_CONFIG_DIR_MODE = 0o700;
 export const XDG_CONFIG_HOME_ENV = "XDG_CONFIG_HOME";
@@ -107,11 +107,11 @@ export const CHATGPT_TOKEN_SECRET_ENV = "DMS_AI_CHATGPT_TOKEN_SECRET";
 export const CODEX_AUTH_REFRESH_INTERVAL_MS = 5 * 60_000;
 export const CODEX_AUTH_COMMAND_TIMEOUT_MS = 30_000;
 
-export const CHATGPT_LOG_PREFIX = "[dms-ai chatgpt]";
+export const CHATGPT_LOG_PREFIX = "[dms-assistant chatgpt]";
 export const CHATGPT_NOT_SIGNED_IN_MESSAGE =
-  "[dms-ai] Codex needs a ChatGPT account: sign in from Assistant › Settings.";
+  "[dms-assistant] Codex needs a ChatGPT account: sign in from Assistant › Settings.";
 export const CHATGPT_SIGNED_OUT_MESSAGE =
-  "[dms-ai] the ChatGPT sign-in expired or was revoked: sign in again from Assistant › Settings.";
+  "[dms-assistant] the ChatGPT sign-in expired or was revoked: sign in again from Assistant › Settings.";
 export const OPENAI_API_KEY_IGNORED_WARNING =
   "OPENAI_API_KEY is ignored: Codex now runs on your ChatGPT plan. Sign in with ChatGPT from Assistant › Settings.";
 export const OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY";

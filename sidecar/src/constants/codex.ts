@@ -8,7 +8,7 @@ import { MCP_SERVER_KEY } from "./mcp.js";
  */
 export const SAFE_MODE_SKILL_NAME = "dms-builder-mcp";
 export const SAFE_MODE_SKILL_MISSING_WARNING = `the ${SAFE_MODE_SKILL_NAME} skill is missing from the Codex skill index; safe-mode turns will fail on this session`;
-export const SAFE_MODE_SKILL_MISSING_MESSAGE = `[dms-ai] safe mode needs the ${SAFE_MODE_SKILL_NAME} skill, which is missing from the Codex skill index. Switch to Code mode, or check that @antelopejs/agent-skills is installed with dms-assistant.`;
+export const SAFE_MODE_SKILL_MISSING_MESSAGE = `[dms-assistant] safe mode needs the ${SAFE_MODE_SKILL_NAME} skill, which is missing from the Codex skill index. Switch to Code mode, or check that @antelopejs/agent-skills is installed with dms-assistant.`;
 
 /**
  * Scopes Codex populates on its own. A fresh CODEX_HOME already carries six
@@ -86,7 +86,7 @@ export const CODEX_APP_SERVER_COMMAND = "app-server";
 
 export const JSONRPC_VERSION = "2.0";
 export const JSONRPC_LINE_SEPARATOR = "\n";
-export const CODEX_LOG_PREFIX = "[dms-ai codex]";
+export const CODEX_LOG_PREFIX = "[dms-assistant codex]";
 
 /**
  * The app-server is out of process, so its death has to become an error rather
@@ -243,9 +243,9 @@ export const CODEX_CLIENT_CAPABILITIES = {
 export const CODEX_MAX_LIVE_SESSIONS = 4;
 
 export const CODEX_MISSING_CLI_MESSAGE =
-  "[dms-ai] the Codex provider needs @openai/codex; install it to use this provider";
+  "[dms-assistant] the Codex provider needs @openai/codex; install it to use this provider";
 export const CODEX_VERSION_MISMATCH_MESSAGE =
-  "[dms-ai] refusing to start the codex binary:";
+  "[dms-assistant] refusing to start the codex binary:";
 
 /**
  * Opt-in escape hatch for a Codex release the shipped types were not generated

@@ -37,7 +37,7 @@ export interface ChatGptAuthRecord {
   savedAt?: string;
 }
 
-/** `%APPDATA%\dms-ai` on Windows, `$XDG_CONFIG_HOME/dms-ai` (or `~/.config/dms-ai`) elsewhere. */
+/** `%APPDATA%\dms-assistant` on Windows, `$XDG_CONFIG_HOME/dms-assistant` (or `~/.config/dms-assistant`) elsewhere. */
 export function chatGptConfigDir(): string {
   const appData = process.env[APPDATA_ENV];
   if (process.platform === WINDOWS_PLATFORM && appData !== undefined) {

@@ -4,3 +4,4 @@ dist/
 .antelope/file-storage/
 .dev-session-secret
 .dev-login.json
+.env

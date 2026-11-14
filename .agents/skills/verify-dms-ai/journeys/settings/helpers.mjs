@@ -4,7 +4,8 @@ import { ai, pick } from "../../ai.mjs";
 
 export const DEFAULTS = {
   provider: "claude",
-  mode: "normal",
+  defaultModeClaude: "auto",
+  defaultModeCodex: "normal",
   thinking: "medium",
   claudeModel: "claude-opus-5-5",
   generationMode: "safe",

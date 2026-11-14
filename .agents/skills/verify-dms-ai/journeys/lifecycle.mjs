@@ -3,6 +3,7 @@ import { networkInterfaces } from "node:os";
 import { connect } from "node:net";
 import { guarded } from "../guard.mjs";
 import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, text, until, withEnv } from "../ai.mjs";
+import { mcpJsonJourneys } from "./lifecycle/mcp-json.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
@@ -257,6 +258,7 @@ export const journeys = guarded([
       await ctx.restartBackend();
     },
   },
+  ...mcpJsonJourneys,
 ]);
 
 export { parseJson };

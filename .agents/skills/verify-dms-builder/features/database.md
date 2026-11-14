@@ -1,71 +1,26 @@
 ---
 covers:
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis-fields.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis-input.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis-job.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis-names.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis-relations.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/analysis.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/database-connection-remove.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/database-connection.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/database-pin.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/env-lines.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources-batch.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources-pages.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources-plan.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources-references.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources-repairs.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/map-resources.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/mapped-choices.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/mapped-displays.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/mapped-modules.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/mapped-routes.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/mapping-refusal.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/module-reload.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/modules.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/own-connections.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config-ops.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config-readers.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config-remove.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config-steps.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config-text.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-config.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-env-loading.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-env.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project-scaffold.ts
-  - packages/dms-builder/src/implementations/dms-builder/engine/project.ts
-  - packages/interface-dms-builder/src/analysis.ts
-  - packages/interface-dms-builder/src/mapping.ts
-  - packages/interface-dms-builder/src/project.ts
-  - packages/dms-builder/src/routes/database.ts
-  - packages/dms-builder/frontend-vue/app/components/DatabaseApplied.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseApplySummary.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseBuild.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseConnect.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseConnectionEdit.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseConnectionRemove.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabasePanel.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabasePromptCopy.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseProposal.vue
-  - packages/dms-builder/frontend-vue/app/components/DatabaseRelation.vue
-  - packages/dms-builder/frontend-vue/app/runtime/analysis-summary.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-build.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-connect.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-display.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-remap.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-rules.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-server-text.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database-types.ts
-  - packages/dms-builder/frontend-vue/app/runtime/database.ts
+  - src/builder/routes/database.ts
+  - src/builder/constants/routes.ts
+  - src/builder/implementations/**
+  - frontend-vue/builder/app/runtime/**
 docs:
-  - packages/interface-dms-builder/docs/11.external-databases.md
+  - docs/8.database-connection.md
 ---
 
 # External databases
 
+The `/api/builder/database` routes behind the onboarding's "Start from an existing database" path, the engine files they reach, and the client and types in `frontend-vue/builder` that call them. The analysis and the mapping of a real external database need a catalog provider and a database the run does not hold, so the journeys drive the empty, shape and refusal paths.
+
 ## Sub-features
 
-- `a-project-without-an-external-database-answers-the-documented-empties-and-404s`
+- `a-project-without-an-external-database-answers-the-documented-empties-and-404s`: the connection list is empty, and an unknown connection, analysis, sample or mapping answers 404 or a not_found refusal.
+- `the-project-answer-carries-the-fields-the-connect-form-reads`: `GET /database/project` answers the modules, this module's id, the own database and the pins that the client's `ProjectModules` type reads.
+- `writes-that-are-refused-or-dry-run-leave-the-project-untouched`: refused writes, a dry run with and without `variables` and a repair with nothing to repair answer as documented and leave `antelope.config.ts` and `.env` as they were.
+
+## How to get to it (user POV)
+
+- Pick "Start from an existing database" in the assistant's onboarding popup, which calls these routes. The popup opens that form only behind a working Claude or Codex sign-in, which a run never holds, so the journeys call the routes the way the popup's client does.
 
 ## Driving it with dms-control
 

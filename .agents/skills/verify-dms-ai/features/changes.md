@@ -7,6 +7,7 @@ covers:
   - sidecar/src/checkpoints/**
   - sidecar/src/state/change-sets.ts
   - sidecar/src/state/store.ts
+  - sidecar/src/state/stored-schemas.ts
   - sidecar/src/state/conversations.ts
   - sidecar/src/constants/checkpoints.ts
   - sidecar/src/server/change-set-actions.ts

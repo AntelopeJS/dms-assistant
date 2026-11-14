@@ -8,33 +8,6 @@ export interface DoorRule {
   why: string;
 }
 
-/**
- * How the gate decides whether a diff changed what the covered code does:
- * `emit` compares the JavaScript statements of the covered files on the
- * base and on HEAD (types, comments, formatting, imports and export
- * keywords left out); `probe` runs a command on a checkout of each, the
- * checkout's path as last argument, and compares what it prints.
- */
-export type Behaviour = { kind: "emit" } | { kind: "probe"; command: string[] };
-
-/**
- * A formal check: the source files it covers, the check's own files, the
- * command that runs it, how its output names a violated and a passing rule,
- * how the gate decides that a diff changed the covered behaviour, and the
- * command run on the base when it did or when the check's own files changed
- * (`command` when absent).
- */
-export interface FormalCheck {
-  name: string;
-  covers: string[];
-  files: string[];
-  command: string[];
-  baseCommand?: string[];
-  violation: RegExp | null;
-  passing: RegExp | null;
-  behaviour: Behaviour;
-}
-
 /** The repo-owned layer of the verification skill, read by `dms-control`. */
 export interface VerifyConfig {
   playground: string;
@@ -44,12 +17,11 @@ export interface VerifyConfig {
   smoke: string;
   smokeJourney: string;
   doors: Record<DoorKind, DoorRule | null>;
-  formal: FormalCheck[];
+  formal: never[];
 }
 
 const SKILL = ".agents/skills/verify-dms-builder";
-const MODULE = "packages/dms-builder";
-const INTERFACE = "packages/interface-dms-builder";
+const ENGINE = "src/builder/implementations/dms-builder/engine";
 
 const config: VerifyConfig = {
   playground: `${SKILL}/playground`,
@@ -59,62 +31,35 @@ const config: VerifyConfig = {
     ["pnpm", "--dir", `${SKILL}/playground`, "install", "--ignore-workspace", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts"],
     [`${SKILL}/playground/node_modules/.bin/tsc`, "-p", `${SKILL}/playground/tsconfig.build.json`],
   ],
-  userFacing: [`${MODULE}/src/**`, `${MODULE}/frontend-vue/**`, `${MODULE}/skills/**`, `${MODULE}/package.json`, `${INTERFACE}/src/**`, `${INTERFACE}/package.json`],
-  notUserFacing: [
-    `${MODULE}/src/test/**`,
-    `${MODULE}/frontend-vue/tests/**`,
-    `${MODULE}/frontend-vue/.*`,
-    `${MODULE}/frontend-vue/eslint.config.mjs`,
-    `${MODULE}/frontend-vue/vitest.config.ts`,
-    `${MODULE}/frontend-vue/pnpm-lock.yaml`,
-  ],
+  userFacing: ["src/builder/**", "frontend-vue/builder/**", "frontend-vue/i18n/locales/builder-*.json"],
+  notUserFacing: ["src/builder/test/**", "frontend-vue/builder/tests/**", "frontend-vue/builder/vitest.config.ts"],
   smoke: "smoke",
-  smokeJourney: "onboard, retitle the Board page's Revenue card through POST /api/builder/page/blocks, and read the new title back from the page source, the structure API and the rebuilt page",
+  smokeJourney: "onboard, list the catalog connections and read the project's modules through /api/builder/database as the owner, and see an anonymous request refused",
   doors: {
     data: {
-      globs: [
-        `${MODULE}/src/implementations/dms-builder/engine/page-delete.ts`,
-        `${MODULE}/src/implementations/dms-builder/engine/resource-ops-delete.ts`,
-        `${MODULE}/src/implementations/dms-builder/engine/ops-categories.ts`,
-        `${MODULE}/src/implementations/dms-builder/engine/database-connection-remove.ts`,
-        `${MODULE}/src/implementations/dms-builder/engine/project-config-remove.ts`,
-      ],
+      globs: [`${ENGINE}/database-connection-remove.ts`, `${ENGINE}/project-config-remove.ts`],
       funnels: [],
-      why: "these delete project source files, tables and their rows, which a revert of the builder does not bring back",
+      why: "removing a connection takes its modules and their entries out of the project's sources, which a revert of the module does not bring back",
     },
     format: {
-      globs: [`${MODULE}/src/implementations/dms-builder/engine/emit.ts`, `${MODULE}/src/implementations/dms-builder/engine/resource-emit.ts`, `${MODULE}/src/implementations/dms-builder/engine/resource-emit-types.ts`, `${MODULE}/src/implementations/dms-builder/engine/query-emit.ts`, `${MODULE}/src/implementations/dms-builder/engine/query-template-emit.ts`],
+      globs: [`${ENGINE}/emit.ts`, `${ENGINE}/resource-emit.ts`, `${ENGINE}/resource-emit-types.ts`, `${ENGINE}/query-emit.ts`, `${ENGINE}/query-template-emit.ts`],
       funnels: [],
-      why: "the source the builder writes into a project is read back by the next version of the builder and by the project's own build",
+      why: "the source that mapping a database writes into a project is read back by the project's own build and by the DMS builder that edits it next",
     },
     contract: {
-      globs: [`${MODULE}/package.json`, `${MODULE}/src/routes/**`, `${MODULE}/src/config.ts`, `${INTERFACE}/package.json`, `${INTERFACE}/src/**`, `${MODULE}/frontend-vue/package.json`],
+      globs: ["src/builder/routes/**", "src/builder/constants/routes.ts", "src/builder/config.ts", "frontend-vue/builder/app/runtime/database-types.ts"],
       funnels: [],
-      why: "other modules import the interface, agents call the HTTP routes, and projects set the config keys and the renderer range",
+      why: "the onboarding popup and agents call these HTTP routes, and projects set the builder config keys",
     },
     outbound: null,
     exposure: {
-      globs: [`${MODULE}/src/routes/**`, `${MODULE}/src/config.ts`, `${MODULE}/src/frontend-module.ts`, `${MODULE}/src/index.ts`],
+      globs: ["src/builder/routes/**", "src/builder/config.ts", "src/builder/frontend-module.ts", "src/builder/index.ts"],
       funnels: [],
-      why: "these decide who may rewrite the project's sources and whether the builder is reachable at all",
+      why: "these decide who may rewrite the project's sources and open connections to databases, and whether the routes are mounted at all",
     },
-    publish: {
-      globs: [`${MODULE}/package.json`, `${INTERFACE}/package.json`, `${MODULE}/.release-it.json`, `${INTERFACE}/.release-it.json`, `${MODULE}/changelogen.config.json`, `${INTERFACE}/changelogen.config.json`, ".github/workflows/release.yml", ".github/workflows/release-interface.yml"],
-      funnels: [],
-      why: "the package names, their files and the release workflows claim @antelopejs/dms-builder and @antelopejs/interface-dms-builder in the npm registry",
-    },
+    publish: null,
   },
-  formal: [
-    {
-      name: "formal-page-save",
-      covers: [`${MODULE}/src/implementations/dms-builder/engine/ops.ts`, `${MODULE}/src/implementations/dms-builder/engine/writable.ts`, `${MODULE}/src/implementations/dms-builder/engine/page-draft.ts`, `${MODULE}/src/implementations/dms-builder/engine/page-structure.ts`, `${MODULE}/src/implementations/dms-builder/engine/source-index.ts`, `${MODULE}/frontend-vue/app/runtime/session-lifecycle.ts`, `${MODULE}/frontend-vue/app/runtime/session-site.ts`, `${MODULE}/frontend-vue/app/runtime/session-loaders.ts`, `${MODULE}/frontend-vue/app/runtime/draft.ts`],
-      files: [".agents/skills/formal-page-save/**"],
-      command: ["node", ".agents/skills/formal-page-save/check.mjs"],
-      violation: /^(?:finding|BROKEN|CHANGED|HOLDS) +(\w+)/gm,
-      passing: /(?<=^holds +(?:\w+, )*)(\w+)(?=,| \()/gm,
-      behaviour: { kind: "emit" },
-    },
-  ],
+  formal: [],
 };
 
 export default config;

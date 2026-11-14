@@ -16,9 +16,10 @@ export const journeys = guarded([
       const body = await settings(ctx, "read the defaults");
       await ctx.verify("the table of the Settings page", [
         same("every default", picked(body), DEFAULTS),
-        same("the capabilities: no Builder, Claude ready, Codex not", [pick(body, "builderAvailable"), pick(body, "providers", "claude", "available"), pick(body, "providers", "codex", "available")], [false, true, false]),
+        same("the capabilities: the Builder, Claude ready, Codex not", [pick(body, "builderAvailable"), pick(body, "providers", "claude", "available"), pick(body, "providers", "codex", "available")], [true, true, false]),
         check("Codex says why", text(body, "providers", "codex", "reason").includes("Sign in with ChatGPT"), text(body, "providers", "codex", "reason")),
         same("the defaults the form can reset to", [pick(body, "defaults", "thinking"), pick(body, "defaults", "requestTimeoutMinutes"), pick(body, "defaults", "checkpointRetentionDays")], ["medium", 5, 30]),
+        same("the default mode of each agent", pick(body, "defaults", "defaultModes"), { claude: "auto", codex: "normal" }),
       ]);
     },
   },
@@ -29,7 +30,7 @@ export const journeys = guarded([
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const changes = [
-        ["provider", "codex"], ["mode", "plan"], ["thinking", "off"], ["claudeModel", "claude-test-model"], ["generationMode", "vibe"], ["allowLocalSkills", true],
+        ["provider", "codex"], ["defaultModeClaude", "plan"], ["defaultModeCodex", "acceptEdits"], ["thinking", "off"], ["claudeModel", "claude-test-model"], ["generationMode", "vibe"], ["allowLocalSkills", true],
         ["alwaysAskDependencies", false], ["alwaysAskBlockRemoval", false], ["requestTimeoutMinutes", "30"], ["notifyRequests", false], ["checkpointRetentionDays", "90"],
       ];
       const expected = { ...DEFAULTS };
@@ -69,32 +70,50 @@ export const journeys = guarded([
   },
   {
     id: "a-stored-settings-file-is-read-back-by-the-next-start",
-    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, and a value or a key the file should not hold is ignored while the default stays",
+    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and a file from before the default mode was per agent seeds both agents from its one mode",
     entryPoint: "<project>/node_modules/.cache/dms-ai/settings.json, GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
-      await stopBackend(ctx);
-      writeFileSync(sidecarPath(ctx, "settings.json"), JSON.stringify({ thinking: "high", mode: "acceptEdits", generationMode: "vibe", claudeModel: "claude-from-file", allowLocalSkills: true, requestTimeoutMinutes: 30, checkpointRetentionDays: 7, notifyRequests: false, provider: "nobody", alwaysAskDependencies: "yes", unknownKey: 1 }));
-      await ctx.restartBackend();
-      await statusIs(ctx, (status) => text(status, "status") === "ready", 60_000);
-      const body = await settings(ctx, "read what the file holds");
+      /** @param {string} label @param {Record<string, unknown>} file */
+      const startOn = async (label, file) => {
+        await stopBackend(ctx);
+        writeFileSync(sidecarPath(ctx, "settings.json"), JSON.stringify(file));
+        await ctx.restartBackend();
+        await statusIs(ctx, (status) => text(status, "status") === "ready", 60_000);
+        return settings(ctx, label);
+      };
+      const modes = (/** @type {unknown} */ body) => [pick(body, "defaultModeClaude"), pick(body, "defaultModeCodex")];
+      const body = await startOn("read what the file holds", { thinking: "high", defaultModes: { claude: "acceptEdits", codex: "plan" }, generationMode: "vibe", claudeModel: "claude-from-file", allowLocalSkills: true, requestTimeoutMinutes: 30, checkpointRetentionDays: 7, notifyRequests: false, provider: "nobody", alwaysAskDependencies: "yes", unknownKey: 1 });
       await ctx.verify("the file", [
-        same("the fields it holds", [pick(body, "thinking"), pick(body, "mode"), pick(body, "generationMode"), pick(body, "claudeModel"), pick(body, "allowLocalSkills"), pick(body, "requestTimeoutMinutes"), pick(body, "checkpointRetentionDays"), pick(body, "notifyRequests")], ["high", "acceptEdits", "vibe", "claude-from-file", true, "30", "7", false]),
+        same("the fields it holds", [pick(body, "thinking"), pick(body, "generationMode"), pick(body, "claudeModel"), pick(body, "allowLocalSkills"), pick(body, "requestTimeoutMinutes"), pick(body, "checkpointRetentionDays"), pick(body, "notifyRequests")], ["high", "vibe", "claude-from-file", true, "30", "7", false]),
+        same("the default mode of each agent", modes(body), ["acceptEdits", "plan"]),
         same("an unknown provider keeps the default", pick(body, "provider"), "claude"),
         same("a value of the wrong type keeps the default", pick(body, "alwaysAskDependencies"), true),
         same("an unknown key is not served", pick(body, "unknownKey"), undefined),
+      ]);
+      const refused = await startOn("read a mode Codex has not", { defaultModes: { claude: "plan", codex: "auto" } });
+      await ctx.verify("a mode the agent has not", [same("Codex keeps its default and Claude Code its choice", modes(refused), ["plan", "normal"])]);
+      const planned = await startOn("read a file with the old mode", { mode: "plan" });
+      const reviewed = await startOn("read a file with the old Auto review", { mode: "auto" });
+      const asked = await startOn("read a file with the old Ask first", { mode: "normal" });
+      await ctx.verify("a file with the one mode of the earlier version", [
+        same("Plan only seeds both agents", modes(planned), ["plan", "plan"]),
+        same("Auto review, which Codex has not, seeds Ask first on both", modes(reviewed), ["normal", "normal"]),
+        same("the old Ask first was never a choice over the default, so Claude Code keeps Auto review", modes(asked), ["auto", "normal"]),
+        same("the old key is not served", pick(asked, "mode"), undefined),
       ]);
     },
   },
   {
     id: "a-value-outside-the-options-is-refused-and-changes-nothing",
-    title: "a value outside the options answers 400 with its reason, nothing changes, an unknown field is ignored and the deletions switch cannot be turned off",
+    title: "a value outside the options answers 400 with its reason, nothing changes, an unknown field (the retired single mode included) is ignored and the deletions switch cannot be turned off",
     entryPoint: "PUT /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const refused = [
         [{ thinking: "bogus" }, /off.*low.*medium.*high/s],
-        [{ mode: "full-auto" }, /normal.*acceptEdits.*plan/s],
+        [{ defaultModeClaude: "full-auto" }, /"normal"\|"auto"\|"acceptEdits"\|"plan"/],
+        [{ defaultModeCodex: "auto" }, /"normal"\|"acceptEdits"\|"plan"/],
         [{ generationMode: "code" }, /safe.*vibe/s],
         [{ requestTimeoutMinutes: "7" }, /5\|15\|30/],
         [{ requestTimeoutMinutes: "14" }, /5\|15\|30/],
@@ -115,7 +134,7 @@ export const journeys = guarded([
         checks.push(same(`${JSON.stringify(body)} is 400`, answer.status, 400), check(`${JSON.stringify(body)} says why`, reason.test(text(answer.body, "message")), text(answer.body, "message")));
       }
       await ctx.verify("every refusal", checks);
-      const odd = await ai(ctx, "unknown field and the locked switch", "PUT", "/settings", { body: { nonsense: 1, alwaysAskDeletions: false } });
+      const odd = await ai(ctx, "unknown field and the locked switch", "PUT", "/settings", { body: { nonsense: 1, mode: "plan", alwaysAskDeletions: false } });
       await ctx.verify("what cannot be written", [
         same("200", odd.status, 200),
         same("deletions still ask", pick(odd.body, "alwaysAskDeletions"), true),

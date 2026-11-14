@@ -30,9 +30,9 @@ import {
 	createAssistantActivity,
 } from "../runtime/assistant-activity";
 import {
-	launcherAction,
 	paletteAssistant,
 	paletteSource,
+	registerLauncher,
 } from "../runtime/assistant-commands";
 import {
 	ASSISTANT_ACTIONS_KEY,
@@ -339,12 +339,10 @@ function registerDashboardEntries(
 	session: AssistantSession,
 	i18n: ChatI18n,
 ): () => void {
-	const register = (): void =>
-		registerHeaderAction(launcherAction(i18n.t, session.launcherState.value));
-	register();
-	const stopWatchingLauncher = watch(
-		[i18n.locale, session.launcherState],
-		register,
+	const stopWatchingLauncher = registerLauncher(
+		i18n.t,
+		session.launcherState,
+		registerHeaderAction,
 	);
 	registerCommandPaletteSource(
 		paletteSource(i18n.t, session.pendingApprovals, {

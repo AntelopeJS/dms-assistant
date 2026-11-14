@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@antelopejs/interface-dms-builder': file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz
-
 importers:
 
   .:
@@ -28,8 +25,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz
-        version: file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz(@antelopejs/interface-core@0.4.0)
+        specifier: '>=0.5.0 <1.0.0'
+        version: 0.5.0(@antelopejs/interface-core@0.4.0)
       '@antelopejs/tooling-configs':
         specifier: ^0.5.1
         version: 0.5.1(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))
@@ -60,11 +57,10 @@ packages:
   '@antelopejs/interface-core@0.4.0':
     resolution: {integrity: sha512-IPX6dtt3KHknclN4mLOYeRYL2Odz1Pts+dtaZul62NghsBUX/0OFHD4Qhoaf+Beva4hjInbaF918ajr4Z5HVWQ==}
 
-  '@antelopejs/interface-dms-builder@file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz':
-    resolution: {integrity: sha512-SZVgpOwVXTD0QUfFfZl62wGNi5Bm3JE7dKbHrd5TpY2k9K/Xyh1po3/2VAQP5NVaSjX+nwAs95sNEBcK8KHCyg==, tarball: file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz}
-    version: 0.4.1
+  '@antelopejs/interface-dms-builder@0.5.0':
+    resolution: {integrity: sha512-BlNSGyIWYP96630jdDu3jmi34cDC+ul43VI/itVZVqHdE5+3TNeCu/e8Nawm4EiwA18JaL+eqoEFqLbdu4gf9w==}
     peerDependencies:
-      '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
+      '@antelopejs/interface-core': '>=0.5.1 <1.0.0'
 
   '@antelopejs/tooling-configs@0.5.1':
     resolution: {integrity: sha512-Q1JWAsMIDy8f6KaTFPAakT+ChWDhQCzJjdszFFam/pUFqBVMgY+Lp1I7bc8SwcWL3CMdHBzgUUEId2od2cB7hQ==}
@@ -1930,7 +1926,7 @@ snapshots:
     dependencies:
       reflect-metadata: 0.2.2
 
-  '@antelopejs/interface-dms-builder@file:../.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz(@antelopejs/interface-core@0.4.0)':
+  '@antelopejs/interface-dms-builder@0.5.0(@antelopejs/interface-core@0.4.0)':
     dependencies:
       '@antelopejs/interface-core': 0.4.0
 

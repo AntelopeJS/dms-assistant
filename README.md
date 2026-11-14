@@ -85,15 +85,15 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 
 <!-- antelopejs-docs-compat:start -->
 
-| Package                                  | Supported                                                     | Tested with                                                   |
-| ---------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- |
-| `@antelopejs/agent-skills`               | `file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz`          | `file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz`          |
-| `@antelopejs/interface-api`              | `>=0.3.0 <1.0.0`                                              | `0.3.0`                                                       |
-| `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`                                              | `0.4.0`                                                       |
-| `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`                                              | `0.3.1`                                                       |
-| `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`                                              | `0.0.3`                                                       |
-| `@antelopejs/interface-dms`              | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz`         | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz`         |
-| `@antelopejs/interface-dms-builder`      | `file:.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz` | `file:.tgz-deps/antelopejs-interface-dms-builder-41d2eb4.tgz` |
+| Package                                  | Supported                                             | Tested with                                           |
+| ---------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
+| `@antelopejs/agent-skills`               | `^0.3.0`                                              | `0.3.0`                                               |
+| `@antelopejs/interface-api`              | `>=0.3.0 <1.0.0`                                      | `0.3.0`                                               |
+| `@antelopejs/interface-core`             | `>=0.4.0 <1.0.0`                                      | `0.4.0`                                               |
+| `@antelopejs/interface-database`         | `>=0.3.0 <1.0.0`                                      | `0.3.1`                                               |
+| `@antelopejs/interface-database-catalog` | `>=0.0.3 <1.0.0`                                      | `0.0.3`                                               |
+| `@antelopejs/interface-dms`              | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz` | `file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz` |
+| `@antelopejs/interface-dms-builder`      | `>=0.5.0 <0.6.0`                                      | `0.5.0`                                               |
 
 <!-- antelopejs-docs-compat:end -->
 

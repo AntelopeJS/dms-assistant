@@ -43,19 +43,6 @@ From the root of a project that already loads `@antelopejs/dms`, add the module 
 ajs project modules add @antelopejs/dms-assistant
 ```
 
-The module replaces `@antelopejs/dms-ai` and `@antelopejs/dms-builder`. One project loads either this module or those two, never both. `@antelopejs/dms` now reads the builder's settings and catalog connections on its own entry. In development, this module moves them there from the old entries, whether those entries load or not. So switch in this order:
-
-1. Add this module, as above.
-2. Mark the `dms-ai` and `dms-builder` entries `disabled: true` in `antelope.config.ts`.
-3. Start the project in development with `ajs project dev`, then start it again. The first start moves their builder settings and catalog connections to the `dms` entry, and logs what it moved and one line for each old entry. `@antelopejs/dms` loaded `antelope.config.ts` before the move wrote it, so it serves the moved connections from the second start. Until then, the onboarding shows its plain Connect form.
-4. Remove an old entry only once its line reads `<entry>: nothing left to move, safe to remove`. A line that says `still here` or `not safe to remove` names what to move by hand first. Remove both by the names your `antelope.config.ts` gives them:
-
-```bash
-ajs project modules remove dms-ai dms-builder
-```
-
-A second start writes nothing. It logs only what still needs a person: standing conflicts, can't-read warnings and the per-entry lines. [Upgrade from the earlier modules](https://dms.antelopejs.com/docs/modules/assistant/upgrade) describes the move.
-
 ## Configuration
 
 The assistant's keys stay at the top level of the module's `config`. The database connect routes read one key, `builder.api.enabled`. The chat gets its builder tools from the DMS MCP server, so the `dms` module's `mcp.backendUrl` points the server's bridge at the same origin.
@@ -109,7 +96,6 @@ The module needs a DMS backend in a release that implements the `@antelopejs/int
 - [Extending](https://dms.antelopejs.com/docs/modules/assistant/extending)
 - [FAQ](https://dms.antelopejs.com/docs/modules/assistant/faq)
 - [Database connection](https://dms.antelopejs.com/docs/modules/assistant/database-connection): the routes that connect an existing database
-- [Upgrade from the earlier modules](https://dms.antelopejs.com/docs/modules/assistant/upgrade): the move of their settings and connections, and when an old entry is safe to remove
 - [Builder](https://dms.antelopejs.com/docs/interfaces/builder/introduction), in the DMS docs: the operations behind the builder tools
 
 The guide's sources live in [`docs/`](./docs). The package ships its agent skills in [`skills/`](./skills): `dms-ai` and `dms-ai-code-mode`. `antelopeJs.skills` declares them. The assistant loads them into its agent after the DMS workflow skills of `@antelopejs/agent-skills`.

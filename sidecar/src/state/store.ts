@@ -8,7 +8,6 @@ import {
   STATE_JSON_INDENT,
   STATE_LOG_PREFIX,
 } from "../constants/state.js";
-import { migrateConversation } from "./legacy-tool-names.js";
 import { StoredConversationSchema } from "./stored-schemas.js";
 import type { StoredState } from "./types.js";
 
@@ -52,7 +51,7 @@ function readConversations(stored: StoredEntries): ReadStateFile {
   const unreadable: StoredEntries = {};
   for (const [id, entry] of Object.entries(stored)) {
     const parsed = StoredConversationSchema.safeParse(entry);
-    if (parsed.success) conversations[id] = migrateConversation(parsed.data);
+    if (parsed.success) conversations[id] = parsed.data;
     else unreadable[id] = entry;
   }
   const dropped = Object.keys(unreadable).length;

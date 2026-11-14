@@ -41,7 +41,7 @@ The backend starts the sidecar as a child process, reports its status, restarts 
 - `a-backend-that-crashed-leaves-no-sidecar-for-long`: stopping the project stops the sidecar, and a sidecar left by a killed backend is stopped by the next start.
 - `a-production-start-runs-no-sidecar`: a production start (the journey pins `backend: "production"`, so `ajs project start` with `NODE_ENV` unset) reports `disabled: true` and not running from `/ai/sidecar-info` and `/ai/status`, and writes no `sidecar.lock` and no sidecar folder.
 
-- `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json`: the development start (the journey pins `backend: "dev"`, which `guarded` gives every journey that pins no other) removes the `dms-ai` server of the previous version from the project's `.mcp.json`, keeps every other server and key, leaves the `dms` server in place, writes nothing on the next start, keeps a `dms-ai` server of the owner's own whose launcher is another, and leaves a file that is not a JSON object of servers as it is, with a warning.
+- `a-development-start-adds-the-dms-server-to-mcp-json-and-keeps-the-rest`: the development start (the journey pins `backend: "dev"`, which `guarded` gives every journey that pins no other) leaves the `dms` server in the project's `.mcp.json`, keeps every other server and key as written, a `dms-ai` server included, logs no removal, writes nothing on the next start, and leaves a file that is not a JSON object of servers as it is, with a warning.
 
 ## How to get to it (user POV)
 

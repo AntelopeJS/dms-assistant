@@ -7,7 +7,6 @@ covers:
   - src/types/activity.ts
   - sidecar/src/audit/**
   - sidecar/src/constants/audit.ts
-  - sidecar/src/state/legacy-tool-names.ts
   - sidecar/src/state/store.ts
   - sidecar/src/state/stored-schemas.ts
   - sidecar/src/state/conversations.ts
@@ -30,7 +29,6 @@ The audit log of every tool the assistant used, driven from seeded stored record
 - `a-row-opens-its-detail-with-the-arguments-trail-output-and-diff`: the Action detail panel, J and K, a deep link, the decision trail, the diff and Show raw JSON.
 - `the-export-holds-every-row-whatever-the-tab-and-the-period`: one CSV line per record, quoting and the formula guard.
 - `the-export-stops-at-10000-rows`: 10,005 records export 10,000 data lines, the newest first.
-- `a-call-recorded-under-a-legacy-tool-name-reads-under-the-current-one`: a stored conversation naming `BuilderAddBlock` and `mcp__dms-ai__BuilderAddBlock` shows two `builder_add_block` rows allowed as Builder operations in the log.
 - `an-approved-call-the-dms-held-shows-as-held-under-its-own-tab`: an approved deletion the DMS held reads Held by the DMS, under the Held by the DMS tab and not under Denied or blocked.
 - `a-list-page-holds-200-rows-however-many-are-asked`: the same 10,005 records list 25 rows a page, 200 at most in one list, 50 after Load more.
 

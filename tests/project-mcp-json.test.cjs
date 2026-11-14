@@ -22,7 +22,7 @@ const DMS_PACKAGE_DIR = path.resolve(
   "../node_modules/@antelopejs/dms",
 );
 const MCP_JSON = ".mcp.json";
-const STALE_ENTRY = {
+const DMS_AI_ENTRY = {
   command: "node",
   args: ["node_modules/.cache/dms-ai/mcp-bridge.cjs"],
 };
@@ -150,22 +150,6 @@ function assertHolds(text, expected) {
   assert.equal(text, `${core.formatMcpJson(held)}\n`);
 }
 
-void test("dms-assistant first: the step, then core's write, leave core's entry and no dead one (fails a step that leaves the dead entry for core to keep)", async () => {
-  await writeMcpJson({ mcpServers: { "dms-ai": STALE_ENTRY } });
-  await loadStep().syncProjectMcpJson(dir);
-  await coreStarts();
-  assertHolds(await readMcpJson(), { mcpServers: { dms: DMS_ENTRY } });
-});
-
-void test("dms first: core's write, then the step, leave core's entry and no dead one, said once (fails a step that stops once core's entry is there)", async () => {
-  await writeMcpJson({ mcpServers: { "dms-ai": STALE_ENTRY } });
-  await coreStarts();
-  const step = loadStep();
-  await step.syncProjectMcpJson(dir);
-  assertHolds(await readMcpJson(), { mcpServers: { dms: DMS_ENTRY } });
-  assert.equal(step.notices.length, 1);
-});
-
 void test("no .mcp.json: the step writes core's entry alone, or nothing when the project turned core's writing off (fails a step that throws on a missing file or writes more)", async () => {
   await coreStarts(false);
   await loadStep().syncProjectMcpJson(dir);
@@ -175,14 +159,17 @@ void test("no .mcp.json: the step writes core's entry alone, or nothing when the
   await assert.rejects(stat(path.join(dir, MCP_JSON)), { code: "ENOENT" });
 });
 
-void test("a hand-edited .mcp.json keeps every other server, key and order, and a dms-ai entry of its own (fails a step that reorders, drops keys or removes any dms-ai)", async () => {
+void test("a hand-edited .mcp.json keeps every other server, key and order, a dms-ai entry included (fails a step that reorders, drops keys or removes a dms-ai entry)", async () => {
   const github = { command: "npx", args: ["-y", "@github/mcp"] };
   const ownDmsAi = { command: "node", args: ["tools/dms-ai.cjs"] };
   const zeta = { url: "http://localhost:9000/mcp" };
   const cases = [
     [
-      { mcpServers: { github, "dms-ai": STALE_ENTRY, zeta }, extra: [1] },
-      { mcpServers: { github, zeta, dms: DMS_ENTRY }, extra: [1] },
+      { mcpServers: { github, "dms-ai": DMS_AI_ENTRY, zeta }, extra: [1] },
+      {
+        mcpServers: { github, "dms-ai": DMS_AI_ENTRY, zeta, dms: DMS_ENTRY },
+        extra: [1],
+      },
     ],
     [
       { $schema: "x", mcpServers: { github, "dms-ai": ownDmsAi, zeta } },
@@ -200,8 +187,8 @@ void test("a hand-edited .mcp.json keeps every other server, key and order, and 
   }
 });
 
-void test("core wrote no launcher, as when its backend is not on this machine: the step removes the dead entry and adds no dms one (fails a step that adds an entry whose launcher does not exist)", async () => {
-  await writeMcpJson({ mcpServers: { "dms-ai": STALE_ENTRY, other: {} } });
+void test("core wrote no launcher, as when its backend is not on this machine: the step adds no dms entry (fails a step that adds an entry whose launcher does not exist)", async () => {
+  await writeMcpJson({ mcpServers: { other: {} } });
   const step = loadStep({ mcp: { backendUrl: "https://api.example.com" } });
   await step.syncProjectMcpJson(dir);
   assertHolds(await readMcpJson(), { mcpServers: { other: {} } });
@@ -224,17 +211,19 @@ void test("nothing to change: the step does not rewrite the file, its bytes and 
   assert.equal(step.notices.length, 0);
 });
 
-void test("core's writing off, or a DMS config it cannot read: the step removes the dead entry and adds nothing (fails a step that adds an entry core will not serve)", async () => {
+void test("core's writing off, or a DMS config it cannot read: the step adds nothing (fails a step that adds an entry core will not serve)", async () => {
   const steps = [
     loadStep({ mcp: { mcpJson: false } }),
     loadStep({ mcp: { enabled: false } }),
     loadStep({ mcp: { mcpJson: "no" } }),
     loadStep({}, false),
   ];
+  await coreStarts(false);
   for (const step of steps) {
-    await writeMcpJson({ mcpServers: { "dms-ai": STALE_ENTRY } });
+    await writeMcpJson({ mcpServers: { "dms-ai": DMS_AI_ENTRY } });
+    const before = await readMcpJson();
     await step.syncProjectMcpJson(dir);
-    assertHolds(await readMcpJson(), { mcpServers: {} });
+    assert.equal(await readMcpJson(), before);
   }
 });
 
@@ -258,8 +247,6 @@ function loadModule(dev) {
   const listeners = [];
   /** @type {string[]} */
   const synced = [];
-  /** @type {string[]} */
-  const moved = [];
   const restore = interceptRequire(
     {
       "@antelopejs/interface-core/logging": { Logging: { Error() {} } },
@@ -285,12 +272,6 @@ function loadModule(dev) {
           synced.push(root);
         },
       },
-      "./lifecycle/builder-settings-move": {
-        /** @param {string} projectPath */
-        moveLegacyBuilderSettings: async (projectPath) => {
-          moved.push(projectPath);
-        },
-      },
       "./logging/log-buffer": { startLogCapture() {} },
       "./frontend-module": { frontendModule: () => ({}) },
       "./config": require("../dist/config.js"),
@@ -300,7 +281,7 @@ function loadModule(dev) {
   );
   try {
     delete require.cache[require.resolve("../dist/index.js")];
-    return { ...require("../dist/index.js"), listeners, synced, moved };
+    return { ...require("../dist/index.js"), listeners, synced };
   } finally {
     restore();
   }
@@ -317,22 +298,4 @@ void test("the step runs in development once every module started, after core's 
   await production.construct({});
   await production.start();
   assert.equal(production.listeners.length, 0);
-});
-
-/**
- * Fails on a move of the builder settings that runs before every module started, runs in
- * production, or resolves legacy folders against anything but the project's folder.
- */
-void test("the builder settings move runs in development once every module started, and not in production", async () => {
-  const dev = loadModule(true);
-  await dev.construct({});
-  await dev.start();
-  assert.deepEqual(dev.moved, []);
-  for (const listener of dev.listeners) listener();
-  assert.deepEqual(dev.moved, [dir]);
-  const production = loadModule(false);
-  await production.construct({});
-  await production.start();
-  for (const listener of production.listeners) listener();
-  assert.deepEqual(production.moved, []);
 });

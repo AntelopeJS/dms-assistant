@@ -52,8 +52,3 @@ export const MCP_TOOL_TITLES = {
 
 /** The snake_case name of an MCP tool dms-ai serves or once served. */
 export type McpToolName = keyof typeof MCP_TOOL_TITLES;
-
-/** Whether `name` is the name of an MCP tool dms-ai serves or once served. */
-export function isMcpToolName(name: string): name is McpToolName {
-  return Object.hasOwn(MCP_TOOL_TITLES, name);
-}

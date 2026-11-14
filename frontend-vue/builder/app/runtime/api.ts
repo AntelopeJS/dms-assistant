@@ -96,8 +96,8 @@ export function useBuilderApi() {
 		/** Writes the connection's new URL into `.env`; one with no password keeps the current one. */
 		setConnectionUrl: (connection: string, url: string) =>
 			post<{ variable: string }>('/database/connection/url', { connection, url }),
-		/** The project run that answers; a restart of the project, which loads a new `.env`, names a new one. */
-		projectRun: () => get<{ run: string }>('/database/run'),
+		/** Whether the project's `.env` changed since the running project loaded it: a restart is due to load it. */
+		reloadDue: () => get<{ due: boolean }>('/database/reload'),
 		/** A few rows for the integrator to look at, held in the panel and nowhere else. */
 		sampleRows: (connection: string, relation: string, limit: number) =>
 			$authFetch<RowSample>(`${API_PREFIX}/database/sample`, {

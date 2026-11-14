@@ -87,8 +87,7 @@ export interface DatabaseConnect {
 	 * read-only, or keeps the access an earlier visit wrote, then followed until its analysis is
 	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
 	 * URL, it follows the written connection again without writing; with another URL for the same
-	 * database, it writes only the new URL and takes no answer from the project run that answered
-	 * before that write, which still holds the old URL. Answers to an attempt that a later `connect`, `reset` or
+	 * database, it writes only the new URL, and follows the connection once the project loaded it. Answers to an attempt that a later `connect`, `reset` or
 	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
 	 * until its analysis is ready, the project's connection or analysis fails, the database has no
 	 * table, the project no longer declares it, its time to be followed again runs out, or a later
@@ -180,9 +179,7 @@ export function useDatabaseConnect(
 	let reloadingSince: { reload: Reload; at: number } | undefined;
 	let analysing = false;
 	let answeredSchemas: string | undefined;
-	let written:
-		| { connection: string; url: string; staleRun?: string }
-		| undefined;
+	let written: { connection: string; url: string } | undefined;
 	let generation = RESUMED_LOOP;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
@@ -230,9 +227,8 @@ export function useDatabaseConnect(
 		connection: string,
 		module: string,
 		loop: number,
-		staleRun?: string,
 	): Promise<BuildView | null> {
-		const answers = await readBuild(api, connection, staleRun);
+		const answers = await readBuild(api, connection);
 		if (!current(loop)) return null;
 		const { reload } = buildState(answers);
 		if (reload === undefined) reloadingSince = undefined;
@@ -257,11 +253,10 @@ export function useDatabaseConnect(
 		connection: string,
 		module: string,
 		loop: number,
-		staleRun?: string,
 	): Promise<void> {
 		let next: BuildView | null;
 		try {
-			next = await followBuild(connection, module, loop, staleRun);
+			next = await followBuild(connection, module, loop);
 		} catch (error) {
 			if (current(loop)) failure.value = api.failure(error).detail;
 			return;
@@ -290,10 +285,7 @@ export function useDatabaseConnect(
 			return;
 		}
 		if (next.gaveUp || failure.value !== null) return;
-		timer = setTimeout(
-			() => void poll(connection, module, loop, staleRun),
-			POLL_MS,
-		);
+		timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
 	}
 
 	async function write(
@@ -303,9 +295,7 @@ export function useDatabaseConnect(
 	): Promise<boolean> {
 		const url = connectionUrl(form.engine, form.fields);
 		if (written?.connection === connection && written.url === url) return true;
-		let staleRun: string | undefined;
 		try {
-			if (writing.kind === "url") staleRun = (await api.projectRun()).run;
 			const result =
 				writing.kind === "url"
 					? await api.setConnectionUrl(connection, url)
@@ -326,7 +316,7 @@ export function useDatabaseConnect(
 			if (current(loop)) refusal.value = api.failure(error).detail;
 			return false;
 		}
-		written = { connection, url, staleRun };
+		written = { connection, url };
 		return true;
 	}
 
@@ -341,14 +331,12 @@ export function useDatabaseConnect(
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
-		const staleRun = written?.staleRun;
 		memory.write(target.attempt, {
 			engine: form.engine,
 			connection,
 			access: answer,
-			staleRun,
 		});
-		if (current(loop)) await poll(connection, module, loop, staleRun);
+		if (current(loop)) await poll(connection, module, loop);
 	}
 
 	function stop(): { loop: number; attempt: string } {
@@ -435,12 +423,7 @@ export function useDatabaseConnect(
 	});
 
 	if (remembered !== null) {
-		void poll(
-			remembered.connection,
-			remembered.module,
-			RESUMED_LOOP,
-			remembered.staleRun,
-		);
+		void poll(remembered.connection, remembered.module, RESUMED_LOOP);
 	}
 
 	return {

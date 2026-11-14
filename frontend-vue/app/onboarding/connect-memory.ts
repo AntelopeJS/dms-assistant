@@ -17,8 +17,6 @@ export interface WrittenConnection {
 	connection: string;
 	/** The live check's answer before the write. */
 	access: DatabaseAccess;
-	/** The project run that answered before a new URL was written: its answers are the old URL's. */
-	staleRun?: string;
 }
 
 /** A written connection as the tab remembers it. */
@@ -101,7 +99,6 @@ function keptOf(value: unknown): Kept | null {
 	const connection = textOf(value, "connection");
 	const access = accessOf(Reflect.get(value, "access"));
 	const writtenAt: unknown = Reflect.get(value, "writtenAt");
-	const staleRun = textOf(value, "staleRun");
 	if (
 		engine === undefined ||
 		!isConnectionId(connection) ||
@@ -110,8 +107,7 @@ function keptOf(value: unknown): Kept | null {
 	) {
 		return null;
 	}
-	const kept = { engine, connection, access, writtenAt };
-	return staleRun === undefined ? kept : { ...kept, staleRun };
+	return { engine, connection, access, writtenAt };
 }
 
 function parsed(text: string | null): Stored | null {
@@ -178,15 +174,14 @@ export function connectMemory(
 			}
 			const until = written.writtenAt + CONNECT_MEMORY_LIMIT_MS;
 			if (Date.now() >= until) return null;
-			const { engine, connection, access, staleRun } = written;
-			const remembered = {
+			const { engine, connection, access } = written;
+			return {
 				engine,
 				connection,
 				access,
 				module: tablesModuleOf(connection),
 				until,
 			};
-			return staleRun === undefined ? remembered : { ...remembered, staleRun };
 		},
 		begin: () => {
 			const attempt = newAttempt();

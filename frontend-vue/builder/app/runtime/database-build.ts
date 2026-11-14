@@ -129,32 +129,26 @@ async function readAnalysis(
 	}
 }
 
-async function readRun(api: ReturnType<typeof useBuilderApi>): Promise<string | Unreachable> {
+async function readReloadDue(api: ReturnType<typeof useBuilderApi>): Promise<boolean | Unreachable> {
 	try {
-		return (await api.projectRun()).run
+		return (await api.reloadDue()).due
 	} catch {
 		return UNREACHABLE
 	}
 }
 
 /**
- * Reads the three answers the screen derives from. A request that failed counts as reloading. Given
- * `staleRun`, the project run that answered before a new URL was written, the connection and its
- * analysis that run answers are the old URL's: the connection counts as not loaded yet.
+ * Reads the three answers the screen derives from. A request that failed counts as reloading. While
+ * the project's `.env` changed since the running project loaded it, the connection it serves is the
+ * old `.env`'s: it counts as not loaded yet, and its analysis as none.
  */
-export async function readBuild(
-	api: ReturnType<typeof useBuilderApi>,
-	connection: string,
-	staleRun?: string,
-): Promise<BuildAnswers> {
-	if (staleRun !== undefined) {
-		const run = await readRun(api)
-		if (run === UNREACHABLE) {
-			return { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
-		}
-		if (run === staleRun) {
-			return { ...(await readDeclared(api, connection)), listed: null, analysis: null }
-		}
+export async function readBuild(api: ReturnType<typeof useBuilderApi>, connection: string): Promise<BuildAnswers> {
+	const due = await readReloadDue(api)
+	if (due === UNREACHABLE) {
+		return { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
+	}
+	if (due) {
+		return { ...(await readDeclared(api, connection)), listed: null, analysis: null }
 	}
 	const [wiring, listed, analysis] = await Promise.all([
 		readDeclared(api, connection),

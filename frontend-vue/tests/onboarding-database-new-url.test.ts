@@ -37,20 +37,23 @@ const ANALYSED = {
 };
 
 /**
- * A project that lists `shop` with the error of its old URL and its failed analysis until it
- * restarts on the URL the popup writes, as `ajs project dev -w` does once `.env` changes.
+ * A project that loaded `.env` with the old URL of `shop`, so it lists `shop` with that URL's error
+ * and failed analysis until it restarts on the `.env` the popup writes, as `ajs project dev -w`
+ * does once `.env` changed.
  */
 function failedConnection() {
-	let run = "run-before-the-url";
+	const OLD = "postgres://app:old@db.example.com:5432/shop";
+	let env = OLD;
+	let loaded = OLD;
 	const fake = fakeBuilder({
 		projectModules: async () => ({ ...PROJECT, modules: ["builder-db-shop"] }),
-		setConnectionUrl: vi.fn(async () => ({
-			ok: true,
-			data: { variable: "SHOP_URL" },
-		})),
-		projectRun: async () => ({ run }),
+		setConnectionUrl: vi.fn(async (_connection: string, url: string) => {
+			env = url;
+			return { ok: true, data: { variable: "SHOP_URL" } };
+		}),
+		reloadDue: async () => ({ due: env !== loaded }),
 		databaseConnections: async () =>
-			run === "run-before-the-url"
+			loaded === OLD
 				? [{ ...LISTED, error: "password authentication failed" }]
 				: [LISTED],
 	});
@@ -58,7 +61,7 @@ function failedConnection() {
 	return {
 		fake,
 		restart: () => {
-			run = "run-with-the-url";
+			loaded = env;
 			fake.setAnalysis(null);
 		},
 	};
@@ -137,5 +140,35 @@ describe("a corrected URL for a connection that failed", () => {
 			connection: "shop",
 		});
 		expect(fake.api.setConnectionUrl).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("the URL the project already loaded, entered again", () => {
+	it("follows the running project, which has nothing new to load", async () => {
+		vi.useFakeTimers();
+		const LOADED = "postgres://app:secret@db.example.com:5432/shop";
+		let env = LOADED;
+		const fake = fakeBuilder({
+			projectModules: async () => ({
+				...PROJECT,
+				modules: ["builder-db-shop"],
+			}),
+			setConnectionUrl: vi.fn(async (_connection: string, url: string) => {
+				env = url;
+				return { ok: true, data: { variable: "SHOP_URL" } };
+			}),
+			reloadDue: async () => ({ due: env !== LOADED }),
+		});
+		const connect = mountConnect(fake.api, tabMemory());
+		void connect.connect("postgres", LOADED);
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(fake.api.setConnectionUrl).toHaveBeenCalledWith("shop", LOADED);
+		expect(fake.analyseDatabase).toHaveBeenCalled();
+		fake.setAnalysis(ANALYSED);
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(connect.phase.value).toMatchObject({
+			kind: "analysed",
+			connection: "shop",
+		});
 	});
 });

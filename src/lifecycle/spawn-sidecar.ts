@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { z } from "zod";
 import { Logging } from "@antelopejs/interface-core/logging";
+import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { PRODUCTION_NODE_ENV } from "../constants/module";
 import {
   SIDECAR_BACKEND_URL_FLAG,
@@ -81,6 +82,18 @@ const state: LauncherState = {
   options: null,
 };
 
+let development: Promise<boolean> | undefined;
+
+/**
+ * Whether the project runs in development, as the core reports it: true under
+ * `ajs project run`, false under `ajs project start`, which sets no
+ * `NODE_ENV`. Memoized, since it cannot change within a process.
+ */
+function runsInDevelopment(): Promise<boolean> {
+  development ??= GetRuntimeInfo().then(({ dev }) => dev);
+  return development;
+}
+
 export function getSidecarPort(): number | null {
   return getSidecarOwner().getPort();
 }
@@ -109,11 +122,14 @@ export function hasSidecarGivenUp(): boolean {
 }
 
 /**
- * True when spawning is turned off for this process (production or the disable
- * env flag); the client uses it to skip injecting the assistant entirely rather
- * than show a perpetually-reconnecting icon.
+ * True when spawning is turned off for this process: outside development,
+ * under a production `NODE_ENV`, which the sidecar itself refuses, or with the
+ * disable env flag. The sidecar runs agents on the host, so it starts in
+ * development only. The client uses it to skip injecting the assistant
+ * entirely rather than show a perpetually-reconnecting icon.
  */
-export function isSidecarDisabled(): boolean {
+export async function isSidecarDisabled(): Promise<boolean> {
+  if (!(await runsInDevelopment())) return true;
   if (process.env.NODE_ENV === PRODUCTION_NODE_ENV) return true;
   return process.env[SIDECAR_ENV_DISABLE_KEY] === SIDECAR_DISABLED_FLAG;
 }
@@ -125,7 +141,7 @@ export function isSidecarDisabled(): boolean {
  */
 export async function spawnSidecar(opts: SpawnOptions): Promise<void> {
   state.options = opts;
-  if (isSidecarDisabled()) return;
+  if (await isSidecarDisabled()) return;
   await getSidecarOwner().attach(createLaunch(opts));
 }
 
@@ -138,7 +154,7 @@ export async function spawnSidecar(opts: SpawnOptions): Promise<void> {
  * given up — recovery then requires a restart/reload.
  */
 export async function ensureSidecarRunning(): Promise<void> {
-  if (isSidecarDisabled()) return;
+  if (await isSidecarDisabled()) return;
   await getSidecarOwner().revive();
 }
 
@@ -147,7 +163,7 @@ export async function ensureSidecarRunning(): Promise<void> {
  * from a crash loop or a wedged agent. A no-op where spawning is turned off.
  */
 export async function restartSidecar(): Promise<void> {
-  if (isSidecarDisabled()) return;
+  if (await isSidecarDisabled()) return;
   await getSidecarOwner().restart();
 }
 

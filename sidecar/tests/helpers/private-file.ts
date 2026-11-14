@@ -57,16 +57,19 @@ async function readWindowsAcl(
 }
 
 /**
- * Asserts that only the current account can read `file`: mode 0600 on POSIX,
- * and on Windows, which ignores the mode, an ACL that inherits nothing and
- * holds one entry, for the current user.
+ * Asserts that only the current account can open `target`: `posixMode` (0600
+ * by default) on POSIX, and on Windows, which ignores the mode, an ACL that
+ * inherits nothing and holds one entry, for the current user.
  */
-export async function expectReadableByOwnerOnly(file: string): Promise<void> {
+export async function expectReadableByOwnerOnly(
+  target: string,
+  posixMode = OWNER_ONLY_MODE,
+): Promise<void> {
   if (process.platform !== "win32") {
-    expect((await stat(file)).mode & FILE_MODE_MASK).toBe(OWNER_ONLY_MODE);
+    expect((await stat(target)).mode & FILE_MODE_MASK).toBe(posixMode);
     return;
   }
-  const acl = await readWindowsAcl(file);
+  const acl = await readWindowsAcl(target);
   expect(acl.isProtected).toBe(true);
   expect(acl.rules).toEqual([
     { sid: acl.currentUser, type: "Allow", isInherited: false },

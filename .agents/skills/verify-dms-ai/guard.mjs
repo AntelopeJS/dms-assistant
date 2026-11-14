@@ -72,14 +72,17 @@ async function signInHydrated(ctx, tab, account) {
  * recorded, the backend and the dashboard are probed, and when one is gone the journey ends with an error and no
  * failing check. Every journey declares `standby: false`: a standby backend loads the module and spawns its own sidecar
  * into the folder of the backend under test, overwriting `sidecar.lock`, so no standby boots while a journey runs.
+ * Every journey runs a development backend (`ajs project dev`) unless it pins another `backend`: the module starts its
+ * sidecar in development only, and `dms-control up` runs `ajs project start`.
  *
- * @template {{ run: (ctx: Ctx) => Promise<void> }} Journey
+ * @template {{ run: (ctx: Ctx) => Promise<void>, backend?: "production" | "dev" | "watch" }} Journey
  * @param {Journey[]} journeys The journeys of a feature
  * @returns {Journey[]} The same journeys with the guard installed
  */
 export function guarded(journeys) {
   return journeys.map((journey) => ({
     ...journey,
+    backend: journey.backend ?? "dev",
     standby: false,
     async run(/** @type {Ctx} */ ctx) {
       const openTab = ctx.tab.bind(ctx);

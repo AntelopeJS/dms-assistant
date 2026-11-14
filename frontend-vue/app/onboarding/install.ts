@@ -39,10 +39,7 @@ export interface OnboardingHost {
 const APP_WIDGETS_STATE_KEY = "dms-app-widgets";
 const WIDGET_ID = "dms-assistant:onboarding";
 
-/**
- * The `useDmsState` key the dock adds 1 to on each click of the assistant's chip, starting at 0
- * (dms #871).
- */
+/** The `useDmsState` key the dock adds 1 to on each click of the assistant's chip, starting at 0. */
 export const ONBOARDING_SELECTED_STATE_KEY =
 	"dms-assistant:onboarding-selected";
 
@@ -52,15 +49,9 @@ interface AppWidget {
 	label: string;
 	body: string;
 	order?: number;
-	/**
-	 * A `useDmsState` key the dock adds 1 to on each click of the chip, starting at 0. Needs
-	 * dms #871; an older dock ignores it.
-	 */
+	/** A `useDmsState` key the dock adds 1 to on each click of the chip, starting at 0. */
 	onSelectEvent?: string;
-	/**
-	 * A dot on the chip's corner while set; registering the widget again without it clears the dot.
-	 * Needs dms #871; an older dock ignores it.
-	 */
+	/** A dot on the chip's corner while set; registering the widget again without it clears the dot. */
 	badge?: "dot";
 }
 
@@ -77,7 +68,7 @@ function widgetFor(needsAttention: boolean): AppWidget {
 
 /**
  * Adds the popup to the overlays the DMS draws over every page, as the builder adds its own, and
- * the assistant's chip to the DMS widget dock, which unfolds its card on hover. A click on the chip
+ * the assistant's chip to the DMS widget dock, which unfolds its card on hover or focus. A click on the chip
  * opens the popup, and the chip carries a dot while the onboarding needs attention.
  */
 function registerOverlay(controller: OnboardingController): () => void {

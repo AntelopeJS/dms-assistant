@@ -153,11 +153,9 @@
 				"progress": "Étape {step} sur 3",
 				"widget": {
 					"label": "Assistant",
-					"attention": "Assistant, configuration à terminer",
 					"ai": "IA",
 					"not_connected": "Non connecté",
-					"mockups": "Maquettes",
-					"open": "Ouvrir"
+					"mockups": "Maquettes"
 				},
 				"welcome": {
 					"title": "Construisons votre back-office",

@@ -2,6 +2,63 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.1.0
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/a433f6f6f71a329d5ba437c50fbbba2e59c9dfa8...v0.1.0)
+
+### 🚀 Enhancements
+
+- Merge dms-ai and dms-builder into one dms-assistant module ([#3](https://github.com/AntelopeJS/dms-assistant/pull/3))
+- **onboarding:** Connect an AI and pick a starting point from one popup ([#9](https://github.com/AntelopeJS/dms-assistant/pull/9))
+- **chat:** Redesign the assistant chat ([#8](https://github.com/AntelopeJS/dms-assistant/pull/8))
+- **builder:** Register each external database with dms-database and check it live first ([#12](https://github.com/AntelopeJS/dms-assistant/pull/12))
+- **onboarding:** Check the database live before writing it, and list the real mockups ([#13](https://github.com/AntelopeJS/dms-assistant/pull/13))
+- **activity:** Show an approved call the DMS held as its own Held result and tab ([#33](https://github.com/AntelopeJS/dms-assistant/pull/33))
+- **sidecar:** Tell the chat agent that a mockup it creates has source "chat" ([#31](https://github.com/AntelopeJS/dms-assistant/pull/31))
+
+### 🩹 Fixes
+
+- **playground:** Ignore .env so the database connect flow can write its URL ([#22](https://github.com/AntelopeJS/dms-assistant/pull/22))
+- **frontend-vue:** Typecheck the chat with the DMS app's ES2022 lib ([#24](https://github.com/AntelopeJS/dms-assistant/pull/24))
+- **sidecar:** Start the sidecar only when the project runs in development ([#34](https://github.com/AntelopeJS/dms-assistant/pull/34))
+- **onboarding:** Ask for a restart when the project does not reload after a connect ([#30](https://github.com/AntelopeJS/dms-assistant/pull/30))
+- **sidecar:** Pass the vitest suite on Windows, credential files owner-only ([#36](https://github.com/AntelopeJS/dms-assistant/pull/36))
+- **frontend-vue:** Use the multi-word names of the DMS components that dms 0.20.0 renamed ([#39](https://github.com/AntelopeJS/dms-assistant/pull/39))
+- **release:** Start the version at 0.0.0 and the first changelog after the dms-builder import ([#42](https://github.com/AntelopeJS/dms-assistant/pull/42))
+
+### 💅 Refactors
+
+- **builder:** Remove the live-page editor overlay ([#11](https://github.com/AntelopeJS/dms-assistant/pull/11))
+- Fix the code behind the dms-assistant suppressions ([#6](https://github.com/AntelopeJS/dms-assistant/pull/6))
+- Type construct with the module's config type ([#7](https://github.com/AntelopeJS/dms-assistant/pull/7))
+- **frontend-vue:** Lint undefined names with the DMS auto-import globals ([#10](https://github.com/AntelopeJS/dms-assistant/pull/10))
+- **builder:** Check what the engine loads at run time instead of asserting it ([#17](https://github.com/AntelopeJS/dms-assistant/pull/17))
+- Run the assistant on the dms engine, MCP server and plugin skills ([#19](https://github.com/AntelopeJS/dms-assistant/pull/19))
+- **chat:** Draw sketch previews with the DMS sketch node ([#32](https://github.com/AntelopeJS/dms-assistant/pull/32))
+- **builder:** Connect databases through dms core and drop the last engine copy ([#20](https://github.com/AntelopeJS/dms-assistant/pull/20))
+- **builder:** Prune the database runtime and catalog the builder UI left behind ([#37](https://github.com/AntelopeJS/dms-assistant/pull/37))
+- **frontend-vue:** Drop the widget's interim Open button and in-card dot ([#15](https://github.com/AntelopeJS/dms-assistant/pull/15))
+
+### 🏡 Chore
+
+- **guardrails:** Lower the SAFETY ceiling to 2 ([#23](https://github.com/AntelopeJS/dms-assistant/pull/23))
+- **frontend-vue:** Lint with the antelopeNuxtConfig preset of tooling-configs ([#41](https://github.com/AntelopeJS/dms-assistant/pull/41))
+
+### ✅ Tests
+
+- **builder:** Split spec functions over the line limit ([#16](https://github.com/AntelopeJS/dms-assistant/pull/16))
+- **verify:** Run verify-dms-ai and verify-dms-builder on the merged layout ([#21](https://github.com/AntelopeJS/dms-assistant/pull/21))
+- **verify:** Declare standby: false on every verify-dms-ai journey ([#29](https://github.com/AntelopeJS/dms-assistant/pull/29))
+
+### 🤖 CI
+
+- Run the node and test jobs on Windows ([#18](https://github.com/AntelopeJS/dms-assistant/pull/18))
+- Gate the frontend-vue vitest suite on windows-latest ([#38](https://github.com/AntelopeJS/dms-assistant/pull/38))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.10.1
 
 [compare changes](https://github.com/AntelopeJS/dms-ai/compare/v0.10.0...v0.10.1)

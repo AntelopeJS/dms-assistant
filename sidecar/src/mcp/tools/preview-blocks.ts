@@ -27,7 +27,6 @@ import {
   PREVIEW_REMOTE_URL,
   PREVIEW_RESULT_SHOWN,
   PREVIEW_SAME_ORIGIN_PATH,
-  PREVIEW_SKETCH_FORBIDDEN,
   PREVIEW_URL_OPTION_KEY,
 } from "../../constants/preview.js";
 import {
@@ -41,6 +40,7 @@ import {
   PreviewVariantSchema,
 } from "../../protocol/preview.js";
 import { defineTool, type McpToolResult } from "../define-tool.js";
+import { sketchRefusals } from "../sketch-refusals.js";
 
 export interface PreviewBlocksDeps {
   showPreview: (preview: BlockPreviewType) => void;
@@ -172,14 +172,11 @@ function checkNode(node: PreviewNodeType, depth: number, stats: TreeStats) {
 }
 
 function checkSketch(sketch: PreviewSketchType): void {
-  const markup = `${sketch.html}\n${sketch.css ?? ""}`;
-  const refused = PREVIEW_SKETCH_FORBIDDEN.find(([pattern]) =>
-    pattern.test(markup),
-  );
+  const [refused] = sketchRefusals(sketch);
   if (refused === undefined) return;
   throw new PreviewInputError(
     PREVIEW_ERROR_CODES.INVALID_SKETCH,
-    `${PREVIEW_ERROR_SKETCH}${refused[1]}.`,
+    `${PREVIEW_ERROR_SKETCH}${refused}.`,
   );
 }
 

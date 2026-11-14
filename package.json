@@ -86,7 +86,7 @@
     "suppressions:update": "antelopejs-suppressions --update"
   },
   "dependencies": {
-    "@antelopejs/agent-skills": "file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz",
+    "@antelopejs/agent-skills": ">=0.3.0 <0.4.0",
     "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
     "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
     "@antelopejs/interface-database": ">=0.3.0 <1.0.0",
@@ -164,7 +164,6 @@
       "@antelopejs/dms>@antelopejs/interface-core": "0.4.0",
       "@antelopejs/dms>@antelopejs/interface-data-api": "0.6.1",
       "@antelopejs/dms>@antelopejs/interface-database": "0.3.1",
-      "@antelopejs/agent-skills": "file:.tgz-deps/antelopejs-agent-skills-f363f57.tgz",
       "@antelopejs/dms>@antelopejs/interface-database-decorators": "0.3.2",
       "@antelopejs/interface-dms": "file:.tgz-deps/antelopejs-interface-dms-41d2eb4.tgz"
     }

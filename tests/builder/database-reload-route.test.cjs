@@ -39,8 +39,8 @@ function loadEntry(envFile) {
 
 /**
  * Fails on a reload answer that keeps the `.env` of the first start, so a restart that loaded the
- * new URL still reads as due; on one that takes a rewrite of the same text, which the core does not
- * restart on, as due; and on a reload route open to anyone but the tenant owner.
+ * new URL still reads as due; on one that takes a rewrite of the same values, quoted or not, as
+ * due, which a project run without `-w` never clears; and on a reload route open to anyone but the tenant owner.
  */
 void test("the reload route is due once .env changed since the project loaded it, and not after the restart that loads it", async () => {
   const directory = mkdtempSync(
@@ -56,6 +56,9 @@ void test("the reload route is due once .env changed since the project loaded it
     assert.deepEqual(await route.call(OWNER), { due: false });
 
     writeFileSync(envFile, 'SHOP_URL="postgres://app:old@db/shop"\n');
+    assert.deepEqual(await route.call(OWNER), { due: false });
+
+    writeFileSync(envFile, "SHOP_URL=postgres://app:old@db/shop\n");
     assert.deepEqual(await route.call(OWNER), { due: false });
 
     writeFileSync(envFile, 'SHOP_URL="postgres://app:fixed@db/shop"\n');

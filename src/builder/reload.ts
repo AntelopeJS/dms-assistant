@@ -1,26 +1,27 @@
 import { readFile } from "node:fs/promises";
+import { isDeepStrictEqual, parseEnv } from "node:util";
 
-let watched: { file: string; loaded: string | undefined } | undefined;
+let watched: { file: string; loaded: object } | undefined;
 
-async function textOf(file: string): Promise<string | undefined> {
+async function valuesOf(file: string): Promise<object> {
   try {
-    return await readFile(file, "utf8");
+    return parseEnv(await readFile(file, "utf8"));
   } catch {
-    return undefined;
+    return {};
   }
 }
 
-/** Keeps the text of the project's `.env` as the run of the project that constructs the module loaded it. */
+/** Keeps the values of the project's `.env` as the run of the project that constructs the module loaded them. */
 export async function rememberLoadedEnv(file: string): Promise<void> {
-  watched = { file, loaded: await textOf(file) };
+  watched = { file, loaded: await valuesOf(file) };
 }
 
 /**
- * Whether the project's `.env` changed since this run of the project loaded it. Under
- * `ajs project dev -w` the core restarts the project on that change; until then, the connections
- * this run serves are still the ones the old `.env` declares.
+ * Whether the values of the project's `.env` changed since this run of the project loaded them,
+ * read as the core reads them. Under `ajs project dev -w` the core restarts the project on that
+ * change; until then, the connections this run serves are still the ones the old values declare.
  */
 export async function reloadDue(): Promise<boolean> {
   if (watched === undefined) return false;
-  return (await textOf(watched.file)) !== watched.loaded;
+  return !isDeepStrictEqual(await valuesOf(watched.file), watched.loaded);
 }

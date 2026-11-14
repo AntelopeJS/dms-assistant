@@ -39,12 +39,13 @@ The backend starts the sidecar as a child process, reports its status, restarts 
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it`: with `DMS_AI_IDLE_SHUTDOWN_MS` at 20 seconds, a sidecar only the backend talks to exits one timeout after it started (the start arms the timer); the next probe starts another, and a direct `/health` made a third of the timeout in postpones its exit by a whole timeout (the health check touches the timer).
 - `dms-ai-0-starts-the-backend-without-a-sidecar`: DMS_AI=0 leaves the status offline and disabled, the banner without a button, and the routes that need the sidecar answering 503.
 - `a-backend-that-crashed-leaves-no-sidecar-for-long`: stopping the project stops the sidecar, and a sidecar left by a killed backend is stopped by the next start.
+- `a-production-start-runs-no-sidecar`: a production start (the journey pins `backend: "production"`, so `ajs project start` with `NODE_ENV` unset) reports `disabled: true` and not running from `/ai/sidecar-info` and `/ai/status`, and writes no `sidecar.lock` and no sidecar folder.
 
-- `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json`: the development start (the journey pins `backend: "dev"`, as every journey of the run does through `guarded`) removes the `dms-ai` server of the previous version from the project's `.mcp.json`, keeps every other server and key, leaves the `dms` server in place, writes nothing on the next start, keeps a `dms-ai` server of the owner's own whose launcher is another, and leaves a file that is not a JSON object of servers as it is, with a warning.
+- `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json`: the development start (the journey pins `backend: "dev"`, which `guarded` gives every journey that pins no other) removes the `dms-ai` server of the previous version from the project's `.mcp.json`, keeps every other server and key, leaves the `dms` server in place, writes nothing on the next start, keeps a `dms-ai` server of the owner's own whose launcher is another, and leaves a file that is not a JSON object of servers as it is, with a warning.
 
 ## How to get to it (user POV)
 
-- Modules › Assistant › Settings, the banner; `DMS_AI=0` before `ajs project dev`; `.mcp.json` at the project root after a development start.
+- Modules › Assistant › Settings, the banner; `DMS_AI=0` before `ajs project dev`; `ajs project start` for a production start; `.mcp.json` at the project root after a development start.
 
 ## Driving it with dms-control
 

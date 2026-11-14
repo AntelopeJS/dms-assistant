@@ -1,8 +1,8 @@
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { networkInterfaces } from "node:os";
 import { connect } from "node:net";
 import { guarded } from "../guard.mjs";
-import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, text, until, withEnv } from "../ai.mjs";
+import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, stopBackend, text, until, withEnv } from "../ai.mjs";
 import { mcpJsonJourneys } from "./lifecycle/mcp-json.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -12,6 +12,7 @@ const READY = (/** @type {unknown} */ status) => text(status, "status") === "rea
 const IDLE_TIMEOUT_MS = 20_000;
 const IDLE_MARGIN_MS = 5000;
 const IDLE_EARLY_MS = 2000;
+const PRODUCTION_SETTLE_MS = 5000;
 
 export const journeys = guarded([
   {
@@ -256,6 +257,26 @@ export const journeys = guarded([
       const stopped = await until(() => before !== null && !alive(before.pid), { timeoutMs: 30_000 });
       await ctx.verify("stopping the project stops the sidecar", [check("the sidecar is gone", Boolean(stopped), `pid ${before?.pid}`)]);
       await ctx.restartBackend();
+    },
+  },
+  {
+    id: "a-production-start-runs-no-sidecar",
+    title: "a production start (ajs project start, NODE_ENV unset) reports the sidecar disabled and not running, and writes no sidecar.lock",
+    entryPoint: "ajs project start, GET /ai/sidecar-info, /ai/status",
+    backend: "production",
+    async run(/** @type {Ctx} */ ctx) {
+      await stopBackend(ctx);
+      rmSync(sidecarPath(ctx), { recursive: true, force: true });
+      await ctx.restartBackend();
+      const info = await ai(ctx, "sidecar info", "GET", "/sidecar-info");
+      const status = await ai(ctx, "status", "GET", "/status");
+      await pause(PRODUCTION_SETTLE_MS);
+      await ctx.verify("no sidecar in production", [
+        same("the probe", [pick(info.body, "disabled"), pick(info.body, "isRunning")], [true, false]),
+        same("the status", [text(status.body, "status"), pick(status.body, "disabled"), pick(status.body, "isRunning")], ["offline", true, false]),
+        same("no sidecar.lock", existsSync(sidecarPath(ctx, "sidecar.lock")), false),
+        same("no sidecar folder, which a spawn creates before the sidecar runs", existsSync(sidecarPath(ctx)), false),
+      ]);
     },
   },
   ...mcpJsonJourneys,

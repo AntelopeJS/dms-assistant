@@ -33,7 +33,7 @@ RUN=$($C up --prepare --base origin/main --skill "$PWD/.agents/skills/verify-dms
 - the checkout is laid out again under `$RUN/root`, every sibling linked, and the playground copied, so the run's build and `.antelope/` are its own;
 - the API, the dashboard and the mail sink get free ports from the kernel, and `HOME` is `$RUN/home`;
 - a `mongod` the run owns serves `verify_<run>` databases;
-- the dashboard runs `ajs dms start -e docs -b <api>`. `up` starts the backend with `ajs project start -e docs`, and each journey starts its own with `ajs project dev -e docs` (see Gotchas).
+- the dashboard runs `ajs dms start -e docs -b <api>`. `up` starts the backend with `ajs project start -e docs`, and each journey starts its own, with `ajs project dev -e docs` unless it pins another backend (see Gotchas).
 
 The module under verification is a `local` source at the checkout root, and `@antelopejs/dms` comes from the registry, pinned by the playground's lockfile. The fixture module (`playground/src`) serves a member with a role (`POST /verify-ai/member`) and registers a home page and a plain page; it declares no skills.
 
@@ -87,7 +87,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 - The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
 - The 24 hour, 7 day and 30 day windows are driven with calls 3 hours, 10 days and 40 days old, not at the edge of each window.
 - Text the dashboard uppercases (section titles) is matched without regard to case.
-- A journey runs a development backend (`ajs project dev`) unless it pins another `backend`: `guarded` in `guard.mjs` sets `backend: "dev"` on every journey, because the module starts its sidecar in development only. `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` also pins it itself, because the module touches `.mcp.json` in development only.
+- A journey runs a development backend (`ajs project dev`) unless it pins another `backend`: `guarded` in `guard.mjs` sets `backend: "dev"` on every journey, because the module starts its sidecar in development only. `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` also pins it itself, because the module touches `.mcp.json` in development only. `a-production-start-runs-no-sidecar` pins `backend: "production"` to show that `ajs project start` starts no sidecar.
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it` sets `DMS_AI_IDLE_SHUTDOWN_MS` to 20 seconds and restarts the backend with it; it takes about a minute, and nothing else may use the checkout while it runs.
 
 ## Not driven

@@ -10,6 +10,7 @@ import {
 } from "vue";
 import type { AssistantSession } from "../runtime/assistant-session";
 import { type OnboardingApi, refusalMessage } from "./api";
+import type { ConnectMemory } from "./connect-memory";
 import { hasContent, NO_CONTENT, type ProjectContent } from "./content";
 import type {
 	ClaudeTokenCheck,
@@ -40,6 +41,8 @@ export interface OnboardingDeps {
 	preferences: PreferenceStore;
 	/** The builder runs, so a database can be connected. */
 	canConnectDatabase: boolean;
+	/** The connection this tab wrote and still follows, across a reload of the page. */
+	connecting: ConnectMemory;
 	openTab: (url: string) => void;
 }
 
@@ -57,13 +60,16 @@ export interface OnboardingController {
 	/** Why the last action failed, until the next view. */
 	problem: Readonly<Ref<string | null>>;
 	canConnectDatabase: boolean;
+	connecting: ConnectMemory;
 	/**
-	 * Reads the onboarding state and the project's content, then opens the popup if it should.
-	 * Rejects when the backend does not answer its state; `open` reads again after that.
+	 * Reads the onboarding state and the project's content, then opens the popup if it should: on
+	 * the connect form when this tab still follows a connection it wrote. Rejects when the backend
+	 * does not answer its state; `open` reads again after that.
 	 */
 	load: () => Promise<void>;
 	/**
-	 * Opens the popup, on `step` if given, and reads the project's content again so it shows this
+	 * Opens the popup, on `step` if given, else on the connect form while this tab still follows a
+	 * connection it wrote, and reads the project's content again so it shows this
 	 * session's conversations and mockups. While the state is unread, it opens once a read
 	 * answers, and asks for that read again if the last one failed.
 	 */
@@ -149,6 +155,17 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		});
 	}
 
+	function stepOrResumed(step: OnboardingStep | null): OnboardingStep | null {
+		if (
+			step !== null ||
+			!deps.canConnectDatabase ||
+			deps.connecting.read() === null
+		) {
+			return step;
+		}
+		return "connect-database";
+	}
+
 	function open(step?: OnboardingStep): void {
 		const current = state.value;
 		if (current === null) {
@@ -156,8 +173,9 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			if (loadFailed) void load().catch(() => undefined);
 			return;
 		}
-		show(current, step ?? null);
-		void refresh(step ?? null, flow.value);
+		const shown = stepOrResumed(step ?? null);
+		show(current, shown);
+		void refresh(shown, flow.value);
 	}
 
 	function load(): Promise<void> {
@@ -182,7 +200,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		loadFailed = false;
 		state.value = read;
 		content.value = project;
-		const step = pendingStep ?? null;
+		const step = stepOrResumed(pendingStep ?? null);
 		const asked = pendingStep !== undefined;
 		pendingStep = undefined;
 		const opens =
@@ -273,6 +291,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		}),
 		problem: readonly(problem),
 		canConnectDatabase: deps.canConnectDatabase,
+		connecting: deps.connecting,
 		load,
 		open,
 		close: () => {

@@ -29,6 +29,7 @@ import type {
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
+import type { ConnectMemory } from "./connect-memory";
 import {
 	canConnect,
 	type ConnectCheck,
@@ -49,6 +50,9 @@ export function engineNames(locale: string): string {
 }
 
 const POLL_MS = 1_000;
+
+/** The generation of the follow a remembered connection starts; every `connect` or `reset` moves past it. */
+const RESUMED_LOOP = 0;
 
 /**
  * Where "Connect and analyse" stands: the form, the live check (which a failed check ends in),
@@ -84,7 +88,10 @@ export interface DatabaseConnect {
 	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
 	 * URL, it follows the written connection again without writing; with another URL for the same
 	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
-	 * unmount replaced change nothing.
+	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
+	 * until its analysis is ready, the project's connection or analysis fails, the database has no
+	 * table, the project no longer declares it, its time to be followed again runs out, or a later
+	 * `connect` or `reset` in any popup of the tab; the next `useDatabaseConnect` follows it again.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -101,7 +108,10 @@ interface Checked {
 	form: ConnectForm;
 	connection: string;
 	module: string;
+	access: DatabaseAccess;
 	writing: ConnectionWriting;
+	/** The memory's attempt this connect began. */
+	attempt: string;
 }
 
 /**
@@ -143,12 +153,26 @@ export function connectForm(
  * "Connect and analyse" over the builder's live check and connect engine: the check of the URL
  * before anything is written, the `ConfigureProject` batch the builder's form writes with the
  * access chosen, then the builder's build answers polled each second through the project's reload
- * and the analysis, its schemas picked as the builder pre-checks them.
+ * and the analysis, its schemas picked as the builder pre-checks them. A connection `memory` holds
+ * is followed again from the start, without its URL.
  */
-export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
-	const phase = ref<ConnectPhase>({ kind: "form" });
+export function useDatabaseConnect(
+	api: BuilderApi,
+	memory: ConnectMemory,
+): DatabaseConnect {
+	const remembered = memory.read();
+	const phase = ref<ConnectPhase>(
+		remembered === null
+			? { kind: "form" }
+			: {
+					kind: "analysing",
+					connection: remembered.connection,
+					module: remembered.module,
+				},
+	);
+	const resumeUntil = remembered?.until;
 	const view = ref<BuildView | null>(null);
-	const access = ref<DatabaseAccess | null>(null);
+	const access = ref<DatabaseAccess | null>(remembered?.access ?? null);
 	const refusal = ref<string | null>(null);
 	const failure = ref<string | null>(null);
 	let checked: Checked | undefined;
@@ -156,7 +180,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	let analysing = false;
 	let answeredSchemas: string | undefined;
 	let written: { connection: string; url: string } | undefined;
-	let generation = 0;
+	let generation = RESUMED_LOOP;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
 
@@ -238,19 +262,30 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			return;
 		}
 		if (next === null || !current(loop)) return;
+		const expired =
+			loop === RESUMED_LOOP &&
+			resumeUntil !== undefined &&
+			Date.now() >= resumeUntil;
+		if (next.undeclared || expired) {
+			memory.clear();
+			phase.value = { kind: "form" };
+			return;
+		}
 		if (next.fork && next.job) {
+			memory.clear();
 			phase.value = { kind: "analysed", connection, module };
 			return;
 		}
-		const stuck =
-			next.gaveUp ||
+		if (
 			next.connectionError !== undefined ||
 			next.analysisFailed ||
-			next.empty ||
-			failure.value !== null;
-		if (!stuck) {
-			timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
+			next.empty
+		) {
+			memory.clear();
+			return;
 		}
+		if (next.gaveUp || failure.value !== null) return;
+		timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
 	}
 
 	async function write(
@@ -290,18 +325,24 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		choice: ConnectionAccess,
 		loop: number,
 	): Promise<void> {
-		const { connection, module } = target;
+		const { form, connection, module, access: answer } = target;
 		phase.value = { kind: "analysing", connection, module };
 		if (!(await write(target, choice, loop))) {
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
+		memory.write(target.attempt, {
+			engine: form.engine,
+			connection,
+			access: answer,
+		});
 		if (current(loop)) await poll(connection, module, loop);
 	}
 
-	function stop(): number {
+	function stop(): { loop: number; attempt: string } {
 		if (timer !== undefined) clearTimeout(timer);
 		generation += 1;
+		const attempt = memory.begin();
 		checked = undefined;
 		refusal.value = null;
 		failure.value = null;
@@ -310,7 +351,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		reloadingSince = undefined;
 		analysing = false;
 		answeredSchemas = undefined;
-		return generation;
+		return { loop: generation, attempt };
 	}
 
 	async function connect(
@@ -319,7 +360,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	): Promise<UrlProblem | null> {
 		const form = connectForm(engine, url);
 		if ("kind" in form) return form;
-		const loop = stop();
+		const { loop, attempt } = stop();
 		phase.value = { kind: "checking" };
 		const answer = await checkAccess(engine, url);
 		if (!current(loop)) return null;
@@ -330,7 +371,9 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			form,
 			connection,
 			module: managedNames(form).tablesModule,
+			access: answer,
 			writing: { kind: "url" },
+			attempt,
 		};
 		if (written?.connection !== connection) {
 			let project: ProjectModules;
@@ -378,6 +421,10 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		disposed = true;
 		if (timer !== undefined) clearTimeout(timer);
 	});
+
+	if (remembered !== null) {
+		void poll(remembered.connection, remembered.module, RESUMED_LOOP);
+	}
 
 	return {
 		phase,

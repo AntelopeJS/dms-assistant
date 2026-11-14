@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
-import { defineComponent, h, nextTick, type PropType, ref } from "vue";
+import { nextTick, ref } from "vue";
 import BlockPreviewCard from "../../app/chat/components/BlockPreviewCard.vue";
 import { useConversation } from "../../app/chat/composables/useConversation";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
@@ -15,6 +15,8 @@ import {
 } from "../../app/chat/utils/block-preview";
 import { buildUserMessage } from "../../app/chat/utils/conversation-messages";
 import { createTestI18n } from "../support/i18n";
+import { DmsBlockPreview } from "../support/stand-ins/DmsBlockPreview";
+import { UTabs } from "../support/stand-ins/UTabs";
 import { PANEL_STUBS } from "../support/stubs";
 
 const CONVERSATION_ID = "conv-1";
@@ -64,53 +66,6 @@ const SKETCH_ONLY: BlockPreview = {
 	sketch: SKETCH,
 	timestampMs: 3_000,
 };
-
-const UTabs = defineComponent({
-	name: "UTabs",
-	props: {
-		modelValue: { type: String, default: "" },
-		items: {
-			type: Array as PropType<{ value: string; label: string }[]>,
-			default: () => [],
-		},
-	},
-	emits: ["update:modelValue"],
-	setup:
-		(props, { emit, attrs }) =>
-		() =>
-			h(
-				"div",
-				{ role: "tablist", "aria-label": attrs["aria-label"] },
-				props.items.map((item) =>
-					h(
-						"button",
-						{
-							role: "tab",
-							"aria-selected": item.value === props.modelValue,
-							onClick: () => emit("update:modelValue", item.value),
-						},
-						item.label,
-					),
-				),
-			),
-});
-
-const DmsBlockPreview = defineComponent({
-	name: "DmsBlockPreview",
-	props: {
-		tree: { type: [Object, Array], required: true },
-		blockTypes: { type: Object, default: undefined },
-	},
-	setup: (props) => () =>
-		h(
-			"div",
-			{
-				class: "dms-block-preview",
-				"data-fetches-block-types": String(props.blockTypes === undefined),
-			},
-			JSON.stringify(props.tree),
-		),
-});
 
 interface MountOptions {
 	preview?: BlockPreview;

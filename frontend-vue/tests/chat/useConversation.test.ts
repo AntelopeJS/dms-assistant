@@ -14,11 +14,13 @@ import {
 	ACTIVITY_KINDS,
 	QUIET_NOTICE_AFTER_MS,
 } from "../../app/chat/constants/run-status";
-import type { RunProgress } from "../../app/chat/types/conversation";
+import type {
+	RunProgress,
+	ToolCallMessage,
+} from "../../app/chat/types/conversation";
 import type { PendingAttachment } from "../../app/chat/utils/attachments";
 import { isAgentQuiet } from "../../app/chat/utils/run-status";
 import { toolRowState } from "../../app/chat/utils/tool-state";
-import type { ToolCallMessage } from "../../app/chat/types/conversation";
 
 const CONVERSATION_ID = "conv-chat-1";
 const FILE_DATA = "PGh0bWw+PC9odG1sPg==";

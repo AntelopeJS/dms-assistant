@@ -35,6 +35,7 @@ export const SERVER_EVENT_TYPES = {
 	RUN_DONE: "run_done",
 	RUN_ERROR: "run_error",
 	RUN_RESUMED: "run_resumed",
+	CONVERSATION_CLOSED: "conversation_closed",
 	CONVERSATION_SNAPSHOT: "conversation_snapshot",
 	CONVERSATION_LIST: "conversation_list",
 	SETTINGS_UPDATE: "settings_update",

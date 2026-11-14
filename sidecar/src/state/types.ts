@@ -209,6 +209,8 @@ export interface StoredConversation {
 
 export interface StoredState {
   conversations: Record<string, StoredConversation>;
+  /** When each deleted conversation was deleted, so its id is never reused; absent when none is. */
+  deleted?: Record<string, number>;
 }
 
 /** What the transcript store alone knows of a conversation. */

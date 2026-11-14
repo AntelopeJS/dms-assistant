@@ -1,3 +1,4 @@
+import { DELETED_ID_RETENTION_MS } from "../constants/state.js";
 import type { Store } from "./store.js";
 import type { ChatMode, GenerationMode } from "./settings-types.js";
 import {
@@ -30,6 +31,14 @@ type StoredMessagePatch = Partial<StoredMessage>;
 
 /** Why a conversation id takes no more writes: set aside when the store was read, or deleted. */
 export type ConversationClosure = "set_aside" | "deleted";
+
+/** What a chat is told when it opens or writes to a closed conversation. */
+export const CLOSED_CONVERSATION_MESSAGES: Record<ConversationClosure, string> =
+  {
+    set_aside:
+      "This conversation was saved by another version of the assistant and cannot be continued. Start a new conversation.",
+    deleted: "This conversation was deleted. Start a new conversation.",
+  };
 
 export interface ConversationStore {
   get(conversationId: string): StoredConversation | null;
@@ -82,7 +91,9 @@ const TITLE_FALLBACK = "New conversation";
 interface CacheState {
   store: Store;
   cache: Map<string, StoredConversation>;
-  closed: Map<string, ConversationClosure>;
+  setAside: ReadonlySet<string>;
+  /** When each deleted conversation was deleted; see `DELETED_ID_RETENTION_MS`. */
+  deleted: Map<string, number>;
 }
 
 function buildEmptyConversation(nowMs: number): StoredConversation {
@@ -94,7 +105,32 @@ function buildEmptyConversation(nowMs: number): StoredConversation {
 }
 
 function snapshotState(state: CacheState): StoredState {
-  return { conversations: Object.fromEntries(state.cache) };
+  const snapshot: StoredState = {
+    conversations: Object.fromEntries(state.cache),
+  };
+  if (state.deleted.size > 0) {
+    snapshot.deleted = Object.fromEntries(state.deleted);
+  }
+  return snapshot;
+}
+
+function closureOf(
+  state: CacheState,
+  conversationId: string,
+): ConversationClosure | null {
+  if (state.setAside.has(conversationId)) return "set_aside";
+  if (state.deleted.has(conversationId)) return "deleted";
+  return null;
+}
+
+/**
+ * Forgets the deletions older than the retention: by then no turn of theirs
+ * runs, and an id is a random UUID that only its own browser still holds.
+ */
+function pruneDeleted(state: CacheState, nowMs: number): void {
+  for (const [id, deletedAtMs] of state.deleted) {
+    if (nowMs - deletedAtMs > DELETED_ID_RETENTION_MS) state.deleted.delete(id);
+  }
 }
 
 function persistCache(state: CacheState): void {
@@ -115,7 +151,7 @@ function ensureConversation(
 ): StoredConversation | null {
   const existing = state.cache.get(conversationId);
   if (existing !== undefined) return existing;
-  if (state.closed.has(conversationId)) return null;
+  if (closureOf(state, conversationId) !== null) return null;
   const created = buildEmptyConversation(Date.now());
   state.cache.set(conversationId, created);
   return created;
@@ -304,8 +340,10 @@ function listEntries(state: CacheState): ConversationEntry[] {
 }
 
 function deleteConversation(state: CacheState, conversationId: string): void {
-  state.closed.set(conversationId, "deleted");
   if (!state.cache.delete(conversationId)) return;
+  const nowMs = Date.now();
+  state.deleted.set(conversationId, nowMs);
+  pruneDeleted(state, nowMs);
   persistCache(state);
 }
 
@@ -315,11 +353,9 @@ async function loadCacheFromDisk(state: CacheState): Promise<void> {
   for (const [id, conv] of Object.entries(stored.conversations)) {
     state.cache.set(id, conv);
   }
-  state.closed = new Map(
-    state.store
-      .setAsideIds()
-      .map((id): [string, ConversationClosure] => [id, "set_aside"]),
-  );
+  state.setAside = new Set(state.store.setAsideIds());
+  state.deleted = new Map(Object.entries(stored.deleted ?? {}));
+  pruneDeleted(state, Date.now());
 }
 
 export function createConversationStore(
@@ -328,11 +364,12 @@ export function createConversationStore(
   const state: CacheState = {
     store: options.store,
     cache: new Map(),
-    closed: new Map(),
+    setAside: new Set(),
+    deleted: new Map(),
   };
   return {
     get: (id) => getConversation(state, id),
-    closure: (id) => state.closed.get(id) ?? null,
+    closure: (id) => closureOf(state, id),
     appendMessage: (id, message) => appendToConversation(state, id, message),
     patchMessages: (id, matches, patch) =>
       patchMessages(state, id, matches, patch),

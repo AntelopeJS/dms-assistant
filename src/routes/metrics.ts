@@ -10,6 +10,7 @@ import {
 } from "../sidecar";
 import type { ChartPayload, KeyValueItem, UsageReport } from "../types";
 import { usageChartPayload, usageSummaryPayload } from "./metric-shapes";
+import { type QueryValue, queryText } from "./query-text";
 
 const EMPTY_USAGE: UsageReport = { days: [], totalTokens: 0, conversations: 0 };
 
@@ -33,10 +34,10 @@ async function readMetric<T, R>(
 @AuthOwnerOnly()
 export class AIMetricsController extends Controller(`${ROUTE_PREFIX}/metrics`) {
   @Get("usage")
-  usage(@Parameter("days", "query") days?: string): Promise<ChartPayload> {
+  usage(@Parameter("days", "query") days?: QueryValue): Promise<ChartPayload> {
     return readMetric(
       "/metrics/usage",
-      { days },
+      { days: queryText(days) },
       USAGE_ANSWER,
       EMPTY_USAGE,
       usageChartPayload,
@@ -45,11 +46,11 @@ export class AIMetricsController extends Controller(`${ROUTE_PREFIX}/metrics`) {
 
   @Get("usage/summary")
   usageSummary(
-    @Parameter("days", "query") days?: string,
+    @Parameter("days", "query") days?: QueryValue,
   ): Promise<{ items: KeyValueItem[] }> {
     return readMetric(
       "/metrics/usage",
-      { days },
+      { days: queryText(days) },
       USAGE_ANSWER,
       EMPTY_USAGE,
       usageSummaryPayload,

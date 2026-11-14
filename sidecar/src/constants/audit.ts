@@ -19,14 +19,21 @@ export const ALLOWED_BY_VALUES = [
 ] as const;
 export type AllowedBy = (typeof ALLOWED_BY_VALUES)[number];
 
-/** How a tool call ended. `waiting` and `running` are derived by the client. */
-export const TOOL_OUTCOMES = [
+const AUDITED_TOOL_OUTCOMES = [
   "done",
   "failed",
   "denied",
   "blocked",
   "stopped",
 ] as const;
+
+/**
+ * How a tool call ended. `waiting` and `running` are derived by the client.
+ * `held` is a call the DMS refused until someone confirms it: it changed
+ * nothing, and the chat asks the person before its repeat runs, so the audit
+ * leaves it out.
+ */
+export const TOOL_OUTCOMES = [...AUDITED_TOOL_OUTCOMES, "held"] as const;
 export type ToolOutcome = (typeof TOOL_OUTCOMES)[number];
 
 export const PERMISSION_KINDS = [
@@ -52,7 +59,7 @@ export const CHANGE_FILE_STATUSES = ["added", "modified", "deleted"] as const;
 export type ChangeFileStatus = (typeof CHANGE_FILE_STATUSES)[number];
 
 export const ACTIVITY_RESULTS = [
-  ...TOOL_OUTCOMES,
+  ...AUDITED_TOOL_OUTCOMES,
   "pending",
   "expired",
 ] as const;

@@ -1,34 +1,30 @@
-import { z } from "zod";
+import {
+  type CallEnd,
+  type HeldCalls,
+  holdRefusalOf,
+  isHoldConsumedBy,
+} from "../agent/held-calls.js";
 import type {
   RunnerToolResult,
   RunnerToolUse,
 } from "../agent/runner-events.js";
 import {
-  bareToolName,
   isBashTool,
   isEditTool,
   isMutatingBuilderTool,
   isMutatingTool,
   isReadOnlyTool,
 } from "../agent/tool-kinds.js";
-import type {
-  AllowedBy,
-  ToolOutcome,
-  TypecheckOutcome,
-} from "../constants/audit.js";
-import {
-  TYPECHECK_CLEAN_MESSAGE,
-  TYPECHECK_ERRORS_PREFIX,
-  TYPECHECK_TOOL_NAME,
-} from "../constants/typecheck.js";
+import type { AllowedBy, ToolOutcome } from "../constants/audit.js";
 import {
   EVENT_TYPES,
   STATUS,
   type ToolCallEndEventType,
 } from "../protocol/events.js";
+import { JsonValueSchema } from "../protocol/json.js";
 import type { CallAudit, CallDecision } from "../audit/call-audit.js";
 import type { ConversationStore } from "../state/conversations.js";
-import type { ActiveTurn, TurnRegistry } from "./turn-registry.js";
+import type { TurnRegistry } from "./turn-registry.js";
 
 /** What starting, ending and stopping a tool call reads and writes. */
 export interface ToolCallServices {
@@ -38,6 +34,7 @@ export interface ToolCallServices {
     "get" | "appendMessage" | "patchMessages"
   >;
   callAudit: Pick<CallAudit, "lookup">;
+  heldCalls: Pick<HeldCalls, "observe">;
 }
 
 /**
@@ -63,7 +60,9 @@ const DEFAULT_ALLOWED_BY: readonly AllowedByMatcher[] = [
 
 const FALLBACK_ALLOWED_BY: AllowedBy = "read_auto";
 
-const OUTCOME_BY_DECISION: Partial<Record<AllowedBy, ToolOutcome>> = {
+const OUTCOME_BY_DECISION: Partial<
+  Record<AllowedBy, Extract<ToolOutcome, "blocked" | "denied">>
+> = {
   blocked: "blocked",
   denied: "denied",
   auto_denied: "denied",
@@ -87,43 +86,21 @@ function decisionOf(
   return services.callAudit.lookup(conversationId, callId);
 }
 
-function outcomeOf(
+function endOf(
   ev: RunnerToolResult,
   decision: CallDecision | undefined,
-): ToolOutcome {
-  if (ev.isStopped === true) return "stopped";
+  toolName: string,
+): CallEnd {
+  if (ev.isStopped === true) return { outcome: "stopped" };
   const decided =
     decision === undefined
       ? undefined
       : OUTCOME_BY_DECISION[decision.allowedBy];
-  if (decided !== undefined) return decided;
-  return ev.isError ? "failed" : "done";
-}
-
-const TYPECHECK_OUTCOME_MARKERS: ReadonlyArray<[string, TypecheckOutcome]> = [
-  [TYPECHECK_ERRORS_PREFIX, "failed"],
-  [TYPECHECK_CLEAN_MESSAGE, "passed"],
-];
-
-function noteTypecheck(
-  turn: ActiveTurn,
-  toolName: string,
-  ev: RunnerToolResult,
-) {
-  if (bareToolName(toolName) !== TYPECHECK_TOOL_NAME) return;
-  const asString = z.string().safeParse(ev.result);
-  let text = "";
-  if (asString.success) {
-    text = asString.data;
-  } else {
-    try {
-      text = JSON.stringify(ev.result ?? "");
-    } catch {
-      text = "";
-    }
-  }
-  const marker = TYPECHECK_OUTCOME_MARKERS.find(([m]) => text.includes(m));
-  if (marker !== undefined) turn.typecheck = marker[1];
+  if (decided !== undefined) return { outcome: decided };
+  const held = holdRefusalOf(toolName, ev);
+  if (held !== undefined) return { outcome: "held", ...held };
+  if (!ev.isError) return { outcome: "done" };
+  return { outcome: "failed", isHoldConsumed: isHoldConsumedBy(toolName, ev) };
 }
 
 /** Persists a call as it starts and tracks it on the running turn. */
@@ -135,6 +112,7 @@ export function startToolCall(
   const turn = services.turns.get(conversationId);
   turn?.openCalls.set(ev.callId, {
     toolName: ev.toolName,
+    args: ev.args,
     startedAtMs: Date.now(),
   });
   if (turn !== undefined && isMutatingTool(ev.toolName)) {
@@ -166,14 +144,30 @@ function toolNameOf(
 }
 
 function trackEnd(
-  turn: ActiveTurn | undefined,
+  services: ToolCallServices,
+  conversationId: string,
   ev: RunnerToolResult,
   toolName: string,
-  outcome: ToolOutcome,
+  end: CallEnd,
 ): void {
+  const turn = services.turns.get(conversationId);
   if (turn === undefined) return;
+  const open = turn.openCalls.get(ev.callId);
   turn.openCalls.delete(ev.callId);
-  noteTypecheck(turn, toolName, ev);
+  const args = JsonValueSchema.safeParse(open?.args);
+  if (open !== undefined && args.success) {
+    services.heldCalls.observe(
+      conversationId,
+      { toolName: open.toolName, args: args.data },
+      end,
+    );
+  }
+  const { outcome } = end;
+  if (outcome === "held") {
+    turn.mutatingCallIds = turn.mutatingCallIds.filter(
+      (callId) => callId !== ev.callId,
+    );
+  }
   if (outcome === "done" && isMutatingBuilderTool(toolName)) turn.builderOps++;
 }
 
@@ -189,9 +183,10 @@ export function endToolCall(
 ): ToolCallEndEventType {
   const toolName = toolNameOf(services, conversationId, ev.callId);
   const decision = decisionOf(services, conversationId, ev.callId);
-  const outcome = outcomeOf(ev, decision);
+  const end = endOf(ev, decision, toolName);
+  const { outcome } = end;
   const allowedBy = decision?.allowedBy ?? defaultAllowedBy(toolName);
-  trackEnd(services.turns.get(conversationId), ev, toolName, outcome);
+  trackEnd(services, conversationId, ev, toolName, end);
   const status = ev.isError ? STATUS.ERROR : STATUS.SUCCESS;
   services.conversationStore.patchMessages(
     conversationId,

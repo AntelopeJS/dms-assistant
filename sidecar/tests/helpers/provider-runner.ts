@@ -38,11 +38,6 @@ export function buildInertStaticMcpDeps(
       invalidate: () => {},
     },
     hostProjectRoot,
-    moduleRoots: [],
-    logsClient: { getLogs: async () => [] },
-    builderClient: { call: async () => null },
-    databaseClient: { get: async () => [], post: async () => ({}) },
-    builderEnabled: false,
     navigationCompleter,
   };
 }
@@ -59,7 +54,6 @@ export function buildInertMcpDeps(conversationId: string): AiMcpServerDeps {
     sendToHost: () => {},
     requestQuestion: () =>
       Promise.reject(new Error("no question is expected in this test")),
-    getLastEditedFile: () => undefined,
     showPreview: () => {},
     listAttachedImages: () => [],
   };

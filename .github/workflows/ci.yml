@@ -74,22 +74,11 @@ jobs:
       - run: pnpm install --filter "{.}" --filter "./frontend-vue" --frozen-lockfile
       - run: pnpm --dir frontend-vue run verify-source
 
-  # The builder engine specs write ts-morph fixtures to disk and take minutes.
-  # Each shard runs its files with `mocha --parallel` (`.mocharc.json`). One
-  # rule per shard but the last, which takes every file no rule matches, so a
-  # new spec always runs; the rules group the files by their measured duration.
+  # The builder engine specs write ts-morph fixtures to disk, so they run apart
+  # from `checks`, with `mocha --parallel` (`.mocharc.json`).
   engine-specs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      SHARD_RULES: |
-        ^(map-resources(-(display|display-defaults|page-options|page-options-mapped))?|module-reload|page-access)\.
-        ^(map-resources-(forgiving|remap)\.|table-)
-        ^(draft-queries|map-resources-(approval|declared-relations|display-defaults-null|label-defaults-kept)|mapped-table-reads)\.
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -102,24 +91,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --frozen-lockfile
       - run: pnpm run build
-      - env:
-          SHARD: ${{ matrix.shard }}
-          TOTAL: ${{ strategy.job-total }}
-        run: |
-          files=$(cd dist/builder/test && ls *.spec.js | sort | awk -v shard="$SHARD" -v total="$TOTAL" '
-            BEGIN {
-              n = split(ENVIRON["SHARD_RULES"], rule, "\n")
-              if (rule[n] == "") n--
-              if (n != total - 1) { print "SHARD_RULES has " n " rules for " total " shards" > "/dev/stderr"; exit 1 }
-            }
-            {
-              owner = total
-              for (i = 1; i <= n; i++) if ($0 ~ rule[i]) { owner = i; break }
-              if (owner == shard) print "dist/builder/test/" $0
-            }')
-          test -n "$files" || { echo "shard $SHARD runs no spec file" >&2; exit 1; }
-          mapfile -t list <<< "$files"
-          pnpm exec mocha "${list[@]}"
+      - run: DMS_PREBUILT=1 pnpm test:specs
 
   ubuntu:
     if: always()

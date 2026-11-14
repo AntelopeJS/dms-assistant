@@ -1,5 +1,9 @@
 import { DATABASE_TOOL_NAMES } from "./database.js";
-import { BUILDER_TOOL_NAMES } from "./builder.js";
+import {
+  BUILDER_TOOL_NAMES,
+  MOCKUP_TOOL_NAMES,
+  PAGE_VERIFY_TOOL_NAME,
+} from "./builder.js";
 import { QUERY_LOGS_TOOL_NAME } from "./logs.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
 import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
@@ -17,6 +21,40 @@ export const MCP_SERVER_TYPE_SDK = "sdk" as const;
  * The SDK exposes MCP tools to the model as mcp__<serverKey>__<toolName>.
  */
 export const MCP_TOOL_NAME_PREFIX = `mcp__${MCP_SERVER_KEY}__`;
+
+/** The DMS MCP server of `@antelopejs/dms`: its key in `.mcp.json`, and so its tools' prefix. */
+export const DMS_MCP_SERVER_KEY = "dms";
+export const DMS_MCP_TOOL_NAME_PREFIX = `mcp__${DMS_MCP_SERVER_KEY}__`;
+/**
+ * The `code` of the JSON text block the DMS MCP ends its answer with when it
+ * holds a call until someone confirms it. The DMS runs an identical call
+ * repeated within `DMS_MCP_HOLD_WINDOW_MS` in the same session.
+ */
+export const DMS_MCP_HOLD_CODE = "confirmation_required";
+/**
+ * The `code` of the JSON text block the DMS MCP ends a held call's answer
+ * with when the call passed the DMS's gate, so used its hold, and then
+ * failed. A failure before the gate carries no code and leaves the hold.
+ */
+export const DMS_MCP_HOLD_CONSUMED_CODE = "confirmation_consumed";
+/**
+ * How the prose of that answer continues after the tool's name: read only
+ * when an answer carries no code, as a DMS released before the code sends.
+ */
+export const DMS_MCP_HOLD_REFUSAL_SUFFIX =
+  " was not run: no one has confirmed it yet.";
+/** How the line of that answer that holds the DMS's preview of the call, as JSON, starts. */
+export const DMS_MCP_HOLD_PREVIEW_PREFIX =
+  "Its arguments, with what the builder previewed: ";
+export const DMS_MCP_HOLD_WINDOW_MS = 10 * MS_PER_MINUTE;
+/** How `.mcp.json` starts the DMS MCP server: `node` on the stdio launcher the DMS writes under the project root. */
+export const DMS_MCP_COMMAND = "node";
+export const DMS_MCP_LAUNCHER_PATH = [
+  "node_modules",
+  ".cache",
+  "dms",
+  "mcp-bridge.cjs",
+] as const;
 
 export const GET_CURRENT_PAGE_TOOL_NAME = "get_current_page";
 export const GET_CURRENT_PAGE_TOOL_DESCRIPTION =
@@ -42,8 +80,7 @@ export const NAVIGATE_RESULT_LANDED_PREFIX = ". Host is now displaying ";
 export const NAVIGATE_UNKNOWN_ROUTE_PREFIX = "Did not navigate: ";
 export const NAVIGATE_UNKNOWN_ROUTE_SUFFIX =
   " is not a registered page route. Closest known routes: ";
-export const NAVIGATE_UNKNOWN_ROUTE_HINT =
-  ". Call list_pages for the full list and use a real route.";
+export const NAVIGATE_UNKNOWN_ROUTE_HINT = `. Call ${DMS_MCP_TOOL_NAME_PREFIX}${LIST_PAGES_TOOL_NAME} for the full list and use a real route.`;
 /**
  * Cap the number of suggested routes inlined into the tool result.
  */
@@ -68,38 +105,46 @@ export const ASK_USER_QUESTION_BUILTIN_TOOL_NAME = "AskUserQuestion";
 export const ASK_USER_QUESTION_REDIRECT_MESSAGE = `AskUserQuestion is not available here. Use the ${MCP_TOOL_NAME_PREFIX}${ASK_USER_TOOL_NAME} tool instead to ask the user multiple-choice questions.`;
 
 /**
- * Explicit allowlist of the module's own MCP tools that are safe to auto-allow
- * without a permission prompt: none of them mutate host state (page reads and
- * navigation, listing pages, asking the user, showing a preview, running tsc for a typecheck,
- * querying logs). Keyed by the fully qualified name the SDK presents to the
- * model. Any new dms-ai tool is NOT auto-allowed until it is added here
- * deliberately.
+ * The DMS MCP's tools that the chat serves itself, since only the chat's own
+ * drive the user's tab and the chat. Hidden, so the agent sees one of each.
  */
-export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set(
-  [
-    GET_CURRENT_PAGE_TOOL_NAME,
-    NAVIGATE_TOOL_NAME,
-    FIND_PAGES_TOOL_NAME,
-    LIST_PAGES_TOOL_NAME,
-    ASK_USER_TOOL_NAME,
-    PREVIEW_BLOCKS_TOOL_NAME,
-    TYPECHECK_TOOL_NAME,
-    QUERY_LOGS_TOOL_NAME,
-    ...DATABASE_TOOL_NAMES,
-    ...BUILDER_TOOL_NAMES,
-  ].map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
-);
+export const DMS_MCP_HIDDEN_TOOL_NAMES: readonly string[] = [
+  NAVIGATE_TOOL_NAME,
+  PREVIEW_BLOCKS_TOOL_NAME,
+];
+
+const CHAT_TOOL_NAMES: readonly string[] = [
+  ASK_USER_TOOL_NAME,
+  GET_CURRENT_PAGE_TOOL_NAME,
+  FIND_PAGES_TOOL_NAME,
+  NAVIGATE_TOOL_NAME,
+  PREVIEW_BLOCKS_TOOL_NAME,
+];
+
+const DMS_MCP_AUTO_ALLOW_TOOL_NAMES: readonly string[] = [
+  ...BUILDER_TOOL_NAMES,
+  ...DATABASE_TOOL_NAMES,
+  TYPECHECK_TOOL_NAME,
+  QUERY_LOGS_TOOL_NAME,
+  LIST_PAGES_TOOL_NAME,
+  ...MOCKUP_TOOL_NAMES,
+  PAGE_VERIFY_TOOL_NAME,
+];
+
+/**
+ * Explicit allowlist of the MCP tools the chat runs without a permission
+ * prompt, by the fully qualified name the agent sees. The DMS MCP itself holds
+ * its risky calls for a repeated confirmation. A tool outside this set, a new
+ * one included, still asks.
+ */
+export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set([
+  ...CHAT_TOOL_NAMES.map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
+  ...DMS_MCP_AUTO_ALLOW_TOOL_NAMES.map(
+    (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
+  ),
+]);
 
 export const MCP_HTTP_PATH = "/mcp";
-/** The project's sessionless endpoint, reached through the DMS backend with the client credential. */
-export const MCP_PROJECT_PATH = "/mcp/project";
-/**
- * The largest message the project endpoint reads: the backend route in front
- * of it parses JSON bodies up to 1 MiB, so a page composed in one call fits.
- */
-export const MCP_PROJECT_MAX_BODY_BYTES = 1024 * 1024;
-/** The conversation the project endpoint's tools are bound to: no chat carries it. */
-export const PROJECT_CONVERSATION_ID = "project-mcp";
 /**
  * Where an out-of-process provider reaches the endpoint above.
  */
@@ -120,24 +165,17 @@ export const MCP_LOOPBACK_HOSTNAMES = [
 
 const MS_PER_SECOND = 1_000;
 
-/**
- * The longest a dms-ai tool waits on the user: an ask_user question, or a
- * Builder deletion held at the gate for the longest permission timeout.
- */
 const LONGEST_USER_WAIT_MS = Math.max(
   QUESTION_TIMEOUT_MS,
   Math.max(...REQUEST_TIMEOUT_MINUTES) * MS_PER_MINUTE,
 );
 
-/**
- * Room left after that wait for the work the call then does (the turn's
- * checkpoint, the Builder op and its typecheck).
- */
 const MCP_TOOL_TIMEOUT_GRACE_MS = 5 * MS_PER_MINUTE;
 
 /**
- * How long a provider lets one dms-ai tool call run. It must outlast every wait
- * on the user, or the provider abandons a call whose card is still on screen.
+ * How long a provider lets one MCP tool call run, on both servers. It must
+ * outlast every wait on the user, or the provider abandons a call whose card is
+ * still on screen.
  */
 export const MCP_TOOL_TIMEOUT_MS =
   LONGEST_USER_WAIT_MS + MCP_TOOL_TIMEOUT_GRACE_MS;

@@ -1,7 +1,9 @@
 import { join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
+import type { ToolCallSubject } from "../../src/agent/held-calls.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import { MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
+import { DMS_MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
 import { PERMISSION_DECISIONS } from "../../src/constants/permissions.js";
 import {
   type TurnFixture,
@@ -9,7 +11,7 @@ import {
 } from "../helpers/claude-turn-runner.js";
 
 const TEST_TIMEOUT_MS = 30_000;
-const MCP = MCP_TOOL_NAME_PREFIX;
+const DMS = DMS_MCP_TOOL_NAME_PREFIX;
 const DEPENDENCY_CHANGE = { command: "pnpm add jsvat" };
 const PLAIN_COMMAND = { command: "node -e \"console.log('hi')\"" };
 const WEB_PAGE = { url: "https://example.com/docs", prompt: "summarize" };
@@ -297,14 +299,53 @@ function registerBuilderAndLedgerCases({ runTurn }: TurnFixture): void {
   );
 
   it(
-    "keeps Builder deletions and block removals on canUseTool, where their own gate asks",
+    "leaves a deletion to the DMS MCP's own confirmation and asks before a block removal while its setting is on (fails an auto-allow that skips the block-removal setting)",
     async () => {
-      const turn = await runTurn([
-        { id: "delete", name: `${MCP}builder_delete_page`, input: {} },
-        { id: "remove", name: `${MCP}builder_remove_block`, input: {} },
+      const calls = [
+        { id: "delete", name: `${DMS}builder_delete_page`, input: {} },
+        { id: "remove", name: `${DMS}builder_remove_block`, input: {} },
+      ];
+      const asking = await runTurn(calls, {
+        settings: { alwaysAskBlockRemoval: true },
+      });
+      expect(asking.tools).toMatchObject([ASKED, ASKED]);
+      expect(asking.prompts.map((p) => [p.callId, p.alwaysAsk])).toEqual([
+        ["remove", true],
       ]);
-      expect(turn.tools).toMatchObject([ASKED, ASKED]);
-      expect(turn.announced).toEqual(["delete", "remove"]);
+      const unasked = await runTurn(calls, {
+        settings: { alwaysAskBlockRemoval: false },
+      });
+      expect(unasked.prompts).toEqual([]);
+      expect(unasked.announced).toEqual(["delete", "remove"]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    [PERMISSION_DECISIONS.ALLOW_ONCE, ASKED],
+    [PERMISSION_DECISIONS.DENY, REFUSED_WHEN_ASKED],
+  ])(
+    "asks once before the repeat of a call the DMS holds, and the answer %s decides it (fails an auto-allow that lets the DMS run the repeat unasked)",
+    async (answer, repeat) => {
+      const held = { ref: "orders" };
+      const isHeldCall = (call: ToolCallSubject) =>
+        call.toolName === `${DMS}builder_delete_resource` &&
+        isDeepStrictEqual(call.args, held);
+      const turn = await runTurn(
+        [
+          { id: "repeat", name: `${DMS}builder_delete_resource`, input: held },
+          {
+            id: "other",
+            name: `${DMS}builder_delete_resource`,
+            input: { ref: "customers" },
+          },
+        ],
+        { isHeldCall, answer },
+      );
+      expect(turn.prompts.map((p) => [p.callId, p.kind])).toEqual([
+        ["repeat", "destructive"],
+      ]);
+      expect(turn.tools).toMatchObject([repeat, ASKED]);
     },
     TEST_TIMEOUT_MS,
   );
@@ -313,19 +354,19 @@ function registerBuilderAndLedgerCases({ runTurn }: TurnFixture): void {
     "announces first-party tools to the call ledger and records them as in Ask first",
     async () => {
       const turn = await runTurn([
-        { id: "add", name: `${MCP}builder_add_block`, input: {} },
-        { id: "list", name: `${MCP}builder_list_pages`, input: {} },
+        { id: "add", name: `${DMS}builder_add_block`, input: {} },
+        { id: "list", name: `${DMS}builder_list_pages`, input: {} },
       ]);
       expect(turn.announced).toEqual(["add", "list"]);
       expect(turn.decisions).toEqual([
         {
           callId: "add",
-          toolName: `${MCP}builder_add_block`,
+          toolName: `${DMS}builder_add_block`,
           allowedBy: "builder_auto",
         },
         {
           callId: "list",
-          toolName: `${MCP}builder_list_pages`,
+          toolName: `${DMS}builder_list_pages`,
           allowedBy: "read_auto",
         },
       ]);

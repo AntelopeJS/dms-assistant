@@ -1,7 +1,7 @@
 {
   "name": "@antelopejs/dms-assistant",
   "version": "0.1.0",
-  "description": "Development assistant for the AntelopeJS DMS: a chat panel and coding agent that edit the project in reviewable, undoable change sets, and a visual page editor whose every edit is an AST rewrite of the project sources, typechecked before it is written.",
+  "description": "Development assistant for the AntelopeJS DMS: a chat panel and coding agent that edit the project in reviewable, undoable change sets, and an onboarding that starts a project from scratch or from a database you already run.",
   "keywords": [
     "ai",
     "antelopejs",
@@ -53,7 +53,7 @@
     "lint": "pnpm run --reporter=append-only \"/^lint:(oxlint|frontend|rules)$/\"",
     "lint:oxlint": "oxlint",
     "lint:frontend": "pnpm --dir frontend-vue lint",
-    "lint:rules": "node node_modules/@antelopejs/dms/frontend-vue/scripts/check-api-error-presentation.mjs frontend-vue/app frontend-vue/builder/app && antelopejs-check-interface-ranges && node scripts/check-playground-install.mjs && node scripts/check-i18n.mjs && node scripts/frontend-source-check.cjs",
+    "lint:rules": "node node_modules/@antelopejs/dms/frontend-vue/scripts/check-api-error-presentation.mjs frontend-vue/app frontend-vue/builder/app && node scripts/check-playground-install.mjs && node scripts/check-i18n.mjs && node scripts/frontend-source-check.cjs",
     "lint:fix": "oxlint --fix && oxfmt . && pnpm --dir frontend-vue lint:fix",
     "typecheck": "pnpm run --reporter=append-only \"/^typecheck:(module|chat|sidecar|sidecar-tests)$/\"",
     "typecheck:module": "tsc --noEmit",
@@ -67,7 +67,7 @@
     "test:sidecar-smoke": "pnpm run build:sidecar && node --test tests/sidecar-build.test.cjs",
     "test:frontend-registration": "pnpm run build && node --test tests/frontend-registration.test.cjs",
     "test:channels": "pnpm run build && node --test tests/channels.test.cjs tests/channel-limits.test.cjs",
-    "test:routes": "pnpm run build && node --test tests/routes.test.cjs tests/banner-routes.test.cjs tests/database-routes.test.cjs",
+    "test:routes": "pnpm run build && node --test tests/routes.test.cjs tests/banner-routes.test.cjs",
     "test:spawn-args": "node --test tests/spawn-args.test.cjs",
     "test:sidecar-lifecycle": "node --test tests/sidecar-lifecycle.test.cjs",
     "test:build-id": "node --test tests/build-id.test.cjs",
@@ -86,12 +86,12 @@
     "suppressions:update": "antelopejs-suppressions --update"
   },
   "dependencies": {
-    "@antelopejs/agent-skills": "^0.1.0",
-    "@antelopejs/interface-api": ">=0.3.0 <1.0.0",
-    "@antelopejs/interface-core": ">=0.4.0 <1.0.0",
-    "@antelopejs/interface-database": ">=0.3.0 <1.0.0",
-    "@antelopejs/interface-dms": ">=0.12.0 <1.0.0",
-    "@antelopejs/interface-dms-builder": ">=0.4.1 <0.5.0",
+    "@antelopejs/agent-skills": ">=0.3.0 <0.4.0",
+    "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
+    "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
+    "@antelopejs/interface-database": ">=0.4.0 <0.5.0",
+    "@antelopejs/interface-dms": ">=0.14.0 <0.15.0",
+    "@antelopejs/interface-dms-builder": ">=0.5.0 <0.6.0",
     "@anthropic-ai/claude-agent-sdk": "^0.3.316",
     "@anthropic-ai/claude-code": "^2.1.316",
     "@modelcontextprotocol/sdk": "1.29.0",
@@ -101,12 +101,12 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@antelopejs/core": "^1.21.0",
-    "@antelopejs/dms": ">=0.19.1 <1.0.0",
-    "@antelopejs/interface-api-util": ">=0.3.0 <1.0.0",
-    "@antelopejs/interface-data-api": ">=0.6.1 <1.0.0",
-    "@antelopejs/interface-database-decorators": ">=0.2.0 <1.0.0",
-    "@antelopejs/tooling-configs": "^0.5.8",
+    "@antelopejs/core": "~1.23.2",
+    "@antelopejs/dms": ">=0.20.0 <0.21.0",
+    "@antelopejs/interface-api-util": ">=0.3.2 <0.4.0",
+    "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
+    "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
+    "@antelopejs/tooling-configs": ">=0.7.1 <0.8.0",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
@@ -152,14 +152,11 @@
     }
   },
   "optionalDependencies": {
-    "@antelopejs/interface-database-catalog": ">=0.0.3 <1.0.0"
+    "@antelopejs/interface-database-catalog": ">=0.0.4 <0.1.0"
   },
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.34.9",
   "antelopeJs": {
     "baseUrl": "dist",
-    "implements": [
-      "@antelopejs/interface-dms-builder"
-    ],
     "skills": [
       "./skills"
     ],

@@ -15,8 +15,8 @@ const TEST_COMMAND = { command: "pnpm test --run" };
 const OTHER_TEST_COMMAND = { command: "pnpm test unit" };
 const LINT_COMMAND = { command: "pnpm lint" };
 const DEPENDENCY_COMMAND = { command: "pnpm add jsvat" };
-const DELETE_PAGE = "mcp__dms-ai__builder_delete_page";
-const REMOVE_BLOCK = "mcp__dms-ai__builder_remove_block";
+const DELETE_PAGE = "mcp__dms__builder_delete_page";
+const REMOVE_BLOCK = "mcp__dms__builder_remove_block";
 
 function request(
   args: Record<string, string>,
@@ -107,12 +107,9 @@ function registerAlwaysAskCases(): void {
     const t = createTestBus();
     void t.bus.requestPermission(request(DEPENDENCY_COMMAND));
     void t.bus.requestPermission(
-      request({ pageRef: "/dashboard" }, CONVERSATION_ID, DELETE_PAGE),
-    );
-    void t.bus.requestPermission(
       request({ path: "/p#a" }, CONVERSATION_ID, REMOVE_BLOCK),
     );
-    const prompts = await t.waitForPrompts(3);
+    const prompts = await t.waitForPrompts(2);
     expect(
       prompts.every((p) => p.alwaysAsk && p.ruleOptions.length === 0),
     ).toBe(true);
@@ -121,12 +118,6 @@ function registerAlwaysAskCases(): void {
       type: "command",
       effect: "adds_dependency",
       touches: ["package.json", "pnpm-lock.yaml"],
-    });
-    const deletion = prompts.find((p) => p.toolName === DELETE_PAGE);
-    expect(deletion?.kind).toBe("destructive");
-    expect(deletion?.preview).toMatchObject({
-      type: "destructive",
-      target: "/dashboard",
     });
   });
 
@@ -138,33 +129,6 @@ function registerAlwaysAskCases(): void {
     const [prompt] = await t.waitForPrompts(1);
     expect(prompt?.alwaysAsk).toBe(false);
     t.bus.cancelConversation(CONVERSATION_ID);
-  });
-
-  it("forwards keepData for a resource deletion kept as data", async () => {
-    const t = createTestBus();
-    const pending = t.bus.requestPermission(
-      request(
-        { ref: "books" },
-        CONVERSATION_ID,
-        "mcp__dms-ai__builder_delete_resource",
-      ),
-    );
-    const [prompt] = await t.waitForPrompts(1);
-    expect(prompt?.preview).toMatchObject({
-      type: "destructive",
-      consequence: "deletes_data",
-      canKeepData: true,
-      confirmText: "books",
-    });
-    t.bus.resolvePermission({
-      requestId: requestIdOf(prompt),
-      decision: PERMISSION_DECISIONS.ALLOW_ONCE,
-      keepData: true,
-    });
-    await expect(pending).resolves.toMatchObject({
-      isAllowed: true,
-      keepData: true,
-    });
   });
 }
 

@@ -1,4 +1,6 @@
+import { isDeepStrictEqual } from "node:util";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import type { ToolCallSubject } from "../../src/agent/held-calls.js";
 import type { ToolDecision } from "../../src/agent/provider.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
 import { createCodexAdapter } from "../../src/providers/codex/adapter.js";
@@ -13,6 +15,7 @@ afterAll(() => setBuilderAvailable(false));
 
 const ELICITATION_METHOD = "mcpServer/elicitation/request";
 const DMS_AI_SERVER = "dms-ai";
+const DMS_SERVER = "dms";
 const OTHER_SERVER = "other";
 const ACCEPTED = { action: "accept", content: {}, _meta: null };
 const DECLINED = { action: "decline", content: null, _meta: null };
@@ -24,7 +27,12 @@ interface StartedCall {
   arguments: Record<string, string>;
 }
 
-function setup(settings: TurnSettings, calls: StartedCall[]) {
+function setup(
+  settings: TurnSettings,
+  calls: StartedCall[],
+  beforeMutation?: () => Promise<void>,
+  isHeldCall?: (call: ToolCallSubject) => boolean,
+) {
   const adapter = createCodexAdapter();
   for (const call of calls) {
     adapter.handle({
@@ -46,6 +54,8 @@ function setup(settings: TurnSettings, calls: StartedCall[]) {
     moduleRoots: [],
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: (decision) => decisions.push(decision),
+    beforeMutation,
+    isHeldCall,
   });
   return { handler, decisions, requestPermission };
 }
@@ -91,13 +101,13 @@ const PAGE_CALL = {
 };
 const DELETE_CALL = {
   id: "call_delete",
-  server: DMS_AI_SERVER,
+  server: DMS_SERVER,
   tool: "builder_delete_page",
   arguments: { pageRef: "/about" },
 };
 const CREATE_CALL = {
   id: "call_create",
-  server: DMS_AI_SERVER,
+  server: DMS_SERVER,
   tool: "builder_create_page",
   arguments: { route: "/new" },
 };
@@ -127,11 +137,7 @@ describe("a dms-ai tool's call consent", () => {
       ).toEqual(ACCEPTED);
       expect(
         await handler.handle(
-          toolConsent(
-            DMS_AI_SERVER,
-            "builder_create_page",
-            CREATE_CALL.arguments,
-          ),
+          toolConsent(DMS_SERVER, "builder_create_page", CREATE_CALL.arguments),
         ),
       ).toEqual(ACCEPTED);
       expect(decisions).toEqual([
@@ -142,19 +148,19 @@ describe("a dms-ai tool's call consent", () => {
         },
         {
           callId: "call_create",
-          toolName: "mcp__dms-ai__builder_create_page",
+          toolName: "mcp__dms__builder_create_page",
           allowedBy: "builder_auto",
         },
       ]);
     },
   );
 
-  it("leaves a deletion to the gate in the tool instead of asking twice", async () => {
+  it("leaves a deletion to the DMS MCP's own confirmation instead of asking twice", async () => {
     const { handler, decisions, requestPermission } = setup(TURN_SETTINGS, [
       DELETE_CALL,
     ]);
     const consent = toolConsent(
-      DMS_AI_SERVER,
+      DMS_SERVER,
       "builder_delete_page",
       DELETE_CALL.arguments,
     );
@@ -163,7 +169,7 @@ describe("a dms-ai tool's call consent", () => {
     expect(decisions).toEqual([
       {
         callId: "call_delete",
-        toolName: "mcp__dms-ai__builder_delete_page",
+        toolName: "mcp__dms__builder_delete_page",
         allowedBy: "builder_auto",
       },
     ]);
@@ -175,12 +181,150 @@ describe("a dms-ai tool's call consent", () => {
       PAGE_CALL,
     ]);
     await handler.handle(
-      toolConsent(DMS_AI_SERVER, "builder_create_page", CREATE_CALL.arguments),
+      toolConsent(DMS_SERVER, "builder_create_page", CREATE_CALL.arguments),
     );
     expect(decisions.map((decision) => decision.callId)).toEqual([
       "call_create",
     ]);
   });
+});
+
+describe("a DMS MCP call the chat holds", () => {
+  const removal = {
+    id: "call_remove",
+    server: DMS_SERVER,
+    tool: "builder_remove_block",
+    arguments: { path: "/p:0" },
+  };
+
+  it("waits for the turn's checkpoint before a write, not before a read (fails a consent answered before the change set's snapshot)", async () => {
+    const order: string[] = [];
+    const beforeMutation = vi.fn(async () => {
+      order.push("checkpoint");
+    });
+    const { handler } = setup(
+      TURN_SETTINGS,
+      [PAGE_CALL, CREATE_CALL],
+      beforeMutation,
+    );
+    await handler.handle(toolConsent(DMS_AI_SERVER, "get_current_page", {}));
+    expect(beforeMutation).not.toHaveBeenCalled();
+    await handler
+      .handle(
+        toolConsent(DMS_SERVER, "builder_create_page", CREATE_CALL.arguments),
+      )
+      .then(() => order.push("accepted"));
+    expect(order).toEqual(["checkpoint", "accepted"]);
+  });
+
+  it("asks the person before a block removal while the setting is on (fails an auto-allow that skips the block-removal setting)", async () => {
+    const settings = { ...TURN_SETTINGS, alwaysAskBlockRemoval: true };
+    const { handler, requestPermission } = setup(settings, [removal]);
+    requestPermission.mockResolvedValue({
+      isAllowed: true,
+      allowedBy: "approved",
+    });
+    const consent = toolConsent(
+      DMS_SERVER,
+      "builder_remove_block",
+      removal.arguments,
+    );
+    expect(await handler.handle(consent)).toEqual(ACCEPTED);
+    expect(requestPermission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolName: "mcp__dms__builder_remove_block",
+        args: removal.arguments,
+        callId: "call_remove",
+      }),
+    );
+  });
+
+  it("accepts builder_add_block on the DMS MCP and declines a name it does not list (fails an allowlist that trusts every mcp__dms__ tool)", async () => {
+    const addBlock = {
+      id: "call_add",
+      server: DMS_SERVER,
+      tool: "builder_add_block",
+      arguments: { pageRef: "/about" },
+    };
+    const unlisted = {
+      id: "call_unlisted",
+      server: DMS_SERVER,
+      tool: "drop_everything",
+      arguments: {},
+    };
+    const { handler, decisions } = setup(TURN_SETTINGS, [addBlock, unlisted]);
+    expect(
+      await handler.handle(
+        toolConsent(DMS_SERVER, "builder_add_block", addBlock.arguments),
+      ),
+    ).toEqual(ACCEPTED);
+    expect(
+      await handler.handle(toolConsent(DMS_SERVER, "drop_everything", {})),
+    ).toEqual(DECLINED);
+    expect(decisions).toEqual([
+      {
+        callId: "call_add",
+        toolName: "mcp__dms__builder_add_block",
+        allowedBy: "builder_auto",
+      },
+      {
+        callId: "call_unlisted",
+        toolName: "mcp__dms__drop_everything",
+        allowedBy: "blocked",
+      },
+    ]);
+  });
+
+  it("runs a block removal unasked once the setting is off", async () => {
+    const settings = { ...TURN_SETTINGS, alwaysAskBlockRemoval: false };
+    const { handler, requestPermission } = setup(settings, [removal]);
+    const consent = toolConsent(
+      DMS_SERVER,
+      "builder_remove_block",
+      removal.arguments,
+    );
+    expect(await handler.handle(consent)).toEqual(ACCEPTED);
+    expect(requestPermission).not.toHaveBeenCalled();
+  });
+});
+
+describe("the repeat of a call the DMS holds", () => {
+  const isHeldCall = (call: ToolCallSubject) =>
+    call.toolName === "mcp__dms__builder_delete_page" &&
+    isDeepStrictEqual(call.args, DELETE_CALL.arguments);
+
+  it.each([
+    [true, ACCEPTED],
+    [false, DECLINED],
+  ])(
+    "asks the person once, then answers allowed=%s (fails an auto-allow that lets the DMS run the repeat unasked)",
+    async (isAllowed, answer) => {
+      const { handler, requestPermission } = setup(
+        TURN_SETTINGS,
+        [DELETE_CALL],
+        undefined,
+        isHeldCall,
+      );
+      requestPermission.mockResolvedValue({
+        isAllowed,
+        allowedBy: isAllowed ? "approved" : "denied",
+      });
+      const consent = toolConsent(
+        DMS_SERVER,
+        "builder_delete_page",
+        DELETE_CALL.arguments,
+      );
+      expect(await handler.handle(consent)).toEqual(answer);
+      expect(requestPermission).toHaveBeenCalledTimes(1);
+      expect(requestPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          toolName: "mcp__dms__builder_delete_page",
+          args: DELETE_CALL.arguments,
+          callId: "call_delete",
+        }),
+      );
+    },
+  );
 });
 
 describe("an elicitation the sidecar declines", () => {

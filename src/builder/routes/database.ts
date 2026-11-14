@@ -15,9 +15,17 @@ import type {
   ProjectConfigOpts,
   ProjectConfigStep,
 } from "@antelopejs/interface-dms-builder";
+import { type QueryValue, queryText } from "../../routes/query-text";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
 import { type ConnectionCheckBody, runConnectionCheck } from "./database-check";
-import * as engine from "../implementations/dms-builder";
+import {
+  analysisState,
+  latestAnalysis,
+  startAnalysis,
+} from "../implementations/dms-builder/engine/analysis-job";
+import { mapResources } from "../implementations/dms-builder/engine/map-resources";
+import { mappedChoices } from "../implementations/dms-builder/engine/mapped-choices";
+import { configureProject } from "../implementations/dms-builder/engine/project-config-ops";
 import {
   catalogOf,
   listCatalogConnections,
@@ -37,7 +45,6 @@ import {
 } from "../implementations/dms-builder/engine/database-connection";
 import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
 import { repairDatabaseConnections } from "../implementations/dms-builder/engine/database-repair";
-import { latestAnalysis } from "../implementations/dms-builder/engine/analysis-job";
 import {
   configureProjectWithVariables,
   type ProjectVariable,
@@ -152,20 +159,21 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: AnalyseDatabaseInput,
   ) {
-    return engine.AnalyseDatabase(body);
+    return startAnalysis(body);
   }
 
   /** One analysis by `id`, or the latest of a `connection`: the running one, or else the last to finish. */
   @Get(ROUTES.databaseAnalysis)
   async analysis(
     @AuthTenantOwner() _user: User,
-    @Parameter("id", "query") id: string | undefined,
-    @Parameter("connection", "query") connection: string | undefined,
+    @Parameter("id", "query") id: QueryValue,
+    @Parameter("connection", "query") connection: QueryValue,
   ) {
-    if (id) {
-      return engine.GetAnalysis(id);
+    const analysisId = queryText(id);
+    if (analysisId) {
+      return analysisState(analysisId);
     }
-    const latest = latestAnalysis(connection ?? "");
+    const latest = latestAnalysis(queryText(connection) ?? "");
     if (!latest.ok) {
       return new HTTPResult(HTTP_NOT_FOUND, latest.error);
     }
@@ -177,16 +185,16 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: MapResourcesInput,
   ) {
-    return engine.MapResources(body);
+    return mapResources(body);
   }
 
   @Get(ROUTES.databaseMapping)
   async mapping(
     @AuthTenantOwner() _user: User,
-    @Parameter("connection", "query") connection: string,
-    @Parameter("module", "query") module: string,
+    @Parameter("connection", "query") connection: QueryValue,
+    @Parameter("module", "query") module: QueryValue,
   ) {
-    return engine.GetMapping(connection, module);
+    return mappedChoices(queryText(connection) ?? "", queryText(module) ?? "");
   }
 
   @Get(ROUTES.databaseProject)
@@ -213,7 +221,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Post(ROUTES.databaseProject)
   async project(@AuthTenantOwner() _user: User, @JSONBody() body: ProjectBody) {
     if (!body.variables?.length || body.opts?.dryRun) {
-      return engine.ConfigureProject(body.steps, body.opts);
+      return configureProject(body.steps, body.opts);
     }
     return configureProjectWithVariables(body.steps, body.variables);
   }
@@ -221,10 +229,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Get(ROUTES.databaseConnection)
   async connection(
     @AuthTenantOwner() _user: User,
-    @Parameter("connection", "query") connection: string,
+    @Parameter("connection", "query") connection: QueryValue,
   ) {
     try {
-      const wiring = connectionWiring(connection);
+      const wiring = connectionWiring(queryText(connection) ?? "");
       if (!wiring) {
         return new HTTPResult(HTTP_NOT_FOUND, {
           code: "not_found",

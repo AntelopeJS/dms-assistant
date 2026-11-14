@@ -25,7 +25,8 @@ export type ToolRowState =
 	| "denied"
 	| "blocked"
 	| "failed"
-	| "stopped";
+	| "stopped"
+	| "held";
 
 /**
  * A file attached to a user message. `dataUrl` is only present for messages

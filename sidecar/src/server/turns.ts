@@ -226,6 +226,7 @@ function buildRunnerContext(
     beforeMutation: async () => {
       await services.turns.get(conversationId)?.checkpoint.ready();
     },
+    isHeldCall: (call) => services.heldCalls.isHeld(conversationId, call),
     onTokenUsage: (usage) => addTurnUsage(services, conversationId, usage),
     onModelUsed: (model) =>
       services.conversationStore.markModel(conversationId, model),
@@ -317,15 +318,16 @@ export function sendChangeSet(
 }
 
 /**
- * Builder operations typecheck before they write anything, so a turn that
- * changed the project through them alone passed a typecheck.
+ * The typecheck a turn's change set starts with. Builder operations typecheck
+ * before they write anything, so a turn that changed the project through them
+ * alone passed. Any other turn is `skipped` until the safety net typechecks
+ * the roots it edited: the agent's own typecheck call may have checked another
+ * root.
  */
 export function turnTypecheck(turn: ActiveTurn): ChangeSetRecord["typecheck"] {
   const isBuilderOnly =
     turn.builderOps > 0 && turn.builderOps >= turn.mutatingCallIds.length;
-  return turn.typecheck === "skipped" && isBuilderOnly
-    ? "passed"
-    : turn.typecheck;
+  return isBuilderOnly ? "passed" : "skipped";
 }
 
 async function recordChangeSet(

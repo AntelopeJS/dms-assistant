@@ -179,3 +179,59 @@ describe("permission previews and rules", () => {
 
   registerRuleMatchCases(() => root);
 });
+
+describe("a deletion's approval card", () => {
+  const describeDeletion = (
+    toolName: string,
+    args: Parameters<typeof describeRequest>[0]["args"],
+  ) =>
+    describeRequest({
+      toolName,
+      args,
+      hostProjectRoot: "/srv/app",
+      alwaysAskDependencies: true,
+      alwaysAskBlockRemoval: true,
+    });
+
+  it("describes a deletion from the call's own arguments, a table's rows going unless the call keeps them (fails a card blind to keepData)", async () => {
+    const DELETE_TABLE = "mcp__dms__builder_delete_resource";
+    const previews = await Promise.all([
+      describeDeletion(DELETE_TABLE, { ref: "orders" }),
+      describeDeletion(DELETE_TABLE, { ref: "orders", keepData: true }),
+      describeDeletion("mcp__dms__builder_delete_page", { pageRef: "/about" }),
+    ]);
+    expect(previews.map((d) => [d.kind, d.ruleOptions, d.preview])).toEqual([
+      [
+        "destructive",
+        [],
+        {
+          type: "destructive",
+          operation: "builder_delete_resource",
+          target: "orders",
+          consequence: "deletes_data",
+          confirmText: "orders",
+        },
+      ],
+      [
+        "destructive",
+        [],
+        {
+          type: "destructive",
+          operation: "builder_delete_resource",
+          target: "orders",
+          consequence: "removes_code",
+        },
+      ],
+      [
+        "destructive",
+        [],
+        {
+          type: "destructive",
+          operation: "builder_delete_page",
+          target: "/about",
+          consequence: "removes_code",
+        },
+      ],
+    ]);
+  });
+});

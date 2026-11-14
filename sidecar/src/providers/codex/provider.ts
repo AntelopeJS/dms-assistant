@@ -294,10 +294,6 @@ function trackTurnId(
   backendRef.current.turnId = params.data.turn.id;
 }
 
-/**
- * MCP calls are announced as they start, so a gated Builder handler can name
- * the call it belongs to (see CallLedger).
- */
 function announceToolCall(ctx: ProviderSessionContext, event: RunnerEvent) {
   if (event.type !== "tool_use") return;
   if (!event.toolName.startsWith(MCP_TOOL_NAME_PREFIX)) return;
@@ -449,6 +445,7 @@ async function createProviderSession(
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: ctx.onToolDecision,
     beforeMutation: ctx.beforeMutation,
+    isHeldCall: ctx.isHeldCall,
   });
 
   const { codexProcess, threadId, isSafeModeSkillIndexed } =

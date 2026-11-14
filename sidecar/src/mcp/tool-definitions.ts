@@ -1,27 +1,19 @@
 import type { AnyMcpToolDefinition } from "./define-tool.js";
 import { buildAskUserTool } from "./tools/ask-user.js";
-import { buildBuilderTools } from "./tools/builder.js";
-import { buildDatabaseTools } from "./tools/database.js";
 import { buildFindPagesUsingTool } from "./tools/find-pages-using.js";
 import { buildGetCurrentPageTool } from "./tools/get-current-page.js";
-import { buildListPagesTool } from "./tools/list-pages.js";
 import { buildNavigateToPageTool } from "./tools/navigate-to-page.js";
 import { buildPreviewBlocksTool } from "./tools/preview-blocks.js";
-import { buildQueryLogsTool } from "./tools/query-logs.js";
-import { buildTypecheckTool } from "./tools/typecheck.js";
 import type { AiMcpServerDeps } from "./types.js";
 
+/**
+ * The tools of the chat's own `dms-ai` MCP server. Every other MCP tool the
+ * agent sees comes from the DMS MCP server.
+ */
 export function buildToolDefinitions(
   deps: AiMcpServerDeps,
 ): AnyMcpToolDefinition[] {
-  const builderTools = deps.builderEnabled
-    ? buildBuilderTools({
-        builderClient: deps.builderClient,
-        gate: deps.gateBuilderOp,
-      })
-    : [];
   return [
-    ...builderTools,
     buildGetCurrentPageTool(deps.getCurrentPage),
     buildFindPagesUsingTool({
       registry: deps.registry,
@@ -29,7 +21,6 @@ export function buildToolDefinitions(
       hostProjectRoot: deps.hostProjectRoot,
       getCurrentPage: deps.getCurrentPage,
     }),
-    buildListPagesTool({ registry: deps.registry }),
     buildNavigateToPageTool({
       sendToHost: deps.sendToHost,
       navigationCompleter: deps.navigationCompleter,
@@ -44,12 +35,5 @@ export function buildToolDefinitions(
       showPreview: deps.showPreview,
       listAttachedImages: deps.listAttachedImages,
     }),
-    buildTypecheckTool({
-      hostProjectRoot: deps.hostProjectRoot,
-      moduleRoots: deps.moduleRoots,
-      getLastEditedFile: deps.getLastEditedFile,
-    }),
-    buildQueryLogsTool({ logsClient: deps.logsClient }),
-    ...buildDatabaseTools({ databaseClient: deps.databaseClient }),
   ];
 }

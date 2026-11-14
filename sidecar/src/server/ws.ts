@@ -3,6 +3,7 @@ import type { Duplex } from "node:stream";
 import { type WebSocket, WebSocketServer } from "ws";
 import { createCallAudit } from "../audit/call-audit.js";
 import { createCallLedger } from "../agent/call-ledger.js";
+import { createHeldCalls } from "../agent/held-calls.js";
 import { createConversationModes } from "../agent/conversation-modes.js";
 import { createEditTracker, type EditTracker } from "../agent/edit-tracker.js";
 import {
@@ -32,10 +33,7 @@ import {
 } from "../checkpoints/checkpoints.js";
 import { createShadowGit } from "../checkpoints/shadow-git.js";
 import { WS_MAX_PAYLOAD_BYTES } from "../constants/attachments.js";
-import {
-  ASK_USER_TOOL_NAME,
-  PROJECT_CONVERSATION_ID,
-} from "../constants/mcp.js";
+import { ASK_USER_TOOL_NAME } from "../constants/mcp.js";
 import { DEFAULT_SETTINGS } from "../constants/settings.js";
 import {
   WS_CLIENT_CLOSE_GRACE_MS,
@@ -43,7 +41,6 @@ import {
   WS_LOG_PREFIX,
   WS_PATH,
 } from "../constants/ws.js";
-import { createProjectMcpEndpoint } from "../mcp/project-endpoint.js";
 import { createAiMcpServer } from "../mcp/sdk-binding.js";
 import type {
   AiMcpServer,
@@ -55,6 +52,7 @@ import type {
   ProviderHostRuntime,
   ProviderRuntime,
 } from "../providers/types.js";
+import type { LogsClient } from "../logs/logs-client.js";
 import type { SkillSource } from "../skills/types.js";
 import { createChangeSetStore } from "../state/change-sets.js";
 import type { ConversationStore } from "../state/conversations.js";
@@ -84,7 +82,6 @@ import { createLiveTurnStore } from "./live-turns.js";
 import type { NavigationCompleter } from "./navigation-completer.js";
 import { createPendingQueueStore } from "./pending-queue.js";
 import {
-  buildBuilderGate,
   interruptConversation,
   onPermissionDecided,
   onPermissionPrompt,
@@ -111,6 +108,7 @@ export interface AttachWsServerOptions {
   conversationStore: ConversationStore;
   settingsStore?: SettingsStore;
   mcpDeps: AiMcpServerStaticDeps;
+  logsClient: LogsClient;
   /**
    * What the sidecar's own runtime offers every provider. Neutral: the backends
    * are reached through the registry, never by name from here.
@@ -229,14 +227,10 @@ function buildMcpDepsFactory(
     conversationId,
     sendToHost: hostCommandsOf(conversationId),
     requestQuestion: (req) => askUser(services(holder), req),
-    getLastEditedFile: () =>
-      services(holder).editTracker.getLastEditedFile(conversationId),
     showPreview: (preview) =>
       emitBlockPreview(services(holder), conversationId, preview),
     listAttachedImages: () =>
       listAttachedImages(services(holder), conversationId),
-    gateBuilderOp: (toolName, args) =>
-      buildBuilderGate(services(holder), conversationId)(toolName, args),
   });
 }
 
@@ -339,6 +333,10 @@ function buildPermissionBus(
       onRulesChanged(services(holder), conversationId),
     onDenyAll: (conversationId) =>
       interruptConversation(services(holder), conversationId),
+    heldCalls: {
+      holdOf: (conversationId, call) =>
+        services(holder).heldCalls.holdOf(conversationId, call),
+    },
   });
 }
 
@@ -394,7 +392,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     createMcpServer: buildMcpServerFactory(createMcpDeps),
     questionBus: buildQuestionBus(holder),
     editTracker: parts.editTracker,
-    logsClient: options.mcpDeps.logsClient,
+    logsClient: options.logsClient,
     moduleRoots: options.moduleRoots ?? [],
     hostState: options.hostState,
     hostSocketRegistry: options.hostSocketRegistry,
@@ -402,11 +400,6 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     permissionBus: buildPermissionBus(options, holder),
     navigationCompleter: options.navigationCompleter,
     idleController,
-    projectMcp: createProjectMcpEndpoint({
-      mcpDeps: options.mcpDeps,
-      sendToHost: hostCommandsOf(PROJECT_CONVERSATION_ID),
-      idleController,
-    }),
     runner: buildRunner(options, settingsStore.get(), createMcpDeps, holder),
     liveTurns: createLiveTurnStore(),
     pendingQueue: createPendingQueueStore(),
@@ -418,6 +411,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     checkpoints: options.checkpoints ?? createDisabledCheckpoints(),
     callAudit: createCallAudit(),
     callLedger: createCallLedger(),
+    heldCalls: createHeldCalls(),
     turns: createTurnRegistry(),
     askers: new Map(),
     viewers: new WeakMap(),
@@ -445,7 +439,6 @@ export function attachWsServer(
   holder.current = config;
   if (options.bridge !== undefined) {
     options.bridge.services = config;
-    options.bridge.projectMcp = config.projectMcp;
   }
   if (options.settingsApplier) {
     options.settingsApplier.apply = (next) => applySettings(config, next);

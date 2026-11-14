@@ -109,7 +109,8 @@
 					"denied": "denied",
 					"blocked": "blocked · safe mode",
 					"failed": "failed",
-					"stopped": "stopped"
+					"stopped": "stopped",
+					"held": "held until you confirm"
 				}
 			},
 			"change": {
@@ -219,15 +220,16 @@
 				"deny": "Deny",
 				"review": "Review",
 				"confirm_delete": "Delete",
-				"remove_code_only": "Remove the code only",
 				"data_loss": "Data loss",
 				"why_deletes_data": "Removes the code and clears its stored data. Undo restores the code, not the data.",
 				"why_removes_code": "Removes it from the project. Undo restores it from the change set.",
 				"why_builder": "Builder change, reversible from the change set. Asked because removals are never silent.",
+				"why_held": "The DMS holds this call until you confirm it.",
+				"why_held_configure": "Changes the project's configuration.",
+				"why_held_map": "Maps the tables and removes the pages {pages}.",
+				"why_held_tool": "Asked because another call to this tool is waiting for your confirmation.",
 				"type_to_confirm_before": "Type",
 				"type_to_confirm_after": "to confirm",
-				"keep_data": "Keep the data, remove only the code",
-				"recommended": "recommended",
 				"suggest": "Suggest a change",
 				"suggest_placeholder": "Tell the assistant what to do instead",
 				"send_suggestion": "Deny and send",

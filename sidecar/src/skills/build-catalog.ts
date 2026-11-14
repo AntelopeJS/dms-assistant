@@ -17,9 +17,10 @@ export interface SkillCatalogItem {
 export interface SkillCatalog {
   items: SkillCatalogItem[];
   /**
-   * Names contributed by more than one module. Claude namespaces skills per
-   * plugin, so a collision is harmless there; Codex keys them by bare name and
-   * keeps only one, so the loser silently disappears from the agent's index.
+   * Names contributed by more than one module. Both providers load the first
+   * source's copy only (see `firstOfEachName` and the Codex path's
+   * `selectSkillsToDisable`), so the later copies silently disappear from the
+   * agent's index.
    */
   duplicateNames: string[];
 }
@@ -71,6 +72,18 @@ export function findDuplicateSkillNames(
     seen.add(item.name);
   }
   return [...duplicated];
+}
+
+/** The first item of each name, in source order: the copy the agent loads when sources share a name. */
+export function firstOfEachName(
+  items: readonly SkillCatalogItem[],
+): SkillCatalogItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.name)) return false;
+    seen.add(item.name);
+    return true;
+  });
 }
 
 function sameSkillKey(item: SkillCatalogItem): string {

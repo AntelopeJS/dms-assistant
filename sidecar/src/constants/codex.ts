@@ -6,9 +6,9 @@ import { MCP_SERVER_KEY } from "./mcp.js";
  * at 2% of the context, so this one has to survive the cut or safe mode loses
  * the workflow it tells the agent to follow.
  */
-export const SAFE_MODE_SKILL_NAME = "dms-builder-safe";
+export const SAFE_MODE_SKILL_NAME = "dms-builder-mcp";
 export const SAFE_MODE_SKILL_MISSING_WARNING = `the ${SAFE_MODE_SKILL_NAME} skill is missing from the Codex skill index; safe-mode turns will fail on this session`;
-export const SAFE_MODE_SKILL_MISSING_MESSAGE = `[dms-ai] safe mode needs the ${SAFE_MODE_SKILL_NAME} skill, which is missing from the Codex skill index. Switch to Code mode, or check that dms-assistant ships its skills.`;
+export const SAFE_MODE_SKILL_MISSING_MESSAGE = `[dms-ai] safe mode needs the ${SAFE_MODE_SKILL_NAME} skill, which is missing from the Codex skill index. Switch to Code mode, or check that @antelopejs/agent-skills is installed with dms-assistant.`;
 
 /**
  * Scopes Codex populates on its own. A fresh CODEX_HOME already carries six

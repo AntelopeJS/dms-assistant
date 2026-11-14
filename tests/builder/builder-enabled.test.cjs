@@ -78,10 +78,6 @@ void test("re-decides when the module is reconfigured", async () => {
 });
 
 /**
- * The builder entry over the real `config.js`: what a deployment sees is that
- * the controller is never loaded. The routes entry is a getter, so the list
- * records the import rather than the mock's creation.
- *
  * @param {boolean} dev
  */
 function bootModule(dev) {
@@ -97,9 +93,9 @@ function bootModule(dev) {
   const loadedRoutes = [];
   const mocks = {
     ...runtimeMock,
-    "@antelopejs/interface-core": { ImplementInterface: () => undefined },
-    "@antelopejs/interface-dms-builder": {},
-    "./implementations/dms-builder": {},
+    "./implementations/dms-builder/engine/query-template-emit": {
+      registerBuiltinQueryTemplates: () => loadedRoutes.push("templates"),
+    },
     "./config": loadModule(distFile("config.js"), runtimeMock, exposesConfig),
   };
   Object.defineProperty(mocks, "./routes", {
@@ -119,14 +115,14 @@ void test("mounts no routes when the project does not run in development", async
   assert.deepEqual(booted.loadedRoutes, []);
 });
 
-void test("mounts the routes in development", async () => {
+void test("mounts the routes in development, once the query templates are registered (fails routes that map with an empty template registry)", async () => {
   const booted = bootModule(true);
   await booted.index.construct();
-  assert.deepEqual(booted.loadedRoutes, ["./routes"]);
+  assert.deepEqual(booted.loadedRoutes, ["templates", "./routes"]);
 });
 
 void test("mounts the routes when an override enables the builder outside development", async () => {
   const booted = bootModule(false);
   await booted.index.construct({ api: { enabled: true } });
-  assert.deepEqual(booted.loadedRoutes, ["./routes"]);
+  assert.deepEqual(booted.loadedRoutes, ["templates", "./routes"]);
 });

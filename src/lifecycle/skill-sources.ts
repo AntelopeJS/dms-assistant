@@ -3,6 +3,7 @@ import {
   collectSkillPackages,
   type ModuleRef,
   type SkillPackage,
+  workflowSkillsDir,
 } from "@antelopejs/agent-skills";
 import { Logging } from "@antelopejs/interface-core/logging";
 import { GetModuleInfo, ListModules } from "@antelopejs/interface-core/modules";
@@ -21,6 +22,11 @@ const LocalPathSchema = z.string().min(1);
 type SkillSourceKey = (source: SkillSource) => string;
 
 const FALLBACK_PLUGIN_NAME = "skills";
+
+const WORKFLOW_SKILLS: SkillSource = {
+  module: "antelopejs",
+  dir: workflowSkillsDir,
+};
 
 function sanitizePluginName(name: string): string {
   const cleaned = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
@@ -111,7 +117,10 @@ async function gather(projectRoot: string): Promise<SkillSource[]> {
     project: projectRoot,
     onWarning: (message) => Logging.Warn(`${SIDECAR_LOG_PREFIX} ${message}`),
   });
-  const byDir = dedupeBy(toSkillSources(skillPackages), (source) => source.dir);
+  const byDir = dedupeBy(
+    [WORKFLOW_SKILLS, ...toSkillSources(skillPackages)],
+    (source) => source.dir,
+  );
   return dedupeBy(
     byDir,
     (source) => source.module,

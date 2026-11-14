@@ -202,6 +202,7 @@ export async function startWsHarness(
       navigationCompleter,
       HOST_ROOT,
     ),
+    logsClient: { getLogs: async () => [] },
     providerRuntime: buildProviderRuntime(
       join(tmpDir, ".state"),
       mcpHttpRegistry,

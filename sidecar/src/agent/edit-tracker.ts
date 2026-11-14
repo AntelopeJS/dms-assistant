@@ -14,7 +14,6 @@ export function extractEditedFilePath(args: ToolArgs): string | undefined {
 export interface EditTracker {
   record(conversationId: string, filePath: string): void;
   getEditedFiles(conversationId: string): string[];
-  getLastEditedFile(conversationId: string): string | undefined;
   clear(conversationId: string): void;
 }
 
@@ -29,11 +28,6 @@ export function createEditTracker(): EditTracker {
     getEditedFiles: (conversationId) => [
       ...(byConversation.get(conversationId) ?? []),
     ],
-    getLastEditedFile: (conversationId) => {
-      const list = byConversation.get(conversationId);
-      if (list === undefined || list.length === 0) return undefined;
-      return list[list.length - 1];
-    },
     clear: (conversationId) => {
       byConversation.delete(conversationId);
     },

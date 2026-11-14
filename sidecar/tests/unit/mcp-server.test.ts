@@ -3,7 +3,6 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { describe, expect, it } from "vitest";
 import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
-import { QUERY_LOGS_TOOL_NAME } from "../../src/constants/logs.js";
 import {
   ASK_USER_TOOL_NAME,
   GET_CURRENT_PAGE_TOOL_NAME,
@@ -12,13 +11,8 @@ import {
   MCP_SERVER_VERSION,
   NAVIGATE_TOOL_NAME,
 } from "../../src/constants/mcp.js";
-import {
-  FIND_PAGES_TOOL_NAME,
-  LIST_PAGES_TOOL_NAME,
-} from "../../src/constants/pages.js";
+import { FIND_PAGES_TOOL_NAME } from "../../src/constants/pages.js";
 import { PREVIEW_BLOCKS_TOOL_NAME } from "../../src/constants/preview.js";
-import { TYPECHECK_TOOL_NAME } from "../../src/constants/typecheck.js";
-import type { LogsClient } from "../../src/logs/logs-client.js";
 import { createAiMcpServer } from "../../src/mcp/sdk-binding.js";
 import type { ImportsScanner } from "../../src/pages/imports-scanner.js";
 import type { RegistryClient } from "../../src/pages/registry-client.js";
@@ -39,26 +33,16 @@ function buildStubScanner(): ImportsScanner {
   };
 }
 
-function buildStubLogsClient(): LogsClient {
-  return { getLogs: async () => [] };
-}
-
 function buildDeps() {
   return {
     getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
     registry: buildStubRegistry(),
     scanner: buildStubScanner(),
     hostProjectRoot: "/tmp/host",
-    moduleRoots: [],
-    logsClient: buildStubLogsClient(),
-    builderClient: { call: async () => null },
-    databaseClient: { get: async () => [], post: async () => ({}) },
-    builderEnabled: false,
     sendToHost: () => {},
     navigationCompleter: createNavigationCompleter(),
     conversationId: "conv-test",
     requestQuestion: async () => null,
-    getLastEditedFile: () => undefined,
     showPreview: () => {},
     listAttachedImages: () => [],
   };
@@ -90,12 +74,6 @@ describe("createAiMcpServer", () => {
     expect(listed).toContain(NAVIGATE_TOOL_NAME);
   });
 
-  it("registers the list_pages tool", async () => {
-    const server = createAiMcpServer(buildDeps());
-    const listed = await listRegisteredTools(server);
-    expect(listed).toContain(LIST_PAGES_TOOL_NAME);
-  });
-
   it("registers the ask_user tool", async () => {
     const server = createAiMcpServer(buildDeps());
     const listed = await listRegisteredTools(server);
@@ -108,16 +86,15 @@ describe("createAiMcpServer", () => {
     expect(listed).toContain(PREVIEW_BLOCKS_TOOL_NAME);
   });
 
-  it("registers the typecheck tool", async () => {
-    const server = createAiMcpServer(buildDeps());
-    const listed = await listRegisteredTools(server);
-    expect(listed).toContain(TYPECHECK_TOOL_NAME);
-  });
-
-  it("registers the query_logs tool", async () => {
-    const server = createAiMcpServer(buildDeps());
-    const listed = await listRegisteredTools(server);
-    expect(listed).toContain(QUERY_LOGS_TOOL_NAME);
+  it("serves only the chat's own tools (fails a server that still lists a tool the DMS MCP serves)", async () => {
+    const listed = await listRegisteredTools(createAiMcpServer(buildDeps()));
+    expect([...listed].sort()).toEqual([
+      "ask_user",
+      "find_pages_using",
+      "get_current_page",
+      "navigate_to_page",
+      "preview_blocks",
+    ]);
   });
 
   it("uses the configured server version metadata", async () => {

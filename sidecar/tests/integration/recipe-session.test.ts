@@ -38,7 +38,7 @@ const CONVERSATION_B = "conv-recipe-b";
 const WAIT_TIMEOUT_MS = 20_000;
 const TEST_TIMEOUT_MS = 40_000;
 const ANSWER = "Yes";
-const SKILL_NAME = "dms-builder-safe";
+const SKILL_NAME = "dms-builder-mcp";
 
 /**
  * Claude is handed an allowlist naming the skill; Codex an extra root naming

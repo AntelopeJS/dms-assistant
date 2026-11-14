@@ -57,20 +57,65 @@ export const DELETE_REQUEST = {
 	...DIFF_REQUEST,
 	requestId: "r3",
 	callId: "c3",
-	toolName: "mcp__dms-ai__builder_delete_resource",
-	args: { ref: "legacy_coupons" },
+	toolName: "mcp__dms__builder_delete_resource",
+	args: { ref: "legacy_coupons", keepData: false },
 	summary: "Delete the table legacy_coupons",
 	kind: "destructive",
-	alwaysAsk: true,
+	alwaysAsk: false,
 	preview: {
 		type: "destructive",
-		operation: "resource · API routes",
+		operation: "builder_delete_resource",
 		target: "legacy_coupons",
 		consequence: "deletes_data",
 		confirmText: "legacy_coupons",
-		canKeepData: true,
 	},
 	ruleOptions: [],
+};
+
+export const CONFIGURE_DIFF = `--- a/antelope.config.ts\n+++ b/antelope.config.ts\n${"+    shop: {},\n".repeat(30)}`;
+
+const CONFIGURE_STEPS = [
+	{ action: "AddModule", module: "shop", version: "1.0.0" },
+];
+
+export const CONFIGURE_REQUEST = {
+	...DIFF_REQUEST,
+	requestId: "r4",
+	callId: "c4",
+	toolName: "mcp__dms__builder_configure_project",
+	args: { steps: CONFIGURE_STEPS },
+	summary: "Configure project",
+	kind: "builder",
+	preview: {
+		type: "held",
+		operation: "builder_configure_project",
+		details: {
+			plannedChanges: [
+				{ path: "antelope.config.ts", kind: "modify", diff: CONFIGURE_DIFF },
+			],
+			steps: CONFIGURE_STEPS,
+		},
+	},
+	ruleOptions: [],
+};
+
+export const MAP_REQUEST = {
+	...CONFIGURE_REQUEST,
+	requestId: "r5",
+	callId: "c5",
+	toolName: "mcp__dms__builder_map_resources",
+	args: { module: "shop", connection: "pg-main", resources: [] },
+	summary: "Map database tables",
+	preview: {
+		type: "held",
+		operation: "builder_map_resources",
+		details: {
+			connection: "pg-main",
+			module: "shop",
+			pagesToRemove: ["orders", "customers"],
+			resources: [],
+		},
+	},
 };
 
 export const CHANGE_SET = {

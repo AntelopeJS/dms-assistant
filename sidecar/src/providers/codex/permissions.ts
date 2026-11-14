@@ -1,10 +1,15 @@
 import { z } from "zod";
+import type { ToolCallSubject } from "../../agent/held-calls.js";
 import type { PermissionBus } from "../../agent/permission-bus.js";
 import {
   CODEX_CHANGE_DIFF_ARG,
   CODEX_CHANGE_KIND_ARG,
 } from "../../agent/permission-preview.js";
 import type { ToolDecision } from "../../agent/provider.js";
+import {
+  asksBeforeBlockRemoval,
+  isMutatingTool,
+} from "../../agent/tool-kinds.js";
 import {
   CODEX_APPROVAL_DECISIONS,
   CODEX_COMMAND_APPROVAL_METHOD,
@@ -60,6 +65,7 @@ export interface CodexPermissionDeps {
   onToolDecision?: (decision: ToolDecision) => void;
   /** Awaited before an approved change runs (the turn's checkpoint). */
   beforeMutation?: () => Promise<void>;
+  isHeldCall?: (call: ToolCallSubject) => boolean;
 }
 
 export interface CodexPermissionHandler {
@@ -99,20 +105,69 @@ function decline(): CodexApprovalDecisionResponse {
   return { decision: CODEX_APPROVAL_DECISIONS.DECLINE };
 }
 
-/**
- * Answers an MCP elicitation, in every mode and scope: Safe and plan modes let
- * dms-ai's own tools run, as on the Claude path.
- */
-function answerElicitation(
+const ACCEPTED_ELICITATION: CodexElicitationResponse = {
+  action: "accept",
+  content: {},
+  _meta: null,
+};
+
+const DECLINED_ELICITATION: CodexElicitationResponse = {
+  action: "decline",
+  content: null,
+  _meta: null,
+};
+
+function pendingMcpCall(
+  deps: CodexPermissionDeps,
+  callId: string | undefined,
+): CodexMcpCall | undefined {
+  return deps.getPendingMcpCalls().find((pending) => pending.id === callId);
+}
+
+function asksPerson(
+  deps: CodexPermissionDeps,
+  decision: ToolDecision,
+): boolean {
+  if (asksBeforeBlockRemoval(decision.toolName, deps.getSettings())) {
+    return true;
+  }
+  const call = pendingMcpCall(deps, decision.callId);
+  if (call === undefined) return false;
+  const subject = { toolName: decision.toolName, args: call.arguments };
+  return deps.isHeldCall?.(subject) === true;
+}
+
+async function askBeforeMcpCall(
+  deps: CodexPermissionDeps,
+  decision: ToolDecision,
+): Promise<CodexElicitationResponse> {
+  if (deps.permissionBus === undefined) return DECLINED_ELICITATION;
+  const call = pendingMcpCall(deps, decision.callId);
+  const outcome = await deps.permissionBus.requestPermission({
+    conversationId: deps.conversationId,
+    toolName: decision.toolName,
+    args: call?.arguments,
+    callId: decision.callId,
+  });
+  if (!outcome.isAllowed) return DECLINED_ELICITATION;
+  await deps.beforeMutation?.();
+  return ACCEPTED_ELICITATION;
+}
+
+async function answerElicitation(
   deps: CodexPermissionDeps,
   verdict: ElicitationVerdict,
-): CodexElicitationResponse {
-  if (verdict.decision !== undefined) deps.onToolDecision?.(verdict.decision);
-  if (verdict.action === "accept") {
-    return { action: "accept", content: {}, _meta: null };
+): Promise<CodexElicitationResponse> {
+  if (verdict.action === "decline") {
+    if (verdict.decision !== undefined) deps.onToolDecision?.(verdict.decision);
+    console.warn(`${CODEX_LOG_PREFIX} ${verdict.reason}`);
+    return DECLINED_ELICITATION;
   }
-  console.warn(`${CODEX_LOG_PREFIX} ${verdict.reason}`);
-  return { action: "decline", content: null, _meta: null };
+  const { decision } = verdict;
+  if (asksPerson(deps, decision)) return askBeforeMcpCall(deps, decision);
+  deps.onToolDecision?.(decision);
+  if (isMutatingTool(decision.toolName)) await deps.beforeMutation?.();
+  return ACCEPTED_ELICITATION;
 }
 
 /**

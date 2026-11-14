@@ -109,7 +109,8 @@
 					"denied": "refusé",
 					"blocked": "bloqué · mode sûr",
 					"failed": "échec",
-					"stopped": "arrêté"
+					"stopped": "arrêté",
+					"held": "retenu jusqu'à votre accord"
 				}
 			},
 			"change": {
@@ -219,15 +220,16 @@
 				"deny": "Refuser",
 				"review": "Examiner",
 				"confirm_delete": "Supprimer",
-				"remove_code_only": "Retirer seulement le code",
 				"data_loss": "Perte de données",
 				"why_deletes_data": "Retire le code et efface ses données. Annuler restaure le code, pas les données.",
 				"why_removes_code": "Le retire du projet. Annuler le restaure depuis le lot de modifications.",
 				"why_builder": "Modification Builder, réversible depuis le lot de modifications. Demandée car les suppressions ne sont jamais silencieuses.",
+				"why_held": "Le DMS retient cet appel jusqu'à votre accord.",
+				"why_held_configure": "Modifie la configuration du projet.",
+				"why_held_map": "Mappe les tables et retire les pages {pages}.",
+				"why_held_tool": "Demandé car un autre appel à cet outil attend votre accord.",
 				"type_to_confirm_before": "Saisissez",
 				"type_to_confirm_after": "pour confirmer",
-				"keep_data": "Garder les données, retirer seulement le code",
-				"recommended": "recommandé",
 				"suggest": "Proposer autre chose",
 				"suggest_placeholder": "Dites à l'assistant quoi faire à la place",
 				"send_suggestion": "Refuser et envoyer",

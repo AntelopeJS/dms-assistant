@@ -162,32 +162,3 @@ export function resolveModuleRootForFile(
   }
   return best;
 }
-
-export interface TargetResolution {
-  root: string | null;
-  knownTargets: string[];
-}
-
-function knownTargetLabels(knownRoots: readonly string[]): string[] {
-  return knownRoots.map((r) => path.basename(normalize(r)));
-}
-
-export function resolveTypecheckTarget(
-  target: string | undefined,
-  knownRoots: readonly string[],
-  lastEditedFile: string | undefined,
-  hostProjectRoot: string,
-): TargetResolution {
-  const knownTargets = knownTargetLabels(knownRoots);
-  if (target === undefined || target.length === 0) {
-    if (lastEditedFile !== undefined) {
-      const owner = resolveModuleRootForFile(lastEditedFile, knownRoots);
-      if (owner !== null) return { root: owner, knownTargets };
-    }
-    return { root: normalize(hostProjectRoot), knownTargets };
-  }
-  const byName = knownRoots.find((r) => path.basename(normalize(r)) === target);
-  if (byName !== undefined) return { root: normalize(byName), knownTargets };
-  const owner = resolveModuleRootForFile(target, knownRoots);
-  return { root: owner, knownTargets };
-}

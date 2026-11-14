@@ -63,11 +63,6 @@ async function startTestServer(): Promise<ServerHandle> {
       invalidate: () => {},
     },
     hostProjectRoot: TEST_HOST_ROOT,
-    moduleRoots: [],
-    logsClient: { getLogs: async () => [] },
-    builderClient: { call: async () => null },
-    databaseClient: { get: async () => [], post: async () => ({}) },
-    builderEnabled: false,
     navigationCompleter,
   };
   const ws = attachWsServer(server, {
@@ -80,6 +75,7 @@ async function startTestServer(): Promise<ServerHandle> {
     hostProjectRoot: TEST_HOST_ROOT,
     conversationStore,
     mcpDeps,
+    logsClient: { getLogs: async () => [] },
     hostState,
     hostSocketRegistry,
     navigationCompleter,

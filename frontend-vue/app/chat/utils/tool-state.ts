@@ -38,7 +38,7 @@ function isOpen(tool: ToolCallMessage): boolean {
 }
 
 /**
- * One of the seven row states. An open call is waiting when a request names
+ * One of the eight row states. An open call is waiting when a request names
  * it, running while its turn is, and stopped once the turn is over without
  * closing it.
  */

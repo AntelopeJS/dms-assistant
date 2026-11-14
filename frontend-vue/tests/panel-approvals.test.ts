@@ -12,9 +12,12 @@ import {
 } from "./support/panel-harness";
 import {
 	COMMAND_REQUEST,
+	CONFIGURE_DIFF,
+	CONFIGURE_REQUEST,
 	DELETE_REQUEST,
 	DIFF_REQUEST,
 	keydown,
+	MAP_REQUEST,
 } from "./support/panel-fixtures";
 
 beforeEach(() => {
@@ -115,7 +118,38 @@ describe("the approvals dock", () => {
 		});
 	});
 
-	it("makes a data loss typed, offers to keep the data, and never a chat-wide rule", async () => {
+	it("shows a held configuration change with the DMS's preview in full, in a box that scrolls (fails a card that cuts the preview or reads like a removal)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		deliver(harness, CONFIGURE_REQUEST);
+		await nextTick();
+		const card = panel.find(".perm.is-focused");
+		expect(card.find(".perm__why").text()).toBe(
+			"Changes the project's configuration.",
+		);
+		const rows = card.find(".perm__kv.is-full");
+		expect(rows.findAll("dt").map((cell) => cell.text())).toEqual([
+			"plannedChanges[0].path",
+			"plannedChanges[0].kind",
+			"plannedChanges[0].diff",
+			"steps[0].action",
+			"steps[0].module",
+			"steps[0].version",
+		]);
+		expect(rows.findAll("dd")[2].text()).toBe(CONFIGURE_DIFF.trim());
+	});
+
+	it("names the pages a held mapping removes (fails a card that hides them)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		deliver(harness, MAP_REQUEST);
+		await nextTick();
+		expect(panel.find(".perm.is-focused .perm__why").text()).toBe(
+			"Maps the tables and removes the pages orders, customers.",
+		);
+	});
+
+	it("makes a data loss typed, shows the call's own keepData without a way to change it, and never a chat-wide rule", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		deliver(harness, DELETE_REQUEST);
@@ -123,17 +157,19 @@ describe("the approvals dock", () => {
 		const card = panel.find(".perm.is-danger");
 		expect(card.text()).toContain("Data loss");
 		expect(card.text()).not.toContain("this chat");
+		expect(card.find('input[type="checkbox"]').exists()).toBe(false);
+		expect(
+			card.findAll(".perm__kv dt, .perm__kv dd").map((cell) => cell.text()),
+		).toEqual(["ref", "legacy_coupons", "keepData", "false"]);
 		const confirm = buttonWithText(card, "Delete");
 		expect(confirm.attributes("disabled")).toBeDefined();
 		await card.find(".perm__confirm input").setValue("legacy_coupons");
-		expect(
-			buttonWithText(card, "Delete").attributes("disabled"),
-		).toBeUndefined();
-		await card.find('input[type="checkbox"]').setValue(true);
-		await buttonWithText(card, "Remove the code only").trigger("click");
-		expect(sentOfType(harness, "permission_response")[0]).toMatchObject({
+		await buttonWithText(card, "Delete").trigger("click");
+		expect(sentOfType(harness, "permission_response")[0]).toEqual({
+			type: "permission_response",
+			conversationId: CONVERSATION_ID,
+			requestId: "r3",
 			decision: "allow_once",
-			keepData: true,
 		});
 	});
 

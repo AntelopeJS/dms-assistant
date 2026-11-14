@@ -20,6 +20,7 @@ import type { LogsClient } from "../logs/logs-client.js";
 import type { BufferedLog } from "../logs/types.js";
 import type { JsonValue } from "../protocol/json.js";
 import type { TypecheckOutcome } from "../constants/audit.js";
+import { TYPECHECK_TOOL_NAME } from "../constants/typecheck.js";
 
 /**
  * A line worth listing in the auto-fix notice: a compiler error, or a reload
@@ -114,7 +115,10 @@ function defaultDelay(ms: number): Promise<void> {
 export interface BuildReport {
   /** The auto-fix prompt, or null when the build is healthy. */
   healPrompt: string | null;
-  /** `skipped` when no typecheck could run on the edited roots. */
+  /**
+   * `passed` only when every edited root typechecked clean, `failed` when one
+   * has errors, and `skipped` otherwise.
+   */
   typecheck: TypecheckOutcome;
   /** One line per problem, for the auto-fix notice. */
   errors: string[];
@@ -130,19 +134,19 @@ async function typecheckRoots(deps: CollectIssuesDeps): Promise<TypecheckPass> {
     deps.runTypecheckFn ?? ((root) => runTypecheck({ targetRoot: root }));
   const roots = uniqueEditedRoots(deps.editedFiles, deps.knownRoots);
   const summaries: string[] = [];
-  let hasRun = false;
+  let hasSkippedRoot = roots.length === 0;
   for (const root of roots) {
     const result = await runTs(root);
-    hasRun ||= result.ran;
+    hasSkippedRoot ||= !result.ran;
     if (result.ran && !result.ok) {
-      summaries.push(`${path.basename(root)}:\n${result.summary}`);
+      const target = JSON.stringify({ target: root });
+      summaries.push(
+        `${path.basename(root)} (${TYPECHECK_TOOL_NAME} ${target}):\n${result.summary}`,
+      );
     }
   }
-  const typecheck: TypecheckOutcome = !hasRun
-    ? "skipped"
-    : summaries.length > 0
-      ? "failed"
-      : "passed";
+  const typecheck: TypecheckOutcome =
+    summaries.length > 0 ? "failed" : hasSkippedRoot ? "skipped" : "passed";
   return { summaries, typecheck };
 }
 

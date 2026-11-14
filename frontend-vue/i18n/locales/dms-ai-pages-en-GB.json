@@ -323,7 +323,7 @@
 			},
 			"always_ask_deletions": {
 				"label": "Deleting pages, tables, fields or queries",
-				"description": "Locked: may delete data.",
+				"description": "Locked. The chat asks for your approval on a card before each one runs.",
 				"locked": "Deleting pages, tables, fields or queries · locked"
 			},
 			"always_ask_dependencies": {

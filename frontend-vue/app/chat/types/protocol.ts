@@ -8,7 +8,13 @@ export type ProviderName = "claude" | "codex";
 export type ApprovalMode = "normal" | "auto" | "acceptEdits" | "plan";
 export type Scope = "safe" | "vibe";
 
-export type ToolOutcome = "done" | "failed" | "denied" | "blocked" | "stopped";
+export type ToolOutcome =
+	| "done"
+	| "failed"
+	| "denied"
+	| "blocked"
+	| "stopped"
+	| "held";
 
 export type AllowedBy =
 	| "read_auto"
@@ -78,7 +84,6 @@ export interface DestructivePreview {
 	target: string;
 	consequence: DestructiveConsequence;
 	confirmText?: string;
-	canKeepData: boolean;
 }
 
 export interface WebPreview {
@@ -92,12 +97,34 @@ interface GenericPreview {
 	args: Record<string, unknown>;
 }
 
+/**
+ * A Builder call the DMS holds until the person confirms it. `details` is the
+ * DMS's preview from its refusal, else the call's own arguments.
+ */
+export interface HeldPreview {
+	type: "held";
+	operation: string;
+	details: unknown;
+}
+
+/**
+ * Another call to a Builder tool the DMS holds a call of. `args` are the
+ * call's own, not a preview from the DMS.
+ */
+export interface HeldToolPreview {
+	type: "held_tool";
+	operation: string;
+	args: Record<string, unknown>;
+}
+
 export type PermissionPreview =
 	| DiffPreview
 	| CommandPreview
 	| DestructivePreview
 	| WebPreview
-	| GenericPreview;
+	| GenericPreview
+	| HeldPreview
+	| HeldToolPreview;
 
 export type PermissionKind =
 	| "edit"

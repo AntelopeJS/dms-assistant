@@ -4,12 +4,18 @@ import type {
 	CommandPreview,
 	DestructivePreview,
 	DiffPreview,
+	HeldPreview,
 	PermissionPreview,
 	PermissionRule,
 	RuleKind,
 	WebPreview,
 } from "../types/protocol";
-import { bareToolName, describeTool, toolVerb } from "./tool-lexicon";
+import {
+	bareToolName,
+	describeTool,
+	type NamedArgument,
+	toolVerb,
+} from "./tool-lexicon";
 
 /** How a card names its request, in the user's language. */
 export interface PermissionCardText {
@@ -81,7 +87,81 @@ const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
 		allowLabel: t("dms_ai.panel.approvals.allow"),
 		why: req.kind === "builder" ? t("dms_ai.panel.approvals.why_builder") : "",
 	}),
+	held: (req, preview: HeldPreview, t) => ({
+		title: verbAndTarget(req, t),
+		sub: "",
+		onceLabel: t("dms_ai.panel.approvals.once_time"),
+		allowLabel: t("dms_ai.panel.approvals.allow"),
+		why: heldWhy(preview, t),
+	}),
+	held_tool: (req, _preview, t) => ({
+		title: verbAndTarget(req, t),
+		sub: "",
+		onceLabel: t("dms_ai.panel.approvals.once_time"),
+		allowLabel: t("dms_ai.panel.approvals.allow"),
+		why: t("dms_ai.panel.approvals.why_held_tool"),
+	}),
 };
+
+const CONFIGURE_PROJECT_TOOL_NAME = "builder_configure_project";
+const MAP_RESOURCES_TOOL_NAME = "builder_map_resources";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function pagesToRemove(details: unknown): string[] {
+	const pages = isRecord(details) ? details.pagesToRemove : undefined;
+	if (!Array.isArray(pages)) return [];
+	return pages.filter((page): page is string => typeof page === "string");
+}
+
+function heldWhy(preview: HeldPreview, t: Translate): string {
+	if (preview.operation === CONFIGURE_PROJECT_TOOL_NAME)
+		return t("dms_ai.panel.approvals.why_held_configure");
+	const pages = pagesToRemove(preview.details);
+	if (preview.operation === MAP_RESOURCES_TOOL_NAME && pages.length > 0)
+		return t("dms_ai.panel.approvals.why_held_map", {
+			pages: pages.join(", "),
+		});
+	return t("dms_ai.panel.approvals.why_held");
+}
+
+/**
+ * Every value of a held call's preview on a row of its own, in full: nested
+ * keys joined by dots, list items by index, text such as a diff as it is.
+ */
+export function heldPreviewRows(details: unknown, name = ""): NamedArgument[] {
+	if (Array.isArray(details) && details.length > 0)
+		return details.flatMap((item: unknown, index) =>
+			heldPreviewRows(item, `${name}[${index}]`),
+		);
+	if (isRecord(details) && Object.keys(details).length > 0)
+		return Object.entries(details).flatMap(([key, value]) =>
+			heldPreviewRows(value, name === "" ? key : `${name}.${key}`),
+		);
+	const value =
+		typeof details === "string"
+			? details
+			: (JSON.stringify(details) ?? String(details));
+	return [{ name, value }];
+}
+
+const MAX_SIDE_BY_SIDE_NAME_CHARS = 16;
+const MAX_SIDE_BY_SIDE_VALUE_CHARS = 24;
+
+/**
+ * Whether a row reads on the card's whole width, its value under its name:
+ * a value of several lines, such as a diff, or a name or value too long to
+ * share a narrow panel's width with the other.
+ */
+export function isStackedRow(row: NamedArgument): boolean {
+	return (
+		row.value.includes("\n") ||
+		row.value.length > MAX_SIDE_BY_SIDE_VALUE_CHARS ||
+		row.name.length > MAX_SIDE_BY_SIDE_NAME_CHARS
+	);
+}
 
 /** "Delete the page {target}": the Builder's destructive operations by name. */
 const DESTRUCTIVE_TITLE_KEYS: Record<string, string> = {

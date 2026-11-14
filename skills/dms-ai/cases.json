@@ -36,9 +36,9 @@
       "id": "dms-ai-not-builder-routes",
       "area": "dms-ai",
       "style": "clean",
-      "prompt": "Every /api/builder route answers 404 and the builder writes nothing. How do I set the projectRoot of the builder module?",
+      "prompt": "My coding agent has no builder_catalog tool. How do I check that the project serves the DMS builder MCP?",
       "expect": {
-        "skills": ["dms-builder"],
+        "skills": ["dms-builder-mcp"],
         "acceptable": ["dms"],
         "avoid": ["dms-ai"]
       }

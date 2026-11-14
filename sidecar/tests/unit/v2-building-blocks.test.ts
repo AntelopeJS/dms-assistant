@@ -1,9 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createCallLedger } from "../../src/agent/call-ledger.js";
 import { ASK_USER_RESULT_SKIPPED } from "../../src/constants/mcp.js";
-import type { AnyMcpToolDefinition } from "../../src/mcp/define-tool.js";
-import { gateBuilderTools } from "../../src/mcp/tools/builder-gate.js";
-import { buildBuilderTools } from "../../src/mcp/tools/builder.js";
 import { buildAskUserTool } from "../../src/mcp/tools/ask-user.js";
 import { createChatSocketRegistry } from "../../src/server/chat-socket-registry.js";
 import { createPendingQueueStore } from "../../src/server/pending-queue.js";
@@ -15,48 +12,6 @@ function fakeSocket() {
   const sent: string[] = [];
   return { socket: { send: (raw: string) => sent.push(raw) }, sent };
 }
-
-describe("Builder gate", () => {
-  const builderClient = { call: vi.fn(async () => ({ ok: true })) };
-
-  function tool(name: string, gate: Parameters<typeof gateBuilderTools>[1]) {
-    const tools: AnyMcpToolDefinition[] = buildBuilderTools({
-      builderClient,
-      gate,
-    });
-    return tools.find((t) => t.name === name);
-  }
-
-  it("refuses a denied deletion with the reason, without calling the Builder", async () => {
-    builderClient.call.mockClear();
-    const deletePage = tool("builder_delete_page", async () => ({
-      isAllowed: false,
-      message: "no",
-    }));
-    const result = await deletePage?.handler({ pageRef: "/p" });
-    expect(result).toMatchObject({ isError: true, content: [{ text: "no" }] });
-    expect(builderClient.call).not.toHaveBeenCalled();
-  });
-
-  it("deletes the resource's code only when the user keeps the data", async () => {
-    builderClient.call.mockClear();
-    const remove = tool("builder_delete_resource", async () => ({
-      isAllowed: true,
-      keepData: true,
-    }));
-    await remove?.handler({ ref: "books" });
-    expect(builderClient.call).toHaveBeenCalledWith("DeleteResource", [
-      "books",
-      { keepData: true },
-    ]);
-  });
-
-  it("never gates a read tool", async () => {
-    const gate = vi.fn(async () => ({ isAllowed: false }));
-    await tool("builder_catalog", gate)?.handler({});
-    expect(gate).not.toHaveBeenCalled();
-  });
-});
 
 describe("call ledger", () => {
   it("pairs a handler with the call the provider announced", () => {
@@ -197,6 +152,21 @@ describe("safety net report", () => {
       ...base,
       runTypecheckFn: async () => ({
         ran: false,
+        ok: true,
+        errorCount: 0,
+        summary: "",
+      }),
+    });
+    expect(report.typecheck).toBe("skipped");
+  });
+
+  it("does not pass a turn when one edited root could not be typechecked", async () => {
+    const report = await inspectBuild({
+      ...base,
+      editedFiles: ["/proj/src/a.ts", "/proj/modules/mymod/src/b.ts"],
+      knownRoots: ["/proj", "/proj/modules/mymod"],
+      runTypecheckFn: async (root) => ({
+        ran: root === "/proj",
         ok: true,
         errorCount: 0,
         summary: "",

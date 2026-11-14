@@ -2,12 +2,12 @@ import type { CallAudit } from "../audit/call-audit.js";
 import type { CallLedger } from "../agent/call-ledger.js";
 import type { ConversationModes } from "../agent/conversation-modes.js";
 import type { EditTracker } from "../agent/edit-tracker.js";
+import type { HeldCalls } from "../agent/held-calls.js";
 import type { PermissionBus } from "../agent/permission-bus.js";
 import type { QuestionBus } from "../agent/question-bus.js";
 import type { AgentRunner } from "../agent/runner.js";
 import type { Checkpoints } from "../checkpoints/checkpoints.js";
 import type { LogsClient } from "../logs/logs-client.js";
-import type { ProjectMcpEndpoint } from "../mcp/project-endpoint.js";
 import type { AiMcpServer } from "../mcp/types.js";
 import type { ConversationStore } from "../state/conversations.js";
 import type { HostState } from "../state/host-state.js";
@@ -51,6 +51,7 @@ export interface SidecarServices {
   checkpoints: Checkpoints;
   callAudit: CallAudit;
   callLedger: CallLedger;
+  heldCalls: HeldCalls;
   turns: TurnRegistry;
   /** Who asked for each conversation's latest request (from the actor frame). */
   askers: Map<string, string>;
@@ -63,8 +64,6 @@ export interface SidecarServices {
 
 export interface RoutingConfig extends SidecarServices {
   idleController: IdleShutdownController;
-  /** The tools served to agent sessions outside the chat. */
-  projectMcp: ProjectMcpEndpoint;
 }
 
 /** One socket's view: the shared services plus who drives it. */

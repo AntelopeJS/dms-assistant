@@ -1,0 +1,250 @@
+import { z } from "zod";
+import {
+  DMS_MCP_HOLD_CODE,
+  DMS_MCP_HOLD_CONSUMED_CODE,
+  DMS_MCP_HOLD_PREVIEW_PREFIX,
+  DMS_MCP_HOLD_REFUSAL_SUFFIX,
+  DMS_MCP_HOLD_WINDOW_MS,
+  DMS_MCP_TOOL_NAME_PREFIX,
+} from "../constants/mcp.js";
+import type { ToolOutcome } from "../constants/audit.js";
+import { type JsonValue, JsonValueSchema } from "../protocol/json.js";
+import type { RunnerToolResult } from "./runner-events.js";
+import { bareToolName } from "./tool-kinds.js";
+
+export interface ToolCallSubject {
+  toolName: string;
+  args: JsonValue;
+}
+
+/**
+ * A call the DMS holds: what it showed of the call in its refusal, its
+ * arguments with what the builder worked out, such as a configuration diff or
+ * the pages a mapping removes. Absent when the refusal shows none.
+ */
+export interface HeldCall {
+  preview: JsonValue | undefined;
+}
+
+/**
+ * How a call stands to the held calls of its conversation: the same call as
+ * one the DMS holds, with that hold's preview, or another call to a tool the
+ * DMS holds a call of.
+ */
+export type HoldMatch =
+  | ({ match: "same_call" } & HeldCall)
+  | { match: "same_tool" };
+
+/**
+ * How a call ended, as the held calls read it: a held one with its preview, a
+ * failed one with whether the DMS says it used its hold first.
+ */
+export type CallEnd =
+  | ({ outcome: "held" } & HeldCall)
+  | { outcome: "failed"; isHoldConsumed: boolean }
+  | { outcome: Exclude<ToolOutcome, "held" | "failed"> };
+
+interface Hold extends HeldCall {
+  conversationId: string;
+  tool: string;
+  expiresAtMs: number;
+}
+
+/**
+ * The DMS MCP's calls held until someone confirms them. The DMS refuses the
+ * first such call and runs an identical one repeated within its window, so
+ * the chat asks the person before it lets that repeat through. The DMS keeps
+ * each hold for the MCP session that was refused, and each conversation runs
+ * its own session, so the chat keeps each hold for its conversation: a call
+ * in one conversation never records, consults or releases another's hold.
+ */
+export interface HeldCalls {
+  /** A call is held by its `held` outcome and released once it succeeded. */
+  observe(conversationId: string, call: ToolCallSubject, end: CallEnd): void;
+  /**
+   * Whether the call's tool has a held call pending in the conversation,
+   * whatever the call's arguments: the DMS drops the arguments its tool does
+   * not know before it looks its hold up, so a repeat with another key can
+   * still run.
+   */
+  isHeld(conversationId: string, call: ToolCallSubject): boolean;
+  /**
+   * How the call stands to the conversation's held calls, or `undefined` when
+   * its tool has none held there.
+   */
+  holdOf(conversationId: string, call: ToolCallSubject): HoldMatch | undefined;
+}
+
+const TextBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
+
+const TextOfBlocksSchema = z
+  .array(z.unknown())
+  .transform((blocks) =>
+    blocks
+      .flatMap((block) => TextBlockSchema.safeParse(block).data?.text ?? [])
+      .join("\n"),
+  );
+
+/**
+ * A tool's answer as text: Claude hands the MCP content as a string or its
+ * blocks, Codex the MCP result with its `content`, or an error's `message`.
+ */
+const AnswerTextSchema = z.union([
+  z.string(),
+  TextOfBlocksSchema,
+  z.object({ content: TextOfBlocksSchema }).transform(({ content }) => content),
+  z.object({ message: z.string() }).transform(({ message }) => message),
+]);
+
+const JsonObjectSchema = z.record(z.string(), JsonValueSchema);
+
+function withSortedKeys(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) return value.map(withSortedKeys);
+  const object = JsonObjectSchema.safeParse(value);
+  if (!object.success) return value;
+  return Object.fromEntries(
+    Object.entries(object.data)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, inner]) => [key, withSortedKeys(inner)]),
+  );
+}
+
+function callKey(conversationId: string, call: ToolCallSubject): string {
+  return JSON.stringify([
+    conversationId,
+    bareToolName(call.toolName),
+    withSortedKeys(call.args),
+  ]);
+}
+
+function isDmsTool(toolName: string): boolean {
+  return toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX);
+}
+
+function previewIn(text: string): JsonValue | undefined {
+  const line = text
+    .split("\n")
+    .find((candidate) => candidate.startsWith(DMS_MCP_HOLD_PREVIEW_PREFIX));
+  if (line === undefined) return undefined;
+  try {
+    return JsonValueSchema.parse(
+      JSON.parse(line.slice(DMS_MCP_HOLD_PREVIEW_PREFIX.length)),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+const CodeSchema = z.object({ code: z.string() });
+
+function endingCodeOf(text: string): string | undefined {
+  const lastLine = text.slice(text.lastIndexOf("\n") + 1);
+  try {
+    return CodeSchema.safeParse(JSON.parse(lastLine)).data?.code;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The DMS's refusal of a call it holds until someone confirms it, when the
+ * tool's answer is one: read from the code it ends with, or from its prose
+ * when it ends with no code at all.
+ */
+export function holdRefusalOf(
+  toolName: string,
+  answer: Pick<RunnerToolResult, "result">,
+): HeldCall | undefined {
+  if (!isDmsTool(toolName)) return undefined;
+  const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
+  const code = endingCodeOf(text);
+  const isRefusal =
+    code === undefined
+      ? text.startsWith(
+          `${bareToolName(toolName)}${DMS_MCP_HOLD_REFUSAL_SUFFIX}`,
+        )
+      : code === DMS_MCP_HOLD_CODE;
+  return isRefusal ? { preview: previewIn(text) } : undefined;
+}
+
+/**
+ * Whether a failed call's answer ends with the DMS's code saying the call
+ * passed its gate, so used its hold, before it failed.
+ */
+export function isHoldConsumedBy(
+  toolName: string,
+  answer: Pick<RunnerToolResult, "result">,
+): boolean {
+  if (!isDmsTool(toolName)) return false;
+  const text = AnswerTextSchema.safeParse(answer.result).data ?? "";
+  return endingCodeOf(text) === DMS_MCP_HOLD_CONSUMED_CODE;
+}
+
+function releasesHold(end: CallEnd): boolean {
+  if (end.outcome === "done") return true;
+  return end.outcome === "failed" && end.isHoldConsumed;
+}
+
+/**
+ * The held calls of every conversation. A refused call stays held for the
+ * DMS's whole window, counted from when its refusal arrived, so never for
+ * less time than the DMS holds it. Only a run with the same arguments that
+ * succeeded, or that failed after the DMS says it used its hold, releases it.
+ * When the chat cannot tell whether the DMS still holds a call, it asks once
+ * more: that costs a question, never a missing one.
+ *
+ * - A run that fails with no word that the DMS used its hold keeps it: the DMS
+ *   runs some of its work, such as a preview, before its gate, and keeps its
+ *   hold when that fails.
+ * - A repeat with a key the DMS's tool drops runs on the DMS's hold, but the
+ *   chat's hold stays for the rest of the window, so the tool's later calls
+ *   are asked on their first call too. Releasing the held calls whose
+ *   arguments the run's contain would be unsafe: when the extra key is one
+ *   the tool knows, the run consumed another hold, and the DMS would run the
+ *   held call unasked.
+ */
+export function createHeldCalls(now: () => number = Date.now): HeldCalls {
+  const holdByCall = new Map<string, Hold>();
+  const dropExpired = (at: number): void => {
+    for (const [key, hold] of holdByCall) {
+      if (hold.expiresAtMs < at) holdByCall.delete(key);
+    }
+  };
+  const holdOf = (
+    conversationId: string,
+    call: ToolCallSubject,
+  ): HoldMatch | undefined => {
+    if (!isDmsTool(call.toolName)) return undefined;
+    dropExpired(now());
+    const same = holdByCall.get(callKey(conversationId, call));
+    if (same !== undefined) {
+      return { match: "same_call", preview: same.preview };
+    }
+    const tool = bareToolName(call.toolName);
+    const isToolHeld = [...holdByCall.values()].some(
+      (h) => h.conversationId === conversationId && h.tool === tool,
+    );
+    return isToolHeld ? { match: "same_tool" } : undefined;
+  };
+  return {
+    observe(conversationId, call, end) {
+      if (!isDmsTool(call.toolName)) return;
+      const at = now();
+      dropExpired(at);
+      const key = callKey(conversationId, call);
+      if (end.outcome === "held") {
+        holdByCall.set(key, {
+          conversationId,
+          tool: bareToolName(call.toolName),
+          preview: end.preview,
+          expiresAtMs: at + DMS_MCP_HOLD_WINDOW_MS,
+        });
+      } else if (releasesHold(end)) {
+        holdByCall.delete(key);
+      }
+    },
+    isHeld: (conversationId, call) =>
+      holdOf(conversationId, call) !== undefined,
+    holdOf,
+  };
+}

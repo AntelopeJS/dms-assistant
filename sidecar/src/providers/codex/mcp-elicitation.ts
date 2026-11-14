@@ -55,10 +55,11 @@ function findCall(
 }
 
 /**
- * Accepts the consent for dms-ai's own tools, as the Claude path auto-allows
- * them in every mode and scope: deletions and the other always-ask Builder
- * operations still wait for the person at the gate inside the tool. Declines
- * any other server's tool, and any elicitation that asks for user input.
+ * Accepts the consent for the chat's and the DMS MCP's auto-allowed tools, as
+ * the Claude path auto-allows them in every mode and scope: the DMS MCP holds
+ * its own risky calls until the agent repeats them, and the permission handler
+ * asks the person before that repeat. Declines any other tool, and any
+ * elicitation that asks for user input.
  */
 export function decideElicitation(
   params: McpElicitationParams | undefined,
@@ -85,7 +86,7 @@ export function decideElicitation(
   if (!FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES.has(toolName)) {
     return {
       action: "decline",
-      reason: `declined ${toolName}: not a dms-ai tool`,
+      reason: `declined ${toolName}: not a tool the chat auto-allows`,
       decision: { callId: call.id, toolName, allowedBy: "blocked" },
     };
   }

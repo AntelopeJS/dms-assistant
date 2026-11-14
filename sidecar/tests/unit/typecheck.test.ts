@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   parseTscOutput,
   resolveModuleRootForFile,
-  resolveTypecheckTarget,
   runTypecheck,
 } from "../../src/agent/typecheck.js";
 import {
@@ -48,41 +47,6 @@ describe("resolveModuleRootForFile", () => {
 
   it("returns null for a file outside every root", () => {
     expect(resolveModuleRootForFile("/elsewhere/z.ts", roots)).toBeNull();
-  });
-});
-
-describe("resolveTypecheckTarget", () => {
-  const roots = ["/proj", "/proj/modules/dms-ai"];
-
-  it("defaults to the module owning the last edited file", () => {
-    const r = resolveTypecheckTarget(
-      undefined,
-      roots,
-      "/proj/modules/dms-ai/src/x.ts",
-      "/proj",
-    );
-    expect(r.root).toBe("/proj/modules/dms-ai");
-  });
-
-  it("defaults to the host root when there is no last edited file", () => {
-    const r = resolveTypecheckTarget(undefined, roots, undefined, "/proj");
-    expect(r.root).toBe("/proj");
-  });
-
-  it("resolves a target by directory basename", () => {
-    const r = resolveTypecheckTarget("dms-ai", roots, undefined, "/proj");
-    expect(r.root).toBe("/proj/modules/dms-ai");
-  });
-
-  it("rejects a target outside the known roots", () => {
-    const r = resolveTypecheckTarget(
-      "/somewhere/else",
-      roots,
-      undefined,
-      "/proj",
-    );
-    expect(r.root).toBeNull();
-    expect(r.knownTargets).toContain("dms-ai");
   });
 });
 

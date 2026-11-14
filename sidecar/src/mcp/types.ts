@@ -3,11 +3,7 @@ import type {
   QuestionAnswers,
   QuestionRequest,
 } from "../agent/question-bus.js";
-import type { BuilderClient } from "../builder/builder-client.js";
-import type { DatabaseClient } from "../database/database-client.js";
-import type { BuilderGate } from "./tools/builder-gate.js";
 import type { MCP_SERVER_TYPE_SDK } from "../constants/mcp.js";
-import type { LogsClient } from "../logs/logs-client.js";
 import type { ImportsScanner } from "../pages/imports-scanner.js";
 import type { RegistryClient } from "../pages/registry-client.js";
 import type { AnyServerEventType } from "../protocol/events.js";
@@ -21,11 +17,6 @@ export interface AiMcpServerStaticDeps {
   registry: RegistryClient;
   scanner: ImportsScanner;
   hostProjectRoot: string;
-  moduleRoots: string[];
-  logsClient: LogsClient;
-  builderClient: BuilderClient;
-  builderEnabled: boolean;
-  databaseClient: DatabaseClient;
   navigationCompleter: NavigationCompleter;
 }
 
@@ -38,11 +29,8 @@ export interface AiMcpServerDeps extends AiMcpServerStaticDeps {
   conversationId: string;
   sendToHost: (event: AnyServerEventType) => void;
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
-  getLastEditedFile: () => string | undefined;
   showPreview: (preview: BlockPreviewType) => void;
   listAttachedImages: () => string[];
-  /** Absent in tests and tools-only boots: every Builder op then runs as is. */
-  gateBuilderOp?: BuilderGate;
 }
 
 /**

@@ -1,7 +1,6 @@
 import type { ToolEntry } from "./types";
 
-/** Prefix the agent SDK gives the module's own MCP tools. */
-const MCP_TOOL_PREFIX = "mcp__dms-ai__";
+const MCP_TOOL_PREFIXES = ["mcp__dms-ai__", "mcp__dms__"] as const;
 
 /** The agents' built-in tools, by the name they are logged under. */
 const BUILTIN_TOOLS = {
@@ -26,8 +25,7 @@ const BUILTIN_TOOLS = {
   RedoChangeSet: { icon: "i-ph-arrow-clockwise", source: "assistant" },
 } satisfies Readonly<Record<string, ToolEntry>>;
 
-/** The module's own MCP tools, by their bare name. */
-const MODULE_TOOLS = {
+const MCP_TOOLS = {
   get_current_page: { icon: "i-ph-browser", source: "project" },
   navigate_to_page: { icon: "i-ph-arrow-square-out", source: "project" },
   find_pages_using: { icon: "i-ph-magnifying-glass", source: "project" },
@@ -100,16 +98,17 @@ export interface LoggedTool extends ToolEntry {
 /** Every tool the log knows, in display order: the agents', then the module's. */
 export const LOGGED_TOOLS: readonly LoggedTool[] = Object.entries({
   ...BUILTIN_TOOLS,
-  ...MODULE_TOOLS,
+  ...MCP_TOOLS,
 }).map(([name, entry]) => ({ ...entry, name }));
 
 const TOOLS_BY_NAME = new Map(LOGGED_TOOLS.map((tool) => [tool.name, tool]));
 
 /** The bare name of a tool, the MCP prefix the agent SDK adds removed. */
 export function bareToolName(value: string): string {
-  return value.startsWith(MCP_TOOL_PREFIX)
-    ? value.slice(MCP_TOOL_PREFIX.length)
-    : value;
+  const prefix = MCP_TOOL_PREFIXES.find((candidate) =>
+    value.startsWith(candidate),
+  );
+  return prefix === undefined ? value : value.slice(prefix.length);
 }
 
 /** The known tool a logged name stands for, prefixed or not. */

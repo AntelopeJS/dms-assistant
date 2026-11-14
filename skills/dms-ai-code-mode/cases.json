@@ -29,7 +29,7 @@
       "style": "clean",
       "prompt": "We are in safe mode. Create a Reports page under the pages.reports category with builder_create_page, then add a TableView on the orders resource.",
       "expect": {
-        "skills": ["dms-builder-safe"],
+        "skills": ["dms-builder-mcp"],
         "acceptable": ["dms-pages", "dms-best-practices"],
         "avoid": ["dms-ai-code-mode"]
       }

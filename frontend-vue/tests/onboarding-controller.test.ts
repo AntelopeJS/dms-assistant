@@ -115,7 +115,7 @@ describe("opening on its own", () => {
 		});
 		await controller.load();
 		controller.open("connect-database");
-		connecting.write({
+		connecting.write(connecting.begin(), {
 			engine: "mongodb",
 			connection: "shop",
 			module: "builder-db-shop-tables",

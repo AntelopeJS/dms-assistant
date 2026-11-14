@@ -124,8 +124,7 @@ describe("a reload of the page while the connection loads", () => {
 		expect(memory.read()).toBeNull();
 	});
 
-	it("follows the connection it wrote when the popup closed before the write answered", async () => {
-		vi.useFakeTimers();
+	function slowWrite() {
 		let answer: (result: { ok: true }) => void = () => undefined;
 		const fake = fakeBuilder({
 			configureProject: vi.fn(
@@ -135,17 +134,54 @@ describe("a reload of the page while the connection loads", () => {
 					}),
 			),
 		});
+		return { api: fake.api, answer: () => answer({ ok: true }) };
+	}
+
+	it("follows the connection it wrote when the popup closed before the write answered", async () => {
+		vi.useFakeTimers();
+		const closed = slowWrite();
 		const memory = memoryConnects();
-		void mountConnect(fake.api, memory).connect("postgres", URL);
+		void mountConnect(closed.api, memory).connect("postgres", URL);
 		await vi.advanceTimersByTimeAsync(10);
 		unmountConnect();
-		answer({ ok: true });
+		closed.answer();
 		await vi.advanceTimersByTimeAsync(10);
 
-		expect(mountConnect(fake.api, memory).phase.value).toEqual({
+		expect(mountConnect(closed.api, memory).phase.value).toEqual({
 			kind: "analysing",
 			connection: "shop",
 			module: "builder-db-shop-tables",
 		});
+	});
+
+	it("keeps the connection a reopened popup wrote over a write the closed one answers later", async () => {
+		vi.useFakeTimers();
+		const closed = slowWrite();
+		const memory = memoryConnects();
+		void mountConnect(closed.api, memory).connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(10);
+		const reopened = reload(fakeBuilder().api, memory);
+		void reopened.connect(
+			"postgres",
+			"postgres://app:secret@db.example.com/crm",
+		);
+		await vi.advanceTimersByTimeAsync(10);
+		closed.answer();
+		await vi.advanceTimersByTimeAsync(10);
+
+		expect(memory.read()?.connection).toBe("crm");
+	});
+
+	it("keeps nothing from a write the closed popup answers after the reopened one went back to its form", async () => {
+		vi.useFakeTimers();
+		const closed = slowWrite();
+		const memory = memoryConnects();
+		void mountConnect(closed.api, memory).connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(10);
+		reload(fakeBuilder().api, memory).reset();
+		closed.answer();
+		await vi.advanceTimersByTimeAsync(10);
+
+		expect(memory.read()).toBeNull();
 	});
 });

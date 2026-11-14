@@ -87,7 +87,8 @@ export interface DatabaseConnect {
 	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
 	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
 	 * until its analysis is ready, the project's connection or analysis fails, the database has no
-	 * table, or a later `connect` or `reset`; the next `useDatabaseConnect` follows it again.
+	 * table, or a later `connect` or `reset` in any popup of the tab; the next `useDatabaseConnect`
+	 * follows it again.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -106,6 +107,8 @@ interface Checked {
 	module: string;
 	access: DatabaseAccess;
 	writing: ConnectionWriting;
+	/** The memory's attempt this connect began. */
+	attempt: string;
 }
 
 /**
@@ -315,15 +318,19 @@ export function useDatabaseConnect(
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
-		if (loop !== generation) return;
-		memory.write({ engine: form.engine, connection, module, access: answer });
+		memory.write(target.attempt, {
+			engine: form.engine,
+			connection,
+			module,
+			access: answer,
+		});
 		if (current(loop)) await poll(connection, module, loop);
 	}
 
-	function stop(): number {
+	function stop(): { loop: number; attempt: string } {
 		if (timer !== undefined) clearTimeout(timer);
 		generation += 1;
-		memory.clear();
+		const attempt = memory.begin();
 		checked = undefined;
 		refusal.value = null;
 		failure.value = null;
@@ -332,7 +339,7 @@ export function useDatabaseConnect(
 		reloadingSince = undefined;
 		analysing = false;
 		answeredSchemas = undefined;
-		return generation;
+		return { loop: generation, attempt };
 	}
 
 	async function connect(
@@ -341,7 +348,7 @@ export function useDatabaseConnect(
 	): Promise<UrlProblem | null> {
 		const form = connectForm(engine, url);
 		if ("kind" in form) return form;
-		const loop = stop();
+		const { loop, attempt } = stop();
 		phase.value = { kind: "checking" };
 		const answer = await checkAccess(engine, url);
 		if (!current(loop)) return null;
@@ -354,6 +361,7 @@ export function useDatabaseConnect(
 			module: managedNames(form).tablesModule,
 			access: answer,
 			writing: { kind: "url" },
+			attempt,
 		};
 		if (written?.connection !== connection) {
 			let project: ProjectModules;

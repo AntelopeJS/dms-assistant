@@ -3,9 +3,10 @@ import { shallowRef } from "vue";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import type { OnboardingApi } from "../../app/onboarding/api";
 import { NO_CONTENT, type ProjectContent } from "../../app/onboarding/content";
-import type {
-	ConnectMemory,
-	WrittenConnection,
+import {
+	type ConnectMemory,
+	connectMemory,
+	type WrittenConnection,
 } from "../../app/onboarding/connect-memory";
 import type {
 	OnboardingState,
@@ -62,20 +63,22 @@ export function memoryPreferences(
 	return store;
 }
 
-/** A written connection kept in memory, as `sessionStorage` keeps it across a reload of the tab. */
+/** The tab's connect memory over a map, as `sessionStorage` keeps it across a reload of the tab. */
 export function memoryConnects(
 	initial: WrittenConnection | null = null,
 ): ConnectMemory {
-	let saved = initial;
-	return {
-		read: () => saved,
-		write: (next) => {
-			saved = next;
+	const items = new Map<string, string>();
+	const memory = connectMemory(() => ({
+		getItem: (key) => items.get(key) ?? null,
+		setItem: (key, value) => {
+			items.set(key, value);
 		},
-		clear: () => {
-			saved = null;
+		removeItem: (key) => {
+			items.delete(key);
 		},
-	};
+	}));
+	if (initial !== null) memory.write(memory.begin(), initial);
+	return memory;
 }
 
 export interface OnboardingHarness {

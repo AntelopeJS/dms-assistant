@@ -25,7 +25,8 @@ afterEach(() => {
 
 describe("the connection a tab remembers across a reload", () => {
 	it("reads what an earlier page of the tab wrote, until it is cleared", () => {
-		connectMemory(() => window.sessionStorage).write(WRITTEN);
+		const tab = connectMemory(() => window.sessionStorage);
+		tab.write(tab.begin(), WRITTEN);
 		const reloaded = connectMemory(() => window.sessionStorage);
 		expect(reloaded.read()).toEqual(WRITTEN);
 
@@ -35,13 +36,20 @@ describe("the connection a tab remembers across a reload", () => {
 
 	it.each([
 		["text that is not JSON", "{"],
+		["a connection with no attempt", JSON.stringify({ written: WRITTEN })],
 		[
 			"an engine the popup does not connect",
-			JSON.stringify({ ...WRITTEN, engine: "oracle" }),
+			JSON.stringify({
+				attempt: "a",
+				written: { ...WRITTEN, engine: "oracle" },
+			}),
 		],
 		[
 			"an access without its answers",
-			JSON.stringify({ ...WRITTEN, access: { reachable: true } }),
+			JSON.stringify({
+				attempt: "a",
+				written: { ...WRITTEN, access: { reachable: true } },
+			}),
 		],
 	])("reads nothing from %s", (_, stored) => {
 		window.sessionStorage.setItem(CONNECT_MEMORY_KEY, stored);
@@ -52,7 +60,22 @@ describe("the connection a tab remembers across a reload", () => {
 		const refusing = connectMemory(() => {
 			throw new Error("storage disabled");
 		});
-		expect(() => refusing.write(WRITTEN)).not.toThrow();
+		expect(() => refusing.write(refusing.begin(), WRITTEN)).not.toThrow();
 		expect(refusing.read()).toBeNull();
+	});
+
+	it("keeps no write from an attempt that a later one or a clear replaced, in any popup of the tab", () => {
+		const closed = connectMemory(() => window.sessionStorage);
+		const reopened = connectMemory(() => window.sessionStorage);
+		const first = closed.begin();
+		const later = reopened.begin();
+		reopened.write(later, { ...WRITTEN, connection: "crm" });
+		closed.write(first, WRITTEN);
+		expect(reopened.read()?.connection).toBe("crm");
+
+		const cleared = closed.begin();
+		reopened.clear();
+		closed.write(cleared, WRITTEN);
+		expect(reopened.read()).toBeNull();
 	});
 });

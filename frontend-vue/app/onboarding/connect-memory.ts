@@ -15,10 +15,23 @@ export interface WrittenConnection {
 	access: DatabaseAccess;
 }
 
+/**
+ * The tab's connect attempts and the connection the latest one wrote. Every popup of the tab shares
+ * it, so a write that answers after a later attempt began, in this popup or one opened since, is
+ * not kept.
+ */
 export interface ConnectMemory {
 	read: () => WrittenConnection | null;
-	write: (written: WrittenConnection) => void;
+	/** Starts an attempt: forgets the written connection and every earlier attempt. */
+	begin: () => string;
+	/** Keeps the connection `attempt` wrote, unless a later attempt began or `clear` ran since. */
+	write: (attempt: string, written: WrittenConnection) => void;
 	clear: () => void;
+}
+
+interface Stored {
+	attempt: string;
+	written?: WrittenConnection;
 }
 
 export const CONNECT_MEMORY_KEY = "dms-assistant:onboarding-connect";
@@ -51,14 +64,7 @@ function accessOf(value: unknown): DatabaseAccess | null {
 	};
 }
 
-function parsed(text: string | null): WrittenConnection | null {
-	if (text === null) return null;
-	let value: unknown;
-	try {
-		value = JSON.parse(text);
-	} catch {
-		return null;
-	}
+function writtenOf(value: unknown): WrittenConnection | null {
 	if (value === null || typeof value !== "object") return null;
 	const stored = textOf(value, "engine");
 	const engine = CONNECTABLE_ENGINES.find((known) => known === stored);
@@ -76,22 +82,58 @@ function parsed(text: string | null): WrittenConnection | null {
 	return { engine, connection, module, access };
 }
 
-/** The written connection in `storage`, the tab's `sessionStorage`; a storage that refuses keeps none. */
-export function connectMemory(storage: () => Storage): ConnectMemory {
+function parsed(text: string | null): Stored | null {
+	if (text === null) return null;
+	let value: unknown;
+	try {
+		value = JSON.parse(text);
+	} catch {
+		return null;
+	}
+	if (value === null || typeof value !== "object") return null;
+	const attempt = textOf(value, "attempt");
+	if (attempt === undefined) return null;
+	const written = writtenOf(Reflect.get(value, "written"));
+	return written === null ? { attempt } : { attempt, written };
+}
+
+function newAttempt(): string {
+	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** The storage calls the memory makes; the tab's `sessionStorage` provides them. */
+export type ConnectStorage = Pick<
+	Storage,
+	"getItem" | "setItem" | "removeItem"
+>;
+
+/** The connect attempts in `storage`, the tab's `sessionStorage`; a storage that refuses keeps none. */
+export function connectMemory(storage: () => ConnectStorage): ConnectMemory {
+	function stored(): Stored | null {
+		try {
+			return parsed(storage().getItem(CONNECT_MEMORY_KEY));
+		} catch {
+			return null;
+		}
+	}
+
+	function keep(next: Stored): void {
+		try {
+			storage().setItem(CONNECT_MEMORY_KEY, JSON.stringify(next));
+		} catch {
+			return;
+		}
+	}
+
 	return {
-		read: () => {
-			try {
-				return parsed(storage().getItem(CONNECT_MEMORY_KEY));
-			} catch {
-				return null;
-			}
+		read: () => stored()?.written ?? null,
+		begin: () => {
+			const attempt = newAttempt();
+			keep({ attempt });
+			return attempt;
 		},
-		write: (written) => {
-			try {
-				storage().setItem(CONNECT_MEMORY_KEY, JSON.stringify(written));
-			} catch {
-				return;
-			}
+		write: (attempt, written) => {
+			if (stored()?.attempt === attempt) keep({ attempt, written });
 		},
 		clear: () => {
 			try {

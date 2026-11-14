@@ -4,6 +4,9 @@ export const BLOCK_PREVIEW_COMPONENT_NAMES = [
 	"dms-block-preview",
 ] as const;
 
+/** Node type `DmsBlockPreview` draws as a sandboxed sketch rather than a block. */
+export const SKETCH_NODE_TYPE = "sketch";
+
 export const BLOCK_PREVIEW_MAIN_TAB = "proposed";
 export const BLOCK_PREVIEW_VARIANT_TAB_PREFIX = "variant-";
 

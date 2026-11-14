@@ -3,14 +3,14 @@ import { computed, ref, watch } from "vue";
 import { useBlockPreviewComponent } from "../composables/useBlockPreviewComponent";
 import { useChatI18n } from "../composables/useChatI18n";
 import { BLOCK_PREVIEW_MAIN_TAB } from "../constants/block-preview";
-import type { BlockPreview } from "../types/protocol";
+import type { BlockPreview, PreviewNode } from "../types/protocol";
 import {
 	type BlockPreviewTab,
 	formatTree,
 	previewTabs,
 	type ReferenceView,
+	sketchNode,
 } from "../utils/block-preview";
-import SketchFrame from "./SketchFrame.vue";
 
 interface Props {
 	preview: BlockPreview;
@@ -47,10 +47,10 @@ const paneCount = computed<number>(
 			(pane) => pane !== null && pane !== undefined,
 		).length,
 );
-const sketchTitle = computed<string>(() =>
-	t("dms_ai.panel.preview.sketch_frame", {
-		caption: activeView.value.sketch?.caption ?? props.preview.title,
-	}),
+const sketchTree = computed<PreviewNode | null>(() =>
+	activeView.value.sketch === undefined
+		? null
+		: sketchNode(activeView.value.sketch),
 );
 const mockupLabel = computed<string>(
 	() => props.preview.reference?.caption ?? t("dms_ai.panel.preview.mockup"),
@@ -153,7 +153,7 @@ watch(open, (isOpen) => {
 						</div>
 					</section>
 					<section
-						v-if="activeView.sketch"
+						v-if="sketchTree"
 						class="bp-pane bp-pane--sketch"
 						:aria-label="t('dms_ai.panel.preview.custom_sketch')"
 					>
@@ -162,14 +162,21 @@ watch(open, (isOpen) => {
 							{{ t("dms_ai.panel.preview.custom_sketch") }}
 						</span>
 						<div class="bp-pane__sketch">
-							<SketchFrame
+							<component
+								:is="previewComponent"
+								v-if="previewComponent"
 								:key="activeTab"
-								:sketch="activeView.sketch"
-								:title="sketchTitle"
+								:tree="sketchTree"
 							/>
-							<p v-if="activeView.sketch.caption" class="bp-pane__caption">
-								{{ activeView.sketch.caption }}
-							</p>
+							<div v-else class="bp-fallback">
+								<p class="bp-fallback__title">
+									<UIcon name="i-ph-info" />
+									{{ t("dms_ai.panel.preview.fallback_title") }}
+								</p>
+								<pre
+									class="bp-fallback__json"
+								><code>{{ formatTree(sketchTree) }}</code></pre>
+							</div>
 						</div>
 					</section>
 				</div>
@@ -252,23 +259,10 @@ watch(open, (isOpen) => {
 	min-height: 220px;
 	max-height: 64vh;
 	overflow: auto;
+	padding: 12px;
 	border: 1px dashed var(--ai-line);
 	border-radius: var(--ai-radius-md);
 	background: var(--ai-tint);
-}
-
-.bp-pane__sketch :deep(.sketch-frame__doc) {
-	border-radius: calc(var(--ai-radius-md) - 1px) calc(var(--ai-radius-md) - 1px)
-		0 0;
-}
-
-.bp-pane__caption {
-	margin: 0;
-	padding: 8px 12px;
-	border-top: 1px dashed var(--ai-line);
-	font-size: 12px;
-	line-height: 1.45;
-	color: var(--ui-text-muted);
 }
 
 .bp-pane__image {

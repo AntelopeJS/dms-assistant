@@ -7,12 +7,14 @@ import {
 	MOCKUP_VIEWER_PATH,
 	REMOTE_URL,
 	SAME_ORIGIN_PATH,
+	SKETCH_NODE_TYPE,
 } from "../constants/block-preview";
 import type { ConversationMessage, UserMessage } from "../types/conversation";
 import type {
 	BlockPreview,
 	BlockPreviewReference,
 	PreviewNode,
+	PreviewSketch,
 	PreviewTree,
 	PreviewView,
 } from "../types/protocol";
@@ -108,6 +110,11 @@ export function hasSketch(preview: BlockPreview): boolean {
 	return [preview, ...(preview.variants ?? [])].some(
 		(view) => view.sketch !== undefined,
 	);
+}
+
+/** The DMS `sketch` node that draws a sketch, so the DMS owns its frame and checks. */
+export function sketchNode(sketch: PreviewSketch): PreviewNode {
+	return { type: SKETCH_NODE_TYPE, options: { ...sketch } };
 }
 
 export function formatTree(tree: PreviewTree): string {

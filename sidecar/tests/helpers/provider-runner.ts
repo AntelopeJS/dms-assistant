@@ -22,12 +22,10 @@ const UNREACHABLE_HOST_ROOT = "/tmp";
 
 /** The MCP dependencies of a host that is not there: every client answers empty. */
 export function buildInertStaticMcpDeps(
-  getCurrentPage: AiMcpServerStaticDeps["getCurrentPage"],
   navigationCompleter: AiMcpServerStaticDeps["navigationCompleter"],
   hostProjectRoot: string,
 ): AiMcpServerStaticDeps {
   return {
-    getCurrentPage,
     registry: {
       getRegistry: async () => [],
       getStaleSinceMs: () => null,
@@ -46,11 +44,11 @@ export function buildInertStaticMcpDeps(
 export function buildInertMcpDeps(conversationId: string): AiMcpServerDeps {
   return {
     ...buildInertStaticMcpDeps(
-      () => ({ path: UNKNOWN_PAGE_PATH }),
       createNavigationCompleter(),
       UNREACHABLE_HOST_ROOT,
     ),
     conversationId,
+    getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
     sendToHost: () => {},
     requestQuestion: () =>
       Promise.reject(new Error("no question is expected in this test")),

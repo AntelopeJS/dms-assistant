@@ -58,7 +58,6 @@ async function startTestServer(): Promise<ServerHandle> {
   const hostSocketRegistry = createHostSocketRegistry();
   const navigationCompleter = createNavigationCompleter();
   const mcpDeps = {
-    getCurrentPage: () => hostState.getCurrentPage(),
     registry,
     scanner: {
       scan: async () => ({ importersByFile: new Map() }),
@@ -144,12 +143,15 @@ describe("host_state_update WS message", () => {
     await settle();
     client.close();
     const resolvedFile = resolve(TEST_HOST_ROOT, ABOUT_FILE);
-    expect(handle.hostState.getCurrentPage()).toEqual({
+    expect(handle.hostState.getCurrentPage(null)).toEqual({
       path: "/about",
       title: "About",
       filepath: resolvedFile,
     });
-    const block = formatHostContext(handle.hostState.getCurrentPage(), "vibe");
+    const block = formatHostContext(
+      handle.hostState.getCurrentPage(null),
+      "vibe",
+    );
     expect(block).toContain("page: /about");
     expect(block).toContain("title: About");
     expect(block).toContain(`file: ${resolvedFile}`);
@@ -169,7 +171,7 @@ describe("host_state_update WS message", () => {
     await settle();
     client.close();
     const toolDef = buildGetCurrentPageTool(() =>
-      handle.hostState.getCurrentPage(),
+      handle.hostState.getCurrentPage(null),
     );
     const result = await toolDef.handler({});
     const text = result.content[0]?.text ?? "";
@@ -178,7 +180,7 @@ describe("host_state_update WS message", () => {
 
   it("returns the unknown page when no host_state_update arrived yet", async () => {
     const toolDef = buildGetCurrentPageTool(() =>
-      handle.hostState.getCurrentPage(),
+      handle.hostState.getCurrentPage(null),
     );
     const result = await toolDef.handler({});
     const text = result.content[0]?.text ?? "";

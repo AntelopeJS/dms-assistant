@@ -3,17 +3,31 @@ import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
 import { createHostState } from "../../src/state/host-state.js";
 
 const ABOUT_FILE = "/project/pages/about.vue";
+const CAMILLE = "u-camille";
+const DANA = "u-dana";
 
 describe("createHostState", () => {
   it("defaults to the unknown page", () => {
     const state = createHostState();
-    expect(state.getCurrentPage()).toEqual({ path: UNKNOWN_PAGE_PATH });
+    expect(state.getCurrentPage(CAMILLE)).toEqual({ path: UNKNOWN_PAGE_PATH });
   });
 
   it("setCurrentPage updates the value returned by getCurrentPage", async () => {
     const state = createHostState();
-    await state.setCurrentPage({ path: "/about", title: "About" });
-    expect(state.getCurrentPage()).toEqual({ path: "/about", title: "About" });
+    await state.setCurrentPage(CAMILLE, { path: "/about", title: "About" });
+    expect(state.getCurrentPage(CAMILLE)).toEqual({
+      path: "/about",
+      title: "About",
+    });
+  });
+
+  it("keeps each person's page apart (fails a page shared by the whole server)", async () => {
+    const state = createHostState();
+    await state.setCurrentPage(CAMILLE, { path: "/orders" });
+    await state.setCurrentPage(DANA, { path: "/customers" });
+    expect(state.getCurrentPage(CAMILLE).path).toBe("/orders");
+    expect(state.getCurrentPage(DANA).path).toBe("/customers");
+    expect(state.getCurrentPage(null).path).toBe(UNKNOWN_PAGE_PATH);
   });
 
   it("adds the source file resolved from the route", async () => {
@@ -21,14 +35,14 @@ describe("createHostState", () => {
       resolveFilepath: async (path) =>
         path === "/about" ? ABOUT_FILE : undefined,
     });
-    await state.setCurrentPage({ path: "/about", title: "About" });
-    expect(state.getCurrentPage()).toEqual({
+    await state.setCurrentPage(CAMILLE, { path: "/about", title: "About" });
+    expect(state.getCurrentPage(CAMILLE)).toEqual({
       path: "/about",
       title: "About",
       filepath: ABOUT_FILE,
     });
-    await state.setCurrentPage({ path: "/unregistered" });
-    expect(state.getCurrentPage()).toEqual({ path: "/unregistered" });
+    await state.setCurrentPage(CAMILLE, { path: "/unregistered" });
+    expect(state.getCurrentPage(CAMILLE)).toEqual({ path: "/unregistered" });
   });
 
   it("drops a file resolved for a page the host has already left", async () => {
@@ -42,11 +56,11 @@ describe("createHostState", () => {
         return `/project${path}.vue`;
       },
     });
-    const slow = state.setCurrentPage({ path: "/slow" });
-    await state.setCurrentPage({ path: "/fast" });
+    const slow = state.setCurrentPage(CAMILLE, { path: "/slow" });
+    await state.setCurrentPage(CAMILLE, { path: "/fast" });
     releaseFirst();
     await slow;
-    expect(state.getCurrentPage()).toEqual({
+    expect(state.getCurrentPage(CAMILLE)).toEqual({
       path: "/fast",
       filepath: "/project/fast.vue",
     });

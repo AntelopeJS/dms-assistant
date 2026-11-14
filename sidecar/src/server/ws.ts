@@ -71,7 +71,11 @@ import {
   createHostCommandRouter,
   type HostCommandSender,
 } from "./host-command-router.js";
-import type { HostSocketRegistry } from "./host-socket-registry.js";
+import { pageOf } from "./host-page.js";
+import type {
+  HostSocketRegistry,
+  SocketSender,
+} from "./host-socket-registry.js";
 import type { SettingsApplier, SidecarBridge } from "./http.js";
 import type { IdleShutdownController } from "./idle-shutdown.js";
 import {
@@ -225,6 +229,7 @@ function buildMcpDepsFactory(
   return (conversationId) => ({
     ...staticDeps,
     conversationId,
+    getCurrentPage: () => pageOf(services(holder), conversationId),
     sendToHost: hostCommandsOf(conversationId),
     requestQuestion: (req) => askUser(services(holder), req),
     showPreview: (preview) =>
@@ -375,10 +380,13 @@ interface ServiceParts {
 
 function buildServices(parts: ServiceParts): RoutingConfig {
   const { options, holder, chatSocketRegistry, settingsStore } = parts;
-  const hostCommandsOf = createHostCommandRouter(
-    options.hostSocketRegistry,
-    chatSocketRegistry,
-  );
+  const viewers = new WeakMap<SocketSender, string>();
+  const hostCommandsOf = createHostCommandRouter({
+    hosts: options.hostSocketRegistry,
+    chats: chatSocketRegistry,
+    conversations: options.conversationStore,
+    viewers,
+  });
   const createMcpDeps = buildMcpDepsFactory(
     options.mcpDeps,
     holder,
@@ -414,7 +422,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     heldCalls: createHeldCalls(),
     turns: createTurnRegistry(),
     askers: new Map(),
-    viewers: new WeakMap(),
+    viewers,
   };
 }
 

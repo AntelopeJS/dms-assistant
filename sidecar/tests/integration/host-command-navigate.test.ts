@@ -52,7 +52,6 @@ async function startTestServer(): Promise<ServerHandle> {
   const hostSocketRegistry = createHostSocketRegistry();
   const navigationCompleter = createNavigationCompleter();
   const mcpDeps = {
-    getCurrentPage: () => hostState.getCurrentPage(),
     registry: {
       getRegistry: async () => [],
       getStaleSinceMs: () => null,
@@ -130,7 +129,7 @@ function registerReportCases(getHandle: () => ServerHandle): void {
   it("does not throw when no host is connected", async () => {
     const handle = getHandle();
     const toolDef = buildNavigateToPageTool({
-      sendToHost: handle.hostSocketRegistry.send,
+      sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
       navigationCompleter: handle.navigationCompleter,
       registry: {
         getRegistry: async () => [],
@@ -156,7 +155,7 @@ function registerReportCases(getHandle: () => ServerHandle): void {
     await settle();
     const incoming = waitForMessage(client);
     const toolDef = buildNavigateToPageTool({
-      sendToHost: handle.hostSocketRegistry.send,
+      sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
       navigationCompleter: handle.navigationCompleter,
       registry: {
         getRegistry: async () => [],
@@ -209,7 +208,7 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     await settle();
     const incoming = waitForMessage(client);
     const toolDef = buildNavigateToPageTool({
-      sendToHost: handle.hostSocketRegistry.send,
+      sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
       navigationCompleter: handle.navigationCompleter,
       registry: {
         getRegistry: async () => [],
@@ -248,7 +247,7 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     );
     await settle();
     const toolDef = buildNavigateToPageTool({
-      sendToHost: handle.hostSocketRegistry.send,
+      sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
       navigationCompleter: handle.navigationCompleter,
       registry: {
         getRegistry: async () => [],

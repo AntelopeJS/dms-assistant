@@ -139,7 +139,7 @@ export const journeys = guarded([
         pageHas(tab, "25 of 44 and Load more", /25 of 44\s*Load more/),
         pageHas(tab, "the columns", /TIME\s*ACTION\s*ALLOWED\s*RESULT\s*CONVERSATION\s*DURATION/),
         pageHas(tab, "the last call first, as its tool and target", /Find files =SUM\(1,2\),"q"\s*Read-only, automatic\s*Done\s*Add a revenue chart/),
-        pageHas(tab, "a failed call", /Run command pnpm lint\s*Full auto\s*Failed/),
+        pageHas(tab, "a failed call", /Run command pnpm lint\s*Allowed by a rule\s*Failed/),
         pageHas(tab, "a denied call with its reason", /Run command rm -rf dist\s*Denied by you\s*Not run\s*use the Builder/),
         pageHas(tab, "a blocked call", /Edit file src\/notes\/c\.txt\s*Blocked · safe mode\s*Blocked\s*Blocked by safe mode/),
         pageHas(tab, "an expired call", /Run command pnpm build\s*Expired\s*Expired\s*Request expired/),

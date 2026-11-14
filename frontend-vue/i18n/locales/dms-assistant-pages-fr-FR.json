@@ -139,7 +139,6 @@
 				"builder_auto": "Builder, automatique",
 				"approved": "Autorisée par vous",
 				"rule": "Autorisée par une règle",
-				"full_auto": "Automatique complet",
 				"auto_approved": "Autorisé par la revue automatique",
 				"auto_denied": "Bloqué par la revue automatique",
 				"blocked": "Bloquée · mode sûr",

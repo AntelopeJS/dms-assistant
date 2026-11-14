@@ -94,7 +94,6 @@ const ALLOWED_LABELS: Partial<Record<AllowedBy, string>> = {
   approved: "Allowed by you",
   rule: "Allowed by a rule",
   auto_approved: "Allowed by Auto review",
-  full_auto: "Allowed by Full auto",
   blocked: "Blocked by safe mode",
   denied: "Denied",
   auto_denied: "Blocked by Auto review",

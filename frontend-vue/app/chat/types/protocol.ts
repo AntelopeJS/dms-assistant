@@ -21,7 +21,6 @@ export type AllowedBy =
 	| "builder_auto"
 	| "approved"
 	| "rule"
-	| "full_auto"
 	| "auto_approved"
 	| "auto_denied"
 	| "blocked"
@@ -188,11 +187,6 @@ export interface QuestionSkippedNotice {
 	timestampMs: number;
 }
 
-export interface FullAutoEndedNotice {
-	kind: "full_auto_ended";
-	timestampMs: number;
-}
-
 export interface ModelFallbackNotice {
 	kind: "model_fallback";
 	requestedModel: string;
@@ -210,7 +204,6 @@ export type Notice =
 	| AutoFixNotice
 	| PermissionExpiredNotice
 	| QuestionSkippedNotice
-	| FullAutoEndedNotice
 	| ModelFallbackNotice
 	| AutoUnavailableNotice;
 

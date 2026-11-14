@@ -10,6 +10,23 @@ const TMP_PREFIX = "dms-assistant-state-";
 const STATE_FILE = "state.json";
 const FILE_ENCODING = "utf8";
 
+/** A stored message as an older version could have written it. */
+interface WrittenMessage {
+  role: string;
+  content: string;
+  timestampMs: number;
+  toolName?: string;
+  callId?: string;
+  outcome?: string;
+  allowedBy?: string;
+  notice?: { kind: string; timestampMs: number };
+}
+
+/** A stored conversation holding the one message. */
+function withMessage(message: WrittenMessage) {
+  return { messages: [message], createdAtMs: 1, updatedAtMs: 2 };
+}
+
 describe("state file parsing", () => {
   let dir: string;
   let filePath: string;
@@ -72,6 +89,34 @@ describe("state file parsing", () => {
           createdAtMs: 1,
           updatedAtMs: 2,
         },
+      },
+    };
+    await writeFile(filePath, JSON.stringify(stored), FILE_ENCODING);
+    expect(await createStore({ filePath }).read()).toEqual({
+      conversations: { "conv-kept": kept },
+    });
+  });
+
+  it("sets aside a conversation recorded under Full auto (fails a store that still reads full_auto or full_auto_ended)", async () => {
+    const kept = { messages: [], createdAtMs: 1, updatedAtMs: 2 };
+    const stored = {
+      conversations: {
+        "conv-kept": kept,
+        "conv-full-auto-call": withMessage({
+          role: "tool_result",
+          content: "",
+          toolName: "Bash",
+          callId: "call-1",
+          outcome: "done",
+          allowedBy: "full_auto",
+          timestampMs: 1,
+        }),
+        "conv-full-auto-ended": withMessage({
+          role: "notice",
+          content: "",
+          notice: { kind: "full_auto_ended", timestampMs: 1 },
+          timestampMs: 1,
+        }),
       },
     };
     await writeFile(filePath, JSON.stringify(stored), FILE_ENCODING);

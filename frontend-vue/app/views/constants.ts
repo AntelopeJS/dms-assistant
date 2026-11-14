@@ -26,7 +26,6 @@ export const DECISION_STYLES: Record<AllowedBy, DecisionStyle> = {
 	builder_auto: { icon: "i-ph-hammer", iconClass: "text-dimmed" },
 	approved: { icon: "i-ph-check-circle", iconClass: "text-success" },
 	rule: { icon: "i-ph-key", iconClass: "text-secondary" },
-	full_auto: { icon: "i-ph-lightning", iconClass: "text-secondary" },
 	auto_approved: { icon: "i-ph-seal-check", iconClass: "text-success" },
 	auto_denied: { icon: "i-ph-prohibit", iconClass: "text-warning" },
 	blocked: { icon: "i-ph-shield-warning", iconClass: "text-warning" },

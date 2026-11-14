@@ -14,7 +14,6 @@ export type AllowedBy =
 	| "builder_auto"
 	| "approved"
 	| "rule"
-	| "full_auto"
 	| "auto_approved"
 	| "auto_denied"
 	| "blocked"

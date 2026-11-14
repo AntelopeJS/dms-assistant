@@ -28,7 +28,7 @@ const CALLS = [
   ["Bash", { command: "pnpm add dayjs" }, "rule", "done", true, ""],
   ["Bash", { command: "pnpm test" }, "rule", "stopped", false, ""],
   ["Bash", { command: "pnpm build" }, "expired", "denied", true, ""],
-  ["Bash", { command: "pnpm lint" }, "full_auto", "failed", false, ""],
+  ["Bash", { command: "pnpm lint" }, "rule", "failed", false, ""],
   ["Bash", { command: "rm -rf dist" }, "denied", "denied", true, ""],
   ["Bash", { command: "pnpm install" }, "rule", "done", false, ""],
   ["Edit", { file_path: "src/notes/b.txt" }, "denied", "denied", true, ""],

@@ -39,10 +39,6 @@ const NoticeSchema: z.ZodType<Notice> = z.discriminatedUnion("kind", [
     timestampMs: z.number(),
   }),
   z.looseObject({
-    kind: z.literal("full_auto_ended"),
-    timestampMs: z.number(),
-  }),
-  z.looseObject({
     kind: z.literal("model_fallback"),
     requestedModel: z.string(),
     usedModel: z.string(),

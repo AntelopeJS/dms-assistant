@@ -13,9 +13,14 @@ interface ReportedPage {
   title?: string;
 }
 
+/**
+ * The page each person's dashboard shows, keyed by the `userId` of the
+ * connection's actor (null: a connection that named no actor). A turn reads
+ * its conversation owner's page, never another person's.
+ */
 export interface HostState {
-  getCurrentPage(): CurrentPage;
-  setCurrentPage(page: ReportedPage): Promise<void>;
+  getCurrentPage(viewerId: string | null): CurrentPage;
+  setCurrentPage(viewerId: string | null, page: ReportedPage): Promise<void>;
 }
 
 /** Options of {@link createHostState}. */
@@ -35,21 +40,21 @@ function withFilepath(
 }
 
 /**
- * Holds the page the host displays. The browser reports its route and title;
- * the source file is resolved here from the route, and only applied while
- * that report is still the latest one.
+ * Holds the page each person's host displays. The browser reports its route
+ * and title; the source file is resolved here from the route, and only applied
+ * while that report is still the person's latest one.
  */
 export function createHostState(options: HostStateOptions = {}): HostState {
-  let currentPage: CurrentPage = buildUnknownPage();
+  const pages = new Map<string | null, CurrentPage>();
   return {
-    getCurrentPage: () => currentPage,
-    setCurrentPage: async (page) => {
+    getCurrentPage: (viewerId) => pages.get(viewerId) ?? buildUnknownPage(),
+    setCurrentPage: async (viewerId, page) => {
       const reported: CurrentPage = { ...page };
-      currentPage = reported;
+      pages.set(viewerId, reported);
       if (options.resolveFilepath === undefined) return;
       const filepath = await options.resolveFilepath(page.path);
-      if (currentPage !== reported) return;
-      currentPage = withFilepath(reported, filepath);
+      if (pages.get(viewerId) !== reported) return;
+      pages.set(viewerId, withFilepath(reported, filepath));
     },
   };
 }

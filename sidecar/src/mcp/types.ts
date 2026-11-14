@@ -13,7 +13,6 @@ import type { CurrentPage } from "../state/host-state.js";
 
 /** Deps shared by every conversation's MCP server. Assembled once at startup. */
 export interface AiMcpServerStaticDeps {
-  getCurrentPage: () => CurrentPage;
   registry: RegistryClient;
   scanner: ImportsScanner;
   hostProjectRoot: string;
@@ -27,6 +26,8 @@ export interface AiMcpServerStaticDeps {
  */
 export interface AiMcpServerDeps extends AiMcpServerStaticDeps {
   conversationId: string;
+  /** The page the conversation owner's dashboard shows. */
+  getCurrentPage: () => CurrentPage;
   sendToHost: (event: AnyServerEventType) => void;
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
   showPreview: (preview: BlockPreviewType) => void;

@@ -408,7 +408,7 @@ const handleSetConversationMode = on(
 const handleHostStateUpdate = on(
   MESSAGE_TYPES.HOST_STATE_UPDATE,
   async (_s, msg, ctx) => {
-    await ctx.hostState.setCurrentPage(msg.currentPage);
+    await ctx.hostState.setCurrentPage(viewerOf(ctx), msg.currentPage);
   },
 );
 

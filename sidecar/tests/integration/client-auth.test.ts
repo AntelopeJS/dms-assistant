@@ -43,7 +43,6 @@ function buildContext(directory: string) {
   const hostSocketRegistry = createHostSocketRegistry();
   const navigationCompleter = createNavigationCompleter();
   const mcpDeps = {
-    getCurrentPage: () => hostState.getCurrentPage(),
     registry: {
       getRegistry: async () => [],
       getStaleSinceMs: () => null,

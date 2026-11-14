@@ -1,4 +1,5 @@
 import { ToolArgsSchema } from "../agent/edit-targets.js";
+import { pageOf } from "./host-page.js";
 import { extractEditedFilePath } from "../agent/edit-tracker.js";
 import type { RunnerContext } from "../agent/runner.js";
 import type { RunnerEvent } from "../agent/runner-events.js";
@@ -211,7 +212,7 @@ function buildRunnerContext(
   return {
     conversationId,
     hostProjectRoot: services.hostProjectRoot,
-    getCurrentPage: () => services.hostState.getCurrentPage(),
+    getCurrentPage: () => pageOf(services, conversationId),
     attachments: request.attachments,
     includePageContext: request.includePageContext,
     focusBlock: request.focusBlock,
@@ -276,7 +277,7 @@ function beginTurn(services: SidecarServices, request: TurnRequest): void {
     request: request.request,
     isAutoFix: request.isAutoFix,
     askedBy: services.askers.get(conversationId),
-    pagePath: services.hostState.getCurrentPage().path,
+    pagePath: pageOf(services, conversationId).path,
     checkpoint: services.checkpoints.beginTurn(conversationId),
   });
   broadcastConversationList(services);

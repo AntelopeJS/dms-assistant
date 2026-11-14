@@ -202,11 +202,7 @@ export async function startWsHarness(
     skillDirs: options.skillDirs,
     conversationStore,
     settingsStore,
-    mcpDeps: buildInertStaticMcpDeps(
-      () => hostState.getCurrentPage(),
-      navigationCompleter,
-      HOST_ROOT,
-    ),
+    mcpDeps: buildInertStaticMcpDeps(navigationCompleter, HOST_ROOT),
     logsClient: { getLogs: async () => [] },
     providerRuntime: buildProviderRuntime(
       join(tmpDir, ".state"),

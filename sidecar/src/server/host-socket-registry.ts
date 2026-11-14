@@ -11,7 +11,16 @@ export type EventForSocket = (socket: SocketSender) => AnyServerEventType;
 export interface HostSocketRegistry {
   set: (socket: SocketSender) => void;
   clear: (socket: SocketSender) => void;
-  send: (event: AnyServerEventType, preferred?: SocketSender) => void;
+  /**
+   * Sends a command to one host the conversation's owner `owns`: the
+   * preferred socket when it is one, else that person's latest host. Another
+   * person's host never receives it.
+   */
+  send: (
+    event: AnyServerEventType,
+    owns: (socket: SocketSender) => boolean,
+    preferred?: SocketSender,
+  ) => void;
   /** Every host, each once, except the sockets `isServed` already answers for. */
   broadcast: (
     event: AnyServerEventType,
@@ -51,17 +60,21 @@ function buildSet(state: RegistryState) {
 
 function pickSocket(
   state: RegistryState,
+  owns: (socket: SocketSender) => boolean,
   preferred: SocketSender | undefined,
 ): SocketSender | undefined {
-  if (preferred !== undefined && state.sockets.includes(preferred)) {
-    return preferred;
-  }
-  return state.sockets.at(-1);
+  const owned = state.sockets.filter(owns);
+  if (preferred !== undefined && owned.includes(preferred)) return preferred;
+  return owned.at(-1);
 }
 
 function buildSend(state: RegistryState) {
-  return (event: AnyServerEventType, preferred?: SocketSender): void => {
-    const socket = pickSocket(state, preferred);
+  return (
+    event: AnyServerEventType,
+    owns: (socket: SocketSender) => boolean,
+    preferred?: SocketSender,
+  ): void => {
+    const socket = pickSocket(state, owns, preferred);
     if (socket === undefined) {
       console.warn(`${WS_LOG_PREFIX} sendToHost: no host connected`);
       return;
@@ -83,7 +96,8 @@ function buildBroadcastEach(state: RegistryState) {
 
 /**
  * Tracks every socket that said hello as a host. A command goes to the
- * preferred socket when it is still a host, else to the latest host.
+ * preferred socket when it is still a host its owner owns, else to that
+ * owner's latest host.
  */
 export function createHostSocketRegistry(): HostSocketRegistry {
   const state: RegistryState = { sockets: [] };

@@ -12,6 +12,8 @@ import { createChatSocketRegistry } from "../../src/server/chat-socket-registry.
 
 const FIRST_TAB_CONVERSATION = "conv-first-tab";
 const SECOND_TAB_CONVERSATION = "conv-second-tab";
+const CAMILLE = "u-camille";
+const DANA = "u-dana";
 const NAVIGATE_EVENT: AnyServerEventType = {
   type: EVENT_TYPES.HOST_COMMAND_NAVIGATE,
   path: "/dashboard/settings",
@@ -27,11 +29,28 @@ function buildTab(): Tab {
   return { socket: { send }, send };
 }
 
-function openTwoTabs() {
+/** Every conversation belongs to Camille, unless `owners` says otherwise. */
+function ownedBy(owners: Record<string, string> = {}) {
+  return {
+    get: (conversationId: string) => ({
+      messages: [],
+      createdAtMs: 0,
+      updatedAtMs: 0,
+      ownerId: Object.hasOwn(owners, conversationId)
+        ? owners[conversationId]
+        : CAMILLE,
+    }),
+  };
+}
+
+function openTwoTabs(secondTabOwner = CAMILLE) {
   const hosts = createHostSocketRegistry();
   const chats = createChatSocketRegistry();
+  const viewers = new WeakMap<SocketSender, string>();
   const first = buildTab();
   const second = buildTab();
+  viewers.set(first.socket, CAMILLE);
+  viewers.set(second.socket, secondTabOwner);
   hosts.set(first.socket);
   chats.set(FIRST_TAB_CONVERSATION, first.socket);
   hosts.set(second.socket);
@@ -41,7 +60,12 @@ function openTwoTabs() {
     chats,
     first,
     second,
-    route: createHostCommandRouter(hosts, chats),
+    route: createHostCommandRouter({
+      hosts,
+      chats,
+      conversations: ownedBy({ [SECOND_TAB_CONVERSATION]: secondTabOwner }),
+      viewers,
+    }),
   };
 }
 
@@ -60,6 +84,15 @@ describe("createHostCommandRouter", () => {
     route(FIRST_TAB_CONVERSATION)(NAVIGATE_EVENT);
     expect(first.send).not.toHaveBeenCalled();
     expect(second.send).toHaveBeenCalledWith(JSON.stringify(NAVIGATE_EVENT));
+  });
+
+  it("never falls back to another person's host (fails a fallback to the latest host of any user)", () => {
+    const { hosts, chats, first, second, route } = openTwoTabs(DANA);
+    hosts.clear(first.socket);
+    chats.clear(first.socket);
+    route(FIRST_TAB_CONVERSATION)(NAVIGATE_EVENT);
+    expect(first.send).not.toHaveBeenCalled();
+    expect(second.send).not.toHaveBeenCalled();
   });
 
   it("falls back to the latest host for a conversation no tab carries", () => {

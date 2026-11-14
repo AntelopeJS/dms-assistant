@@ -26,6 +26,9 @@ function buildEvent(): AnyServerEventType {
   return { type: EVENT_TYPES.HOST_COMMAND_NAVIGATE, path: "/x" };
 }
 
+/** Every host belongs to the command's owner. */
+const anyone = (): boolean => true;
+
 describe("createHostSocketRegistry", () => {
   it("starts empty", () => {
     const registry = createHostSocketRegistry();
@@ -36,7 +39,7 @@ describe("createHostSocketRegistry", () => {
     const registry = createHostSocketRegistry();
     const { socket, send: sendSpy } = buildFakeHost();
     registry.set(socket);
-    registry.send(buildEvent());
+    registry.send(buildEvent(), anyone);
     expect(sendSpy).toHaveBeenCalledTimes(1);
     const arg = sendSpy.mock.calls[0]?.[0];
     expect(JSON.parse(String(arg))).toEqual(buildEvent());
@@ -59,13 +62,27 @@ describe("createHostSocketRegistry", () => {
     const second = buildFakeHost();
     registry.set(first.socket);
     registry.set(second.socket);
-    registry.send(buildEvent(), first.socket);
+    registry.send(buildEvent(), anyone, first.socket);
     expect(first.send).toHaveBeenCalledTimes(1);
     expect(second.send).not.toHaveBeenCalled();
     registry.clear(first.socket);
-    registry.send(buildEvent(), first.socket);
+    registry.send(buildEvent(), anyone, first.socket);
     expect(first.send).toHaveBeenCalledTimes(1);
     expect(second.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends only to a host its owner owns, never another person's latest (fails a send to any host)", () => {
+    const registry = createHostSocketRegistry();
+    const mine = buildFakeHost();
+    const theirs = buildFakeHost();
+    registry.set(mine.socket);
+    registry.set(theirs.socket);
+    registry.send(buildEvent(), (socket) => socket === mine.socket);
+    expect(mine.send).toHaveBeenCalledOnce();
+    expect(theirs.send).not.toHaveBeenCalled();
+    registry.clear(mine.socket);
+    registry.send(buildEvent(), (socket) => socket === mine.socket);
+    expect(theirs.send).not.toHaveBeenCalled();
   });
 
   it("falls back to an earlier host once the latest one leaves", () => {
@@ -75,7 +92,7 @@ describe("createHostSocketRegistry", () => {
     registry.set(first.socket);
     registry.set(second.socket);
     registry.clear(second.socket);
-    registry.send(buildEvent());
+    registry.send(buildEvent(), anyone);
     expect(first.send).toHaveBeenCalledTimes(1);
   });
 
@@ -107,6 +124,6 @@ describe("createHostSocketRegistry", () => {
 
   it("send is a no-op when no socket is set", () => {
     const registry = createHostSocketRegistry();
-    expect(() => registry.send(buildEvent())).not.toThrow();
+    expect(() => registry.send(buildEvent(), anyone)).not.toThrow();
   });
 });

@@ -380,7 +380,6 @@ function buildWsStack({
     conversationStore,
     settingsStore,
     mcpDeps: {
-      getCurrentPage: () => hostState.getCurrentPage(),
       registry,
       scanner,
       hostProjectRoot: args.root,

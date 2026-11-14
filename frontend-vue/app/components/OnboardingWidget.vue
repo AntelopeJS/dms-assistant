@@ -5,8 +5,8 @@ import { ONBOARDING_CONTROLLER_KEY } from "../onboarding/runtime";
 import { accountSummary } from "../views/onboarding/login-text";
 
 /**
- * The card the DMS widget dock unfolds from the assistant's chip: the AI the assistant runs on,
- * the project's mockups, and the way back into the onboarding popup.
+ * The card the DMS widget dock unfolds from the assistant's chip: the AI the assistant runs on and
+ * the project's mockups. The chip itself opens the onboarding popup and carries its attention dot.
  */
 const onboarding = inject(ONBOARDING_CONTROLLER_KEY, null);
 const { t } = useChatI18n();
@@ -33,12 +33,6 @@ const mockups = computed(
 			<span class="text-highlighted text-sm font-semibold">
 				{{ t("dms_ai.views.onboarding.widget.label") }}
 			</span>
-			<span
-				v-if="controller.needsAttention.value"
-				class="bg-secondary ms-auto size-2 rounded-full"
-				:aria-label="t('dms_ai.views.onboarding.widget.attention')"
-				role="img"
-			/>
 		</div>
 		<dl class="grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1.5 text-[13px]">
 			<dt class="text-muted">{{ t("dms_ai.views.onboarding.widget.ai") }}</dt>
@@ -57,11 +51,5 @@ const mockups = computed(
 				<dd class="text-highlighted">{{ mockups }}</dd>
 			</template>
 		</dl>
-		<UButton
-			:label="t('dms_ai.views.onboarding.widget.open')"
-			size="sm"
-			block
-			@click="controller.open()"
-		/>
 	</div>
 </template>

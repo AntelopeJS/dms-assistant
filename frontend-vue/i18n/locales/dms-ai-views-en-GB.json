@@ -153,11 +153,9 @@
 				"progress": "Step {step} of 3",
 				"widget": {
 					"label": "Assistant",
-					"attention": "Assistant, setup unfinished",
 					"ai": "AI",
 					"not_connected": "Not connected",
-					"mockups": "Mockups",
-					"open": "Open"
+					"mockups": "Mockups"
 				},
 				"welcome": {
 					"title": "Let’s build your back office",

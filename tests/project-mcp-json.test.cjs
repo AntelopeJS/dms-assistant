@@ -200,6 +200,7 @@ void test("core wrote no launcher, as when its backend is not on this machine: t
 });
 
 void test("nothing to change: the step does not rewrite the file, its bytes and mtime unchanged (fails a step that rewrites the file on every start)", async () => {
+  await coreStarts(false);
   const filePath = path.join(dir, MCP_JSON);
   const text = `{\n    "mcpServers": {\n        "dms": ${JSON.stringify(DMS_ENTRY)}\n    }\n}\n`;
   await writeFile(filePath, text);

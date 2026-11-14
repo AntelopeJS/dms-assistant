@@ -1,7 +1,7 @@
 /**
  * The human-readable title of every MCP tool dms-ai serves or once served,
  * keyed by its snake_case name. MCP clients show the title; the model calls
- * the name; a transcript that recorded an older name is migrated to these.
+ * the name.
  */
 export const MCP_TOOL_TITLES = {
   get_current_page: "Get current page",

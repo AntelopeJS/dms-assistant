@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
+import { chmod, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { WINDOWS_PLATFORM } from "../constants/codex.js";
@@ -44,9 +44,19 @@ function lookUpCurrentUserSid(): Promise<string> {
 }
 
 /**
- * Windows ignores the POSIX mode, so the file's inherited ACL, which lets
- * SYSTEM and the Administrators group read it, is replaced by one entry for
- * the current account.
+ * The ACL file `icacls /restore` reads: in UTF-16LE, each file's name relative
+ * to the directory, then its security descriptor in SDDL. `D:P` is a protected
+ * DACL, which inherits nothing; its one entry grants the account full access.
+ */
+function ownerOnlyAclFile(file: string, sid: string): Buffer {
+  const descriptor = `D:P(A;;FA;;;${sid})`;
+  return Buffer.from(`${path.basename(file)}\r\n${descriptor}\r\n`, "utf16le");
+}
+
+/**
+ * Windows ignores the POSIX mode, and a new file gets entries for SYSTEM and
+ * the Administrators group, inherited or from the creator's token, so its
+ * whole DACL is replaced by one entry for the current account.
  */
 async function restrictToCurrentUser(file: string): Promise<void> {
   if (process.platform !== WINDOWS_PLATFORM) {
@@ -54,11 +64,17 @@ async function restrictToCurrentUser(file: string): Promise<void> {
     return;
   }
   const sid = await lookUpCurrentUserSid();
-  await execFileAsync(
-    systemTool("icacls.exe"),
-    [file, "/inheritance:r", "/grant:r", `*${sid}:F`],
-    { windowsHide: true },
-  );
+  const aclFile = `${file}.acl`;
+  await writeFile(aclFile, ownerOnlyAclFile(file, sid), { flag: "wx" });
+  try {
+    await execFileAsync(
+      systemTool("icacls.exe"),
+      [path.dirname(file), "/restore", aclFile],
+      { windowsHide: true },
+    );
+  } finally {
+    await rm(aclFile, { force: true });
+  }
 }
 
 /**

@@ -184,7 +184,7 @@ describe("sidecar client authentication", () => {
   it("rejects the socket without the Bearer credential, even with cookies, query tokens or the retired subprotocol", async () => {
     const attempts = [
       { protocol: undefined, headers: { Cookie: `token=${CLIENT_TOKEN}` } },
-      { protocol: `dms-assistant.${CLIENT_TOKEN}`, headers: {} },
+      { protocol: `dms-ai.${CLIENT_TOKEN}`, headers: {} },
       { protocol: undefined, headers: { Authorization: "Bearer wrong" } },
     ];
     for (const { protocol, headers } of attempts) {

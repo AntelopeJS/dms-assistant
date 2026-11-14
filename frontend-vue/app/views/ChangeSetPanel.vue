@@ -189,14 +189,14 @@ function openPage(): void {
 			v-if="isUndone || changeSet.overlapped"
 			class="flex flex-col gap-2 px-5 pb-3"
 		>
-			<DmsBanner
+			<DmsNoticeBanner
 				v-if="isUndone"
 				size="sm"
 				tone="info"
 				icon="i-ph-arrow-counter-clockwise"
 				:title="undoneNote"
 			/>
-			<DmsBanner
+			<DmsNoticeBanner
 				v-if="changeSet.overlapped"
 				size="sm"
 				tone="warning"

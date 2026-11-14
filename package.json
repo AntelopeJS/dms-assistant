@@ -52,7 +52,7 @@
     "lint": "pnpm run --reporter=append-only \"/^lint:(oxlint|frontend|rules)$/\"",
     "lint:oxlint": "oxlint",
     "lint:frontend": "pnpm --dir frontend-vue lint",
-    "lint:rules": "node node_modules/@antelopejs/dms/frontend-vue/scripts/check-api-error-presentation.mjs frontend-vue/app frontend-vue/builder/app && node scripts/check-playground-install.mjs && node scripts/check-i18n.mjs && node scripts/frontend-source-check.cjs",
+    "lint:rules": "node node_modules/@antelopejs/dms/frontend-vue/scripts/check-api-error-presentation.mjs frontend-vue/app frontend-vue/builder/app && node scripts/check-playground-install.mjs && node scripts/check-i18n.mjs && node scripts/check-dms-components.mjs && node scripts/frontend-source-check.cjs",
     "lint:fix": "oxlint --fix && oxfmt . && pnpm --dir frontend-vue lint:fix",
     "typecheck": "pnpm run --reporter=append-only \"/^typecheck:(module|chat|sidecar|sidecar-tests)$/\"",
     "typecheck:module": "tsc --noEmit",

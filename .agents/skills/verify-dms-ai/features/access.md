@@ -16,6 +16,7 @@ covers:
   - sidecar/src/mcp/http-binding.ts
   - src/routes/sidecar-answers.ts
   - src/routes/logs.ts
+  - src/routes/query-text.ts
   - src/routes/pages-registry.ts
   - src/pages-registry.ts
   - src/logging/**

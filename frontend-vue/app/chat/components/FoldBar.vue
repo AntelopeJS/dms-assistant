@@ -16,37 +16,43 @@ const { t } = useChatI18n();
 const TOGGLE_KEY = "k";
 
 const label = computed(
-	() => `${t("dms_ai.panel.fold.open")} (${shortcutLabel(TOGGLE_KEY, true)})`,
+	() =>
+		`${t("dms_assistant.panel.fold.open")} (${shortcutLabel(TOGGLE_KEY, true)})`,
 );
 </script>
 
 <template>
-	<Transition name="dms-ai-fold">
+	<Transition name="dms-assistant-fold">
 		<aside
 			v-if="props.isFolded.value"
-			class="dms-ai-chat-tokens dms-ai-fold"
+			class="dms-assistant-chat-tokens dms-assistant-fold"
 			:data-state="props.state.value"
 		>
 			<button
 				type="button"
-				class="dms-ai-fold__button"
+				class="dms-assistant-fold__button"
 				:aria-label="label"
 				:title="label"
 				@click="props.onUnfold"
 			>
-				<span class="dms-ai-fold__tile" aria-hidden="true">
+				<span class="dms-assistant-fold__tile" aria-hidden="true">
 					<UIcon name="i-ph-sparkle" />
 				</span>
-				<span class="dms-ai-fold__dot" aria-hidden="true" />
-				<span class="dms-ai-fold__name">{{ t("dms_ai.panel.assistant") }}</span>
-				<UIcon name="i-ph-caret-double-left" class="dms-ai-fold__caret" />
+				<span class="dms-assistant-fold__dot" aria-hidden="true" />
+				<span class="dms-assistant-fold__name">
+					{{ t("dms_assistant.panel.assistant") }}
+				</span>
+				<UIcon
+					name="i-ph-caret-double-left"
+					class="dms-assistant-fold__caret"
+				/>
 			</button>
 		</aside>
 	</Transition>
 </template>
 
 <style scoped>
-.dms-ai-fold {
+.dms-assistant-fold {
 	position: fixed;
 	top: var(--ui-header-height);
 	right: 0;
@@ -57,7 +63,7 @@ const label = computed(
 	background: var(--dms-bg-sidebar, var(--ui-bg));
 }
 
-.dms-ai-fold__button {
+.dms-assistant-fold__button {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -71,17 +77,17 @@ const label = computed(
 	cursor: pointer;
 }
 
-.dms-ai-fold__button:hover {
+.dms-assistant-fold__button:hover {
 	background: var(--ai-bg-hover);
 	color: var(--ui-text-highlighted);
 }
 
-.dms-ai-fold__button:focus-visible {
+.dms-assistant-fold__button:focus-visible {
 	outline: 2px solid var(--ui-primary);
 	outline-offset: -2px;
 }
 
-.dms-ai-fold__tile {
+.dms-assistant-fold__tile {
 	display: grid;
 	place-items: center;
 	width: 26px;
@@ -93,65 +99,65 @@ const label = computed(
 	font-size: 14px;
 }
 
-.dms-ai-fold__dot {
+.dms-assistant-fold__dot {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
 	background: var(--ui-success);
 }
 
-.dms-ai-fold[data-state="working"] .dms-ai-fold__dot {
+.dms-assistant-fold[data-state="working"] .dms-assistant-fold__dot {
 	background: var(--ai);
-	animation: dms-ai-fold-pulse 1.2s ease-in-out infinite;
+	animation: dms-assistant-fold-pulse 1.2s ease-in-out infinite;
 }
 
-.dms-ai-fold[data-state="question"] .dms-ai-fold__dot {
+.dms-assistant-fold[data-state="question"] .dms-assistant-fold__dot {
 	background: var(--ui-warning);
 }
 
-.dms-ai-fold[data-state="disconnected"] .dms-ai-fold__dot {
+.dms-assistant-fold[data-state="disconnected"] .dms-assistant-fold__dot {
 	background: var(--ui-error);
 }
 
-.dms-ai-fold__name {
+.dms-assistant-fold__name {
 	writing-mode: vertical-rl;
 	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.02em;
 }
 
-.dms-ai-fold__caret {
+.dms-assistant-fold__caret {
 	width: 14px;
 	height: 14px;
 	margin-top: auto;
 }
 
-.dms-ai-fold-enter-active,
-.dms-ai-fold-leave-active {
+.dms-assistant-fold-enter-active,
+.dms-assistant-fold-leave-active {
 	transition:
 		transform 180ms ease,
 		opacity 180ms ease;
 }
 
-.dms-ai-fold-enter-from,
-.dms-ai-fold-leave-to {
+.dms-assistant-fold-enter-from,
+.dms-assistant-fold-leave-to {
 	transform: translateX(100%);
 	opacity: 0;
 }
 
-@keyframes dms-ai-fold-pulse {
+@keyframes dms-assistant-fold-pulse {
 	50% {
 		opacity: 0.35;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.dms-ai-fold-enter-active,
-	.dms-ai-fold-leave-active {
+	.dms-assistant-fold-enter-active,
+	.dms-assistant-fold-leave-active {
 		transition: none;
 	}
 
-	.dms-ai-fold[data-state="working"] .dms-ai-fold__dot {
+	.dms-assistant-fold[data-state="working"] .dms-assistant-fold__dot {
 		animation: none;
 	}
 }

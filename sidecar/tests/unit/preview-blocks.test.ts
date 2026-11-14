@@ -424,7 +424,7 @@ describe("block preview transcript", () => {
     BlockPreviewServices & { conversationStore: ConversationStore };
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-preview-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-preview-"));
     sent = [];
     const store = createStore({ filePath: join(dir, "state.json") });
     const conversationStore = createConversationStore({ store });

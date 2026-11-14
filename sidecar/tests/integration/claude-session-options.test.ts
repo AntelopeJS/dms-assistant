@@ -42,7 +42,7 @@ describe("the options a Claude session starts with", () => {
   let client: WebSocket | undefined;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-session-options-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-session-options-"));
   });
 
   afterEach(async () => {
@@ -92,7 +92,7 @@ describe("the options a Claude session starts with", () => {
             "--client=chat",
           ],
         },
-        "dms-ai": { type: "sdk" },
+        "dms-assistant": { type: "sdk" },
       });
       expect(session?.disallowedTools).toEqual([
         "mcp__dms__navigate_to_page",

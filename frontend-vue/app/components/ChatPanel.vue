@@ -56,11 +56,11 @@ onMounted(() => {
 </script>
 
 <template>
-	<div class="dms-ai-panel">
+	<div class="dms-assistant-panel">
 		<template v-if="isMounted">
 			<ChatView
 				v-if="session"
-				class="dms-ai-panel-chat"
+				class="dms-assistant-panel-chat"
 				:transport="session.chat"
 				:intents="session.intents"
 				:page="session.currentPage.value"
@@ -71,7 +71,7 @@ onMounted(() => {
 			/>
 			<div
 				v-if="isUnavailable || isFirstConnect"
-				class="dms-ai-panel-status"
+				class="dms-assistant-panel-status"
 				role="status"
 			>
 				<UButton
@@ -81,32 +81,32 @@ onMounted(() => {
 					variant="ghost"
 					square
 					icon="i-ph-x"
-					class="dms-ai-panel-close"
-					:aria-label="t('dms_ai.panel.header.close')"
+					class="dms-assistant-panel-close"
+					:aria-label="t('dms_assistant.panel.header.close')"
 					@click="close"
 				/>
 				<template v-if="isUnavailable">
 					<DmsIconWell icon="i-ph-plugs" tone="error" size="lg" />
-					<b class="dms-ai-panel-status-title">
-						{{ t("dms_ai.panel.unavailable.title") }}
+					<b class="dms-assistant-panel-status-title">
+						{{ t("dms_assistant.panel.unavailable.title") }}
 					</b>
-					<span class="dms-ai-panel-status-text">
+					<span class="dms-assistant-panel-status-text">
 						{{
 							lastError
-								? t("dms_ai.panel.unavailable.text_error")
-								: t("dms_ai.panel.unavailable.text")
+								? t("dms_assistant.panel.unavailable.text_error")
+								: t("dms_assistant.panel.unavailable.text")
 						}}
 					</span>
-					<code v-if="lastError" class="dms-ai-panel-error">
+					<code v-if="lastError" class="dms-assistant-panel-error">
 						{{ lastError }}
 					</code>
-					<div class="dms-ai-panel-actions">
+					<div class="dms-assistant-panel-actions">
 						<UButton
 							size="sm"
 							color="secondary"
 							icon="i-ph-arrows-clockwise"
 							:loading="isRestarting"
-							:label="t('dms_ai.panel.unavailable.restart')"
+							:label="t('dms_assistant.panel.unavailable.restart')"
 							@click="restart"
 						/>
 						<UButton
@@ -114,18 +114,18 @@ onMounted(() => {
 							color="neutral"
 							variant="outline"
 							icon="i-ph-gear-six"
-							:label="t('dms_ai.panel.header.settings')"
+							:label="t('dms_assistant.panel.header.settings')"
 							@click="navigate(SETTINGS_PAGE_PATH)"
 						/>
 					</div>
-					<span class="dms-ai-panel-note">
-						{{ t("dms_ai.panel.unavailable.kept") }}
+					<span class="dms-assistant-panel-note">
+						{{ t("dms_assistant.panel.unavailable.kept") }}
 					</span>
 				</template>
 				<template v-else>
-					<span class="dms-ai-panel-spinner" />
-					<b class="dms-ai-panel-status-title">
-						{{ t("dms_ai.panel.connection.first_connect") }}
+					<span class="dms-assistant-panel-spinner" />
+					<b class="dms-assistant-panel-status-title">
+						{{ t("dms_assistant.panel.connection.first_connect") }}
 					</b>
 				</template>
 			</div>
@@ -134,7 +134,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.dms-ai-panel {
+.dms-assistant-panel {
 	position: relative;
 	display: flex;
 	min-width: 0;
@@ -142,12 +142,12 @@ onMounted(() => {
 	color: var(--ui-text);
 }
 
-.dms-ai-panel-chat {
+.dms-assistant-panel-chat {
 	flex: 1 1 auto;
 	min-width: 0;
 }
 
-.dms-ai-panel-status {
+.dms-assistant-panel-status {
 	position: absolute;
 	inset: 0;
 	z-index: 2;
@@ -164,24 +164,24 @@ onMounted(() => {
 	background: var(--dms-bg-sidebar, var(--ui-bg));
 }
 
-.dms-ai-panel-status-title {
+.dms-assistant-panel-status-title {
 	font-size: 15px;
 	font-weight: 600;
 }
 
-.dms-ai-panel-status-text {
+.dms-assistant-panel-status-text {
 	color: var(--ui-text-muted);
 }
 
 /* Sits where the panel header's close button does: centred in a header
    as tall as the DMS navbar (28px is the small square button height). */
-.dms-ai-panel-close {
+.dms-assistant-panel-close {
 	position: absolute;
 	top: calc((var(--ui-header-height) - 28px) / 2);
 	right: 8px;
 }
 
-.dms-ai-panel-error {
+.dms-assistant-panel-error {
 	display: block;
 	max-width: 320px;
 	padding: 8px 10px;
@@ -194,28 +194,28 @@ onMounted(() => {
 	overflow-wrap: anywhere;
 }
 
-.dms-ai-panel-actions {
+.dms-assistant-panel-actions {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
 	gap: 6px;
 }
 
-.dms-ai-panel-note {
+.dms-assistant-panel-note {
 	font-size: 12px;
 	color: var(--ui-text-muted);
 }
 
-.dms-ai-panel-spinner {
+.dms-assistant-panel-spinner {
 	width: 22px;
 	height: 22px;
 	border: 2px solid var(--dms-assistant-line);
 	border-top-color: var(--ui-secondary);
 	border-radius: 50%;
-	animation: dms-ai-spin 0.7s linear infinite;
+	animation: dms-assistant-spin 0.7s linear infinite;
 }
 
-@keyframes dms-ai-spin {
+@keyframes dms-assistant-spin {
 	to {
 		transform: rotate(360deg);
 	}

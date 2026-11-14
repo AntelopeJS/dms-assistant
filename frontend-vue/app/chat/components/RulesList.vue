@@ -18,9 +18,11 @@ const { t } = useChatI18n();
 
 <template>
 	<div class="cb-rules">
-		<span class="cb-rules__title">{{ t("dms_ai.panel.rules.title") }}</span>
+		<span class="cb-rules__title">
+			{{ t("dms_assistant.panel.rules.title") }}
+		</span>
 		<p v-if="rules.length === 0" class="cb-rules__empty">
-			{{ t("dms_ai.panel.rules.empty") }}
+			{{ t("dms_assistant.panel.rules.empty") }}
 		</p>
 		<ul v-else class="cb-rules__list">
 			<li v-for="rule in rules" :key="rule.id" class="cb-rules__item">
@@ -28,19 +30,21 @@ const { t } = useChatI18n();
 				<span class="cb-rules__label">
 					{{
 						rule.label ||
-						t(`dms_ai.panel.rules.kind_${rule.kind}`, { value: rule.value })
+						t(`dms_assistant.panel.rules.kind_${rule.kind}`, {
+							value: rule.value,
+						})
 					}}
 				</span>
 				<UButton
 					size="xs"
 					color="neutral"
 					variant="ghost"
-					:label="t('dms_ai.panel.rules.revoke')"
+					:label="t('dms_assistant.panel.rules.revoke')"
 					@click="emit('revoke', rule.id)"
 				/>
 			</li>
 		</ul>
-		<p class="cb-rules__note">{{ t("dms_ai.panel.rules.note") }}</p>
+		<p class="cb-rules__note">{{ t("dms_assistant.panel.rules.note") }}</p>
 	</div>
 </template>
 

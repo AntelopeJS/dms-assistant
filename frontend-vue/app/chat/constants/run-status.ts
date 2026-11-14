@@ -12,12 +12,12 @@ export const ACTIVITY_KINDS = {
 
 /** Translation key of what a running turn shows, by reported activity. */
 export const ACTIVITY_LABEL_KEYS: Record<ActivityKind, string> = {
-	[ACTIVITY_KINDS.THINKING]: "dms_ai.panel.activity.thinking",
-	[ACTIVITY_KINDS.RESPONDING]: "dms_ai.panel.activity.responding",
-	[ACTIVITY_KINDS.WRITING]: "dms_ai.panel.activity.writing",
-	[ACTIVITY_KINDS.TOOL]: "dms_ai.panel.activity.tool",
-	[ACTIVITY_KINDS.COMPACTING]: "dms_ai.panel.activity.compacting",
-	[ACTIVITY_KINDS.RETRYING]: "dms_ai.panel.activity.retrying",
+	[ACTIVITY_KINDS.THINKING]: "dms_assistant.panel.activity.thinking",
+	[ACTIVITY_KINDS.RESPONDING]: "dms_assistant.panel.activity.responding",
+	[ACTIVITY_KINDS.WRITING]: "dms_assistant.panel.activity.writing",
+	[ACTIVITY_KINDS.TOOL]: "dms_assistant.panel.activity.tool",
+	[ACTIVITY_KINDS.COMPACTING]: "dms_assistant.panel.activity.compacting",
+	[ACTIVITY_KINDS.RETRYING]: "dms_assistant.panel.activity.retrying",
 };
 
 /** Activities whose detail names a tool, shown with the tool's own label. */

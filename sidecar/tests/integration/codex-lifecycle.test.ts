@@ -298,7 +298,7 @@ describe("codex process lifecycle", () => {
   });
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-life-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-life-"));
     stateDir = join(dir, ".state");
     CODEX_FIXTURE.use("plain");
   });

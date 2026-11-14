@@ -48,7 +48,7 @@ const harness = useRouteHarness();
 const { SETTINGS_SECTIONS } = require("../dist/pages/settings/sections.js");
 
 const PAGE_LOCALES = PAGE_LOCALE_FILES.map(readLocale);
-const I18N_KEY = /\$dms_ai\.[A-Za-z0-9_.-]+/g;
+const I18N_KEY = /\$dms_assistant\.[A-Za-z0-9_.-]+/g;
 
 /**
  * @param {unknown} locale
@@ -64,7 +64,7 @@ function nodeAt(locale, parts) {
 }
 
 /**
- * The `$dms_ai` keys an answer holds that a page locale does not translate.
+ * The `$dms_assistant` keys an answer holds that a page locale does not translate.
  * @param {unknown} answer
  */
 function untranslated(answer) {
@@ -100,7 +100,7 @@ void test("raises the most pressing status banner: offline with Restart, a faile
     type: "api",
     url: "/ai/sidecar/restart",
     method: "POST",
-    successMessage: "$dms_ai.status.banner.offline.restarted",
+    successMessage: "$dms_assistant.status.banner.offline.restarted",
   });
   sidecar.isDown = false;
   answer("GET", "/status", 200, {
@@ -172,7 +172,7 @@ void test("hands a pasted return address to the sidecar, and its refusal back", 
 const SAFE_MODE_FIELD = {
   id: "safeMode",
   type: "boolean",
-  description: "$dms_ai.settings.safe_mode.description",
+  description: "$dms_assistant.settings.safe_mode.description",
   component: { type: "x", options: {} },
 };
 
@@ -198,11 +198,11 @@ void test("turns the Safe mode switch off the table, saying why, while the Build
   );
   assert.deepEqual(
     [missing.fields[0].disabled, missing.fields[0].description],
-    [true, "$dms_ai.settings.safe_mode.builder_missing"],
+    [true, "$dms_assistant.settings.safe_mode.builder_missing"],
   );
   assert.deepEqual(
     [present.fields[0].disabled, present.fields[0].description],
-    [undefined, "$dms_ai.settings.safe_mode.description"],
+    [undefined, "$dms_assistant.settings.safe_mode.description"],
   );
   assert.deepEqual(untranslated(missing), []);
 });
@@ -297,7 +297,7 @@ void test("words the Codex sign-in reason in the settings page's own text, in ev
     {
       value: "codex",
       disabled: true,
-      description: "$dms_ai.settings.provider.codex_not_signed_in",
+      description: "$dms_assistant.settings.provider.codex_not_signed_in",
     },
   ]);
   assert.deepEqual(untranslated(form), []);

@@ -25,7 +25,7 @@ describe("sidecar lock", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-lock-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-lock-"));
   });
 
   afterEach(async () => {

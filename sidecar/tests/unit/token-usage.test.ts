@@ -14,7 +14,7 @@ import {
 } from "../../src/state/conversations.js";
 import { createStore } from "../../src/state/store.js";
 
-const TMP_PREFIX = "dms-ai-usage-";
+const TMP_PREFIX = "dms-assistant-usage-";
 const STATE_FILE = "state.json";
 const CONVERSATION_ID = "conv-usage-1";
 const FAST_DEBOUNCE_MS = 10;

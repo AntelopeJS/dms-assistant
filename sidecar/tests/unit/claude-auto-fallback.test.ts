@@ -40,7 +40,7 @@ describe("Auto review the CLI will not run", () => {
 
   beforeEach(async () => {
     refusals = [];
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-auto-fallback-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-auto-fallback-"));
     traceFile = join(dir, "trace.jsonl");
     CLAUDE_FIXTURE.use("plain");
     process.env.MOCK_CLAUDE_TRACE = traceFile;

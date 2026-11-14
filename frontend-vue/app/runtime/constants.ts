@@ -51,19 +51,19 @@ export const MODAL_OPEN_SELECTOR = '[role="dialog"][aria-modal="true"]';
 
 /** The dashboard route of the mockups, drawn full width with the panel folded. */
 export const MOCKUP_PATH = "/mockup";
-export const CHAT_PANEL_COMPONENT_NAME = "DmsAiChatPanel";
+export const CHAT_PANEL_COMPONENT_NAME = "DmsAssistantChatPanel";
 /** The panel's id among the dashboard's docked side panels. */
-export const SIDE_PANEL_ID = "dms-ai:assistant";
+export const SIDE_PANEL_ID = "dms-assistant:assistant";
 export const PANEL_DEFAULT_WIDTH_PX = 460;
 export const PANEL_MIN_WIDTH_PX = 360;
 /** Wide enough for a diff side by side; the DMS caps it at 60% of the window too. */
 export const PANEL_MAX_WIDTH_PX = 820;
-export const COMMAND_PALETTE_ASSISTANT_ID = "dms-ai:assistant";
-export const PALETTE_ANSWER_COMPONENT_NAME = "DmsAiPaletteAnswer";
-export const PALETTE_ASSISTANT_LABEL = "$dms_ai.panel.palette.assistant";
+export const COMMAND_PALETTE_ASSISTANT_ID = "dms-assistant:assistant";
+export const PALETTE_ANSWER_COMPONENT_NAME = "DmsAssistantPaletteAnswer";
+export const PALETTE_ASSISTANT_LABEL = "$dms_assistant.panel.palette.assistant";
 export const PALETTE_ASSISTANT_PLACEHOLDER =
-	"$dms_ai.panel.palette.placeholder";
-export const LAUNCHER_ACTION_ID = "dms-ai-launcher";
+	"$dms_assistant.panel.palette.placeholder";
+export const LAUNCHER_ACTION_ID = "dms-assistant-launcher";
 /**
  * The chat panel's header shows the same icon, which is what gets it into the
  * renderer's icon bundle.
@@ -73,17 +73,17 @@ export const LAUNCHER_ICON = "i-ph-sparkle";
  * The component the header button draws in place of `icon` on a DMS that
  * knows `iconComponent`: the sparkle with the assistant's state.
  */
-export const LAUNCHER_ICON_COMPONENT_NAME = "DmsAiLauncherIcon";
+export const LAUNCHER_ICON_COMPONENT_NAME = "DmsAssistantLauncherIcon";
 export const LAUNCHER_ORDER = 50;
 /**
  * How long a finished turn stays marked when the panel was already open to
  * see it end; with the panel closed the mark waits for it to open.
  */
 export const LAUNCHER_FINISHED_HOLD_MS = 4_000;
-export const LAUNCHER_LABEL_KEY = "dms_ai.panel.launcher";
+export const LAUNCHER_LABEL_KEY = "dms_assistant.panel.launcher";
 /** The panel landmark's name, as an i18n key the DMS resolves. */
 export const PANEL_ARIA_LABEL = `$${LAUNCHER_LABEL_KEY}`;
-export const COMMAND_PALETTE_SOURCE_ID = "dms-ai";
+export const COMMAND_PALETTE_SOURCE_ID = "dms-assistant";
 export const COMMAND_PALETTE_ORDER = 60;
 /** The backend's view of the sidecar: pending approvals, last start error. */
 export const STATUS_PATH = "/ai/status";

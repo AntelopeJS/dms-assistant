@@ -15,8 +15,8 @@ const paths = computed(() => [
 		id: "scratch" as const,
 		icon: "i-ph-sparkle",
 		tone: "bg-(--dms-assistant-tint) text-secondary",
-		title: t("dms_ai.views.onboarding.paths.scratch_title"),
-		text: t("dms_ai.views.onboarding.paths.scratch_text"),
+		title: t("dms_assistant.views.onboarding.paths.scratch_title"),
+		text: t("dms_assistant.views.onboarding.paths.scratch_text"),
 	},
 	...(onboarding.canConnectDatabase
 		? [
@@ -24,8 +24,8 @@ const paths = computed(() => [
 					id: "connect-database" as const,
 					icon: "i-ph-database",
 					tone: "bg-(--dms-accent-tint) text-primary",
-					title: t("dms_ai.views.onboarding.paths.database_title"),
-					text: t("dms_ai.views.onboarding.paths.database_text", {
+					title: t("dms_assistant.views.onboarding.paths.database_title"),
+					text: t("dms_assistant.views.onboarding.paths.database_text", {
 						engines: engineNames(locale.value),
 					}),
 				},
@@ -36,8 +36,8 @@ const paths = computed(() => [
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.paths.title')"
-		:lede="t('dms_ai.views.onboarding.paths.lede')"
+		:title="t('dms_assistant.views.onboarding.paths.title')"
+		:lede="t('dms_assistant.views.onboarding.paths.lede')"
 	>
 		<div class="mt-6 flex flex-col gap-2.5">
 			<button
@@ -73,7 +73,7 @@ const paths = computed(() => [
 			<OnboardingDontShow />
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.paths.explore')"
+				:label="t('dms_assistant.views.onboarding.paths.explore')"
 				color="neutral"
 				variant="ghost"
 				@click="onboarding.close()"

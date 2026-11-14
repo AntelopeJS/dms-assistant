@@ -1,7 +1,7 @@
 import path from "node:path";
 import { SECRET_FILE_GLOBS } from "./secret-file-globs.js";
 
-export const CODEX_READ_ONLY_PROFILE = "dms-ai-read-only";
+export const CODEX_READ_ONLY_PROFILE = "dms-assistant-read-only";
 
 export interface CodexPermissionProfile {
   extraWorkspaceRoots: readonly string[];

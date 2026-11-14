@@ -21,17 +21,19 @@ const PART_SEPARATOR = " · ";
 
 function stateLabel(facts: StatusFacts, t: Translate): string {
 	const labels: Record<StatusKind, () => string> = {
-		ready: () => t("dms_ai.panel.status.ready"),
+		ready: () => t("dms_assistant.panel.status.ready"),
 		working: () =>
-			t("dms_ai.panel.status.working", { time: formatClock(facts.elapsedMs) }),
+			t("dms_assistant.panel.status.working", {
+				time: formatClock(facts.elapsedMs),
+			}),
 		waiting: () =>
 			t(
-				"dms_ai.panel.status.waiting",
+				"dms_assistant.panel.status.waiting",
 				{ count: facts.pendingCount },
 				facts.pendingCount,
 			),
-		connecting: () => t("dms_ai.panel.status.connecting"),
-		offline: () => t("dms_ai.panel.status.offline"),
+		connecting: () => t("dms_assistant.panel.status.connecting"),
+		offline: () => t("dms_assistant.panel.status.offline"),
 	};
 	return labels[facts.kind]();
 }

@@ -134,14 +134,14 @@ function onKeydown(event: KeyboardEvent): void {
 		class="cb-ask"
 		role="dialog"
 		tabindex="-1"
-		:aria-label="t('dms_ai.panel.questions.aria')"
+		:aria-label="t('dms_assistant.panel.questions.aria')"
 		@keydown="onKeydown"
 	>
 		<div class="cb-ask__top">
 			<span class="cb-ask__eyebrow">
 				✦
 				{{
-					t("dms_ai.panel.questions.heading", {
+					t("dms_assistant.panel.questions.heading", {
 						index: page + 1,
 						total,
 						header: current.header,
@@ -186,7 +186,7 @@ function onKeydown(event: KeyboardEvent): void {
 					size="sm"
 					color="secondary"
 					variant="subtle"
-					:label="t('dms_ai.panel.questions.suggested')"
+					:label="t('dms_assistant.panel.questions.suggested')"
 				/>
 				<span v-if="option.description" class="opt-card__d">
 					{{ option.description }}
@@ -201,9 +201,9 @@ function onKeydown(event: KeyboardEvent): void {
 				@click="pick(OTHER)"
 			>
 				<span class="opt-card__k">{{ current.options.length + 1 }}</span>
-				<b>{{ t("dms_ai.panel.questions.other") }}</b>
+				<b>{{ t("dms_assistant.panel.questions.other") }}</b>
 				<span class="opt-card__d">
-					{{ t("dms_ai.panel.questions.other_hint") }}
+					{{ t("dms_assistant.panel.questions.other_hint") }}
 				</span>
 			</button>
 			<textarea
@@ -212,7 +212,7 @@ function onKeydown(event: KeyboardEvent): void {
 				v-model="customTexts[page]"
 				class="cb-ask__custom"
 				rows="2"
-				:placeholder="t('dms_ai.panel.questions.other_placeholder')"
+				:placeholder="t('dms_assistant.panel.questions.other_placeholder')"
 			/>
 		</div>
 		<div class="cb-ask__foot">
@@ -220,13 +220,16 @@ function onKeydown(event: KeyboardEvent): void {
 				size="sm"
 				color="neutral"
 				variant="ghost"
-				:label="t('dms_ai.panel.questions.skip')"
+				:label="t('dms_assistant.panel.questions.skip')"
 				@click="skip"
 			/>
 			<span class="cb-ask__spacer" />
 			<span class="cb-ask__count">
 				{{
-					t("dms_ai.panel.questions.answer_count", { index: page + 1, total })
+					t("dms_assistant.panel.questions.answer_count", {
+						index: page + 1,
+						total,
+					})
 				}}
 			</span>
 			<UButton
@@ -238,8 +241,8 @@ function onKeydown(event: KeyboardEvent): void {
 				{{
 					t(
 						isLast
-							? "dms_ai.panel.questions.send"
-							: "dms_ai.panel.questions.next",
+							? "dms_assistant.panel.questions.send"
+							: "dms_assistant.panel.questions.next",
 					)
 				}}
 				<UKbd value="↵" size="sm" />

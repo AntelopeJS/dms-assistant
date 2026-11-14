@@ -18,8 +18,8 @@ const { t } = useChatI18n();
 const busy = ref(false);
 
 const SUBSCRIPTIONS: Record<ProviderName, string> = {
-	claude: "dms_ai.views.onboarding.ai.claude_text",
-	codex: "dms_ai.views.onboarding.ai.codex_text",
+	claude: "dms_assistant.views.onboarding.ai.claude_text",
+	codex: "dms_assistant.views.onboarding.ai.codex_text",
 };
 
 function statusOf(provider: ProviderName) {
@@ -41,8 +41,8 @@ const hint = computed(() => {
 			tone: "text-warning",
 			text: t(
 				props.view.choice === "claude"
-					? "dms_ai.views.onboarding.ai.expired_claude"
-					: "dms_ai.views.onboarding.ai.expired_codex",
+					? "dms_assistant.views.onboarding.ai.expired_claude"
+					: "dms_assistant.views.onboarding.ai.expired_codex",
 			),
 		};
 	}
@@ -53,13 +53,13 @@ const hint = computed(() => {
 		email === undefined
 			? t(
 					claude
-						? "dms_ai.views.onboarding.ai.found_claude_plain"
-						: "dms_ai.views.onboarding.ai.found_codex_plain",
+						? "dms_assistant.views.onboarding.ai.found_claude_plain"
+						: "dms_assistant.views.onboarding.ai.found_codex_plain",
 				)
 			: t(
 					claude
-						? "dms_ai.views.onboarding.ai.found_claude"
-						: "dms_ai.views.onboarding.ai.found_codex",
+						? "dms_assistant.views.onboarding.ai.found_claude"
+						: "dms_assistant.views.onboarding.ai.found_codex",
 					{ email },
 				);
 	return { tone: "text-success", text };
@@ -80,8 +80,8 @@ async function proceed(): Promise<void> {
 
 <template>
 	<OnboardingFrame
-		:title="t('dms_ai.views.onboarding.ai.title')"
-		:lede="t('dms_ai.views.onboarding.ai.lede')"
+		:title="t('dms_assistant.views.onboarding.ai.title')"
+		:lede="t('dms_assistant.views.onboarding.ai.lede')"
 	>
 		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup">
 			<button
@@ -105,7 +105,7 @@ async function proceed(): Promise<void> {
 					color="success"
 					variant="soft"
 					size="sm"
-					:label="t('dms_ai.views.onboarding.ai.signed_in')"
+					:label="t('dms_assistant.views.onboarding.ai.signed_in')"
 				/>
 				<UBadge
 					v-else-if="statusOf(provider) === 'expired'"
@@ -113,7 +113,7 @@ async function proceed(): Promise<void> {
 					color="warning"
 					variant="soft"
 					size="sm"
-					:label="t('dms_ai.views.onboarding.ai.expired')"
+					:label="t('dms_assistant.views.onboarding.ai.expired')"
 				/>
 				<span
 					v-else
@@ -147,7 +147,7 @@ async function proceed(): Promise<void> {
 		<template #footer>
 			<UButton
 				v-if="onboarding.flow.value.history.length > 0"
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -157,8 +157,8 @@ async function proceed(): Promise<void> {
 			<UButton
 				:label="
 					works
-						? t('dms_ai.views.onboarding.ai.use')
-						: t('dms_ai.views.onboarding.proceed')
+						? t('dms_assistant.views.onboarding.ai.use')
+						: t('dms_assistant.views.onboarding.proceed')
 				"
 				trailing-icon="i-ph-arrow-right"
 				:disabled="view.choice === null"

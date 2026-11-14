@@ -8,7 +8,7 @@ const {
 
 const harness = useRouteHarness();
 
-void test("a usage answer of the wrong shape reads as the empty one (AntelopeJS/dms-ai#111)", async () => {
+void test("a usage answer of the wrong shape reads as the empty one", async () => {
   reset();
   answer("GET", "/metrics/usage", 200, { days: 3, totalTokens: "x" });
   const metrics = new harness.routes.AIMetricsController();
@@ -17,7 +17,7 @@ void test("a usage answer of the wrong shape reads as the empty one (AntelopeJS/
   assert.equal((await metrics.usageSummary("14")).items.length, 2);
 });
 
-void test("a settings answer of the wrong shape locks and defaults nothing on the form (AntelopeJS/dms-ai#111)", async () => {
+void test("a settings answer of the wrong shape locks and defaults nothing on the form", async () => {
   reset();
   answer("GET", "/settings", 200, {
     providers: { codex: "down" },

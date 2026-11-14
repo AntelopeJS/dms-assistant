@@ -35,11 +35,11 @@ const suggestions = computed(() =>
 		<h3>
 			{{
 				name
-					? t("dms_ai.panel.empty.title_page", { page: name })
-					: t("dms_ai.panel.empty.title")
+					? t("dms_assistant.panel.empty.title_page", { page: name })
+					: t("dms_assistant.panel.empty.title")
 			}}
 		</h3>
-		<p>{{ t(`dms_ai.panel.empty.text_${scope}`) }}</p>
+		<p>{{ t(`dms_assistant.panel.empty.text_${scope}`) }}</p>
 		<div class="cb-suggest">
 			<button
 				v-for="suggestion in suggestions"
@@ -54,7 +54,7 @@ const suggestions = computed(() =>
 					size="sm"
 					color="neutral"
 					variant="subtle"
-					:label="t('dms_ai.panel.empty.read_only')"
+					:label="t('dms_assistant.panel.empty.read_only')"
 				/>
 			</button>
 		</div>

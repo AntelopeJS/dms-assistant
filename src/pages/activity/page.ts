@@ -40,7 +40,7 @@ const TABS: TableViewTab[] = [
   })),
 ];
 
-const DETAIL_DRAWER = CustomComponent("DmsAiActivityDetail").meta(
+const DETAIL_DRAWER = CustomComponent("DmsAssistantActivityDetail").meta(
   blockMeta("activity.detail", "i-ph-sidebar-simple"),
 );
 

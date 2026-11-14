@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createHttpServer } from "../../src/server/http.js";
 import type { SkillSource } from "../../src/skills/types.js";
 
-const FIXTURE_DIR = resolve(__dirname, "../fixtures/skills/dms-ai");
+const FIXTURE_DIR = resolve(__dirname, "../fixtures/skills/dms-assistant");
 const ARBITRARY_PORT = 0;
 const CLIENT_TOKEN = "skills-test-credential";
 const WS_HOST = "127.0.0.1";
@@ -36,7 +36,7 @@ describe("GET /skills", () => {
   });
 
   it("returns the catalog for the configured skill dirs", async () => {
-    handle = await startServer([{ module: "dms-ai", dir: FIXTURE_DIR }]);
+    handle = await startServer([{ module: "dms-assistant", dir: FIXTURE_DIR }]);
     const res = await fetch(`http://${WS_HOST}:${handle.port}/skills`, {
       headers: { Authorization: `Bearer ${CLIENT_TOKEN}` },
     });
@@ -46,8 +46,8 @@ describe("GET /skills", () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: "page-builder",
-          id: "dms-ai:page-builder",
-          provenance: "dms-ai",
+          id: "dms-assistant:page-builder",
+          provenance: "dms-assistant",
         }),
       ]),
     );

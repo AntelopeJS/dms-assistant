@@ -31,22 +31,26 @@ const mockups = computed(
 		<div class="flex items-center gap-2">
 			<DmsIconWell icon="i-ph-sparkle" tone="secondary" size="2xs" />
 			<span class="text-highlighted text-sm font-semibold">
-				{{ t("dms_ai.views.onboarding.widget.label") }}
+				{{ t("dms_assistant.views.onboarding.widget.label") }}
 			</span>
 		</div>
 		<dl class="grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1.5 text-[13px]">
-			<dt class="text-muted">{{ t("dms_ai.views.onboarding.widget.ai") }}</dt>
+			<dt class="text-muted">
+				{{ t("dms_assistant.views.onboarding.widget.ai") }}
+			</dt>
 			<dd class="text-highlighted flex items-center gap-1.5">
 				<span
 					class="size-1.5 rounded-full"
 					:class="account ? 'bg-success' : 'bg-warning'"
 					aria-hidden="true"
 				/>
-				{{ account ?? t("dms_ai.views.onboarding.widget.not_connected") }}
+				{{
+					account ?? t("dms_assistant.views.onboarding.widget.not_connected")
+				}}
 			</dd>
 			<template v-if="mockups > 0">
 				<dt class="text-muted">
-					{{ t("dms_ai.views.onboarding.widget.mockups") }}
+					{{ t("dms_assistant.views.onboarding.widget.mockups") }}
 				</dt>
 				<dd class="text-highlighted">{{ mockups }}</dd>
 			</template>

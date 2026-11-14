@@ -25,6 +25,6 @@ const style = computed(() => DECISION_STYLES[props.allowedBy]);
 			:class="style.iconClass"
 			:aria-hidden="true"
 		/>
-		{{ t(`dms_ai.views.allowed.${props.allowedBy}`) }}
+		{{ t(`dms_assistant.views.allowed.${props.allowedBy}`) }}
 	</span>
 </template>

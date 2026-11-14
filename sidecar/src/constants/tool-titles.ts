@@ -1,5 +1,5 @@
 /**
- * The human-readable title of every MCP tool dms-ai serves, keyed by its
+ * The human-readable title of every MCP tool dms-assistant serves, keyed by its
  * snake_case name. MCP clients show the title; the model calls the name.
  */
 export const MCP_TOOL_TITLES = {
@@ -10,5 +10,5 @@ export const MCP_TOOL_TITLES = {
   preview_blocks: "Preview blocks",
 } as const satisfies Readonly<Record<string, string>>;
 
-/** The snake_case name of an MCP tool dms-ai serves. */
+/** The snake_case name of an MCP tool dms-assistant serves. */
 export type McpToolName = keyof typeof MCP_TOOL_TITLES;

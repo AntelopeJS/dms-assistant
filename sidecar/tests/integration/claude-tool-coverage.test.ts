@@ -51,7 +51,7 @@ describe("the tool classification against the installed Claude Code CLI", () => 
   let home: string;
 
   beforeEach(async () => {
-    home = await mkdtemp(join(tmpdir(), "dms-ai-tool-coverage-"));
+    home = await mkdtemp(join(tmpdir(), "dms-assistant-tool-coverage-"));
   });
 
   afterEach(async () => {

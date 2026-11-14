@@ -39,7 +39,9 @@ describe.skipIf(installation === undefined)(
     it(
       "accepts the config and starts a thread under the read-only profile, named or not",
       async () => {
-        stateDir = await mkdtemp(join(tmpdir(), "dms-ai-codex-profiles-"));
+        stateDir = await mkdtemp(
+          join(tmpdir(), "dms-assistant-codex-profiles-"),
+        );
         const project = join(stateDir, "project");
         const moduleRoot = join(stateDir, "module");
         mkdirSync(join(project, ".husky"), { recursive: true });
@@ -66,7 +68,7 @@ describe.skipIf(installation === undefined)(
         await client.request("initialize", {
           clientInfo: {
             name: CODEX_CLIENT_NAME,
-            title: "dms-ai",
+            title: "dms-assistant",
             version: "0",
           },
           capabilities: CODEX_CLIENT_CAPABILITIES,

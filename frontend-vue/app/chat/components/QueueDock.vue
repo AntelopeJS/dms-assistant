@@ -72,15 +72,17 @@ function onDrop(index: number): void {
 </script>
 
 <template>
-	<section class="cb-queue" :aria-label="t('dms_ai.panel.queue.aria')">
+	<section class="cb-queue" :aria-label="t('dms_assistant.panel.queue.aria')">
 		<div class="cb-queue__head">
-			<span class="cb-queue__title">{{ t("dms_ai.panel.queue.title") }}</span>
+			<span class="cb-queue__title">
+				{{ t("dms_assistant.panel.queue.title") }}
+			</span>
 			<UButton
 				v-if="queue.length > 1"
 				size="xs"
 				color="neutral"
 				variant="ghost"
-				:label="t('dms_ai.panel.queue.clear')"
+				:label="t('dms_assistant.panel.queue.clear')"
 				@click="emit('clear')"
 			/>
 		</div>
@@ -99,14 +101,14 @@ function onDrop(index: number): void {
 				<template v-if="editingId === item.id">
 					<span class="cb-queued__n">{{ index + 1 }}</span>
 					<span class="cb-queued__editing">
-						{{ t("dms_ai.panel.queue.editing") }}
+						{{ t("dms_assistant.panel.queue.editing") }}
 					</span>
 					<textarea
 						ref="editorEl"
 						v-model="draft"
 						class="cb-queued__editor"
 						rows="2"
-						:aria-label="t('dms_ai.panel.queue.edit')"
+						:aria-label="t('dms_assistant.panel.queue.edit')"
 						@keydown="onEditorKeydown"
 					/>
 					<div class="cb-queued__actions">
@@ -114,14 +116,14 @@ function onDrop(index: number): void {
 							size="xs"
 							color="neutral"
 							variant="ghost"
-							:label="t('dms_ai.common.cancel')"
+							:label="t('dms_assistant.common.cancel')"
 							@click="editingId = null"
 						/>
 						<UButton
 							size="xs"
 							color="neutral"
 							variant="outline"
-							:label="t('dms_ai.common.save')"
+							:label="t('dms_assistant.common.save')"
 							@click="saveEdit"
 						/>
 					</div>
@@ -131,8 +133,8 @@ function onDrop(index: number): void {
 						type="button"
 						class="cb-queued__handle"
 						draggable="true"
-						:aria-label="t('dms_ai.panel.queue.reorder')"
-						:title="t('dms_ai.panel.queue.reorder')"
+						:aria-label="t('dms_assistant.panel.queue.reorder')"
+						:title="t('dms_assistant.panel.queue.reorder')"
 						@dragstart="draggedId = item.id"
 						@dragend="draggedId = null"
 						@keydown="onHandleKeydown($event, index, item.id)"
@@ -140,14 +142,14 @@ function onDrop(index: number): void {
 						<UIcon name="i-ph-dots-six-vertical" />
 					</button>
 					<span class="cb-queued__n">
-						{{ index === 0 ? t("dms_ai.panel.queue.next") : index + 1 }}
+						{{ index === 0 ? t("dms_assistant.panel.queue.next") : index + 1 }}
 					</span>
 					<span class="cb-queued__txt">{{ item.content }}</span>
 					<span v-if="item.attachments.length > 0" class="cb-queued__files">
 						<UIcon name="i-ph-paperclip" />
 						{{
 							t(
-								"dms_ai.panel.queue.files",
+								"dms_assistant.panel.queue.files",
 								{ count: item.attachments.length },
 								item.attachments.length,
 							)
@@ -159,8 +161,8 @@ function onDrop(index: number): void {
 						variant="ghost"
 						square
 						icon="i-ph-pencil-simple"
-						:aria-label="t('dms_ai.panel.queue.edit')"
-						:title="t('dms_ai.panel.queue.edit')"
+						:aria-label="t('dms_assistant.panel.queue.edit')"
+						:title="t('dms_assistant.panel.queue.edit')"
 						@click="startEdit(item)"
 					/>
 					<UButton
@@ -169,8 +171,8 @@ function onDrop(index: number): void {
 						variant="ghost"
 						square
 						icon="i-ph-x"
-						:aria-label="t('dms_ai.panel.queue.cancel')"
-						:title="t('dms_ai.panel.queue.cancel')"
+						:aria-label="t('dms_assistant.panel.queue.cancel')"
+						:title="t('dms_assistant.panel.queue.cancel')"
 						@click="emit('cancel', item.id)"
 					/>
 				</template>

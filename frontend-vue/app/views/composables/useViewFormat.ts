@@ -1,7 +1,7 @@
 import { formatClock, formatMoment, type MomentOptions } from "../utils/moment";
 import { bareToolName, readableToolName } from "../utils/tools";
 
-const TOOL_LEXICON_PREFIX = "dms_ai.tools";
+const TOOL_LEXICON_PREFIX = "dms_assistant.tools";
 const I18N_PATH_SEPARATOR = ".";
 const I18N_KEY_SIGIL = "$";
 

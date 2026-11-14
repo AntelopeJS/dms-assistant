@@ -32,18 +32,19 @@ const HISTORY_KEY = "j";
 const TOGGLE_KEY = "k";
 
 const historyTitle = computed(
-	() => `${t("dms_ai.panel.header.history")} · ${shortcutLabel(HISTORY_KEY)}`,
+	() =>
+		`${t("dms_assistant.panel.header.history")} · ${shortcutLabel(HISTORY_KEY)}`,
 );
 const closeTitle = computed(
 	() =>
-		`${t("dms_ai.panel.header.close")} · ${shortcutLabel(TOGGLE_KEY, true)}`,
+		`${t("dms_assistant.panel.header.close")} · ${shortcutLabel(TOGGLE_KEY, true)}`,
 );
 
 const moreItems = computed(() => [
 	[
 		{
 			label: t(
-				"dms_ai.panel.rules.count",
+				"dms_assistant.panel.rules.count",
 				{ count: props.rules.length },
 				props.rules.length,
 			),
@@ -53,7 +54,7 @@ const moreItems = computed(() => [
 				[
 					{
 						type: "label" as const,
-						label: t("dms_ai.panel.rules.select_to_revoke"),
+						label: t("dms_assistant.panel.rules.select_to_revoke"),
 					},
 				],
 				props.rules.map((rule) => ({
@@ -66,17 +67,17 @@ const moreItems = computed(() => [
 	],
 	[
 		{
-			label: t("dms_ai.panel.header.open_changes"),
+			label: t("dms_assistant.panel.header.open_changes"),
 			icon: "i-ph-git-diff",
 			onSelect: () => emit("navigate", "changes"),
 		},
 		{
-			label: t("dms_ai.panel.header.open_activity"),
+			label: t("dms_assistant.panel.header.open_activity"),
 			icon: "i-ph-clock-counter-clockwise",
 			onSelect: () => emit("navigate", "activity"),
 		},
 		{
-			label: t("dms_ai.panel.header.settings"),
+			label: t("dms_assistant.panel.header.settings"),
 			icon: "i-ph-gear-six",
 			onSelect: () => emit("navigate", "settings"),
 		},
@@ -103,7 +104,7 @@ const moreItems = computed(() => [
 				variant="ghost"
 				square
 				icon="i-ph-list-bullets"
-				:aria-label="t('dms_ai.panel.header.history')"
+				:aria-label="t('dms_assistant.panel.header.history')"
 				:title="historyTitle"
 				@click="emit('history')"
 			/>
@@ -113,8 +114,8 @@ const moreItems = computed(() => [
 				variant="ghost"
 				square
 				icon="i-ph-note-pencil"
-				:aria-label="t('dms_ai.panel.header.new_chat')"
-				:title="t('dms_ai.panel.header.new_chat')"
+				:aria-label="t('dms_assistant.panel.header.new_chat')"
+				:title="t('dms_assistant.panel.header.new_chat')"
 				@click="emit('newChat')"
 			/>
 			<UDropdownMenu :items="moreItems" :content="{ align: 'end' }">
@@ -124,8 +125,8 @@ const moreItems = computed(() => [
 					variant="ghost"
 					square
 					icon="i-ph-dots-three"
-					:aria-label="t('dms_ai.panel.header.more')"
-					:title="t('dms_ai.panel.header.more')"
+					:aria-label="t('dms_assistant.panel.header.more')"
+					:title="t('dms_assistant.panel.header.more')"
 				/>
 			</UDropdownMenu>
 			<UButton
@@ -134,7 +135,7 @@ const moreItems = computed(() => [
 				variant="ghost"
 				square
 				icon="i-ph-x"
-				:aria-label="t('dms_ai.panel.header.close')"
+				:aria-label="t('dms_assistant.panel.header.close')"
 				:title="closeTitle"
 				@click="emit('close')"
 			/>
@@ -206,7 +207,7 @@ const moreItems = computed(() => [
 .cb__status[data-status="working"] .cb__dot {
 	background: var(--ai);
 	box-shadow: 0 0 6px var(--ai);
-	animation: dms-ai-pulse 1.2s ease-in-out infinite;
+	animation: dms-assistant-pulse 1.2s ease-in-out infinite;
 }
 
 .cb__status[data-status="waiting"] .cb__dot,
@@ -226,7 +227,7 @@ const moreItems = computed(() => [
 	gap: 1px;
 }
 
-@keyframes dms-ai-pulse {
+@keyframes dms-assistant-pulse {
 	50% {
 		opacity: 0.35;
 	}

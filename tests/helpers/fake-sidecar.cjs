@@ -18,7 +18,7 @@ const LOCK_PATH = path.join(
   process.cwd(),
   "node_modules",
   ".cache",
-  "dms-ai",
+  "dms-assistant",
   "sidecar.lock",
 );
 const BUILD_ID_FLAG = "--build-id";

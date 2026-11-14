@@ -47,20 +47,20 @@ const fileCount = computed(() => props.changeSet.files.length);
 
 const title = computed<string>(() => {
 	const files = t(
-		"dms_ai.panel.change.files",
+		"dms_assistant.panel.change.files",
 		{ count: fileCount.value },
 		fileCount.value,
 	);
 	const ops = props.changeSet.builderOps;
 	if (ops === 0) return files;
-	return `${files} · ${t("dms_ai.panel.change.builder_ops", { count: ops }, ops)}`;
+	return `${files} · ${t("dms_assistant.panel.change.builder_ops", { count: ops }, ops)}`;
 });
 
 const eyebrow = computed(() =>
 	t(
 		isUndone.value
-			? "dms_ai.panel.change.undone"
-			: "dms_ai.panel.change.applied",
+			? "dms_assistant.panel.change.undone"
+			: "dms_assistant.panel.change.applied",
 		{
 			number: props.changeSet.number,
 		},
@@ -75,7 +75,7 @@ const hint = computed<string>(() => {
 			locale.value,
 		);
 		return changeSet.stateChangedBy
-			? t("dms_ai.panel.change.undone_by", {
+			? t("dms_assistant.panel.change.undone_by", {
 					time: at,
 					name: changeSet.stateChangedBy,
 				})
@@ -83,7 +83,7 @@ const hint = computed<string>(() => {
 	}
 	const lines = changeSet.added + changeSet.removed;
 	return t(
-		"dms_ai.panel.change.hint",
+		"dms_assistant.panel.change.hint",
 		{
 			time: formatTimeOfDay(changeSet.createdAtMs, locale.value),
 			count: lines,
@@ -111,11 +111,11 @@ const hint = computed<string>(() => {
 				>
 					<span v-if="changeSet.isAutoFix">
 						<UIcon name="i-ph-wrench" />
-						{{ t("dms_ai.panel.change.autofix") }}
+						{{ t("dms_assistant.panel.change.autofix") }}
 					</span>
 					<span v-if="changeSet.overlapped" class="is-warning">
 						<UIcon name="i-ph-warning" />
-						{{ t("dms_ai.panel.change.overlapped") }}
+						{{ t("dms_assistant.panel.change.overlapped") }}
 					</span>
 				</div>
 			</div>
@@ -123,7 +123,9 @@ const hint = computed<string>(() => {
 				v-if="!isUndone"
 				:tone="badge.tone"
 				:icon="badge.icon"
-				:label="t(`dms_ai.panel.change.typecheck.${changeSet.typecheck}`)"
+				:label="
+					t(`dms_assistant.panel.change.typecheck.${changeSet.typecheck}`)
+				"
 				size="sm"
 				:mono="false"
 			/>
@@ -136,7 +138,7 @@ const hint = computed<string>(() => {
 				<UIcon :name="FILE_ICONS[file.status]" class="cb-file__icon" />
 				<span class="cb-file__path" :title="file.path">{{ file.path }}</span>
 				<span v-if="file.status !== 'modified'" class="cb-file__kind">
-					{{ t(`dms_ai.panel.change.status.${file.status}`) }}
+					{{ t(`dms_assistant.panel.change.status.${file.status}`) }}
 				</span>
 				<span v-if="file.added > 0" class="plus">+{{ file.added }}</span>
 				<span v-if="file.removed > 0" class="minus">−{{ file.removed }}</span>
@@ -151,7 +153,7 @@ const hint = computed<string>(() => {
 				variant="outline"
 				icon="i-ph-arrow-clockwise"
 				:loading="isBusy"
-				:label="t('dms_ai.panel.change.redo')"
+				:label="t('dms_assistant.panel.change.redo')"
 				@click="emit('redo')"
 			/>
 			<template v-else>
@@ -161,7 +163,7 @@ const hint = computed<string>(() => {
 					variant="outline"
 					icon="i-ph-arrow-counter-clockwise"
 					:loading="isBusy"
-					:label="t('dms_ai.panel.change.undo')"
+					:label="t('dms_assistant.panel.change.undo')"
 					@click="emit('undo')"
 				/>
 				<UButton
@@ -169,7 +171,7 @@ const hint = computed<string>(() => {
 					color="neutral"
 					variant="ghost"
 					icon="i-ph-arrow-square-out"
-					:label="t('dms_ai.panel.change.review')"
+					:label="t('dms_assistant.panel.change.review')"
 					@click="emit('review')"
 				/>
 			</template>

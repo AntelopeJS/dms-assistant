@@ -22,9 +22,9 @@ const DMS_PACKAGE_DIR = path.resolve(
   "../node_modules/@antelopejs/dms",
 );
 const MCP_JSON = ".mcp.json";
-const DMS_AI_ENTRY = {
+const DMS_ASSISTANT_ENTRY = {
   command: "node",
-  args: ["node_modules/.cache/dms-ai/mcp-bridge.cjs"],
+  args: ["node_modules/.cache/dms-assistant/mcp-bridge.cjs"],
 };
 const DMS_ENTRY = {
   command: "node",
@@ -159,23 +159,42 @@ void test("no .mcp.json: the step writes core's entry alone, or nothing when the
   await assert.rejects(stat(path.join(dir, MCP_JSON)), { code: "ENOENT" });
 });
 
-void test("a hand-edited .mcp.json keeps every other server, key and order, a dms-ai entry included (fails a step that reorders, drops keys or removes a dms-ai entry)", async () => {
+void test("a hand-edited .mcp.json keeps every other server, key and order, a dms-assistant entry included (fails a step that reorders, drops keys or removes a dms-assistant entry)", async () => {
   const github = { command: "npx", args: ["-y", "@github/mcp"] };
-  const ownDmsAi = { command: "node", args: ["tools/dms-ai.cjs"] };
+  const ownDmsAssistant = {
+    command: "node",
+    args: ["tools/dms-assistant.cjs"],
+  };
   const zeta = { url: "http://localhost:9000/mcp" };
   const cases = [
     [
-      { mcpServers: { github, "dms-ai": DMS_AI_ENTRY, zeta }, extra: [1] },
       {
-        mcpServers: { github, "dms-ai": DMS_AI_ENTRY, zeta, dms: DMS_ENTRY },
+        mcpServers: { github, "dms-assistant": DMS_ASSISTANT_ENTRY, zeta },
+        extra: [1],
+      },
+      {
+        mcpServers: {
+          github,
+          "dms-assistant": DMS_ASSISTANT_ENTRY,
+          zeta,
+          dms: DMS_ENTRY,
+        },
         extra: [1],
       },
     ],
     [
-      { $schema: "x", mcpServers: { github, "dms-ai": ownDmsAi, zeta } },
       {
         $schema: "x",
-        mcpServers: { github, "dms-ai": ownDmsAi, zeta, dms: DMS_ENTRY },
+        mcpServers: { github, "dms-assistant": ownDmsAssistant, zeta },
+      },
+      {
+        $schema: "x",
+        mcpServers: {
+          github,
+          "dms-assistant": ownDmsAssistant,
+          zeta,
+          dms: DMS_ENTRY,
+        },
       },
     ],
   ];
@@ -221,7 +240,9 @@ void test("core's writing off, or a DMS config it cannot read: the step adds not
   ];
   await coreStarts(false);
   for (const step of steps) {
-    await writeMcpJson({ mcpServers: { "dms-ai": DMS_AI_ENTRY } });
+    await writeMcpJson({
+      mcpServers: { "dms-assistant": DMS_ASSISTANT_ENTRY },
+    });
     const before = await readMcpJson();
     await step.syncProjectMcpJson(dir);
     assert.equal(await readMcpJson(), before);

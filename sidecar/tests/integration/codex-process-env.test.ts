@@ -18,11 +18,11 @@ import {
   codexDumpEnvInto,
 } from "../helpers/provider-fixtures.js";
 
-const TMP_PREFIX = "dms-ai-codex-env-";
+const TMP_PREFIX = "dms-assistant-codex-env-";
 const CONVERSATION = "conv-codex-env";
 const MCP_TOKEN = "0123456789abcdef";
 const SECRET_NAME = "BUILDER_DB_SHOP_URL";
-const KEPT_NAME = "DMS_AI_TEST_UNRELATED";
+const KEPT_NAME = "DMS_ASSISTANT_TEST_UNRELATED";
 const REQUEST_BUDGET_MS = 10_000;
 const TEST_TIMEOUT_MS = 30_000;
 

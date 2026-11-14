@@ -21,7 +21,7 @@ import {
 } from "./support/panel-fixtures";
 
 beforeEach(() => {
-	localStorage.setItem("dms-ai-conversation-id", CONVERSATION_ID);
+	localStorage.setItem("dms-assistant-conversation-id", CONVERSATION_ID);
 });
 
 afterEach(() => {

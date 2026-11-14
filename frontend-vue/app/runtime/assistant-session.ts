@@ -73,5 +73,5 @@ export interface AssistantSession {
 export type AssistantSessionRef = Readonly<ShallowRef<AssistantSession | null>>;
 
 export const ASSISTANT_SESSION_KEY: InjectionKey<AssistantSessionRef> = Symbol(
-	"dms-ai:assistant-session",
+	"dms-assistant:assistant-session",
 );

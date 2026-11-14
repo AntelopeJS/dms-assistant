@@ -8,7 +8,7 @@ import { PROVIDER_FIXTURES } from "../helpers/provider-fixtures.js";
 import { buildRunner, type RunnerHandle } from "../helpers/provider-runner.js";
 
 const CONVERSATION_ID = "conv-stream-1";
-const TMP_PREFIX = "dms-ai-stream-";
+const TMP_PREFIX = "dms-assistant-stream-";
 const TEST_TIMEOUT_MS = 30_000;
 
 describe.each(PROVIDER_FIXTURES)("runner event stream on $name", (fixture) => {

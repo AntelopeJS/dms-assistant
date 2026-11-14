@@ -3,7 +3,10 @@ const path = require("node:path");
 const { z } = require("zod");
 
 const LOCALES_DIR = path.resolve(__dirname, "../../frontend-vue/i18n/locales");
-const PAGE_LOCALES = ["dms-ai-pages-en-GB.json", "dms-ai-pages-fr-FR.json"];
+const PAGE_LOCALES = [
+  "dms-assistant-pages-en-GB.json",
+  "dms-assistant-pages-fr-FR.json",
+];
 
 /**
  * A node of a locale file: a translated text, or a group of nodes by key.

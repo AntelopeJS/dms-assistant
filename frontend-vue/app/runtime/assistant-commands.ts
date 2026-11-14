@@ -110,11 +110,11 @@ export function assistantSidePanel(): AssistantSidePanel {
 
 /** What each state adds to the launcher's label; a connected assistant adds nothing. */
 const LAUNCHER_STATE_LABEL_KEYS: Record<LauncherState, string | null> = {
-	disconnected: "dms_ai.panel.launcher_state.disconnected",
+	disconnected: "dms_assistant.panel.launcher_state.disconnected",
 	connected: null,
-	working: "dms_ai.panel.launcher_state.working",
-	finished: "dms_ai.panel.launcher_state.finished",
-	question: "dms_ai.panel.launcher_state.question",
+	working: "dms_assistant.panel.launcher_state.working",
+	finished: "dms_assistant.panel.launcher_state.finished",
+	question: "dms_assistant.panel.launcher_state.question",
 };
 
 /**
@@ -154,7 +154,7 @@ function byReadOnlyFirst(
 /**
  * The palette's assistant mode (Tab in ⌘K): first prompts that fit the page on
  * screen, as the panel's empty chat offers them, and an answer drawn by
- * `DmsAiPaletteAnswer`.
+ * `DmsAssistantPaletteAnswer`.
  */
 export function paletteAssistant(
 	t: Translate,
@@ -192,29 +192,29 @@ export function paletteSource(
 		groups: () => [
 			{
 				id: `${COMMAND_PALETTE_SOURCE_ID}-assistant`,
-				label: t("dms_ai.panel.palette.group"),
+				label: t("dms_assistant.panel.palette.group"),
 				items: [
 					{
-						id: "dms-ai-ask",
-						label: t("dms_ai.panel.palette.ask"),
+						id: "dms-assistant-ask",
+						label: t("dms_assistant.panel.palette.ask"),
 						icon: "i-ph-sparkle",
 						suffix: shortcutLabel(TOGGLE_SHORTCUT_KEY, true),
 						onSelect: actions.ask,
 					},
 					{
-						id: "dms-ai-new",
-						label: t("dms_ai.panel.palette.new"),
+						id: "dms-assistant-new",
+						label: t("dms_assistant.panel.palette.new"),
 						icon: "i-ph-note-pencil",
 						onSelect: actions.startConversation,
 					},
 					{
-						id: "dms-ai-approvals",
-						label: t("dms_ai.panel.palette.approvals"),
+						id: "dms-assistant-approvals",
+						label: t("dms_assistant.panel.palette.approvals"),
 						icon: "i-ph-hand-palm",
 						suffix:
 							pendingApprovals.value > 0
 								? t(
-										"dms_ai.panel.palette.waiting",
+										"dms_assistant.panel.palette.waiting",
 										{ count: pendingApprovals.value },
 										pendingApprovals.value,
 									)
@@ -222,8 +222,8 @@ export function paletteSource(
 						onSelect: actions.reviewApprovals,
 					},
 					{
-						id: "dms-ai-changes",
-						label: t("dms_ai.panel.palette.changes"),
+						id: "dms-assistant-changes",
+						label: t("dms_assistant.panel.palette.changes"),
 						icon: "i-ph-git-diff",
 						onSelect: actions.openChanges,
 					},

@@ -29,7 +29,7 @@ export type InlineImageMediaType = (typeof INLINE_IMAGE_MEDIA_TYPES)[number];
 export const PDF_MEDIA_TYPE = "application/pdf";
 
 /**
- * Sub-directory (under the dms-ai state dir) where non-inline attachments are
+ * Sub-directory (under the dms-assistant state dir) where non-inline attachments are
  * written so the agent can read them by path.
  */
 export const UPLOADS_DIR_SEGMENT = "uploads";

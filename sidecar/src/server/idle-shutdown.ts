@@ -3,7 +3,7 @@ import { IDLE_SHUTDOWN_MS, MAX_TIMER_DELAY_MS } from "../constants/daemon.js";
 const POSITIVE_INTEGER_PATTERN = /^[1-9]\d*$/;
 
 /**
- * Reads the optional idle-timeout override (`DMS_AI_IDLE_SHUTDOWN_MS`, a test
+ * Reads the optional idle-timeout override (`DMS_ASSISTANT_IDLE_SHUTDOWN_MS`, a test
  * hook). Only a positive integer a timer can hold is taken; anything else,
  * absent included, leaves the default.
  */

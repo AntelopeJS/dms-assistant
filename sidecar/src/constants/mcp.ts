@@ -12,9 +12,9 @@ import { QUESTION_TIMEOUT_MS } from "./questions.js";
 import { MS_PER_MINUTE } from "./settings.js";
 import { TYPECHECK_TOOL_NAME } from "./typecheck.js";
 
-export const MCP_SERVER_NAME = "dms-ai-mcp";
+export const MCP_SERVER_NAME = "dms-assistant-mcp";
 export const MCP_SERVER_VERSION = "0.0.1";
-export const MCP_SERVER_KEY = "dms-ai";
+export const MCP_SERVER_KEY = "dms-assistant";
 export const MCP_SERVER_TYPE_SDK = "sdk" as const;
 
 /**

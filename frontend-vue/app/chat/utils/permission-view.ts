@@ -50,56 +50,59 @@ const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
 	diff: (_req, preview: DiffPreview, t) => ({
 		title: t(
 			preview.isNewFile
-				? "dms_ai.panel.approvals.create_file"
-				: "dms_ai.panel.approvals.edit_file",
+				? "dms_assistant.panel.approvals.create_file"
+				: "dms_assistant.panel.approvals.edit_file",
 			{ file: baseName(preview.relativePath || preview.path) },
 		),
 		sub: preview.relativePath || preview.path,
-		onceLabel: t("dms_ai.panel.approvals.once_edit"),
-		allowLabel: t("dms_ai.panel.approvals.allow_edit"),
+		onceLabel: t("dms_assistant.panel.approvals.once_edit"),
+		allowLabel: t("dms_assistant.panel.approvals.allow_edit"),
 		why: "",
 	}),
 	command: (_req, preview: CommandPreview, t) => ({
-		title: t("dms_ai.panel.approvals.run", { command: preview.command }),
+		title: t("dms_assistant.panel.approvals.run", { command: preview.command }),
 		sub: commandSub(preview, t),
-		onceLabel: t("dms_ai.panel.approvals.once_command"),
-		allowLabel: t("dms_ai.panel.approvals.allow_command"),
+		onceLabel: t("dms_assistant.panel.approvals.once_command"),
+		allowLabel: t("dms_assistant.panel.approvals.allow_command"),
 		why: "",
 	}),
 	destructive: (req, preview: DestructivePreview, t) => ({
 		title: destructiveTitle(req, preview, t),
-		sub: t(`dms_ai.panel.approvals.consequence_${preview.consequence}`),
-		onceLabel: t("dms_ai.panel.approvals.once_time"),
-		allowLabel: t("dms_ai.panel.approvals.confirm_delete"),
-		why: t(`dms_ai.panel.approvals.why_${preview.consequence}`),
+		sub: t(`dms_assistant.panel.approvals.consequence_${preview.consequence}`),
+		onceLabel: t("dms_assistant.panel.approvals.once_time"),
+		allowLabel: t("dms_assistant.panel.approvals.confirm_delete"),
+		why: t(`dms_assistant.panel.approvals.why_${preview.consequence}`),
 	}),
 	web: (_req, preview: WebPreview, t) => ({
-		title: t("dms_ai.panel.approvals.fetch", { host: preview.host }),
+		title: t("dms_assistant.panel.approvals.fetch", { host: preview.host }),
 		sub: preview.url,
-		onceLabel: t("dms_ai.panel.approvals.once_request"),
-		allowLabel: t("dms_ai.panel.approvals.allow_request"),
+		onceLabel: t("dms_assistant.panel.approvals.once_request"),
+		allowLabel: t("dms_assistant.panel.approvals.allow_request"),
 		why: "",
 	}),
 	generic: (req, _preview, t) => ({
 		title: verbAndTarget(req, t),
 		sub: "",
-		onceLabel: t("dms_ai.panel.approvals.once_time"),
-		allowLabel: t("dms_ai.panel.approvals.allow"),
-		why: req.kind === "builder" ? t("dms_ai.panel.approvals.why_builder") : "",
+		onceLabel: t("dms_assistant.panel.approvals.once_time"),
+		allowLabel: t("dms_assistant.panel.approvals.allow"),
+		why:
+			req.kind === "builder"
+				? t("dms_assistant.panel.approvals.why_builder")
+				: "",
 	}),
 	held: (req, preview: HeldPreview, t) => ({
 		title: verbAndTarget(req, t),
 		sub: "",
-		onceLabel: t("dms_ai.panel.approvals.once_time"),
-		allowLabel: t("dms_ai.panel.approvals.allow"),
+		onceLabel: t("dms_assistant.panel.approvals.once_time"),
+		allowLabel: t("dms_assistant.panel.approvals.allow"),
 		why: heldWhy(preview, t),
 	}),
 	held_tool: (req, _preview, t) => ({
 		title: verbAndTarget(req, t),
 		sub: "",
-		onceLabel: t("dms_ai.panel.approvals.once_time"),
-		allowLabel: t("dms_ai.panel.approvals.allow"),
-		why: t("dms_ai.panel.approvals.why_held_tool"),
+		onceLabel: t("dms_assistant.panel.approvals.once_time"),
+		allowLabel: t("dms_assistant.panel.approvals.allow"),
+		why: t("dms_assistant.panel.approvals.why_held_tool"),
 	}),
 };
 
@@ -118,13 +121,13 @@ function pagesToRemove(details: unknown): string[] {
 
 function heldWhy(preview: HeldPreview, t: Translate): string {
 	if (preview.operation === CONFIGURE_PROJECT_TOOL_NAME)
-		return t("dms_ai.panel.approvals.why_held_configure");
+		return t("dms_assistant.panel.approvals.why_held_configure");
 	const pages = pagesToRemove(preview.details);
 	if (preview.operation === MAP_RESOURCES_TOOL_NAME && pages.length > 0)
-		return t("dms_ai.panel.approvals.why_held_map", {
+		return t("dms_assistant.panel.approvals.why_held_map", {
 			pages: pages.join(", "),
 		});
-	return t("dms_ai.panel.approvals.why_held");
+	return t("dms_assistant.panel.approvals.why_held");
 }
 
 /**
@@ -165,12 +168,17 @@ export function isStackedRow(row: NamedArgument): boolean {
 
 /** "Delete the page {target}": the Builder's destructive operations by name. */
 const DESTRUCTIVE_TITLE_KEYS: Record<string, string> = {
-	builder_delete_page: "dms_ai.panel.approvals.destructive.delete_page",
-	builder_delete_resource: "dms_ai.panel.approvals.destructive.delete_table",
-	builder_remove_field: "dms_ai.panel.approvals.destructive.remove_field",
-	builder_delete_category: "dms_ai.panel.approvals.destructive.delete_category",
-	builder_remove_query: "dms_ai.panel.approvals.destructive.remove_query",
-	builder_map_resources: "dms_ai.panel.approvals.destructive.map_resources",
+	builder_delete_page: "dms_assistant.panel.approvals.destructive.delete_page",
+	builder_delete_resource:
+		"dms_assistant.panel.approvals.destructive.delete_table",
+	builder_remove_field:
+		"dms_assistant.panel.approvals.destructive.remove_field",
+	builder_delete_category:
+		"dms_assistant.panel.approvals.destructive.delete_category",
+	builder_remove_query:
+		"dms_assistant.panel.approvals.destructive.remove_query",
+	builder_map_resources:
+		"dms_assistant.panel.approvals.destructive.map_resources",
 };
 
 function destructiveTitle(
@@ -188,7 +196,7 @@ function destructiveTitle(
 function commandSub(preview: CommandPreview, t: Translate): string {
 	const touches = (preview.touches ?? []).join(", ");
 	if (preview.effect === undefined) return touches || preview.cwd;
-	const effect = t(`dms_ai.panel.approvals.effect_${preview.effect}`);
+	const effect = t(`dms_assistant.panel.approvals.effect_${preview.effect}`);
 	return touches === "" ? effect : `${effect} · ${touches}`;
 }
 
@@ -202,10 +210,10 @@ export function permissionCardText(
 }
 
 const RULE_LABEL_KEYS: Record<RuleKind, string> = {
-	file: "dms_ai.panel.approvals.rule_file",
-	directory: "dms_ai.panel.approvals.rule_directory",
-	command: "dms_ai.panel.approvals.rule_command",
-	domain: "dms_ai.panel.approvals.rule_domain",
+	file: "dms_assistant.panel.approvals.rule_file",
+	directory: "dms_assistant.panel.approvals.rule_directory",
+	command: "dms_assistant.panel.approvals.rule_command",
+	domain: "dms_assistant.panel.approvals.rule_domain",
 };
 
 /** A scope as the card offers it: "Every edit under crm/customers/". */

@@ -24,13 +24,13 @@ function onOpenChange(isOpen: boolean): void {
 <template>
 	<UModal
 		:open="pending !== null"
-		:title="t('dms_ai.panel.change.conflict_title')"
+		:title="t('dms_assistant.panel.change.conflict_title')"
 		@update:open="onOpenChange"
 	>
 		<template #body>
 			<p class="chat-view-conflict">
 				{{
-					t("dms_ai.panel.change.conflict_text", {
+					t("dms_assistant.panel.change.conflict_text", {
 						number: pending?.number ?? 0,
 					})
 				}}
@@ -51,12 +51,12 @@ function onOpenChange(isOpen: boolean): void {
 				<UButton
 					color="neutral"
 					variant="ghost"
-					:label="t('dms_ai.panel.change.undo_only')"
+					:label="t('dms_assistant.panel.change.undo_only')"
 					@click="emit('confirm', false)"
 				/>
 				<UButton
 					color="secondary"
-					:label="t('dms_ai.panel.change.undo_together')"
+					:label="t('dms_assistant.panel.change.undo_together')"
 					@click="emit('confirm', true)"
 				/>
 			</div>

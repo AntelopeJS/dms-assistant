@@ -25,7 +25,7 @@ function assertRefused(result) {
   });
 }
 
-void test("an activity answer of the wrong shape is refused with 502 (AntelopeJS/dms-ai#111)", async () => {
+void test("an activity answer of the wrong shape is refused with 502", async () => {
   reset();
   answer("GET", "/activity", 200, { results: "none", total: 1 });
   answer("GET", "/activity/export", 200, { results: "none", total: 1 });
@@ -37,7 +37,7 @@ void test("an activity answer of the wrong shape is refused with 502 (AntelopeJS
   assertRefused(await activity.detail("row-1"));
 });
 
-void test("a change-set answer of the wrong shape is refused with 502 (AntelopeJS/dms-ai#111)", async () => {
+void test("a change-set answer of the wrong shape is refused with 502", async () => {
   reset();
   answer("GET", "/changes", 200, { results: [{}], total: 1 });
   answer("GET", "/changes/set-1/undo-preview", 200, { files: "a.ts" });
@@ -47,7 +47,7 @@ void test("a change-set answer of the wrong shape is refused with 502 (AntelopeJ
   assertRefused(await changes.undoConfirm("set-1"));
 });
 
-void test("a settings answer that is not an object is refused with 502 (AntelopeJS/dms-ai#111)", async () => {
+void test("a settings answer that is not an object is refused with 502", async () => {
   reset();
   answer("GET", "/settings", 200, [1, 2]);
 

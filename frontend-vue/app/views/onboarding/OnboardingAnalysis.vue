@@ -28,10 +28,10 @@ const props = defineProps<{
 }>();
 
 const KINDS: Record<ScreenKind, string> = {
-	table: "dms_ai.views.onboarding.analysis.kind_table",
-	status: "dms_ai.views.onboarding.analysis.kind_status",
-	tabs: "dms_ai.views.onboarding.analysis.kind_tabs",
-	stats: "dms_ai.views.onboarding.analysis.kind_stats",
+	table: "dms_assistant.views.onboarding.analysis.kind_table",
+	status: "dms_assistant.views.onboarding.analysis.kind_status",
+	tabs: "dms_assistant.views.onboarding.analysis.kind_tabs",
+	stats: "dms_assistant.views.onboarding.analysis.kind_stats",
 };
 
 const onboarding = useOnboarding();
@@ -57,10 +57,10 @@ const lede = computed(() => {
 	if (proposal.value === null) return "";
 	const engine = proposal.value.database.engine;
 	const known = engineOfScheme(engine);
-	return t("dms_ai.views.onboarding.analysis.lede", {
+	return t("dms_assistant.views.onboarding.analysis.lede", {
 		engine: known === undefined ? engine : ENGINES[known].label,
 		tables: t(
-			"dms_ai.views.onboarding.analysis.tables_count",
+			"dms_assistant.views.onboarding.analysis.tables_count",
 			{ count: tables.value.length },
 			tables.value.length,
 		),
@@ -129,14 +129,14 @@ onMounted(load);
 <template>
 	<OnboardingFrame :lede="lede">
 		<template #title>
-			{{ t("dms_ai.views.onboarding.analysis.title") }}
+			{{ t("dms_assistant.views.onboarding.analysis.title") }}
 			<span class="text-primary">{{ view.connection }}</span>
 		</template>
 		<p
 			v-if="proposal === null && problem === null"
 			class="text-muted mt-5 text-sm"
 		>
-			{{ t("dms_ai.views.onboarding.analysis.loading") }}
+			{{ t("dms_assistant.views.onboarding.analysis.loading") }}
 		</p>
 		<div v-if="proposal" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<section class="border-default rounded-xl border p-4">
@@ -144,7 +144,7 @@ onMounted(load);
 					class="text-muted mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
 				>
 					<UIcon name="i-ph-table" class="size-3.5" />
-					{{ t("dms_ai.views.onboarding.analysis.tables") }}
+					{{ t("dms_assistant.views.onboarding.analysis.tables") }}
 				</h3>
 				<ul class="flex max-h-56 flex-col gap-2.5 overflow-y-auto">
 					<li
@@ -165,7 +165,7 @@ onMounted(load);
 					class="text-muted mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
 				>
 					<UIcon name="i-ph-layout" class="size-3.5" />
-					{{ t("dms_ai.views.onboarding.analysis.screens") }}
+					{{ t("dms_assistant.views.onboarding.analysis.screens") }}
 				</h3>
 				<ul class="flex max-h-56 flex-col gap-2 overflow-y-auto">
 					<li
@@ -194,7 +194,7 @@ onMounted(load);
 		</p>
 		<template #footer>
 			<UButton
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -202,7 +202,7 @@ onMounted(load);
 			/>
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.analysis.build')"
+				:label="t('dms_assistant.views.onboarding.analysis.build')"
 				color="neutral"
 				variant="outline"
 				:disabled="chosen.length === 0"
@@ -210,7 +210,7 @@ onMounted(load);
 				@click="build"
 			/>
 			<UButton
-				:label="t('dms_ai.views.onboarding.analysis.mockup')"
+				:label="t('dms_assistant.views.onboarding.analysis.mockup')"
 				icon="i-ph-frame-corners"
 				color="secondary"
 				:disabled="chosen.length === 0"

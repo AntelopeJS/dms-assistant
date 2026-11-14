@@ -65,7 +65,7 @@ $C down "$RUN"
 ## Verdict rules
 
 1. **Run every feature whose `covers:` globs the diff touches, plus the smoke journey.** `plan` prints that list as `run`. When the diff touches a shared file (a `package.json`, a `pnpm-lock.yaml`, a `tsconfig*.json` or `verify.config.ts`), and before a release, run every feature instead: `plan` does not widen `run` for these yet.
-2. **Unmapped surface fails the verdict.** User-facing code is `src/builder/**`, `frontend-vue/builder/**` and `frontend-vue/i18n/locales/builder-*.json`, tests and tool configs excluded (`verify.config.ts`). `map` checks the whole tree. The rest of the repository belongs to `verify-dms-ai`.
+2. **Unmapped surface fails the verdict.** User-facing code is `src/builder/**`, `frontend-vue/builder/**` and `frontend-vue/i18n/locales/builder-*.json`, tests and tool configs excluded (`verify.config.ts`). `map` checks the whole tree. The rest of the repository belongs to `verify-dms-assistant`.
 3. **Every registered journey of a feature in `run` must have run and passed.** Known findings stay as failing journeys (see Gotchas): they fail a verdict only when the diff touches their feature.
 4. **Docs.** Judge every `docs:` page of each touched feature against what the journeys showed.
 5. **Formal checks.** None.
@@ -76,7 +76,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 ## Gotchas
 
-- In a development dashboard dms-assistant's onboarding popup covers every page until onboarding is done. `guarded` ticks its "Don't show on startup" once per browser before any page script runs; verify-dms-ai drives the popup itself.
+- In a development dashboard dms-assistant's onboarding popup covers every page until onboarding is done. `guarded` ticks its "Don't show on startup" once per browser before any page script runs; verify-dms-assistant drives the popup itself.
 - `POST /database/connections/check` answers the owner 403 outside development, so the connection-check journey that reaches a database pins `backend: "dev"`. A dev backend is not watched: nothing in a run rewrites a source and reloads it.
 - The popup's "Start from an existing database" form opens behind a working Claude or Codex sign-in, which a run never holds. The journeys call the routes the way the form's client does, and the client's own logic is pinned by `pnpm --dir frontend-vue test`.
 - A dry run of `POST /database/project` with no step answers the configuration file as `kind: "modify"` with an empty `diff`; the journeys use a step that changes something.

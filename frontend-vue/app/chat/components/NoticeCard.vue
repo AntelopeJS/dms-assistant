@@ -53,13 +53,13 @@ const expiredTool = computed<string>(() => {
 			<template v-if="notice.kind === 'autofix'">
 				<b>
 					{{
-						t("dms_ai.panel.notice.autofix_title", {
+						t("dms_assistant.panel.notice.autofix_title", {
 							attempt: notice.attempt,
 							max: notice.maxAttempts,
 						})
 					}}
 				</b>
-				{{ t("dms_ai.panel.notice.autofix_text") }}
+				{{ t("dms_assistant.panel.notice.autofix_text") }}
 				<ul v-if="showErrors" class="cb-notice__errors">
 					<li v-for="(error, index) in notice.errors" :key="index">
 						<code>{{ error }}</code>
@@ -71,7 +71,7 @@ const expiredTool = computed<string>(() => {
 						size="xs"
 						color="neutral"
 						variant="outline"
-						:label="t('dms_ai.panel.notice.stop_autofix')"
+						:label="t('dms_assistant.panel.notice.stop_autofix')"
 						@click="emit('stopAutoFix')"
 					/>
 					<UButton
@@ -82,8 +82,8 @@ const expiredTool = computed<string>(() => {
 						:label="
 							t(
 								showErrors
-									? 'dms_ai.panel.notice.hide_errors'
-									: 'dms_ai.panel.notice.show_errors',
+									? 'dms_assistant.panel.notice.hide_errors'
+									: 'dms_assistant.panel.notice.show_errors',
 								{ count: notice.errors.length },
 								notice.errors.length,
 							)
@@ -94,10 +94,12 @@ const expiredTool = computed<string>(() => {
 			</template>
 			<template v-else-if="notice.kind === 'permission_expired'">
 				<b>
-					{{ t("dms_ai.panel.notice.expired_title", { tool: expiredTool }) }}
+					{{
+						t("dms_assistant.panel.notice.expired_title", { tool: expiredTool })
+					}}
 				</b>
 				{{
-					t("dms_ai.panel.notice.expired_text", {
+					t("dms_assistant.panel.notice.expired_text", {
 						summary: notice.summary,
 						time,
 					})
@@ -108,41 +110,43 @@ const expiredTool = computed<string>(() => {
 						color="neutral"
 						variant="outline"
 						icon="i-ph-arrows-clockwise"
-						:label="t('dms_ai.panel.approvals.ask_again')"
+						:label="t('dms_assistant.panel.approvals.ask_again')"
 						@click="emit('askAgain', notice.summary)"
 					/>
 				</div>
 			</template>
 			<template v-else-if="notice.kind === 'question_skipped'">
 				{{
-					t("dms_ai.panel.notice.question_skipped", { header: notice.header })
+					t("dms_assistant.panel.notice.question_skipped", {
+						header: notice.header,
+					})
 				}}
 			</template>
 			<template v-else-if="notice.kind === 'model_fallback'">
 				<b>
 					{{
-						t("dms_ai.panel.notice.model_fallback_title", {
+						t("dms_assistant.panel.notice.model_fallback_title", {
 							model: notice.usedModel,
 						})
 					}}
 				</b>
 				{{
-					t("dms_ai.panel.notice.model_fallback_text", {
+					t("dms_assistant.panel.notice.model_fallback_text", {
 						requested: notice.requestedModel,
 						model: notice.usedModel,
 					})
 				}}
 			</template>
 			<template v-else-if="notice.kind === 'auto_unavailable'">
-				<b>{{ t("dms_ai.panel.notice.auto_unavailable_title") }}</b>
+				<b>{{ t("dms_assistant.panel.notice.auto_unavailable_title") }}</b>
 				{{
-					t("dms_ai.panel.notice.auto_unavailable_text", {
+					t("dms_assistant.panel.notice.auto_unavailable_text", {
 						model: notice.model,
 					})
 				}}
 			</template>
 			<template v-else>
-				{{ t("dms_ai.panel.notice.full_auto_ended", { time }) }}
+				{{ t("dms_assistant.panel.notice.full_auto_ended", { time }) }}
 			</template>
 		</div>
 	</div>

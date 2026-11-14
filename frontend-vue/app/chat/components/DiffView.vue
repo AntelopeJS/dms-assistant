@@ -44,7 +44,7 @@ const shown = computed(() =>
 		>
 			{{
 				t(
-					"dms_ai.panel.approvals.show_all_lines",
+					"dms_assistant.panel.approvals.show_all_lines",
 					{ count: shown.hidden },
 					shown.hidden,
 				)

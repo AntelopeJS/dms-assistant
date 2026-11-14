@@ -21,7 +21,7 @@ import type {
 	PreferenceStore,
 } from "../../app/onboarding/preferences";
 import { ONBOARDING_CONTROLLER_KEY } from "../../app/onboarding/runtime";
-import views from "../../i18n/locales/dms-ai-views-en-GB.json";
+import views from "../../i18n/locales/dms-assistant-views-en-GB.json";
 import { createTestI18n } from "./i18n";
 import { OnboardingModal } from "./stand-ins/OnboardingModal";
 import { UCheckbox } from "./stand-ins/UCheckbox";

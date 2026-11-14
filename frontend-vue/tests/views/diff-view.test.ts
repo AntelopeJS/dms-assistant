@@ -122,7 +122,9 @@ describe("DiffView", () => {
 
 	it("marks a new file and derives its counts from the hunks", () => {
 		const wrapper = mountDiff([NEW_FILE]);
-		expect(wrapper.get("[data-pill]").text()).toBe("dms_ai.views.diff.new");
+		expect(wrapper.get("[data-pill]").text()).toBe(
+			"dms_assistant.views.diff.new",
+		);
 		expect(wrapper.get("header").text()).toContain("+1");
 	});
 
@@ -159,7 +161,7 @@ describe("DiffView", () => {
 				isBinary: true,
 			},
 		]);
-		expect(wrapper.text()).toContain("dms_ai.views.diff.binary");
+		expect(wrapper.text()).toContain("dms_assistant.views.diff.binary");
 		expect(wrapper.findAll("[data-line-kind]")).toHaveLength(0);
 	});
 });

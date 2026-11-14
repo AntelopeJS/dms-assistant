@@ -60,7 +60,7 @@ describe("two live Codex conversations stay isolated", () => {
   const sessions: ProviderSession[] = [];
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-iso-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-iso-"));
     CODEX_FIXTURE.use("plain");
     process.env.MOCK_CODEX_SCRIPT = codexScript("mcp-current-page.jsonl");
   });

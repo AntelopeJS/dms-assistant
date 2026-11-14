@@ -12,7 +12,7 @@ interface Props {
 }
 
 const REASON_KEYS: Record<ProviderUnavailableCode, string> = {
-	codex_not_signed_in: "dms_ai.panel.errors.codex_not_signed_in",
+	codex_not_signed_in: "dms_assistant.panel.errors.codex_not_signed_in",
 };
 
 interface Emits {
@@ -33,17 +33,19 @@ const reasonText = computed(() =>
 			<UIcon name="i-ph-key" class="cb-provider__icon" />
 			<div>
 				<b>
-					{{ t("dms_ai.panel.errors.agent_cant_run", { agent: agentName }) }}
+					{{
+						t("dms_assistant.panel.errors.agent_cant_run", { agent: agentName })
+					}}
 				</b>
 				{{ reasonText }}
-				{{ t("dms_ai.panel.errors.agent_no_fallback") }}
+				{{ t("dms_assistant.panel.errors.agent_no_fallback") }}
 				<div class="cb-provider__row">
 					<UButton
 						size="xs"
 						color="neutral"
 						variant="outline"
 						icon="i-ph-gear-six"
-						:label="t('dms_ai.panel.errors.open_settings')"
+						:label="t('dms_assistant.panel.errors.open_settings')"
 						@click="emit('openSettings')"
 					/>
 				</div>

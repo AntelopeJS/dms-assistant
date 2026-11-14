@@ -52,7 +52,7 @@ const row = computed(() => props.rowData);
 const eyebrow = computed(() => {
 	const current = row.value;
 	if (!current) return "";
-	const source = t(`dms_ai.views.source.${toolSource(current.tool)}`);
+	const source = t(`dms_assistant.views.source.${toolSource(current.tool)}`);
 	return `${source} · ${moment(current.timestampMs, true)}`;
 });
 const heading = computed(() => {
@@ -63,8 +63,8 @@ const heading = computed(() => {
 });
 
 const facts = computed(() => [
-	{ id: "allowed", label: t("dms_ai.views.activity.allowed") },
-	{ id: "result", label: t("dms_ai.views.activity.result") },
+	{ id: "allowed", label: t("dms_assistant.views.activity.allowed") },
+	{ id: "result", label: t("dms_assistant.views.activity.result") },
 ]);
 
 const args = computed(() => argumentItems(detail.data.value?.args));
@@ -129,7 +129,7 @@ function openConversation(): void {
 			v-else-if="!detail.data.value"
 			class="flex flex-col gap-3"
 			:aria-busy="true"
-			:aria-label="t('dms_ai.views.common.loading')"
+			:aria-label="t('dms_assistant.views.common.loading')"
 		>
 			<USkeleton class="h-3 w-24" />
 			<USkeleton class="h-24 w-full" />
@@ -137,14 +137,16 @@ function openConversation(): void {
 		</div>
 		<template v-else>
 			<section v-if="args.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrowLabel :label="t('dms_ai.views.activity.arguments')" />
+				<DmsEyebrowLabel :label="t('dms_assistant.views.activity.arguments')" />
 				<div class="border-default bg-(--dms-bg-field) rounded-md border px-3">
 					<DmsKeyValueList :items="args" dense />
 				</div>
 			</section>
 
 			<section v-if="trail.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrowLabel :label="t('dms_ai.views.activity.decision_trail')" />
+				<DmsEyebrowLabel
+					:label="t('dms_assistant.views.activity.decision_trail')"
+				/>
 				<ol class="flex flex-col">
 					<li
 						v-for="(step, index) in trail"
@@ -160,12 +162,12 @@ function openConversation(): void {
 			</section>
 
 			<section v-if="diffFiles.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrowLabel :label="t('dms_ai.views.activity.diff')" />
+				<DmsEyebrowLabel :label="t('dms_assistant.views.activity.diff')" />
 				<DiffView :files="diffFiles" />
 			</section>
 
 			<section v-if="output" class="flex flex-col gap-2">
-				<DmsEyebrowLabel :label="t('dms_ai.views.activity.output')" />
+				<DmsEyebrowLabel :label="t('dms_assistant.views.activity.output')" />
 				<DmsCodeSnippet
 					:code="output"
 					language="text"
@@ -185,8 +187,8 @@ function openConversation(): void {
 					:label="
 						t(
 							isRawShown
-								? 'dms_ai.views.activity.hide_raw'
-								: 'dms_ai.views.activity.show_raw',
+								? 'dms_assistant.views.activity.hide_raw'
+								: 'dms_assistant.views.activity.show_raw',
 						)
 					"
 					@click="isRawShown = !isRawShown"
@@ -209,7 +211,7 @@ function openConversation(): void {
 				icon="i-ph-chats-circle"
 				color="neutral"
 				variant="outline"
-				:label="t('dms_ai.views.activity.open_conversation')"
+				:label="t('dms_assistant.views.activity.open_conversation')"
 				@click="openConversation"
 			/>
 			<UButton
@@ -218,10 +220,10 @@ function openConversation(): void {
 				color="secondary"
 				:label="
 					row.changeSetNumber !== undefined
-						? t('dms_ai.views.activity.view_change_set_number', {
+						? t('dms_assistant.views.activity.view_change_set_number', {
 								number: row.changeSetNumber,
 							})
-						: t('dms_ai.views.activity.view_change_set')
+						: t('dms_assistant.views.activity.view_change_set')
 				"
 				@click="viewChangeSet"
 			/>

@@ -70,7 +70,7 @@ function describeFailure(result: FailingRead): FailureDescription {
 	const notice = computed(() =>
 		result.error.value
 			? resolveError(result.error.value, {
-					fallbackKey: `dms_ai.views.${classifyFailure(result.error.value)}.description`,
+					fallbackKey: `dms_assistant.views.${classifyFailure(result.error.value)}.description`,
 				})
 			: null,
 	);

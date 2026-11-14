@@ -131,7 +131,7 @@ export function readCodexBinaryVersion(
 /**
  * Lets an operator run a Codex release the shipped types were not generated
  * from. Codex ships about ten releases a month, so somebody tracking the latest
- * one needs a way through that does not involve waiting for a dms-ai release —
+ * one needs a way through that does not involve waiting for a dms-assistant release —
  * and it stays an explicit, logged opt-in rather than the default.
  */
 export function isVersionGateWaived(): boolean {

@@ -55,7 +55,7 @@ function loadedCount(pages: ChangesPage[]): number {
 // page loaded again.
 const status = useAiData<AssistantStatus>(AI_ROUTES.status);
 const list = useAiPagedData<ChangesPage, number>(
-	() => `dms-ai:changes:${scope.value}`,
+	() => `dms-assistant:changes:${scope.value}`,
 	({ $authFetch, cursor, signal }) =>
 		$authFetch<ChangesPage>(AI_ROUTES.changes, {
 			query: listQuery(cursor ?? 0),
@@ -83,9 +83,9 @@ const pickedId = ref<string | undefined>(selectedFromRoute());
 const selectedId = computed(() => pickedId.value ?? changeSets.value[0]?.id);
 
 const SCOPE_ITEMS = computed(() => [
-	{ value: "all", label: t("dms_ai.views.changes.filter_all") },
-	{ value: "safe", label: t("dms_ai.views.changes.filter_safe") },
-	{ value: "vibe", label: t("dms_ai.views.changes.filter_code") },
+	{ value: "all", label: t("dms_assistant.views.changes.filter_all") },
+	{ value: "safe", label: t("dms_assistant.views.changes.filter_safe") },
+	{ value: "vibe", label: t("dms_assistant.views.changes.filter_code") },
 ]);
 
 function reload(): Promise<void> {
@@ -109,7 +109,7 @@ function select(id: string | number | undefined): void {
 
 function sublabel(set: ChangeSetSummary): string {
 	if (set.state === "undone") {
-		const parts = [`#${set.number}`, t("dms_ai.views.changes.undone")];
+		const parts = [`#${set.number}`, t("dms_assistant.views.changes.undone")];
 		if (set.stateChangedAtMs) parts.push(moment(set.stateChangedAtMs));
 		if (set.stateChangedBy) parts.push(set.stateChangedBy);
 		return parts.join(" · ");
@@ -118,9 +118,9 @@ function sublabel(set: ChangeSetSummary): string {
 		`#${set.number}`,
 		moment(set.createdAtMs),
 		`+${set.added} −${set.removed}`,
-		t(`dms_ai.views.scope.${set.scope}`),
+		t(`dms_assistant.views.scope.${set.scope}`),
 	];
-	if (set.isAutoFix) parts.push(t("dms_ai.views.changes.auto_fix"));
+	if (set.isAutoFix) parts.push(t("dms_assistant.views.changes.auto_fix"));
 	return parts.join(" · ");
 }
 
@@ -146,13 +146,13 @@ const isFirstLoad = computed(
 );
 const hasMore = computed(() => list.hasMore.value);
 const listLabel = computed(() =>
-	t("dms_ai.views.changes.list_label", { count: total.value }),
+	t("dms_assistant.views.changes.list_label", { count: total.value }),
 );
 const emptyActions = computed(() =>
 	assistant.isAvailable
 		? [
 				{
-					label: t("dms_ai.views.common.open_assistant"),
+					label: t("dms_assistant.views.common.open_assistant"),
 					icon: "i-ph-sparkle",
 					color: "secondary" as const,
 					onClick: () => assistant.openPanel(),
@@ -170,22 +170,22 @@ const emptyActions = computed(() =>
 				icon="i-ph-magnifying-glass"
 				size="sm"
 				class="w-full sm:w-64"
-				:placeholder="t('dms_ai.views.changes.search')"
-				:aria-label="t('dms_ai.views.changes.search')"
+				:placeholder="t('dms_assistant.views.changes.search')"
+				:aria-label="t('dms_assistant.views.changes.search')"
 			/>
 			<DmsSegmentedControl
 				v-model="scope"
 				:items="SCOPE_ITEMS"
 				size="sm"
-				:aria-label="t('dms_ai.views.changes.filter_label')"
+				:aria-label="t('dms_assistant.views.changes.filter_label')"
 			/>
 		</div>
 
 		<DmsCardPanel v-if="isCheckpointOff" :padded="false">
 			<DmsEmptyState
 				icon="i-ph-git-diff"
-				:title="t('dms_ai.views.changes.off_title')"
-				:description="t('dms_ai.views.changes.off_description')"
+				:title="t('dms_assistant.views.changes.off_title')"
+				:description="t('dms_assistant.views.changes.off_description')"
 			/>
 		</DmsCardPanel>
 		<DmsCardPanel
@@ -202,7 +202,7 @@ const emptyActions = computed(() =>
 			v-else-if="isFirstLoad"
 			class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[380px_minmax(0,1fr)]"
 			:aria-busy="true"
-			:aria-label="t('dms_ai.views.common.loading')"
+			:aria-label="t('dms_assistant.views.common.loading')"
 		>
 			<DmsCardPanel class="flex flex-col gap-4">
 				<USkeleton v-for="index in 5" :key="index" class="h-10 w-full" />
@@ -215,16 +215,16 @@ const emptyActions = computed(() =>
 		<DmsCardPanel v-else-if="changeSets.length === 0" :padded="false">
 			<DmsEmptyState
 				icon="i-ph-git-diff"
-				:title="t('dms_ai.views.changes.empty_title')"
-				:description="t('dms_ai.views.changes.empty_description')"
+				:title="t('dms_assistant.views.changes.empty_title')"
+				:description="t('dms_assistant.views.changes.empty_description')"
 				:actions="emptyActions"
 			/>
 		</DmsCardPanel>
 		<DmsCardPanel v-else-if="items.length === 0" :padded="false">
 			<DmsEmptyState
 				variant="no-result"
-				:title="t('dms_ai.views.changes.no_match_title')"
-				:description="t('dms_ai.views.changes.no_match_description')"
+				:title="t('dms_assistant.views.changes.no_match_title')"
+				:description="t('dms_assistant.views.changes.no_match_description')"
 			/>
 		</DmsCardPanel>
 		<template v-else>
@@ -247,7 +247,7 @@ const emptyActions = computed(() =>
 					size="sm"
 					icon="i-ph-caret-down"
 					:loading="list.loadingMore.value"
-					:label="t('dms_ai.views.common.load_more')"
+					:label="t('dms_assistant.views.common.load_more')"
 					@click="loadMore"
 				/>
 			</div>

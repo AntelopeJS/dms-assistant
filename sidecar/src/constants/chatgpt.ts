@@ -98,8 +98,8 @@ export const CHATGPT_LOCK_TIMEOUT_MS = 30_000;
  * secret travels in the app-server's environment, never on disk.
  */
 export const CHATGPT_ACCESS_TOKEN_PATH = "/codex/access-token";
-export const CHATGPT_TOKEN_URL_ENV = "DMS_AI_CHATGPT_TOKEN_URL";
-export const CHATGPT_TOKEN_SECRET_ENV = "DMS_AI_CHATGPT_TOKEN_SECRET";
+export const CHATGPT_TOKEN_URL_ENV = "DMS_ASSISTANT_CHATGPT_TOKEN_URL";
+export const CHATGPT_TOKEN_SECRET_ENV = "DMS_ASSISTANT_CHATGPT_TOKEN_SECRET";
 /**
  * How long Codex reuses a token before asking again. It also asks again after
  * a 401, so this only bounds how stale a token it holds can be.

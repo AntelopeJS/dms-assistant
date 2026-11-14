@@ -1,0 +1,404 @@
+{
+	"dms_assistant": {
+		"module": {
+			"title": "Assistant",
+			"description": "The AI assistant: its settings, what you can undo and what it did"
+		},
+		"pages": {
+			"changes": {
+				"title": "Changes",
+				"description": "Every turn that touched the project, saved as a change set you can review and undo"
+			},
+			"activity": {
+				"title": "Activity",
+				"description": "Audit log of every tool the assistant used, who allowed it and what came out"
+			},
+			"settings": {
+				"title": "Settings",
+				"description": "Defaults for new conversations. Changes save as you go"
+			}
+		},
+		"blocks": {
+			"changes": {
+				"view": {
+					"name": "Change sets",
+					"description": "The change sets, their diffs, and Undo with its preview"
+				}
+			},
+			"activity": {
+				"toolbar": {
+					"name": "Toolbar",
+					"description": "When the audit log was last read, a refresh, and the period"
+				},
+				"period": {
+					"name": "Period",
+					"description": "Picks the period the audit log covers"
+				},
+				"log": {
+					"name": "Audit log",
+					"description": "Every tool call, how it was allowed and what came out"
+				},
+				"detail": {
+					"name": "Action detail",
+					"description": "One tool call: its arguments, decision trail and diff"
+				}
+			},
+			"settings": {
+				"chatgpt": {
+					"name": "ChatGPT account",
+					"description": "The ChatGPT account Codex runs on, with sign-in and sign-out"
+				},
+				"form": {
+					"name": "Assistant settings",
+					"description": "AI and Builder defaults"
+				},
+				"usage": {
+					"name": "Usage",
+					"description": "Tokens the conversations used",
+					"title": "Usage",
+					"caption": "Counted per conversation. Your provider bills them."
+				},
+				"usage_chart": {
+					"name": "Tokens per day",
+					"description": "Tokens used per day over the last 14 days",
+					"title": "Tokens · last 14 days",
+					"caption": "Tokens used per day"
+				},
+				"usage_summary": {
+					"name": "Usage totals",
+					"description": "Tokens, conversations and the biggest conversation",
+					"title": "Last 14 days"
+				},
+				"usage_chart_series": {
+					"name": "Tokens chart series",
+					"description": "The column chart drawn inside the tokens card"
+				},
+				"status_banner": {
+					"name": "Assistant notice",
+					"description": "Says when the assistant is offline, its last turn failed or requests wait for you"
+				}
+			}
+		},
+		"activity": {
+			"export": "Export CSV",
+			"search": "Search tools, files, pages",
+			"count": "{count} action | {count} actions",
+			"columns": {
+				"time": "Time",
+				"action": "Action",
+				"allowed": "Allowed",
+				"result": "Result",
+				"conversation": "Conversation",
+				"duration": "Duration",
+				"category": "Category",
+				"agent": "Agent",
+				"read_only": "Read-only"
+			},
+			"tabs": {
+				"all": "All",
+				"changed": "Changed files",
+				"asked": "Asked you",
+				"denied": "Denied or blocked",
+				"failed": "Failed",
+				"held": "Held by the DMS"
+			},
+			"quick": {
+				"tool": "Tool",
+				"agent": "Agent",
+				"read_only": "Read-only"
+			},
+			"read_only": {
+				"hide": "Hide read-only",
+				"show": "Show read-only"
+			},
+			"detail": {
+				"open": "Details",
+				"title": "Action detail"
+			},
+			"empty": {
+				"title": "No activity yet",
+				"description": "Every tool the assistant uses lands here, with who allowed it and what came out."
+			},
+			"offline": {
+				"title": "Can't reach the assistant",
+				"description": "The audit log comes from the assistant, which isn't running. This isn't an empty log."
+			},
+			"category": {
+				"changed": "Changed files",
+				"asked": "Asked you",
+				"denied": "Denied or blocked",
+				"failed": "Failed",
+				"held": "Held by the DMS"
+			},
+			"agent": {
+				"claude": "Claude Code",
+				"codex": "Codex"
+			},
+			"allowed_by": {
+				"read_auto": "Read-only, automatic",
+				"builder_auto": "Builder, automatic",
+				"approved": "Approved by you",
+				"rule": "Allowed by a rule",
+				"full_auto": "Full auto",
+				"auto_approved": "Allowed by Auto review",
+				"auto_denied": "Blocked by Auto review",
+				"blocked": "Blocked · safe mode",
+				"denied": "Denied by you",
+				"expired": "Expired"
+			},
+			"result": {
+				"done": "Done",
+				"pending": "Pending",
+				"failed": "Failed",
+				"denied": "Not run",
+				"blocked": "Blocked",
+				"stopped": "Stopped",
+				"expired": "Expired",
+				"held": "Held by the DMS"
+			},
+			"tools": {
+				"Read": "Read file",
+				"Write": "Write file",
+				"Edit": "Edit file",
+				"MultiEdit": "Edit file (several edits)",
+				"NotebookEdit": "Edit notebook",
+				"Bash": "Run command",
+				"Glob": "Find files",
+				"Grep": "Search code",
+				"LS": "List folder",
+				"WebFetch": "Fetch web page",
+				"WebSearch": "Search the web",
+				"TodoWrite": "Update steps",
+				"Task": "Run sub-agent",
+				"ExitPlanMode": "Propose plan",
+				"get_current_page": "Read current page",
+				"navigate_to_page": "Open page",
+				"find_pages_using": "Find pages using",
+				"list_pages": "List pages",
+				"ask_user": "Ask you",
+				"typecheck": "Typecheck",
+				"query_logs": "Read logs",
+				"builder_catalog": "Read block catalog",
+				"builder_list_pages": "List Builder pages",
+				"builder_page_structure": "Read page",
+				"builder_create_page": "Create page",
+				"builder_configure_page": "Configure page",
+				"builder_compose_page": "Compose page",
+				"builder_configure_table_view": "Configure table view",
+				"builder_delete_page": "Delete page",
+				"builder_add_block": "Add block",
+				"builder_configure_block": "Configure block",
+				"builder_move_block": "Move block",
+				"builder_remove_block": "Remove block",
+				"builder_create_category": "Create category",
+				"builder_configure_category": "Configure category",
+				"builder_delete_category": "Delete category",
+				"builder_refresh": "Refresh Builder",
+				"builder_create_resource": "Create table",
+				"builder_delete_resource": "Delete table",
+				"builder_list_resources": "List tables",
+				"builder_resource_structure": "Read table",
+				"builder_add_field": "Add field",
+				"builder_configure_field": "Configure field",
+				"builder_remove_field": "Remove field",
+				"builder_query_templates": "Read query templates",
+				"builder_add_query": "Add query",
+				"builder_preview_query": "Preview query",
+				"builder_configure_query": "Configure query",
+				"builder_remove_query": "Remove query",
+				"UndoChangeSet": "Undo change set",
+				"RedoChangeSet": "Redo change set",
+				"ToolSearch": "Load tools",
+				"Skill": "Use skill",
+				"AskUserQuestion": "Ask you (built-in)"
+			}
+		},
+		"changes_table": {
+			"undo_confirm": {
+				"title": "Undo change set #{number}?",
+				"description": "Restores the file to how it was before this change set, then reloads the page. | Restores {count} files to how they were before this change set, then reloads the page.",
+				"description_conflict": "Restores the file to how it was before this change set. A later change set touches the same file. | Restores {count} files to how they were before this change set. A later change set touches the same files.",
+				"description_conflicts": "Restores the file to how it was before this change set. {conflicts} later change sets touch the same file. | Restores {count} files to how they were before this change set. {conflicts} later change sets touch the same files.",
+				"confirm": "Undo",
+				"include_later": "Also undo the later change sets",
+				"include_later_hint": "Safe: undoing this one alone keeps their lines and may not compile."
+			}
+		},
+		"settings": {
+			"hints": {
+				"next_turn": "Applies to new turns. Open chats lose the agent's memory; transcripts stay.",
+				"next_message": "Applies from the next message",
+				"new_conversations": "Applies to new conversations"
+			},
+			"sections": {
+				"ai": {
+					"label": "AI",
+					"description": "Which agent answers, how it thinks, and what it may do without asking."
+				},
+				"builder": {
+					"label": "Builder",
+					"description": "Applies in development only."
+				}
+			},
+			"provider": {
+				"label": "Coding agent",
+				"description": "Runs on this machine, in the project folder. Your code only goes to the provider you pick; a failing agent never falls back to the other.",
+				"unavailable": "Not set up on this machine",
+				"codex_not_signed_in": "Sign in with ChatGPT below to run Codex on your ChatGPT plan.",
+				"claude": {
+					"label": "Claude Code",
+					"description": "Anthropic · model chosen by Claude Code"
+				},
+				"codex": {
+					"label": "Codex",
+					"description": "OpenAI · runs on your ChatGPT plan, once signed in below"
+				}
+			},
+			"chatgpt": {
+				"signed_out": {
+					"title": "Run Codex on your ChatGPT plan",
+					"description": "Sign in with ChatGPT to use your plan's Codex usage here, with no API key. If the DMS runs on another machine, the page OpenAI sends you back to won't load: paste its address with “Paste the return address”.",
+					"action": "Sign in with ChatGPT"
+				},
+				"signed_in": {
+					"title": "Codex runs on the ChatGPT plan of {email}",
+					"description": "Its usage counts toward your plan's limits, which you can cap per app in ChatGPT's settings.",
+					"action": "Sign out"
+				},
+				"sign_out_confirm": {
+					"title": "Sign out of ChatGPT?",
+					"description": "Codex stops working on every DMS project of this machine until you sign in again. To remove dms-assistant from your ChatGPT account entirely, disconnect it in ChatGPT's settings."
+				},
+				"signed_out_toast": "Signed out of ChatGPT",
+				"paste": {
+					"action": "Paste the return address",
+					"title": "Finish signing in with ChatGPT",
+					"description": "After you allowed access, OpenAI sent you to an address starting with http://127.0.0.1 that could not load. Copy that whole address from the address bar and paste it here. It works once, within 10 minutes.",
+					"field": "Return address",
+					"confirm": "Finish signing in",
+					"success": "Signed in with ChatGPT"
+				}
+			},
+			"thinking": {
+				"label": "Thinking",
+				"description": "How long the agent reasons before acting. More thinking is slower and uses more tokens.",
+				"options": {
+					"off": "Off",
+					"low": "Low",
+					"medium": "Medium",
+					"high": "High"
+				}
+			},
+			"claude_model": {
+				"label": "Claude model",
+				"description": "The model Claude Code runs on. Thinking sets its reasoning effort."
+			},
+			"default_mode_claude": {
+				"label": "Default mode on Claude Code",
+				"description": "What Claude Code may do without asking you first. Auto review is the recommended default."
+			},
+			"default_mode_codex": {
+				"label": "Default mode on Codex",
+				"description": "What Codex may do without asking you first. Codex has no Auto review."
+			},
+			"mode": {
+				"normal": {
+					"label": "Ask first",
+					"description": "Asks before any change outside the Builder and before every command, read-only ones included."
+				},
+				"auto": {
+					"label": "Auto review",
+					"description": "A safety check approves routine file edits and web access. Shell commands, dependency files, git hooks and deletions still ask. Asks first on models or plans without it."
+				},
+				"acceptEdits": {
+					"label": "Accept edits",
+					"description": "Applies file edits, except dependency and git hook files. Asks for the rest, every command included.",
+					"description_codex": "With Codex, works as Ask first: asks before every file edit, dependency and git hook files included, and before any command that writes."
+				},
+				"plan": {
+					"label": "Plan only",
+					"description": "Reads and proposes. Changes nothing."
+				}
+			},
+			"always_ask": {
+				"label": "Always ask for",
+				"description": "These ask in every mode."
+			},
+			"always_ask_deletions": {
+				"label": "Deleting pages, tables, fields or queries",
+				"description": "Locked. The chat asks for your approval on a card before each one runs.",
+				"locked": "Deleting pages, tables, fields or queries · locked"
+			},
+			"always_ask_dependencies": {
+				"label": "Adding or removing dependencies",
+				"description": "Package installs and removals run by a command."
+			},
+			"always_ask_block_removal": {
+				"label": "Removing or moving Builder blocks",
+				"description": "Even when other Builder operations run automatically."
+			},
+			"unanswered": {
+				"label": "Unanswered requests",
+				"description": "What happens to a request nobody answers."
+			},
+			"request_timeout": {
+				"label": "Deny after",
+				"options": {
+					"5": "5 minutes",
+					"15": "15 minutes",
+					"30": "30 minutes"
+				}
+			},
+			"notify_requests": {
+				"label": "Notify me in the DMS",
+				"description": "Shows a toast when a request arrives while the assistant panel is closed."
+			},
+			"allow_local_skills": {
+				"title": "Machine-local skills",
+				"label": "Use machine-local skills",
+				"description": "Adds skills from ~/.claude/skills on this machine. Not shared with teammates or other environments."
+			},
+			"checkpoint_retention": {
+				"label": "Undo history",
+				"description": "Change sets older than this can no longer be undone.",
+				"options": {
+					"7": "Keep 7 days",
+					"30": "Keep 30 days",
+					"90": "Keep 90 days"
+				}
+			},
+			"usage": {
+				"series": "Tokens",
+				"total_tokens": "Tokens",
+				"conversations": "Conversations",
+				"top_conversation": "Biggest conversation",
+				"top_tokens": "{count} token | {count} tokens"
+			},
+			"safe_mode": {
+				"label": "Safe mode",
+				"description": "Only page and data edits through the DMS tools",
+				"builder_missing": "Needs the builder, which isn't running."
+			}
+		},
+		"status": {
+			"banner": {
+				"offline": {
+					"title": "The assistant is offline",
+					"description": "Its sidecar isn't running. Restart it to use the assistant again.",
+					"disabled": "Its sidecar is turned off in this module's configuration.",
+					"restart": "Restart assistant",
+					"restarted": "Assistant restarted"
+				},
+				"last_error": {
+					"title": "The assistant's last turn failed",
+					"description": "{error}",
+					"action": "Open activity"
+				},
+				"waiting": {
+					"title": "{count} request is waiting for you | {count} requests are waiting for you",
+					"description": "Open the assistant to answer: the button in the header, or ⌘⇧K."
+				}
+			}
+		}
+	}
+}

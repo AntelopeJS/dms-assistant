@@ -83,7 +83,7 @@ function cellCount(node: PreviewNode): number {
 			</span>
 		</span>
 		<span v-if="isSketched" class="bp-thumb__badge">
-			{{ t("dms_ai.panel.preview.sketch_badge") }}
+			{{ t("dms_assistant.panel.preview.sketch_badge") }}
 		</span>
 	</span>
 </template>

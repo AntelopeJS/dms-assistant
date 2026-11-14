@@ -19,7 +19,7 @@ const {
  * @typedef {import("./helpers/page-locales.cjs").LocaleNode} LocaleNode
  */
 
-const I18N_KEY = /\$dms_ai\.[A-Za-z0-9_.-]+/g;
+const I18N_KEY = /\$dms_assistant\.[A-Za-z0-9_.-]+/g;
 const MODULE_PAGES = ["settings", "changes", "activity"];
 
 /**
@@ -146,7 +146,7 @@ const ContainerSchema = z.union([
 
 /**
  * @param {unknown} value - A node of a serialized tree.
- * @param {Set<string>} keys - Receives each `$dms_ai` key found.
+ * @param {Set<string>} keys - Receives each `$dms_assistant` key found.
  */
 function collectKeys(value, keys) {
   const text = TextSchema.safeParse(value);
@@ -178,8 +178,8 @@ void test("registers the three AI pages, in order, with translated menu entries"
   );
   for (const page of pages) {
     assert.equal(page.menu.module, "ai");
-    assert.match(page.menu.displayName, /^\$dms_ai\.pages\./);
-    assert.match(page.menu.description ?? "", /^\$dms_ai\.pages\./);
+    assert.match(page.menu.displayName, /^\$dms_assistant\.pages\./);
+    assert.match(page.menu.description ?? "", /^\$dms_assistant\.pages\./);
     assert.ok(page.menu.icon, `${page.pageId} has an icon`);
   }
 });
@@ -195,9 +195,9 @@ void test("titles every block and child of the AI pages for the role editor", as
     }
     assert.ok(positions.length > 0, `${page.pageId} declares blocks`);
     for (const { path: where, metadata } of positions) {
-      assert.match(metadata.name, /^\$dms_ai\.blocks\./, where);
+      assert.match(metadata.name, /^\$dms_assistant\.blocks\./, where);
       const description = metadata.description ?? "";
-      assert.match(description, /^\$dms_ai\.blocks\./, where);
+      assert.match(description, /^\$dms_assistant\.blocks\./, where);
       assert.ok(metadata.icon, `${where} has an icon`);
       for (const locale of locales) {
         assert.ok(isTranslated(locale, metadata.name), where);
@@ -207,7 +207,7 @@ void test("titles every block and child of the AI pages for the role editor", as
   }
 });
 
-void test("translates every $dms_ai key the AI pages serve, in English and French", async () => {
+void test("translates every $dms_assistant key the AI pages serve, in English and French", async () => {
   const { modules, pages } = loadPages();
   /** @type {Set<string>} */
   const keys = new Set();
@@ -227,14 +227,17 @@ void test("translates every $dms_ai key the AI pages serve, in English and Frenc
   }
 });
 
-const COMPONENT_PREFIX = "DmsAi";
-const CUSTOM_COMPONENT = /"(DmsAi[A-Z][A-Za-z]+)"/g;
+const COMPONENT_PREFIX = "DmsAssistant";
+const CUSTOM_COMPONENT = /"(DmsAssistant[A-Z][A-Za-z]+)"/g;
 const COMPONENTS_DIR = path.resolve(
   __dirname,
   "../frontend-vue/app/components",
 );
 /** What no DMS block draws: the Changes view and the Activity row drawer. */
-const PAGE_CUSTOM_COMPONENTS = ["DmsAiActivityDetail", "DmsAiChangesView"];
+const PAGE_CUSTOM_COMPONENTS = [
+  "DmsAssistantActivityDetail",
+  "DmsAssistantChangesView",
+];
 
 void test("names only the custom components the frontend registers, where no DMS block fits", async () => {
   const { pages } = loadPages();

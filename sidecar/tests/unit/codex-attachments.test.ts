@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AttachmentType } from "../../src/protocol/messages.js";
 import { buildCodexTurnInput } from "../../src/providers/codex/attachments.js";
 
-const TMP_PREFIX = "dms-ai-attach-";
+const TMP_PREFIX = "dms-assistant-attach-";
 const CONVERSATION = "conv-attach";
 
 /** Smallest valid one-page PDF: enough for a rasterizer to produce a page. */

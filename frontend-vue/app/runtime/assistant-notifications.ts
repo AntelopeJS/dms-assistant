@@ -72,18 +72,22 @@ function approvalToast(
 	state.announcedApprovals = count;
 	toast({
 		title,
-		description: t("dms_ai.panel.toast.approvals_waiting", { count }, count),
+		description: t(
+			"dms_assistant.panel.toast.approvals_waiting",
+			{ count },
+			count,
+		),
 		icon: ICON,
 		color: "secondary",
 		duration: TOAST_DURATION_MS,
 		actions: [
 			{
-				label: t("dms_ai.panel.toast.review"),
+				label: t("dms_assistant.panel.toast.review"),
 				color: "secondary",
 				onClick: () => reviewApprovals(conversationId),
 			},
 			{
-				label: t("dms_ai.panel.toast.later"),
+				label: t("dms_assistant.panel.toast.later"),
 				color: "neutral",
 				variant: "outline",
 				onClick: () => undefined,
@@ -98,8 +102,10 @@ function onPermissionRequest(
 ): void {
 	if (state.options.isPanelOpen.value || !state.isEnabled) return;
 	const title = frame.summary
-		? t(state, "dms_ai.panel.toast.request_title", { summary: frame.summary })
-		: t(state, "dms_ai.panel.toast.request_generic");
+		? t(state, "dms_assistant.panel.toast.request_title", {
+				summary: frame.summary,
+			})
+		: t(state, "dms_assistant.panel.toast.request_generic");
 	approvalToast(state, title, frame.conversationId);
 }
 
@@ -118,20 +124,22 @@ function onChangeSet(state: NotifierState, frame: ChangeSetFrame): void {
 	if (set.state !== "applied" || state.options.isPanelOpen.value) return;
 	const { toast, undoChangeSet, reviewChangeSet } = state.options;
 	toast({
-		title: t(state, "dms_ai.panel.toast.applied", { number: set.number }),
+		title: t(state, "dms_assistant.panel.toast.applied", {
+			number: set.number,
+		}),
 		description: set.title,
 		icon: ICON,
 		color: "secondary",
 		duration: TOAST_DURATION_MS,
 		actions: [
 			{
-				label: t(state, "dms_ai.panel.change.undo"),
+				label: t(state, "dms_assistant.panel.change.undo"),
 				color: "neutral",
 				variant: "outline",
 				onClick: () => undoChangeSet(set),
 			},
 			{
-				label: t(state, "dms_ai.panel.change.review"),
+				label: t(state, "dms_assistant.panel.change.review"),
 				color: "secondary",
 				onClick: () => reviewChangeSet(set.id),
 			},
@@ -172,7 +180,7 @@ export function installAssistantNotifications(
 		const isNew = count > state.announcedApprovals;
 		if (!isNew) state.announcedApprovals = count;
 		if (!isNew || options.isPanelOpen.value || !state.isEnabled) return;
-		approvalToast(state, t(state, "dms_ai.panel.toast.request_generic"));
+		approvalToast(state, t(state, "dms_assistant.panel.toast.request_generic"));
 	});
 	return () => {
 		stopListening();

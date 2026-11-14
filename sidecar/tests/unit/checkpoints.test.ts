@@ -15,7 +15,7 @@ import {
 import { createShadowGit } from "../../src/checkpoints/shadow-git.js";
 import { createChangeSetStore } from "../../src/state/change-sets.js";
 
-const STATE_SEGMENTS = ["node_modules", ".cache", "dms-ai"];
+const STATE_SEGMENTS = ["node_modules", ".cache", "dms-assistant"];
 const RETENTION_DAYS = 30;
 const MS_PER_DAY = 86_400_000;
 const StoredChangeSets = z.looseObject({
@@ -142,7 +142,7 @@ describe("checkpoints", () => {
   let project: Project;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "dms-ai-checkpoints-"));
+    root = await mkdtemp(join(tmpdir(), "dms-assistant-checkpoints-"));
     await writeFile(join(root, "a.ts"), "one\ntwo\nthree\n");
     await writeFile(join(root, ".gitignore"), "ignored.log\n");
     await mkdir(join(root, "node_modules", "dep"), { recursive: true });

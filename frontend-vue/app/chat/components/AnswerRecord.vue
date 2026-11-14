@@ -13,7 +13,7 @@ const { t } = useChatI18n();
 <template>
 	<div class="cb-answers">
 		<span class="cb-answers__who">
-			✦ {{ t("dms_ai.panel.questions.asked") }}
+			✦ {{ t("dms_assistant.panel.questions.asked") }}
 		</span>
 		<div class="cb-answers__card">
 			<template v-for="(record, index) in answers" :key="index">
@@ -21,7 +21,7 @@ const { t } = useChatI18n();
 				<div class="cb-answers__a">
 					<template v-if="record.skipped">
 						<UIcon name="i-ph-arrow-bend-down-right" />
-						<span>{{ t("dms_ai.panel.questions.skipped_record") }}</span>
+						<span>{{ t("dms_assistant.panel.questions.skipped_record") }}</span>
 					</template>
 					<template v-else-if="record.isCustom">
 						<UIcon name="i-ph-chat-circle-dots" />
@@ -30,7 +30,7 @@ const { t } = useChatI18n();
 							size="sm"
 							color="neutral"
 							variant="subtle"
-							:label="t('dms_ai.panel.questions.your_words')"
+							:label="t('dms_assistant.panel.questions.your_words')"
 						/>
 					</template>
 					<template v-else>

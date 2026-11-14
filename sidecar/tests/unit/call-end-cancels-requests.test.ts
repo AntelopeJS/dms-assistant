@@ -89,7 +89,7 @@ describe("a provider-side call end", () => {
     handleTurnEvent(services, CONVERSATION_ID, {
       type: "tool_result",
       callId: "call-ask",
-      result: 'MCP server "dms-ai" tool "ask_user" timed out after 60s',
+      result: 'MCP server "dms-assistant" tool "ask_user" timed out after 60s',
       isError: true,
     });
     await expect(answer).resolves.toBeNull();
@@ -100,7 +100,7 @@ describe("a provider-side call end", () => {
     const { services, permissionBus } = buildHarness();
     const outcome = permissionBus.requestPermission({
       conversationId: CONVERSATION_ID,
-      toolName: "mcp__dms-ai__builder_delete_page",
+      toolName: "mcp__dms-assistant__builder_delete_page",
       args: { pageRef: "/p" },
       callId: "call-delete",
     });

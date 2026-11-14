@@ -26,7 +26,7 @@ describe("a configured model the API refuses", () => {
   let handle: RunnerHandle | undefined;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-model-fallback-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-model-fallback-"));
     CLAUDE_FIXTURE.use("plain");
     process.env.MOCK_CLAUDE_REFUSED_MODEL = REFUSED_MODEL;
     process.env.MOCK_CLAUDE_TRACE = join(dir, "trace.jsonl");

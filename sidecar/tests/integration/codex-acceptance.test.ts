@@ -41,7 +41,7 @@ const ENABLED =
   readAccountStatus().isSignedIn &&
   resolveCodexInstallation() !== undefined;
 
-const TMP_PREFIX = "dms-ai-acceptance-";
+const TMP_PREFIX = "dms-assistant-acceptance-";
 const CONVERSATION = "conv-acceptance";
 const TURN_TIMEOUT_MS = 120_000;
 const TEST_TIMEOUT_MS = 240_000;

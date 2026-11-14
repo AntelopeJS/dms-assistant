@@ -18,7 +18,7 @@ import { PANEL_STUBS } from "./support/stubs";
 const STALL_AFTER_MS = 20_000;
 
 beforeEach(() => {
-	localStorage.setItem("dms-ai-conversation-id", CONVERSATION_ID);
+	localStorage.setItem("dms-assistant-conversation-id", CONVERSATION_ID);
 });
 
 afterEach(() => {
@@ -32,11 +32,11 @@ describe("the chat as a component of the dashboard", () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		expect(document.querySelector("iframe")).toBeNull();
-		expect(panel.find("[data-dms-side-panel] .dms-ai-panel").exists()).toBe(
-			true,
-		);
+		expect(
+			panel.find("[data-dms-side-panel] .dms-assistant-panel").exists(),
+		).toBe(true);
 		expect(panel.find(".chat-view").exists()).toBe(true);
-		expect(Reflect.has(globalThis, "dmsAiChatTransport")).toBe(false);
+		expect(Reflect.has(globalThis, "dmsAssistantChatTransport")).toBe(false);
 	});
 
 	it("says hello with its conversation on the shared stream when it opens", async () => {
@@ -108,7 +108,7 @@ describe("the chat as a component of the dashboard", () => {
 			global: { provide: providedSession(null), stubs: PANEL_STUBS },
 		});
 		await nextTick();
-		expect(panel.find(".dms-ai-panel-status").text()).toContain(
+		expect(panel.find(".dms-assistant-panel-status").text()).toContain(
 			"Connecting the assistant",
 		);
 		expect(panel.find(".chat-view").exists()).toBe(false);
@@ -121,11 +121,11 @@ describe("the chat as a component of the dashboard", () => {
 		const panel = await openPanel(harness);
 		harness.sidecarStatus.value = "reviving";
 		await nextTick();
-		expect(panel.find(".dms-ai-panel-status").exists()).toBe(false);
+		expect(panel.find(".dms-assistant-panel-status").exists()).toBe(false);
 		expect(panel.find(".connection-banner").text()).toContain("restarting");
 		harness.sidecarStatus.value = "unavailable";
 		await nextTick();
-		const screen = panel.find(".dms-ai-panel-status");
+		const screen = panel.find(".dms-assistant-panel-status");
 		expect(screen.text()).toContain("The assistant isn't running");
 		expect(screen.text()).toContain("EADDRINUSE");
 		const restart = screen
@@ -137,7 +137,7 @@ describe("the chat as a component of the dashboard", () => {
 		expect(harness.session.panel.isOpen.value).toBe(false);
 		harness.sidecarStatus.value = "connected";
 		await nextTick();
-		expect(panel.find(".dms-ai-panel-status").exists()).toBe(false);
+		expect(panel.find(".dms-assistant-panel-status").exists()).toBe(false);
 	});
 
 	it("renders the answer as markup, with nothing the model wrote running in the dashboard", async () => {
@@ -272,7 +272,7 @@ describe("a running turn shows what it is doing, and never spins forever", () =>
 });
 
 describe("the shared stream going away and coming back", () => {
-	it("says reconnecting and holds the input, then says hello again and picks the transcript up, as after a dms-ai hot reload", async () => {
+	it("says reconnecting and holds the input, then says hello again and picks the transcript up, as after a dms-assistant hot reload", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		harness.setChannelStatus("reconnecting");

@@ -35,7 +35,7 @@ const FIRST_PARTY_MCP_PREFIXES = [
   DMS_MCP_TOOL_NAME_PREFIX,
 ] as const;
 
-/** The tool's own name, without the `mcp__dms-ai__` or `mcp__dms__` prefix the agent sees. */
+/** The tool's own name, without the `mcp__dms-assistant__` or `mcp__dms__` prefix the agent sees. */
 export function bareToolName(toolName: string): string {
   const prefix = FIRST_PARTY_MCP_PREFIXES.find((candidate) =>
     toolName.startsWith(candidate),

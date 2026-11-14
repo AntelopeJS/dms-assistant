@@ -2,7 +2,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveSkillSources } from "../../src/skills/resolve-sources.js";
 
-const moduleDirs = [{ module: "dms-ai", dir: "/proj/dms-ai/skills" }];
+const moduleDirs = [
+  { module: "dms-assistant", dir: "/proj/dms-assistant/skills" },
+];
 
 describe("resolveSkillSources", () => {
   it("returns module dirs only when local is off", () => {

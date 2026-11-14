@@ -5,13 +5,13 @@ export const SIDECAR_RESPAWN_WINDOW_MS = 60_000;
 export const SIDECAR_RESPAWN_DELAY_MS = 500;
 export const SIDECAR_LOG_PREFIX = "[dms-assistant]";
 export const SIDECAR_DISABLED_FLAG = "0";
-export const SIDECAR_ENV_DISABLE_KEY = "DMS_AI";
+export const SIDECAR_ENV_DISABLE_KEY = "DMS_ASSISTANT";
 export const SIDECAR_DIST_REL = "../../sidecar/dist/index.js";
 export const SIDECAR_SUCCESS_EXIT_CODE = 0;
 export const SIDECAR_CACHE_DIR_SEGMENTS = [
   "node_modules",
   ".cache",
-  "dms-ai",
+  "dms-assistant",
 ] as const;
 export const SIDECAR_LOCK_FILE_NAME = "sidecar.lock";
 export const SIDECAR_LOG_FILE_NAME = "sidecar.log";
@@ -20,7 +20,7 @@ export const SIDECAR_HEALTH_TIMEOUT_MS = 1000;
 export const SIDECAR_LOCK_POLL_INTERVAL_MS = 100;
 export const SIDECAR_STOP_TIMEOUT_MS = 5_000;
 export const SIDECAR_EXIT_POLL_INTERVAL_MS = 100;
-export const SIDECAR_OWNER_KEY = "@antelopejs/dms-ai/sidecar-owner";
+export const SIDECAR_OWNER_KEY = "@antelopejs/dms-assistant/sidecar-owner";
 export const SIDECAR_BUILD_ID_FLAG = "--build-id";
 export const SIDECAR_MODULE_ROOTS_FLAG = "--module-roots";
 export const SIDECAR_SKILL_DIRS_FLAG = "--skill-dirs";
@@ -30,7 +30,7 @@ export const MODULE_ROOTS_TIMEOUT_MS = 3_000;
 export const SIDECAR_DIST_EXTENSION = ".js";
 export const SIDECAR_BUILD_ID_HASH_ALGORITHM = "sha256";
 export const SIDECAR_LOOPBACK_HOST = "127.0.0.1";
-export const SIDECAR_AUTH_HEADER = "x-dms-ai-token";
+export const SIDECAR_AUTH_HEADER = "x-dms-assistant-token";
 
 /** Answer of a route that needs the sidecar while it cannot be reached. */
 export const SIDECAR_UNAVAILABLE_STATUS = 503;

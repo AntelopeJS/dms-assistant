@@ -20,7 +20,7 @@ export const CLIENT_MESSAGE_TYPES = {
 } as const;
 
 /**
- * Pages of the dms-ai module the chat links to. Module pages live under
+ * Pages of the dms-assistant module the chat links to. Module pages live under
  * `/modules/<moduleId>/<slug>`.
  */
 export const SETTINGS_PAGE_PATH = "/modules/ai/settings";

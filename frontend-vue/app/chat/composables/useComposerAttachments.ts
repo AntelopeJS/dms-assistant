@@ -42,7 +42,7 @@ export function useComposerAttachments(
 
 	async function readOne(file: File): Promise<void> {
 		if (exceedsSizeLimit(file)) {
-			error.value = t("dms_ai.panel.composer.file_too_large", {
+			error.value = t("dms_assistant.panel.composer.file_too_large", {
 				name: file.name,
 				max: MAX_ATTACHMENT_MEGABYTES,
 			});
@@ -54,7 +54,7 @@ export function useComposerAttachments(
 				await readFileAsAttachment(file),
 			];
 		} catch {
-			error.value = t("dms_ai.panel.composer.file_unreadable", {
+			error.value = t("dms_assistant.panel.composer.file_unreadable", {
 				name: file.name,
 			});
 		}
@@ -65,7 +65,7 @@ export function useComposerAttachments(
 		const incoming = Array.from(files);
 		const room = MAX_ATTACHMENTS - attachments.value.length;
 		if (incoming.length > room)
-			error.value = t("dms_ai.panel.composer.too_many_files", {
+			error.value = t("dms_assistant.panel.composer.too_many_files", {
 				max: MAX_ATTACHMENTS,
 			});
 		for (const file of incoming.slice(0, Math.max(room, 0)))

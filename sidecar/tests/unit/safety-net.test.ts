@@ -10,8 +10,8 @@ import {
 } from "../../src/server/safety-net.js";
 
 const PROJECT = path.resolve("/proj");
-const DMS_AI = path.join(PROJECT, "modules", "dms-ai");
-const KNOWN_ROOTS = [PROJECT, DMS_AI];
+const DMS_ASSISTANT = path.join(PROJECT, "modules", "dms-assistant");
+const KNOWN_ROOTS = [PROJECT, DMS_ASSISTANT];
 
 function noLogs(): LogsClient {
   return { getLogs: async () => [] };
@@ -38,13 +38,13 @@ describe("uniqueEditedRoots", () => {
   it("dedupes edited files down to their owning roots", () => {
     const roots = uniqueEditedRoots(
       [
-        path.join(DMS_AI, "src", "a.ts"),
-        path.join(DMS_AI, "src", "b.ts"),
+        path.join(DMS_ASSISTANT, "src", "a.ts"),
+        path.join(DMS_ASSISTANT, "src", "b.ts"),
         path.join(PROJECT, "app", "c.ts"),
       ],
       KNOWN_ROOTS,
     );
-    expect(roots.sort()).toEqual([PROJECT, DMS_AI]);
+    expect(roots.sort()).toEqual([PROJECT, DMS_ASSISTANT]);
   });
 });
 
@@ -72,7 +72,7 @@ describe("summarizeReloadErrors", () => {
 
 describe("collectBuildIssues", () => {
   const base = {
-    editedFiles: [path.join(DMS_AI, "src", "a.ts")],
+    editedFiles: [path.join(DMS_ASSISTANT, "src", "a.ts")],
     knownRoots: KNOWN_ROOTS,
     sinceMs: 0,
     delay: async () => {},
@@ -103,7 +103,7 @@ describe("collectBuildIssues", () => {
       logsClient: noLogs(),
       runTypecheckFn: async () => broken,
     });
-    expect(result).toContain(JSON.stringify({ target: DMS_AI }));
+    expect(result).toContain(JSON.stringify({ target: DMS_ASSISTANT }));
   });
 
   it("returns a heal prompt when the host log has reload errors", async () => {

@@ -29,10 +29,10 @@ const source = computed(() => {
 	<OnboardingFrame
 		:title="
 			view.provider === 'claude'
-				? t('dms_ai.views.onboarding.connected.title_claude')
-				: t('dms_ai.views.onboarding.connected.title_codex')
+				? t('dms_assistant.views.onboarding.connected.title_claude')
+				: t('dms_assistant.views.onboarding.connected.title_codex')
 		"
-		:lede="t('dms_ai.views.onboarding.connected.lede')"
+		:lede="t('dms_assistant.views.onboarding.connected.lede')"
 	>
 		<template #lead>
 			<DmsIconWell
@@ -57,7 +57,7 @@ const source = computed(() => {
 		<template #footer>
 			<span class="flex-1" />
 			<UButton
-				:label="t('dms_ai.views.onboarding.connected.next')"
+				:label="t('dms_assistant.views.onboarding.connected.next')"
 				trailing-icon="i-ph-arrow-right"
 				@click="onboarding.send({ type: 'next' })"
 			/>

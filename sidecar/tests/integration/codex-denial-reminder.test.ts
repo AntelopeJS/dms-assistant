@@ -53,7 +53,7 @@ describe("codex denial reminder", () => {
   let session: ProviderSession | undefined;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "dms-ai-denial-"));
+    dir = await mkdtemp(join(tmpdir(), "dms-assistant-denial-"));
     setBuilderAvailable(true);
     CODEX_FIXTURE.use("permission");
   });

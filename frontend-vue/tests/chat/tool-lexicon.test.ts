@@ -35,12 +35,12 @@ describe("the tool lexicon names a call by what it does", () => {
 		const description = describeTool("Edit", {
 			file_path: "/repo/crm/customer.form.ts",
 		});
-		expect(toolVerb(description, echo)).toBe("dms_ai.tools.edit_file");
+		expect(toolVerb(description, echo)).toBe("dms_assistant.tools.edit_file");
 		expect(description.target).toBe("customer.form.ts");
 	});
 
 	it("names a Builder block by its name and type, through the MCP prefix", () => {
-		const description = describeTool("mcp__dms-ai__builder_add_block", {
+		const description = describeTool("mcp__dms-assistant__builder_add_block", {
 			page: "sales/overview",
 			name: "Top customers",
 			type: "TopListCard",
@@ -78,7 +78,9 @@ describe("the tool lexicon names a call by what it does", () => {
 			"typecheck",
 			"navigate_to_page",
 		])
-			expect(describeTool(`mcp__dms-ai__${name}`, {}).verbKey).not.toBeNull();
+			expect(
+				describeTool(`mcp__dms-assistant__${name}`, {}).verbKey,
+			).not.toBeNull();
 	});
 
 	it("names the DMS page check, whatever server serves it (fails when page_verify shows its raw name)", () => {
@@ -86,7 +88,7 @@ describe("the tool lexicon names a call by what it does", () => {
 			page: "/rentals",
 		});
 		expect(toolVerb(description, (key) => key)).toBe(
-			"dms_ai.tools.verify_page",
+			"dms_assistant.tools.verify_page",
 		);
 		expect(description.target).toBe("/rentals");
 	});
@@ -99,7 +101,7 @@ describe("the tool lexicon names a call by what it does", () => {
 		expect(toolVerb(description, echo)).toBe("Fetch invoice totals");
 		expect(description.target).toBe("Q3");
 		expect(readableToolName("some_tool")).toBe("Some tool");
-		expect(bareToolName("mcp__dms-ai__ask_user")).toBe("ask_user");
+		expect(bareToolName("mcp__dms-assistant__ask_user")).toBe("ask_user");
 	});
 
 	it("lists named arguments, values on one line", () => {
@@ -172,7 +174,7 @@ describe("permission cards are titled from the preview, never the raw tool", () 
 		const text = permissionCardText(
 			{
 				...base,
-				toolName: "mcp__dms-ai__builder_delete_page",
+				toolName: "mcp__dms-assistant__builder_delete_page",
 				kind: "destructive",
 				preview: {
 					type: "destructive",
@@ -184,23 +186,27 @@ describe("permission cards are titled from the preview, never the raw tool", () 
 			t,
 		);
 		expect(text.title).toBe(
-			'dms_ai.panel.approvals.destructive.delete_page{"target":"/home"}',
+			'dms_assistant.panel.approvals.destructive.delete_page{"target":"/home"}',
 		);
-		expect(text.sub).toBe("dms_ai.panel.approvals.consequence_removes_code");
+		expect(text.sub).toBe(
+			"dms_assistant.panel.approvals.consequence_removes_code",
+		);
 	});
 
 	it("titles a generic request with the lexicon, not the summary", () => {
 		const text = permissionCardText(
 			{
 				...base,
-				toolName: "mcp__dms-ai__builder_remove_block",
+				toolName: "mcp__dms-assistant__builder_remove_block",
 				args: { path: "home/contactForm" },
 				kind: "builder",
 				preview: { type: "generic", args: {} },
 			},
 			t,
 		);
-		expect(text.title).toBe("dms_ai.tools.remove_block home/contactForm");
+		expect(text.title).toBe(
+			"dms_assistant.tools.remove_block home/contactForm",
+		);
 		expect(text.sub).toBe("");
 	});
 });

@@ -6,7 +6,7 @@ import { createConversationStore } from "../../src/state/conversations.js";
 import { createStore } from "../../src/state/store.js";
 import type { StoredMessage } from "../../src/state/types.js";
 
-const TMP_PREFIX = "dms-ai-conv-";
+const TMP_PREFIX = "dms-assistant-conv-";
 const STATE_FILE = "state.json";
 const CONVERSATION_ID = "conv-test-1";
 const FAST_DEBOUNCE_MS = 10;

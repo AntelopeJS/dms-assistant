@@ -6,7 +6,7 @@ const PLUGIN_MANIFEST_DIR = ".claude-plugin";
 const PLUGIN_MANIFEST_FILE = "plugin.json";
 const PLUGIN_SKILLS_DIR = "skills";
 const PLUGIN_VERSION = "0.0.1";
-const PLUGIN_DESCRIPTION = "dms-ai skill bundle";
+const PLUGIN_DESCRIPTION = "dms-assistant skill bundle";
 const WINDOWS_PLATFORM = "win32";
 
 export interface PluginWrapper {

@@ -8,7 +8,7 @@ import {
 } from "../../src/agent/permission-bus.js";
 
 export const FAST_TIMEOUT_MS = 50;
-export const TEST_PROJECT_ROOT = "/tmp/dms-ai-test-project";
+export const TEST_PROJECT_ROOT = "/tmp/dms-assistant-test-project";
 const POLL_MS = 5;
 const WAIT_LIMIT_MS = 2000;
 

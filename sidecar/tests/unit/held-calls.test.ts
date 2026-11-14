@@ -212,7 +212,7 @@ describe("held calls, once held", () => {
     ).toBe(false);
     expect(
       held.isHeld(TURN_CONVERSATION_ID, {
-        toolName: "mcp__dms-ai__builder_delete_resource",
+        toolName: "mcp__dms-assistant__builder_delete_resource",
         args: ARGS,
       }),
     ).toBe(false);

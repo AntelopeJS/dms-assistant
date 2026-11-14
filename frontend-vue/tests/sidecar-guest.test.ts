@@ -75,7 +75,7 @@ it("withdraws the docked panel when the first probe finds no assistant", async (
 	await harness.run();
 	await vi.waitFor(() =>
 		expect(harness.unregisterSidePanel).toHaveBeenCalledWith(
-			"dms-ai:assistant",
+			"dms-assistant:assistant",
 		),
 	);
 });

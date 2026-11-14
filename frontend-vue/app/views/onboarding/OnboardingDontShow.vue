@@ -10,7 +10,7 @@ const { t } = useChatI18n();
 <template>
 	<UCheckbox
 		v-model="onboarding.dontShow.value"
-		:label="t('dms_ai.views.onboarding.dont_show')"
+		:label="t('dms_assistant.views.onboarding.dont_show')"
 		color="neutral"
 		:ui="{ label: 'text-[13px] font-normal text-toned' }"
 	/>

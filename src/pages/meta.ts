@@ -12,7 +12,7 @@ export const PERIOD_ICON = "i-ph-calendar-blank";
 export const ROW_DRAWER_DIRECTION = "right";
 
 /**
- * The role editor's title, help and icon for a block: `$dms_ai.blocks.<path>`
+ * The role editor's title, help and icon for a block: `$dms_assistant.blocks.<path>`
  * holds its `name` and `description`.
  */
 export function blockMeta(path: string, icon: string): ComponentMetadata {
@@ -28,7 +28,7 @@ export function blockText(path: string, key: string): string {
   return i18nKey(I18N_SECTIONS.BLOCKS, path, key);
 }
 
-/** The menu entry of a page of the module, titled under `$dms_ai.pages.<id>`. */
+/** The menu entry of a page of the module, titled under `$dms_assistant.pages.<id>`. */
 export function pageMenu(id: string, icon: string, order: number): MenuOptions {
   return {
     displayName: i18nKey(I18N_SECTIONS.PAGES, id, "title"),

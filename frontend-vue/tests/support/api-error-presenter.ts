@@ -10,8 +10,10 @@ export function installApiErrorPresenter() {
 	const messages: Record<string, string> = {
 		"error.read_only_demo": "This demo is read-only.",
 		"error.500.description": "Something went wrong.",
-		"dms_ai.views.error.description": "Could not load the assistant's data.",
-		"dms_ai.views.unavailable.description": "The assistant is not running.",
+		"dms_assistant.views.error.description":
+			"Could not load the assistant's data.",
+		"dms_assistant.views.unavailable.description":
+			"The assistant is not running.",
 	};
 	vi.stubGlobal("useToast", () => ({ add }));
 	vi.stubGlobal("getPluginI18n", () => ({

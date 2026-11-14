@@ -15,7 +15,7 @@ import {
   codexStartGrandchildInto,
 } from "../helpers/provider-fixtures.js";
 
-const TMP_PREFIX = "dms-ai-pgroup-";
+const TMP_PREFIX = "dms-assistant-pgroup-";
 const CONVERSATION = "conv-codex-pgroup";
 const GRANDCHILD_PID_FILE = "grandchild.pid";
 const REQUEST_BUDGET_MS = 10_000;

@@ -30,22 +30,22 @@ interface FailureCopy {
 const COPY: Record<RequestFailure, () => FailureCopy> = {
 	unavailable: () => ({
 		icon: "i-ph-plugs",
-		title: t("dms_ai.views.unavailable.title"),
-		description: t("dms_ai.views.unavailable.description"),
+		title: t("dms_assistant.views.unavailable.title"),
+		description: t("dms_assistant.views.unavailable.description"),
 	}),
 	error: () => ({
 		icon: "i-ph-warning-circle",
-		title: t("dms_ai.views.error.title"),
+		title: t("dms_assistant.views.error.title"),
 		description: props.message
 			? serverMessage(props.message)
-			: t("dms_ai.views.error.description"),
+			: t("dms_assistant.views.error.description"),
 	}),
 };
 
 const copy = computed(() => COPY[props.failure]());
 const actions = computed(() => [
 	{
-		label: t("dms_ai.views.common.retry"),
+		label: t("dms_assistant.views.common.retry"),
 		icon: "i-ph-arrows-clockwise",
 		color: "neutral" as const,
 		variant: "outline" as const,

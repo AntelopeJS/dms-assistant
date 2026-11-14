@@ -43,7 +43,7 @@ const isRemote = computed(() => props.view.mode === "remote");
 </script>
 
 <template>
-	<OnboardingFrame :title="t('dms_ai.views.onboarding.codex.title')">
+	<OnboardingFrame :title="t('dms_assistant.views.onboarding.codex.title')">
 		<template #lead>
 			<UBadge
 				class="mb-1 self-start"
@@ -56,8 +56,8 @@ const isRemote = computed(() => props.view.mode === "remote");
 		<template #lede>
 			{{
 				isRemote
-					? t("dms_ai.views.onboarding.codex.remote_lede")
-					: t("dms_ai.views.onboarding.codex.lede")
+					? t("dms_assistant.views.onboarding.codex.remote_lede")
+					: t("dms_assistant.views.onboarding.codex.lede")
 			}}
 		</template>
 
@@ -78,7 +78,7 @@ const isRemote = computed(() => props.view.mode === "remote");
 				{{ problem }}
 			</p>
 			<p v-else class="text-muted mt-2 text-xs">
-				{{ t("dms_ai.views.onboarding.codex.remote_hint") }}
+				{{ t("dms_assistant.views.onboarding.codex.remote_hint") }}
 				<code class="font-mono">{{ CALLBACK_PREFIX }}</code>
 			</p>
 		</div>
@@ -95,10 +95,10 @@ const isRemote = computed(() => props.view.mode === "remote");
 						/>
 						<span class="bg-primary relative inline-flex size-2 rounded-full" />
 					</span>
-					{{ t("dms_ai.views.onboarding.codex.waiting") }}
+					{{ t("dms_assistant.views.onboarding.codex.waiting") }}
 				</p>
 				<UButton
-					:label="t('dms_ai.views.onboarding.codex.reopen')"
+					:label="t('dms_assistant.views.onboarding.codex.reopen')"
 					variant="link"
 					class="px-0"
 					@click="onboarding.signInWithChatGpt()"
@@ -113,15 +113,15 @@ const isRemote = computed(() => props.view.mode === "remote");
 					@click="onboarding.signInWithChatGpt()"
 				>
 					<ProviderMark provider="codex" size="sm" />
-					{{ t("dms_ai.views.onboarding.codex.start") }}
+					{{ t("dms_assistant.views.onboarding.codex.start") }}
 					<UIcon name="i-ph-arrow-square-out" class="text-dimmed size-4" />
 				</UButton>
 				<p v-if="!canStart" class="text-muted text-xs">
-					{{ t("dms_ai.views.onboarding.codex.unavailable") }}
+					{{ t("dms_assistant.views.onboarding.codex.unavailable") }}
 				</p>
 			</template>
 			<UButton
-				:label="t('dms_ai.views.onboarding.codex.remote')"
+				:label="t('dms_assistant.views.onboarding.codex.remote')"
 				variant="link"
 				class="px-0"
 				@click="remote"
@@ -130,7 +130,7 @@ const isRemote = computed(() => props.view.mode === "remote");
 
 		<template #footer>
 			<UButton
-				:label="t('dms_ai.views.onboarding.back')"
+				:label="t('dms_assistant.views.onboarding.back')"
 				icon="i-ph-arrow-left"
 				color="neutral"
 				variant="ghost"
@@ -139,7 +139,7 @@ const isRemote = computed(() => props.view.mode === "remote");
 			<span class="flex-1" />
 			<UButton
 				v-if="isRemote"
-				:label="t('dms_ai.views.onboarding.codex.connect')"
+				:label="t('dms_assistant.views.onboarding.codex.connect')"
 				trailing-icon="i-ph-arrow-right"
 				:disabled="pasted.trim() === ''"
 				:loading="busy"

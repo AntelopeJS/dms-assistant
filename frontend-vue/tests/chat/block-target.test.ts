@@ -16,7 +16,7 @@ function tool(toolName: string, args: unknown): ToolCallMessage {
 		id: `${toolName}-${JSON.stringify(args)}`,
 		role: "tool",
 		callId: "call",
-		toolName: `mcp__dms-ai__${toolName}`,
+		toolName: `mcp__dms-assistant__${toolName}`,
 		args,
 		status: "pending",
 		timestampMs: 0,

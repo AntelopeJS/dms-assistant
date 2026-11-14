@@ -124,7 +124,7 @@ const SAFE_SCOPE_CALLS: Call[] = [
   call("WebFetch", { url: "https://example.com", prompt: "read" }),
   call("Agent", { prompt: "look around" }),
   call("ToolSearch", { query: "select:Monitor" }),
-  call("Skill", { skill: "dms-ai" }),
+  call("Skill", { skill: "dms-assistant" }),
   call("AskUserQuestion", { questions: [] }),
   call(`${DMS_MCP_TOOL_NAME_PREFIX}builder_add_block`, {}),
   call("Write", { file_path: join(homedir(), ".claude", "plans", "p.md") }),
@@ -217,7 +217,7 @@ describe("the PreToolUse guard under Auto review in Code scope", () => {
       call("Agent", { prompt: "look around" }),
       call("ToolSearch", { query: "select:Monitor" }),
       call("TodoWrite", { todos: [] }),
-      call("Skill", { skill: "dms-ai" }),
+      call("Skill", { skill: "dms-assistant" }),
     ];
     expect(await decideAll(reviewable, "auto", "vibe")).toEqual(
       each(reviewable, NONE),

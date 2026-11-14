@@ -12,7 +12,7 @@ import { CODEX_FIXTURE, codexScript } from "../helpers/provider-fixtures.js";
 import { buildRunner, type RunnerHandle } from "../helpers/provider-runner.js";
 
 const CONVERSATION_ID = "conv-codex-death-1";
-const TMP_PREFIX = "dms-ai-codex-death-";
+const TMP_PREFIX = "dms-assistant-codex-death-";
 /** Long enough that only the app-server's death, not the idle timer, ends the turn. */
 const IDLE_WINDOW_MS = 10_000;
 const TEST_TIMEOUT_MS = 30_000;

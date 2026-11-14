@@ -589,7 +589,7 @@ async function startAssistant(
 
 /**
  * The assistant appears for a signed-in owner in development only: a first
- * probe that finds no dms-ai backend, or a disabled sidecar, leaves no trace.
+ * probe that finds no dms-assistant backend, or a disabled sidecar, leaves no trace.
  * The session and the onboarding are provided at once, empty until that probe
  * answers, so the panel the server rendered open and the workspace pages
  * follow them, and another module's layer finds the public onboarding. A

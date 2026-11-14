@@ -72,30 +72,30 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<div class="dms-ai-palette-answer dms-ai-chat-tokens">
-		<p v-if="turn === null" class="dms-ai-palette-answer__note">
-			{{ t("dms_ai.panel.palette.answer.not_running") }}
+	<div class="dms-assistant-palette-answer dms-assistant-chat-tokens">
+		<p v-if="turn === null" class="dms-assistant-palette-answer__note">
+			{{ t("dms_assistant.panel.palette.answer.not_running") }}
 		</p>
 		<template v-else>
-			<p class="dms-ai-palette-answer__mode">
+			<p class="dms-assistant-palette-answer__mode">
 				<UIcon name="i-ph-eye" />
-				{{ t("dms_ai.panel.palette.answer.read_only") }}
+				{{ t("dms_assistant.panel.palette.answer.read_only") }}
 			</p>
 			<p
 				v-if="isStarting"
-				class="dms-ai-palette-answer__progress"
+				class="dms-assistant-palette-answer__progress"
 				role="status"
 			>
 				<span class="spin-ai" />
 				{{
 					turn.channel.isConnected.value
-						? t("dms_ai.panel.palette.answer.thinking")
-						: t("dms_ai.panel.status.connecting")
+						? t("dms_assistant.panel.palette.answer.thinking")
+						: t("dms_assistant.panel.status.connecting")
 				}}
 			</p>
 			<MessageList
 				v-else
-				class="dms-ai-palette-answer__stream"
+				class="dms-assistant-palette-answer__stream"
 				:messages="answer"
 				:change-sets="turn.conversation.changeSets.value"
 				:busy-change-set-ids="NO_BUSY_CHANGE_SETS"
@@ -112,26 +112,30 @@ onBeforeUnmount(() => {
 				@run-plan="continueInAssistant"
 				@edit-plan="continueInAssistant"
 			/>
-			<p v-if="isWaiting" class="dms-ai-palette-answer__waiting" role="alert">
+			<p
+				v-if="isWaiting"
+				class="dms-assistant-palette-answer__waiting"
+				role="alert"
+			>
 				<UIcon name="i-ph-hand-palm" />
-				{{ t("dms_ai.panel.palette.answer.waiting") }}
+				{{ t("dms_assistant.panel.palette.answer.waiting") }}
 			</p>
 		</template>
-		<div class="dms-ai-palette-answer__actions">
+		<div class="dms-assistant-palette-answer__actions">
 			<UButton
 				v-if="turn !== null"
 				size="sm"
 				color="secondary"
 				:variant="isWaiting ? 'solid' : 'soft'"
 				icon="i-ph-sidebar-simple"
-				:label="t('dms_ai.panel.palette.answer.continue')"
+				:label="t('dms_assistant.panel.palette.answer.continue')"
 				@click="continueInAssistant"
 			/>
 			<UButton
 				size="sm"
 				color="neutral"
 				variant="ghost"
-				:label="t('dms_ai.panel.palette.answer.close')"
+				:label="t('dms_assistant.panel.palette.answer.close')"
 				@click="props.close()"
 			/>
 		</div>
@@ -139,16 +143,16 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.dms-ai-palette-answer {
+.dms-assistant-palette-answer {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 	font-size: 13px;
 }
 
-.dms-ai-palette-answer__mode,
-.dms-ai-palette-answer__progress,
-.dms-ai-palette-answer__waiting {
+.dms-assistant-palette-answer__mode,
+.dms-assistant-palette-answer__progress,
+.dms-assistant-palette-answer__waiting {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -157,27 +161,27 @@ onBeforeUnmount(() => {
 	color: var(--ui-text-muted);
 }
 
-.dms-ai-palette-answer__waiting {
+.dms-assistant-palette-answer__waiting {
 	color: var(--ui-warning);
 	font-weight: 500;
 }
 
-.dms-ai-palette-answer__stream {
+.dms-assistant-palette-answer__stream {
 	max-height: min(46vh, 420px);
 	overflow-y: auto;
 }
 
 /* The palette's frame already names the assistant. */
-.dms-ai-palette-answer__stream :deep(.cb-who) {
+.dms-assistant-palette-answer__stream :deep(.cb-who) {
 	display: none;
 }
 
-.dms-ai-palette-answer__note {
+.dms-assistant-palette-answer__note {
 	margin: 0;
 	color: var(--ui-text-muted);
 }
 
-.dms-ai-palette-answer__actions {
+.dms-assistant-palette-answer__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;

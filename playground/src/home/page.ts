@@ -13,20 +13,20 @@ const ASSISTANT_COLUMNS = 3;
 const ASSISTANT_PAGES = [
   {
     id: "settings",
-    title: "$dms_ai.pages.settings.title",
-    description: "$dms_ai.pages.settings.description",
+    title: "$dms_assistant.pages.settings.title",
+    description: "$dms_assistant.pages.settings.description",
     icon: "i-ph-gear-six",
   },
   {
     id: "changes",
-    title: "$dms_ai.pages.changes.title",
-    description: "$dms_ai.pages.changes.description",
+    title: "$dms_assistant.pages.changes.title",
+    description: "$dms_assistant.pages.changes.description",
     icon: "i-ph-git-diff",
   },
   {
     id: "activity",
-    title: "$dms_ai.pages.activity.title",
-    description: "$dms_ai.pages.activity.description",
+    title: "$dms_assistant.pages.activity.title",
+    description: "$dms_assistant.pages.activity.description",
     icon: "i-ph-clock-counter-clockwise",
   },
 ];
@@ -40,8 +40,8 @@ export class HomePage extends PageController("home", {
   description: "Playground home page",
 }) {
   static assistant = NavCardGrid({
-    title: "$dms_ai.module.title",
-    description: "$dms_ai.module.description",
+    title: "$dms_assistant.module.title",
+    description: "$dms_assistant.module.description",
     columns: ASSISTANT_COLUMNS,
     items: ASSISTANT_PAGES.map((page) => ({
       ...page,
@@ -49,8 +49,8 @@ export class HomePage extends PageController("home", {
       to: `${ASSISTANT_PATH}/${page.id}`,
     })),
   }).meta({
-    name: "$dms_ai.module.title",
-    description: "$dms_ai.module.description",
+    name: "$dms_assistant.module.title",
+    description: "$dms_assistant.module.description",
     icon: "i-ph-sparkle",
   });
 

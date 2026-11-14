@@ -25,7 +25,7 @@ What a turn leaves behind is not out of reach. The Activity rows, the change set
 ## Launch
 
 ```bash
-RUN=$($C up --prepare --no-standby --base origin/main --skill "$PWD/.agents/skills/verify-dms-ai")
+RUN=$($C up --prepare --base origin/main --skill "$PWD/.agents/skills/verify-dms-ai")
 ```
 
 `--prepare` runs the `prepare` commands of `verify.config.ts`: the frozen install, the builds of the module and of the sidecar, the install of the playground's own dependencies, `playwright-core` into this folder and the TypeScript build of the playground's fixture module. `up` reads the playground (`playground/` in this folder) and starts an isolated DMS:
@@ -82,8 +82,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 ## Gotchas
 
-- `up` needs `--no-standby`: without it dms-control starts a standby backend for the next journey's database, every backend of a run loads the module, and each spawns its own sidecar in the checkout's one sidecar folder, overwriting `sidecar.lock`. Every journey ends with a NOT VERIFIED error and no failing check on a run that did not start with it (`guarded` in `guard.mjs`).
-- Every dashboard page renders on the server and hydrates after `load`; `guard.mjs` waits for the sign-in form to hydrate, and `choose` and `clickUntil` click again until a radio, a switch or a dialog responds.
+- Every journey declares `standby: false` (`guarded` in `guard.mjs`), so dms-control boots no standby backend while one runs. A standby loads the module and spawns its own sidecar in the checkout's one sidecar folder, overwriting `sidecar.lock`.- Every dashboard page renders on the server and hydrates after `load`; `guard.mjs` waits for the sign-in form to hydrate, and `choose` and `clickUntil` click again until a radio, a switch or a dialog responds.
 - A step whose check fails because the backend or the dashboard stopped answering ends the journey with a `NOT VERIFIED` error and no failing check.
 - The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
 - The 24 hour, 7 day and 30 day windows are driven with calls 3 hours, 10 days and 40 days old, not at the edge of each window.

@@ -54,6 +54,6 @@ dms-control journey "$RUN" lifecycle
 
 ## Gotchas
 
-- The sidecar lives in the playground's `node_modules/.cache/dms-ai`, so a checkout holds one run at a time. A standby backend would share it, so the run must start with `up --no-standby`: `guarded` ends every journey with a NOT VERIFIED error on a run that did not.
+- The sidecar lives in the playground's `node_modules/.cache/dms-ai`, so a checkout holds one run at a time. A standby backend would share it, so `guarded` declares `standby: false` on every journey: dms-control starts no standby while one runs.
 - The `.mcp.json` journey does not read the sidecar's folder. The DMS writes the `dms` server itself in development, so the journey judges the end state, not which module added it.
 - A sidecar that idles for 15 minutes exits. The journeys finish well inside that, and the idle journey drives the same timer with `DMS_AI_IDLE_SHUTDOWN_MS`, a positive integer of milliseconds the sidecar reads at start; the 15-minute default itself is not waited for.

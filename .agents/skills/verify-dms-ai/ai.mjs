@@ -223,7 +223,7 @@ export async function member(ctx, name, permissions = []) {
 /**
  * The sidecar's own folder of the run: its lock, its stored state and its log. It sits in the playground's
  * `node_modules/.cache/dms-ai`, so a checkout holds one run at a time, and a run holds one backend at a time
- * (`guarded` refuses a run with a standby backend).
+ * (`guarded` declares `standby: false` on every journey).
  *
  * @param {Ctx} ctx The journey
  * @param {...string} parts A path under it

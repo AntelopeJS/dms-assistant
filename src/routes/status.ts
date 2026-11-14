@@ -45,11 +45,11 @@ interface ProcessState {
   disabled: boolean;
 }
 
-function processState(): ProcessState {
+async function processState(): Promise<ProcessState> {
   return {
     isRunning: isSidecarRunning(),
     hasGivenUp: hasSidecarGivenUp(),
-    disabled: isSidecarDisabled(),
+    disabled: await isSidecarDisabled(),
   };
 }
 
@@ -63,11 +63,11 @@ async function readStatus(): Promise<AssistantStatus> {
     const response = await requestSidecar(STATUS_PATH);
     const reported = SidecarStatus.safeParse(response.body);
     if (!response.isOk || !reported.success) {
-      return { status: OFFLINE_STATUS, ...processState() };
+      return { status: OFFLINE_STATUS, ...(await processState()) };
     }
-    return { ...reported.data, ...processState() };
+    return { ...reported.data, ...(await processState()) };
   } catch {
-    return { status: OFFLINE_STATUS, ...processState() };
+    return { status: OFFLINE_STATUS, ...(await processState()) };
   }
 }
 

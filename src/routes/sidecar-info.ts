@@ -23,7 +23,7 @@ export class AISidecarInfoController extends Controller(ROUTE_PREFIX) {
       {
         isRunning: isSidecarRunning(),
         hasGivenUp: hasSidecarGivenUp(),
-        disabled: isSidecarDisabled(),
+        disabled: await isSidecarDisabled(),
       },
       { "Cache-Control": "no-store" },
     );

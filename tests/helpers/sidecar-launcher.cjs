@@ -19,6 +19,13 @@ const build = { id: "build-1" };
 
 const stubs = {
   [require.resolve("@antelopejs/interface-core/logging")]: SILENT_LOGGING,
+  [require.resolve("@antelopejs/interface-core/runtime")]: {
+    GetRuntimeInfo: async () => ({
+      dev: true,
+      projectPath: process.cwd(),
+      env: "default",
+    }),
+  },
   [path.join(DIST_DIR, "lifecycle/build-id.js")]: {
     computeBuildId: () => build.id,
   },
@@ -40,7 +47,8 @@ function installStubs() {
 
 /**
  * The launcher starts the fake sidecar instead of the real one, which needs a
- * build, and runs outside the core, so its logs go nowhere.
+ * build, and runs outside the core, so its logs go nowhere and the run counts
+ * as development.
  */
 function stubLauncherDependencies() {
   installStubs();

@@ -34,13 +34,14 @@ const ALLOWED_ATTR = ["href", "title", "target", "rel", "start"];
 
 const SAFE_URL = /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
-const SANITIZE_CONFIG: Config = {
+const SANITIZE_CONFIG: Config & { RETURN_DOM_FRAGMENT: true } = {
 	ALLOWED_TAGS,
 	ALLOWED_ATTR,
 	ALLOWED_URI_REGEXP: SAFE_URL,
 	ALLOW_DATA_ATTR: false,
 	ALLOW_ARIA_ATTR: false,
 	ALLOW_UNKNOWN_PROTOCOLS: false,
+	RETURN_DOM_FRAGMENT: true,
 };
 
 const LINK_TARGET = "_blank";
@@ -102,7 +103,11 @@ function getPurifier(): Purifier {
 	return purifier;
 }
 
-function sanitize(html: string): string {
+/**
+ * The sanitized nodes themselves, never markup to parse again: what DOMPurify
+ * checked is exactly what reaches the page.
+ */
+function sanitize(html: string): DocumentFragment {
 	return getPurifier().sanitize(html, SANITIZE_CONFIG);
 }
 
@@ -110,18 +115,21 @@ function normalize(source: string): string {
 	return (source ?? "").replace(NEWLINES, LINE_BREAK);
 }
 
-/** Model output as sanitized HTML, whole. */
-export function renderMarkdown(source: string): string {
+/**
+ * Model output as sanitized nodes, whole. A caller inserts a clone, so the
+ * fragment stays whole for the next caller.
+ */
+export function renderMarkdown(source: string): DocumentFragment {
 	return sanitize(md.render(normalize(source)));
 }
 
 /**
- * A Markdown document (a SKILL.md) as sanitized HTML. Unlike
+ * A Markdown document (a SKILL.md) as sanitized nodes. Unlike
  * {@link renderMarkdown}, a single newline inside a paragraph is a space, so a
  * hard-wrapped source reflows to the reader's width; a blank line still starts
  * a new paragraph.
  */
-export function renderDocument(source: string): string {
+export function renderDocument(source: string): DocumentFragment {
 	return sanitize(documentMd.render(normalize(source)));
 }
 
@@ -154,9 +162,9 @@ function lineOffset(text: string, line: number): number {
 
 interface MarkdownBlocks {
 	/** Top-level blocks that the text still to come can no longer change. */
-	settled: readonly string[];
+	settled: readonly DocumentFragment[];
 	/** The last block, which the next text may still extend. */
-	open: string;
+	open: DocumentFragment;
 }
 
 export interface IncrementalMarkdown {
@@ -166,11 +174,14 @@ export interface IncrementalMarkdown {
 
 interface IncrementalState {
 	settledSource: string;
-	settled: string[];
+	settled: DocumentFragment[];
 	env: Record<string, unknown>;
 }
 
-function renderBlock(block: TopLevelBlock, state: IncrementalState): string {
+function renderBlock(
+	block: TopLevelBlock,
+	state: IncrementalState,
+): DocumentFragment {
 	return sanitize(md.renderer.render(block.tokens, md.options, state.env));
 }
 
@@ -186,7 +197,8 @@ function renderIncrement(
 	const rest = text.slice(state.settledSource.length);
 	const blocks = splitTopLevelBlocks(md.parse(rest, state.env));
 	const open = blocks.pop();
-	if (open === undefined) return { settled: [...state.settled], open: "" };
+	if (open === undefined)
+		return { settled: [...state.settled], open: sanitize("") };
 	for (const block of blocks) state.settled.push(renderBlock(block, state));
 	state.settledSource += rest.slice(0, lineOffset(rest, open.startLine));
 	return { settled: [...state.settled], open: renderBlock(open, state) };

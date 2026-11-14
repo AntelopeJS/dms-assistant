@@ -29,17 +29,30 @@ jobs:
       windows: true
 
   vitest:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - package: sidecar
-            script: test
-          - package: frontend-vue
-            script: test
+          - os: ubuntu-latest
+            package: sidecar
+          - os: ubuntu-latest
+            package: frontend-vue
+          - os: windows-latest
+            package: frontend-vue
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: Use LF line endings, symlinks and Git Bash for package scripts
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.symlinks true
+          bash_path=$(cygpath -w /usr/bin/bash)
+          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
+          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -52,7 +65,7 @@ jobs:
             pnpm-lock.yaml
             ${{ matrix.package }}/pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --filter "./${{ matrix.package }}" --frozen-lockfile
-      - run: pnpm --dir ${{ matrix.package }} run ${{ matrix.script }}
+      - run: pnpm --dir ${{ matrix.package }} run test
 
   # `ajs dms verify-source`: the production build of the DMS core layer with
   # this one, the assistant and the builder, then vue-tsc.

@@ -30,8 +30,9 @@ function buildLock() {
  * sidecar is found and a fresh spawn is forced. The process-wide owner is
  * dropped first so each test starts without a running sidecar.
  * @param {string[][]} spawns Receives the arguments of each spawned process.
+ * @param {boolean} [dev] Whether the core reports a development run.
  */
-function loadLauncher(spawns) {
+function loadLauncher(spawns, dev = true) {
   delete globalThis[SIDECAR_OWNER_KEY];
   let spawned = false;
   /** @type {Record<string, unknown>} */
@@ -61,6 +62,13 @@ function loadLauncher(spawns) {
     zod: require("zod"),
     "@antelopejs/interface-core/logging": {
       Logging: { Info() {}, Error() {} },
+    },
+    "@antelopejs/interface-core/runtime": {
+      GetRuntimeInfo: async () => ({
+        dev,
+        projectPath: process.cwd(),
+        env: "default",
+      }),
     },
     "../constants/module": { PRODUCTION_NODE_ENV: "production" },
     "../constants/sidecar": require("../dist/constants/sidecar.js"),
@@ -117,4 +125,48 @@ void test("omits the backend flag when the project did not configure it", async 
   await loadLauncher(spawns).spawnSidecar({ hostProjectRoot: process.cwd() });
   assert.equal(spawns.length, 1);
   assert.equal(valueAfter(spawns[0], "--backend-url"), null);
+});
+
+/**
+ * Runs the action with `NODE_ENV` unset, as `ajs project start` leaves it.
+ * @param {() => Promise<void>} action
+ */
+async function withoutNodeEnv(action) {
+  const previous = process.env.NODE_ENV;
+  delete process.env.NODE_ENV;
+  try {
+    await action();
+  } finally {
+    if (previous !== undefined) process.env.NODE_ENV = previous;
+  }
+}
+
+void test("never starts the sidecar outside development, even with NODE_ENV unset", async () => {
+  await withoutNodeEnv(async () => {
+    /** @type {string[][]} */
+    const spawns = [];
+    const launcher = loadLauncher(spawns, false);
+    await launcher.spawnSidecar({ hostProjectRoot: process.cwd() });
+    await launcher.ensureSidecarRunning();
+    assert.equal(spawns.length, 0);
+    assert.equal(await launcher.isSidecarDisabled(), true);
+  });
+});
+
+void test("starts the sidecar in development with NODE_ENV unset", async () => {
+  await withoutNodeEnv(async () => {
+    /** @type {string[][]} */
+    const spawns = [];
+    const launcher = loadLauncher(spawns, true);
+    await launcher.spawnSidecar({ hostProjectRoot: process.cwd() });
+    assert.equal(spawns.length, 1);
+    assert.equal(await launcher.isSidecarDisabled(), false);
+  });
+});
+
+void test("reports a development sidecar enabled before the module starts, as after a hot reload", async () => {
+  await withoutNodeEnv(async () => {
+    const launcher = loadLauncher([], true);
+    assert.equal(await launcher.isSidecarDisabled(), false);
+  });
 });

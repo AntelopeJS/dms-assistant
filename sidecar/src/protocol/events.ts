@@ -35,6 +35,7 @@ export const EVENT_TYPES = {
   RUN_DONE: "run_done",
   RUN_ERROR: "run_error",
   RUN_RESUMED: "run_resumed",
+  CONVERSATION_CLOSED: "conversation_closed",
   CONVERSATION_SNAPSHOT: "conversation_snapshot",
   CONVERSATION_LIST: "conversation_list",
   SETTINGS_UPDATE: "settings_update",
@@ -100,6 +101,16 @@ export const RunErrorEvent = z.object({
   conversationId: z.string(),
   error: z.string(),
   isRetryable: z.boolean().optional(),
+});
+
+/**
+ * Server -> chat: the conversation the chat opened is closed (deleted, or set
+ * aside as unreadable) and takes no request; the chat starts a new one.
+ */
+export const ConversationClosedEvent = z.object({
+  type: z.literal(EVENT_TYPES.CONVERSATION_CLOSED),
+  conversationId: z.string(),
+  message: z.string(),
 });
 
 export const RunResumedEvent = z.object({
@@ -565,6 +576,7 @@ export const AnyServerEvent = z.discriminatedUnion("type", [
   ToolCallEndEvent,
   RunDoneEvent,
   RunErrorEvent,
+  ConversationClosedEvent,
   RunResumedEvent,
   RunProgressEvent,
   ConversationSnapshotEvent,

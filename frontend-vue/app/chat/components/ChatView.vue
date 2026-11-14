@@ -250,7 +250,11 @@ const isEmpty = computed(
 	() => conversation.messages.value.length === 0 && !isRunning.value,
 );
 
+/** The server's reason the conversation this tab had open is closed, until the next switch. */
+const closedNotice = ref<string | null>(null);
+
 function switchConversation(id: string): void {
+	closedNotice.value = null;
 	follow();
 	isDrawerOpen.value = false;
 	if (id === activeId.value) return;
@@ -444,6 +448,18 @@ function refreshListAfterTurn(msg: unknown): void {
 
 channel.onMessage(refreshListAfterTurn);
 
+function leaveClosedConversation(msg: unknown): void {
+	if (msg === null || typeof msg !== "object") return;
+	if (Reflect.get(msg, "type") !== SERVER_EVENT_TYPES.CONVERSATION_CLOSED)
+		return;
+	if (Reflect.get(msg, "conversationId") !== activeId.value) return;
+	newConversation();
+	const message: unknown = Reflect.get(msg, "message");
+	closedNotice.value = typeof message === "string" ? message : null;
+}
+
+channel.onMessage(leaveClosedConversation);
+
 // The DMS mounts the panel open on a reload, often before the tab's stream
 // is up: the list (and the chat's title) is asked for again once it is.
 watch(isConnected, (connected) => {
@@ -586,6 +602,11 @@ onBeforeUnmount(() => {
 			@new="newConversation"
 			@close="isDrawerOpen = false"
 		/>
+
+		<div v-if="closedNotice" class="cb-toast" role="status">
+			<UIcon name="i-ph-chat-circle-slash" class="cb-toast__icon" />
+			<span class="cb-toast__text">{{ closedNotice }}</span>
+		</div>
 
 		<div v-if="list.pendingDelete.value" class="cb-toast" role="status">
 			<UIcon name="i-ph-trash" class="cb-toast__icon" />

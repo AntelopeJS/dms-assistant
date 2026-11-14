@@ -77,26 +77,45 @@ function refusalTo(client: Client): Promise<WireMessage> {
   );
 }
 
+/** The frames the server sends the client in answer to what `act` sends, echo replies left out. */
+async function repliesTo(
+  client: Client,
+  act: () => void,
+): Promise<WireMessage[]> {
+  const before = client.frames.events.length;
+  act();
+  sendWire(client.socket, { type: "echo", payload: "settled" });
+  await client.frames.next((msg) => msg.type === "echo_reply");
+  return client.frames.events
+    .slice(before)
+    .filter((msg) => msg.type !== "echo_reply");
+}
+
 function registerAnswerCases(): void {
   it.each(["allow_once", "allow_rule"] as const)(
-    "refuses another person's %s answer to a pending permission (fails an answer resolved by request id alone)",
+    "drops another person's %s answer to a pending permission with no reply, as for an unknown request (fails an answer resolved by request id alone, or a refusal that tells the request exists)",
     async (decision) => {
       const { running, services, request } = await pausedTurn();
       const dana = await connect(running, DANA);
-      const refused = refusalTo(dana);
       const answer = {
         type: "permission_response",
         conversationId: "anything",
         requestId: String(request.requestId),
         decision,
       };
-      sendWire(
-        dana.socket,
-        decision === "allow_rule"
-          ? { ...answer, rule: requireValue(request.ruleOptions?.[0]) }
-          : answer,
+      const toReal = await repliesTo(dana, () =>
+        sendWire(
+          dana.socket,
+          decision === "allow_rule"
+            ? { ...answer, rule: requireValue(request.ruleOptions?.[0]) }
+            : answer,
+        ),
       );
-      await refused;
+      const toUnknown = await repliesTo(dana, () =>
+        sendWire(dana.socket, { ...answer, requestId: "no-such-request" }),
+      );
+      expect(toReal).toEqual(toUnknown);
+      expect(toReal).toEqual([]);
       expect(
         services.permissionBus.getPendingForConversation(CAMILLE_CONVERSATION),
       ).toHaveLength(1);
@@ -108,7 +127,7 @@ function registerAnswerCases(): void {
   );
 
   it(
-    "refuses another person's answer to a pending question (fails an answer resolved by request id alone)",
+    "drops another person's answer to a pending question with no reply (fails an answer resolved by request id alone, or a refusal that tells the request exists)",
     async () => {
       const { running, services } = await pausedTurn();
       void services.questionBus.requestQuestion({
@@ -118,14 +137,15 @@ function registerAnswerCases(): void {
       const [pending] =
         services.questionBus.getPendingForConversation(CAMILLE_CONVERSATION);
       const dana = await connect(running, DANA);
-      const refused = refusalTo(dana);
-      sendWire(dana.socket, {
-        type: "question_response",
-        conversationId: "anything",
-        requestId: requireValue(pending).requestId,
-        answers: ["orders"],
-      });
-      await refused;
+      const replies = await repliesTo(dana, () =>
+        sendWire(dana.socket, {
+          type: "question_response",
+          conversationId: "anything",
+          requestId: requireValue(pending).requestId,
+          answers: ["orders"],
+        }),
+      );
+      expect(replies).toEqual([]);
       expect(services.questionBus.countPending(CAMILLE_CONVERSATION)).toBe(1);
     },
     TEST_TIMEOUT_MS,

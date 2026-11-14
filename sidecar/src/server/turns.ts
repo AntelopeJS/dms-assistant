@@ -8,7 +8,10 @@ import { MAX_AUTO_HEAL_ATTEMPTS } from "../constants/safety-net.js";
 import { WS_LOG_PREFIX } from "../constants/ws.js";
 import { type AnyServerEventType, EVENT_TYPES } from "../protocol/events.js";
 import type { AttachmentType, FocusBlockType } from "../protocol/messages.js";
-import { truncateTitle } from "../state/conversations.js";
+import {
+  CLOSED_CONVERSATION_MESSAGES,
+  truncateTitle,
+} from "../state/conversations.js";
 import type { ChangeSetRecord, TokenUsage } from "../state/types.js";
 import { broadcastConversationList, emitNotice } from "./chat-events.js";
 import { cancelCallRequests, cancelTurnRequests } from "./permission-events.js";
@@ -390,9 +393,17 @@ async function finishTurn(
   }
 }
 
+/** Throws when the conversation is closed: no turn starts or goes on under a deleted or set-aside id. */
+function assertOpen(services: SidecarServices, conversationId: string): void {
+  const closure = services.conversationStore.closure(conversationId);
+  if (closure !== null) throw new Error(CLOSED_CONVERSATION_MESSAGES[closure]);
+}
+
 /**
  * Runs one model turn end to end: tracking, the provider stream, then the
  * change set and the usage it leaves. Resolves with the change set, if any.
+ * Every turn, the user's and auto-fix's, starts here, so a closed conversation
+ * starts none, and a turn fails at its next event once its conversation closes.
  */
 async function streamTurn(
   services: SidecarServices,
@@ -405,11 +416,13 @@ async function streamTurn(
     send: (event) => services.chatSocketRegistry.send(conversationId, event),
   });
   try {
+    assertOpen(services, conversationId);
     const stream = services.runner.start(
       request.content,
       buildRunnerContext(services, request),
     );
     for await (const ev of stream) {
+      assertOpen(services, conversationId);
       progress.observe(ev);
       handleTurnEvent(services, conversationId, ev);
     }

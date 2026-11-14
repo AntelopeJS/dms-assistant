@@ -11,7 +11,7 @@ import {
   type SettingsPatchType,
 } from "../protocol/messages.js";
 import {
-  type ConversationClosure,
+  CLOSED_CONVERSATION_MESSAGES,
   isVisibleTo,
 } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
@@ -136,12 +136,6 @@ function viewerOf(ctx: ConnectionContext): string | null {
 }
 
 const FOREIGN_CONVERSATION_ERROR = "This conversation belongs to someone else.";
-const CLOSED_CONVERSATION_ERRORS: Record<ConversationClosure, string> = {
-  set_aside:
-    "This conversation was saved by another version of the assistant and cannot be continued. Start a new conversation.",
-  deleted: "This conversation was deleted. Start a new conversation.",
-};
-
 /**
  * Why the connection may not use the conversation: closed (set aside when the
  * store was read, or deleted), or not visible to the connection's actor. Null
@@ -152,7 +146,7 @@ function refusalOf(
   conversationId: string,
 ): string | null {
   const closure = ctx.conversationStore.closure(conversationId);
-  if (closure !== null) return CLOSED_CONVERSATION_ERRORS[closure];
+  if (closure !== null) return CLOSED_CONVERSATION_MESSAGES[closure];
   const stored = ctx.conversationStore.get(conversationId);
   return stored !== null && !isVisibleTo(stored, viewerOf(ctx))
     ? FOREIGN_CONVERSATION_ERROR
@@ -182,6 +176,15 @@ function sendSnapshotIfKnown(
   }
   send(socket, buildSettingsUpdateEvent(ctx));
   if (msg.conversationId === undefined) return;
+  const closure = ctx.conversationStore.closure(msg.conversationId);
+  if (closure !== null) {
+    send(socket, {
+      type: EVENT_TYPES.CONVERSATION_CLOSED,
+      conversationId: msg.conversationId,
+      message: CLOSED_CONVERSATION_MESSAGES[closure],
+    });
+    return;
+  }
   if (refusalOf(ctx, msg.conversationId) !== null) return;
   sendConversationState(socket, ctx, msg.conversationId);
 }
@@ -324,21 +327,24 @@ const handleQueueClear = on(MESSAGE_TYPES.QUEUE_CLEAR, (socket, msg, ctx) => {
 /**
  * Whether the connection may answer the request: the ownership check runs on
  * the conversation the pending request belongs to, never on the one the
- * message names. An unknown request goes on, for its bus to log and drop.
+ * message names. A refused answer gets no reply, like an unknown request, so
+ * the sender cannot tell another person's request from no request. An
+ * unknown request goes on, for its bus to log and drop.
  */
 function mayAnswer(
-  socket: WebSocket,
   ctx: ConnectionContext,
   conversationId: string | undefined,
 ): boolean {
-  return conversationId === undefined || admit(socket, ctx, conversationId);
+  return (
+    conversationId === undefined || refusalOf(ctx, conversationId) === null
+  );
 }
 
 const handlePermissionResponse = on(
   MESSAGE_TYPES.PERMISSION_RESPONSE,
-  (socket, msg, ctx) => {
+  (_s, msg, ctx) => {
     const owner = ctx.permissionBus.conversationOf(msg.requestId);
-    if (!mayAnswer(socket, ctx, owner)) return;
+    if (!mayAnswer(ctx, owner)) return;
     ctx.permissionBus.resolvePermission({
       requestId: msg.requestId,
       decision: msg.decision,
@@ -358,9 +364,9 @@ const handleRevokeRule = on(MESSAGE_TYPES.REVOKE_RULE, (socket, msg, ctx) => {
 
 const handleQuestionResponse = on(
   MESSAGE_TYPES.QUESTION_RESPONSE,
-  (socket, msg, ctx) => {
+  (_s, msg, ctx) => {
     const owner = ctx.questionBus.conversationOf(msg.requestId);
-    if (!mayAnswer(socket, ctx, owner)) return;
+    if (!mayAnswer(ctx, owner)) return;
     ctx.questionBus.resolveQuestion(msg.requestId, {
       answers: msg.answers,
       skipped: msg.skipped ?? [],
@@ -438,6 +444,7 @@ const handleListConversations = on(
 
 function forgetConversation(ctx: SidecarServices, conversationId: string) {
   ctx.conversationStore.delete(conversationId);
+  ctx.turns.stopAutoFix(conversationId);
   ctx.permissionBus.forgetConversation(conversationId);
   ctx.questionBus.cancelConversation(conversationId);
   ctx.editTracker.clear(conversationId);

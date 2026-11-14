@@ -26,6 +26,7 @@ export interface Store {
 
 const StateFileSchema = z.object({
   conversations: z.record(z.string(), z.unknown()),
+  deleted: z.record(z.string(), z.number()).optional().catch(undefined),
 });
 
 type StoredEntries = z.infer<typeof StateFileSchema>["conversations"];
@@ -48,7 +49,10 @@ interface ReadStateFile {
 
 const NOTHING_READ: ReadStateFile = { state: STATE_INITIAL, unreadable: {} };
 
-function readConversations(stored: StoredEntries): ReadStateFile {
+function readConversations(
+  stored: StoredEntries,
+  deleted: StoredState["deleted"],
+): ReadStateFile {
   const conversations: StoredState["conversations"] = {};
   const unreadable: StoredEntries = {};
   for (const [id, entry] of Object.entries(stored)) {
@@ -62,14 +66,16 @@ function readConversations(stored: StoredEntries): ReadStateFile {
       `${STATE_LOG_PREFIX} set aside ${dropped.length} stored conversation(s) of another shape: ${dropped.join(", ")}`,
     );
   }
-  return { state: { conversations }, unreadable };
+  const state: StoredState = { conversations };
+  if (deleted !== undefined) state.deleted = deleted;
+  return { state, unreadable };
 }
 
 function parseStateContents(raw: string): ReadStateFile {
   try {
     const parsed = StateFileSchema.safeParse(JSON.parse(raw));
     if (!parsed.success) return NOTHING_READ;
-    return readConversations(parsed.data.conversations);
+    return readConversations(parsed.data.conversations, parsed.data.deleted);
   } catch {
     return NOTHING_READ;
   }
@@ -100,7 +106,9 @@ async function persistState(
 ): Promise<void> {
   await mkdir(dirname(state.filePath), { recursive: true });
   const conversations = { ...state.unreadable, ...next.conversations };
-  const json = JSON.stringify({ conversations }, null, STATE_JSON_INDENT);
+  const file: z.input<typeof StateFileSchema> = { conversations };
+  if (next.deleted !== undefined) file.deleted = next.deleted;
+  const json = JSON.stringify(file, null, STATE_JSON_INDENT);
   await writeFile(state.filePath, json, STATE_FILE_ENCODING);
 }
 

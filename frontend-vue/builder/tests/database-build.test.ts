@@ -171,6 +171,7 @@ describe('the build steps, derived from the three answers', () => {
 	it('asks for a restart once the project has answered for 20 seconds without the connection, and keeps waiting', () => {
 		const answers: BuildAnswers = { declared: true, listed: null, analysis: null }
 		expect(buildState(answers, TWENTY_SECONDS_MS - 1).restartNeeded).toBe(false)
+		expect(buildState(answers, TWENTY_SECONDS_MS).restartNeeded).toBe(true)
 		const late = buildState(answers, THREE_MINUTES_MS)
 		expect(late.restartNeeded).toBe(true)
 		expect(late.gaveUp).toBe(false)

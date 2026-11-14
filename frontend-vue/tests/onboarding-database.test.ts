@@ -498,6 +498,32 @@ describe("a project that does not reload by itself", () => {
 		expect(schemaCheck(connect)).toEqual({ key: "schema", status: "running" });
 		expect(fake.analyseDatabase).toHaveBeenCalled();
 	});
+
+	it("counts the 20 seconds again after the project went down in between", async () => {
+		vi.useFakeTimers();
+		let down = false;
+		const fake = fakeBuilder({
+			databaseConnections: async () => {
+				if (down) throw new Error("project down");
+				return [];
+			},
+		});
+		const connect = mountConnect(fake.api);
+		void connect.connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(10_000);
+		down = true;
+		await vi.advanceTimersByTimeAsync(12_000);
+		down = false;
+		await vi.advanceTimersByTimeAsync(15_000);
+		expect(schemaCheck(connect)).toEqual({ key: "schema", status: "running" });
+
+		await vi.advanceTimersByTimeAsync(6_000);
+		expect(schemaCheck(connect)).toEqual({
+			key: "schema",
+			status: "running",
+			restart: true,
+		});
+	});
 });
 
 function deferred<T>() {

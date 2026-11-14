@@ -15,7 +15,7 @@ An owner-only development assistant. The backend starts a sidecar (child process
 - `ajs project modules add @antelopejs/dms-assistant`; config `backendUrl: "${@api.API_LOCAL_BASE_URL}"`, builder keys under `builder`. In the `dms` module's config, set `mcp.backendUrl` to the same value.
 - The frontend server proxies `/ai/**` to the backend with the session (`backendProxies`). See the package README for requirements.
 - Every chat gets two MCP servers: `dms`, the DMS MCP that `@antelopejs/dms` serves in development (the `builder_*`, `database_*`, `mockup_*` tools, `typecheck`, `query_logs`, `list_pages`, `page_verify`), and `dms-ai`, the chat's own (`ask_user`, `get_current_page`, `find_pages_using`, `navigate_to_page`, `preview_blocks`). Chats default to Safe mode (builder tools only, typechecked writes). Code mode allows file edits and commands under the approval mode.
-- Claude Code is the default provider. Codex needs `@openai/codex` at the exact version in `peerDependencies` and a ChatGPT sign-in (Assistant › Settings; on a remote DMS the 127.0.0.1 return page fails to load and its address is pasted with **Paste the return address**; stored per user in `~/.config/dms-ai/chatgpt-auth.json`, `OPENAI_API_KEY` is ignored); a provider that cannot run fails the turn, never falls back.
+- Claude Code is the default provider. Codex needs `@openai/codex` at the exact version in `peerDependencies` and a ChatGPT sign-in (Assistant › Settings; on a remote DMS the 127.0.0.1 return page fails to load and its address is pasted with **Paste the return address**; stored per user in `~/.config/dms-assistant/chatgpt-auth.json`, `OPENAI_API_KEY` is ignored); a provider that cannot run fails the turn, never falls back.
 
 ## Skills
 

@@ -89,7 +89,7 @@ void test("an entry ListEntryConnections does not find moves no connection and i
     before["dms-builder"].importOverrides,
   );
   assert.deepEqual(app.warnings(), [
-    '[dms-ai] Not moved to the "dms" entry of antelope.config.ts: antelope.config.ts writes no entry "dms-builder" under modules where @antelopejs/dms can read it. Move these there by hand: the connections of "dms-builder".',
+    '[dms-assistant] Not moved to the "dms" entry of antelope.config.ts: antelope.config.ts writes no entry "dms-builder" under modules where @antelopejs/dms can read it. Move these there by hand: the connections of "dms-builder".',
   ]);
   assert.equal(app.notices().length, 1);
   assert.doesNotMatch(app.notices()[0], /erp/);

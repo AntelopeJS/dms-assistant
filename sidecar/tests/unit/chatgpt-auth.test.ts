@@ -4,12 +4,14 @@ import {
   type KeyObject,
   sign,
 } from "node:crypto";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CHATGPT_JWKS_URL,
   CHATGPT_NOT_SIGNED_IN_MESSAGE,
   CHATGPT_SIGNED_OUT_MESSAGE,
   CHATGPT_TOKEN_URL,
+  XDG_CONFIG_HOME_ENV,
 } from "../../src/constants/chatgpt.js";
 import {
   getAccessToken,
@@ -155,6 +157,17 @@ describe("access token", () => {
   it("stores the tokens readable by their owner only", async () => {
     await writeAuthRecord(signedInRecord());
     await expectReadableByOwnerOnly(chatGptAuthFile());
+  });
+
+  it("stores the sign-in in the dms-assistant folder of the config home (fails a store that keeps the dms-ai folder)", async () => {
+    await writeAuthRecord(signedInRecord());
+    await expectReadableByOwnerOnly(
+      path.join(
+        process.env[XDG_CONFIG_HOME_ENV] ?? "",
+        "dms-assistant",
+        "chatgpt-auth.json",
+      ),
+    );
   });
 });
 

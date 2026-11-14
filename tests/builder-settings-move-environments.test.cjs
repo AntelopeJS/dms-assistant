@@ -47,7 +47,7 @@ export default defineConfig({
 `;
 
 const UNREAD =
-  /^\[dms-ai\] Could not read environments of antelope\.config\.ts: (.+)\. Check by hand the importOverrides that environments\.<env>\.modules gives (.+)\. Move each catalog connection there to the @antelopejs\/dms entry of the same environment\.$/;
+  /^\[dms-assistant\] Could not read environments of antelope\.config\.ts: (.+)\. Check by hand the importOverrides that environments\.<env>\.modules gives (.+)\. Move each catalog connection there to the @antelopejs\/dms entry of the same environment\.$/;
 const NOT_LITERAL =
   "they are not all written there as plain object literals, as with a spread, a variable or an imported base";
 const RESTART =

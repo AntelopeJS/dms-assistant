@@ -41,4 +41,4 @@ export const PROVIDER_INSTALLED_VERSION_TOKEN = "%installed%";
 export const PROVIDER_PINNED_VERSION_TOKEN = "%pinned%";
 export const PROVIDER_UNKNOWN_VERSION = "unknown";
 
-export const PROVIDER_SWITCH_LOG = "[dms-ai] agent provider switched:";
+export const PROVIDER_SWITCH_LOG = "[dms-assistant] agent provider switched:";

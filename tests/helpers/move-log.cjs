@@ -1,5 +1,5 @@
 const VERDICT =
-  /^\[dms-ai\] ([^"]+?: (?:nothing left to move, safe to remove|not safe to remove, |.+ still here, move them before removing).*)$/;
+  /^\[dms-assistant\] ([^"]+?: (?:nothing left to move, safe to remove|not safe to remove, |.+ still here, move them before removing).*)$/;
 
 /**
  * @typedef {"info" | "warn"} Level

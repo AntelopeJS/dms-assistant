@@ -1,6 +1,6 @@
 export const CHECKPOINTS_GIT_DIR = "checkpoints.git";
 export const CHANGE_SETS_FILE_NAME = "change-sets.json";
-export const CHECKPOINTS_LOG_PREFIX = "[dms-ai checkpoints]";
+export const CHECKPOINTS_LOG_PREFIX = "[dms-assistant checkpoints]";
 
 export const GIT_COMMAND = "git";
 /**

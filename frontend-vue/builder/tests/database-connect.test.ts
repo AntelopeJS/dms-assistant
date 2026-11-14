@@ -330,6 +330,9 @@ describe('a connection URL', () => {
 	it('writes the database name as the driver decodes it, and refuses one it cannot', () => {
 		const fields = { ...form().fields, database: 'sales$2024' }
 		expect(connectionUrl('postgres', fields)).toBe('postgres://reader:s3cret@db.example:5432/sales$2024')
+		expect(connectionUrl('postgres', { ...fields, database: 'erp main' })).toBe(
+			'postgres://reader:s3cret@db.example:5432/erp%20main',
+		)
 		expect(parseConnectionUrl('postgres', 'postgres://u@h/sales%242024').database).toBe('sales%242024')
 		expect(fieldProblem({ ...fields, database: 'a?b' })).toMatch(/\?/)
 	})

@@ -115,4 +115,20 @@ describe("a page loaded while the backend restarts", () => {
 		expect(api.readState).toHaveBeenCalledTimes(reads);
 		expect(controller.isOpen.value).toBe(false);
 	});
+
+	it("reads no more once the onboarding stopped while a read again was still waiting for the backend", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = loadedDuringRestart(FOLLOWED);
+		await controller.load().catch(() => undefined);
+		let fail: (error: Error) => void = () => undefined;
+		api.readState.mockImplementationOnce(
+			() => new Promise((_, reject) => (fail = reject)),
+		);
+		await vi.advanceTimersByTimeAsync(2_000);
+		controller.stop();
+		fail(new Error("502"));
+		const reads = api.readState.mock.calls.length;
+		await vi.advanceTimersByTimeAsync(30_000);
+		expect(api.readState).toHaveBeenCalledTimes(reads);
+	});
 });

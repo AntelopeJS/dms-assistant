@@ -275,6 +275,7 @@ export const journeys = guarded([
         same("the probe", [pick(info.body, "disabled"), pick(info.body, "isRunning")], [true, false]),
         same("the status", [text(status.body, "status"), pick(status.body, "disabled"), pick(status.body, "isRunning")], ["offline", true, false]),
         same("no sidecar.lock", existsSync(sidecarPath(ctx, "sidecar.lock")), false),
+        same("no sidecar folder, which a spawn creates before the sidecar runs", existsSync(sidecarPath(ctx)), false),
       ]);
     },
   },

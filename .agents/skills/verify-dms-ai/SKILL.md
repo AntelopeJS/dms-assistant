@@ -33,7 +33,7 @@ RUN=$($C up --prepare --base origin/main --skill "$PWD/.agents/skills/verify-dms
 - the checkout is laid out again under `$RUN/root`, every sibling linked, and the playground copied, so the run's build and `.antelope/` are its own;
 - the API, the dashboard and the mail sink get free ports from the kernel, and `HOME` is `$RUN/home`;
 - a `mongod` the run owns serves `verify_<run>` databases;
-- the dashboard runs `ajs dms start -e docs -b <api>`. `up` starts the backend with `ajs project start -e docs`, and each journey starts its own with `ajs project dev -e docs` (see Gotchas).
+- the dashboard runs `ajs dms start -e docs -b <api>`. `up` starts the backend with `ajs project start -e docs`, and each journey starts its own, with `ajs project dev -e docs` unless it pins another backend (see Gotchas).
 
 The module under verification is a `local` source at the checkout root, and `@antelopejs/dms` comes from the registry, pinned by the playground's lockfile. The fixture module (`playground/src`) serves a member with a role (`POST /verify-ai/member`) and registers a home page and a plain page; it declares no skills.
 

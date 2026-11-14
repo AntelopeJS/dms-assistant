@@ -6,11 +6,7 @@ import {
 	type DatabaseConnect,
 	useDatabaseConnect,
 } from "../app/onboarding/connect-database";
-import {
-	analysisWith,
-	fakeBuilder,
-	READER,
-} from "./support/database-connect";
+import { analysisWith, fakeBuilder, READER } from "./support/database-connect";
 import { memoryConnects } from "./support/onboarding";
 
 vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
@@ -61,7 +57,10 @@ const tabs: VueWrapper[] = [];
  * requests counted.
  */
 function tab(api: ReturnType<typeof fakeBuilder>["api"]) {
-	const analyseDatabase = vi.fn(api.analyseDatabase);
+	const analyseDatabase = vi.fn(
+		(...args: Parameters<typeof api.analyseDatabase>) =>
+			api.analyseDatabase(...args),
+	);
 	let connect: DatabaseConnect | undefined;
 	const memory = memoryConnects({
 		engine: "postgres",
@@ -71,7 +70,10 @@ function tab(api: ReturnType<typeof fakeBuilder>["api"]) {
 	const wrapper = mount(
 		defineComponent({
 			setup() {
-				connect = useDatabaseConnect({ ...api, analyseDatabase } as never, memory);
+				connect = useDatabaseConnect(
+					{ ...api, analyseDatabase } as never,
+					memory,
+				);
 				return () => null;
 			},
 		}),

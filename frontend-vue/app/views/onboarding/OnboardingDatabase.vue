@@ -71,10 +71,12 @@ const ACCESS_OPTIONS: readonly {
 const onboarding = useOnboarding();
 const { t } = useChatI18n();
 const api = useBuilderApi();
-const database = useDatabaseConnect(api);
+const engine = ref<DatabaseEngine>(
+	onboarding.connecting.read()?.engine ?? "postgres",
+);
+const database = useDatabaseConnect(api, onboarding.connecting);
 const project = ref<ProjectModules | null>(null);
 
-const engine = ref<DatabaseEngine>("postgres");
 const url = ref("");
 const urlProblem = ref<UrlProblem | null>(null);
 const access = ref<ConnectionAccess>("read");

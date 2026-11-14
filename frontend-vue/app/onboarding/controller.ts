@@ -10,6 +10,7 @@ import {
 } from "vue";
 import type { AssistantSession } from "../runtime/assistant-session";
 import { type OnboardingApi, refusalMessage } from "./api";
+import type { ConnectMemory } from "./connect-memory";
 import { hasContent, NO_CONTENT, type ProjectContent } from "./content";
 import type {
 	ClaudeTokenCheck,
@@ -40,6 +41,8 @@ export interface OnboardingDeps {
 	preferences: PreferenceStore;
 	/** The builder runs, so a database can be connected. */
 	canConnectDatabase: boolean;
+	/** The connection this tab wrote and still follows, across a reload of the page. */
+	connecting: ConnectMemory;
 	openTab: (url: string) => void;
 }
 
@@ -57,9 +60,11 @@ export interface OnboardingController {
 	/** Why the last action failed, until the next view. */
 	problem: Readonly<Ref<string | null>>;
 	canConnectDatabase: boolean;
+	connecting: ConnectMemory;
 	/**
-	 * Reads the onboarding state and the project's content, then opens the popup if it should.
-	 * Rejects when the backend does not answer its state; `open` reads again after that.
+	 * Reads the onboarding state and the project's content, then opens the popup if it should: on
+	 * the connect form when this tab still follows a connection it wrote. Rejects when the backend
+	 * does not answer its state; `open` reads again after that.
 	 */
 	load: () => Promise<void>;
 	/**
@@ -182,7 +187,9 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		loadFailed = false;
 		state.value = read;
 		content.value = project;
-		const step = pendingStep ?? null;
+		const step =
+			pendingStep ??
+			(deps.connecting.read() === null ? null : "connect-database");
 		const asked = pendingStep !== undefined;
 		pendingStep = undefined;
 		const opens =
@@ -273,6 +280,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		}),
 		problem: readonly(problem),
 		canConnectDatabase: deps.canConnectDatabase,
+		connecting: deps.connecting,
 		load,
 		open,
 		close: () => {

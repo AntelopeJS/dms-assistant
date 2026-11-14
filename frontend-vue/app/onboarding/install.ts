@@ -8,6 +8,7 @@ import type { DatabaseConnection } from "../../builder/app/runtime/database-type
 import type { AssistantSession } from "../runtime/assistant-session";
 import { createOnboardingApi } from "./api";
 import { type ProjectContent, readConversations } from "./content";
+import { connectMemory } from "./connect-memory";
 import { createOnboarding, type OnboardingController } from "./controller";
 import { LAUNCHER_ICON } from "../runtime/constants";
 import { listMockups } from "./mockups";
@@ -140,6 +141,7 @@ export function startOnboarding(host: OnboardingHost): () => void {
 		readContent: () => readContent(session, host.canConnectDatabase),
 		preferences: preferenceStore(() => window.localStorage),
 		canConnectDatabase: host.canConnectDatabase,
+		connecting: connectMemory(() => window.sessionStorage),
 		openTab: (url) => void window.open(url, "_blank", "noopener"),
 	});
 	host.provided.value = controller;

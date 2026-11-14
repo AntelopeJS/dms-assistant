@@ -286,22 +286,26 @@ const handleQueueEnqueue = on(
   },
 );
 
-const handleQueueCancel = on(MESSAGE_TYPES.QUEUE_CANCEL, (_s, msg, ctx) => {
+const handleQueueCancel = on(MESSAGE_TYPES.QUEUE_CANCEL, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   ctx.pendingQueue.cancel(msg.conversationId, msg.id);
   broadcastQueueState(ctx, msg.conversationId);
 });
 
-const handleQueueUpdate = on(MESSAGE_TYPES.QUEUE_UPDATE, (_s, msg, ctx) => {
+const handleQueueUpdate = on(MESSAGE_TYPES.QUEUE_UPDATE, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   ctx.pendingQueue.update(msg.conversationId, msg.id, msg.content);
   broadcastQueueState(ctx, msg.conversationId);
 });
 
-const handleQueueMove = on(MESSAGE_TYPES.QUEUE_MOVE, (_s, msg, ctx) => {
+const handleQueueMove = on(MESSAGE_TYPES.QUEUE_MOVE, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   ctx.pendingQueue.move(msg.conversationId, msg.id, msg.toIndex);
   broadcastQueueState(ctx, msg.conversationId);
 });
 
-const handleQueueClear = on(MESSAGE_TYPES.QUEUE_CLEAR, (_s, msg, ctx) => {
+const handleQueueClear = on(MESSAGE_TYPES.QUEUE_CLEAR, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   ctx.pendingQueue.clear(msg.conversationId);
   broadcastQueueState(ctx, msg.conversationId);
 });
@@ -320,7 +324,8 @@ const handlePermissionResponse = on(
 );
 
 /** An unknown rule id means the chat's list is stale, so the real one is sent. */
-const handleRevokeRule = on(MESSAGE_TYPES.REVOKE_RULE, (_s, msg, ctx) => {
+const handleRevokeRule = on(MESSAGE_TYPES.REVOKE_RULE, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   if (ctx.permissionBus.revokeRule(msg.conversationId, msg.ruleId)) return;
   sendRulesState(ctx, msg.conversationId);
 });
@@ -340,11 +345,16 @@ const handleQuestionResponse = on(
  * then signal the provider to wind the turn down; both are needed so the run
  * can settle.
  */
-const handleInterruptTurn = on(MESSAGE_TYPES.INTERRUPT_TURN, (_s, msg, ctx) => {
-  interruptConversation(ctx, msg.conversationId);
-});
+const handleInterruptTurn = on(
+  MESSAGE_TYPES.INTERRUPT_TURN,
+  (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
+    interruptConversation(ctx, msg.conversationId);
+  },
+);
 
-const handleStopAutoFix = on(MESSAGE_TYPES.STOP_AUTOFIX, (_s, msg, ctx) => {
+const handleStopAutoFix = on(MESSAGE_TYPES.STOP_AUTOFIX, (socket, msg, ctx) => {
+  if (!admit(socket, ctx, msg.conversationId)) return;
   ctx.turns.stopAutoFix(msg.conversationId);
   if (ctx.turns.get(msg.conversationId)?.isAutoFix !== true) return;
   interruptConversation(ctx, msg.conversationId);
@@ -352,7 +362,8 @@ const handleStopAutoFix = on(MESSAGE_TYPES.STOP_AUTOFIX, (_s, msg, ctx) => {
 
 const handleSetConversationMode = on(
   MESSAGE_TYPES.SET_CONVERSATION_MODE,
-  (_s, msg, ctx) => {
+  (socket, msg, ctx) => {
+    if (!admit(socket, ctx, msg.conversationId)) return;
     ctx.conversationModes.update(msg.conversationId, {
       mode: msg.mode,
       generationMode: msg.generationMode,

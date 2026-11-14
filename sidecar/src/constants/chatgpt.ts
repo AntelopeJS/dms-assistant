@@ -79,7 +79,6 @@ export const CHATGPT_TERMINAL_REFRESH_ERRORS: readonly string[] = [
  */
 export const CHATGPT_CONFIG_DIR_NAME = "dms-ai";
 export const CHATGPT_AUTH_FILE_NAME = "chatgpt-auth.json";
-export const CHATGPT_AUTH_FILE_MODE = 0o600;
 export const CHATGPT_CONFIG_DIR_MODE = 0o700;
 export const XDG_CONFIG_HOME_ENV = "XDG_CONFIG_HOME";
 export const APPDATA_ENV = "APPDATA";

@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -9,6 +9,7 @@ import {
   type SidecarLock,
   writeLock,
 } from "../../src/state/lock.js";
+import { expectReadableByOwnerOnly } from "../helpers/private-file.js";
 
 const LOCK: SidecarLock = {
   port: 1234,
@@ -35,7 +36,7 @@ describe("sidecar lock", () => {
     await writeLock(dir, LOCK);
     const raw = await readFile(buildLockPath(dir), "utf8");
     expect(JSON.parse(raw)).toEqual(LOCK);
-    expect((await stat(buildLockPath(dir))).mode & 0o777).toBe(0o600);
+    await expectReadableByOwnerOnly(buildLockPath(dir));
     await removeLock(dir, LOCK.pid);
     expect(existsSync(buildLockPath(dir))).toBe(false);
   });

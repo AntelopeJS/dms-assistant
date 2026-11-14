@@ -6,8 +6,6 @@ import { DEFAULT_CLAUDE_MODEL } from "./settings.js";
  */
 export const ASSISTANT_CONFIG_DIR_NAME = "dms-assistant";
 export const CLAUDE_AUTH_FILE_NAME = "claude-auth.json";
-export const ASSISTANT_AUTH_FILE_MODE = 0o600;
-export const ASSISTANT_CONFIG_DIR_MODE = 0o700;
 
 /** The variables that carry a Claude credential, strongest first. */
 export const CLAUDE_CREDENTIAL_ENV_VARS = [

@@ -1,19 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
 import {
   APPDATA_ENV,
-  CHATGPT_AUTH_FILE_MODE,
   CHATGPT_AUTH_FILE_NAME,
-  CHATGPT_CONFIG_DIR_MODE,
   CHATGPT_CONFIG_DIR_NAME,
   POSIX_CONFIG_DIR,
   XDG_CONFIG_HOME_ENV,
 } from "../../../constants/chatgpt.js";
 import { WINDOWS_PLATFORM } from "../../../constants/codex.js";
+import { writePrivateFile } from "../../../state/private-file.js";
 
 /** The tokens of a signed-in account; cleared on sign-out. */
 export interface ChatGptTokens {
@@ -99,29 +97,17 @@ export function readOrCreateAuthRecord(): ChatGptAuthRecord {
 }
 
 /**
- * Written to a sibling then renamed over the file, so a reader in another
- * sidecar never sees half a record, and created 0600 so no other account on
- * the machine can read the tokens. The mode is applied again with chmod
- * because the `mode` option is masked by the umask and the tokens must not be.
+ * Readable by the current account only, and never seen half written by a
+ * reader in another sidecar: see {@link writePrivateFile}.
  */
 export async function writeAuthRecord(
   record: ChatGptAuthRecord,
 ): Promise<void> {
-  const file = chatGptAuthFile();
-  await mkdir(path.dirname(file), {
-    recursive: true,
-    mode: CHATGPT_CONFIG_DIR_MODE,
-  });
-  const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
   const saved: ChatGptAuthRecord = {
     ...record,
     savedAt: new Date().toISOString(),
   };
-  await writeFile(temporary, JSON.stringify(saved, null, 2), {
-    mode: CHATGPT_AUTH_FILE_MODE,
-  });
-  await chmod(temporary, CHATGPT_AUTH_FILE_MODE);
-  await rename(temporary, file);
+  await writePrivateFile(chatGptAuthFile(), JSON.stringify(saved, null, 2));
 }
 
 /** Whether the record holds tokens that may still work, plan scope included. */

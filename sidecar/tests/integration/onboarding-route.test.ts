@@ -165,6 +165,7 @@ describe("the onboarding routes", () => {
     const configHome = join(home, "xdg");
     await writeFile(configHome, "a file where the config directory should go");
     vi.stubEnv("XDG_CONFIG_HOME", configHome);
+    vi.stubEnv("APPDATA", configHome);
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: true, status: 200 })),

@@ -7,6 +7,7 @@ import { publicOnboarding } from "../app/onboarding/runtime";
 import {
 	CLAUDE_LOGIN,
 	createOnboardingHarness,
+	memoryConnects,
 	memoryPreferences,
 	type OnboardingHarness,
 	onboardingState,
@@ -86,6 +87,23 @@ describe("opening on its own", () => {
 		}).controller;
 		await restarted.load();
 		expect(restarted.isOpen.value).toBe(true);
+	});
+
+	it("opens on the connect form after a reload while this tab follows a connection it wrote", async () => {
+		const { controller } = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+			content: CONVERSATION,
+			preferences: memoryPreferences({ dontShow: true, seenBootId: "boot-1" }),
+			connecting: memoryConnects({
+				engine: "mongodb",
+				connection: "shop",
+				module: "builder-db-shop-tables",
+				access: { reachable: true, canRead: true, canWrite: false },
+			}),
+		});
+		await controller.load();
+		expect(controller.isOpen.value).toBe(true);
+		expect(controller.flow.value.view).toEqual({ kind: "connect-database" });
 	});
 });
 

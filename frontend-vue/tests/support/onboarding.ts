@@ -4,6 +4,10 @@ import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import type { OnboardingApi } from "../../app/onboarding/api";
 import { NO_CONTENT, type ProjectContent } from "../../app/onboarding/content";
 import type {
+	ConnectMemory,
+	WrittenConnection,
+} from "../../app/onboarding/connect-memory";
+import type {
 	OnboardingState,
 	ProviderLogin,
 } from "../../app/onboarding/contract";
@@ -58,6 +62,22 @@ export function memoryPreferences(
 	return store;
 }
 
+/** A written connection kept in memory, as `sessionStorage` keeps it across a reload of the tab. */
+export function memoryConnects(
+	initial: WrittenConnection | null = null,
+): ConnectMemory {
+	let saved = initial;
+	return {
+		read: () => saved,
+		write: (next) => {
+			saved = next;
+		},
+		clear: () => {
+			saved = null;
+		},
+	};
+}
+
 export interface OnboardingHarness {
 	controller: OnboardingController;
 	api: {
@@ -87,6 +107,7 @@ export interface HarnessOptions {
 	content?: ProjectContent;
 	preferences?: PreferenceStore;
 	canConnectDatabase?: boolean;
+	connecting?: ConnectMemory;
 }
 
 /** A controller over a backend that answers `state` until a test says otherwise. */
@@ -121,6 +142,7 @@ export function createOnboardingHarness(
 		readContent: async () => content,
 		preferences: options.preferences ?? memoryPreferences(),
 		canConnectDatabase: options.canConnectDatabase ?? true,
+		connecting: options.connecting ?? memoryConnects(),
 		openTab,
 	});
 	return {

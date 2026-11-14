@@ -1,54 +1,28 @@
 // @vitest-environment jsdom
-import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { defineComponent } from "vue";
 import {
 	CONNECTABLE_ENGINES,
 	connectForm,
-	type DatabaseConnect,
 	engineNames,
-	useDatabaseConnect,
 } from "../app/onboarding/connect-database";
 import { ENGINES } from "../builder/app/runtime/database-connect";
-import type { ProjectConfigStep } from "../builder/app/runtime/database-types";
+import {
+	analysisWith,
+	fakeBuilder,
+	LISTED,
+	mountConnect,
+	PROJECT,
+	schemaCheck,
+	unmountConnect,
+	URL,
+	WRITER,
+} from "./support/database-connect";
 
 vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	t: (key: string, params?: Record<string, unknown>) =>
 		params === undefined ? key : `${key} ${JSON.stringify(params)}`,
 }));
-
-const URL = "postgres://app:secret@db.example.com/shop";
-
-const LISTED = {
-	id: "shop",
-	engine: "postgresql",
-	version: "16",
-	database: "shop",
-	role: "reader",
-};
-
-const READER = {
-	reachable: true,
-	latencyMs: 4,
-	user: "reader",
-	canRead: true,
-	canWrite: false,
-};
-
-const WRITER = { ...READER, user: "owner", canWrite: true };
-
-const PROJECT = {
-	modules: [] as string[],
-	self: "dms",
-	databasePins: [],
-	dmsDatabase: "dms-database",
-	ownDatabase: "mongodb",
-	interfaceDatabase: "0.3.4",
-	drivers: {
-		postgres: { package: "@antelopejs/postgres", version: ">=0.2.6 <0.4.0" },
-	},
-};
 
 const SCHEMAS_QUESTION = {
 	id: "schemas:shop",
@@ -61,91 +35,13 @@ const SCHEMAS_QUESTION = {
 	proposed: null,
 };
 
-function analysisWith(open: unknown[]) {
-	return {
-		id: "job1",
-		status: "done",
-		progress: {},
-		proposal: {
-			connection: "shop",
-			module: "m",
-			database: { engine: "postgresql", role: "reader", writes: "none" },
-			resources: [],
-			excluded: [],
-			open,
-		},
-	};
-}
-
-function fakeBuilder(overrides: Record<string, unknown> = {}) {
-	let analysis: unknown = null;
-	const analyseDatabase = vi.fn(
-		async (_connection: string, _module: string, _schemas?: string[]) => ({
-			ok: true,
-			data: {},
-		}),
-	);
-	const configureProject = vi.fn(
-		async (
-			_steps: ProjectConfigStep[],
-			_dryRun: boolean,
-			_variables?: unknown,
-		) => ({
-			ok: true,
-		}),
-	);
-	const api = {
-		checkConnection: vi.fn(async () => READER),
-		projectModules: async () => PROJECT,
-		configureProject,
-		failure: (error: unknown) => ({
-			detail: error instanceof Error ? error.message : String(error),
-		}),
-		databaseConnection: async () => ({ wiring: { variable: "SHOP_URL" } }),
-		databaseConnections: async () => [LISTED],
-		latestAnalysis: async () =>
-			analysis === null ? { ok: false } : { ok: true, data: analysis },
-		analyseDatabase,
-		...overrides,
-	};
-	return {
-		api,
-		analyseDatabase,
-		configureProject,
-		setAnalysis: (next: unknown) => {
-			analysis = next;
-		},
-	};
-}
-
-let wrapper: VueWrapper | undefined;
-
-function mountConnect(api: unknown): DatabaseConnect {
-	let connect: DatabaseConnect | undefined;
-	wrapper = mount(
-		defineComponent({
-			setup() {
-				connect = useDatabaseConnect(api as never);
-				return () => null;
-			},
-		}),
-	);
-	if (connect === undefined) throw new Error("the host did not set up");
-	return connect;
-}
-
-function schemaCheck(connect: DatabaseConnect) {
-	return connect.checks.value.find((check) => check.key === "schema");
-}
-
 function dmsDatabaseConfig(fake: ReturnType<typeof fakeBuilder>) {
 	const steps = fake.configureProject.mock.calls[0]?.[0] ?? [];
 	return steps.find((step) => step.id === "dms-database")?.entry?.config;
 }
 
 afterEach(() => {
-	wrapper?.unmount();
-	wrapper = undefined;
+	unmountConnect();
 	vi.useRealTimers();
 });
 
@@ -595,8 +491,7 @@ describe("an attempt the owner replaced", () => {
 		const connect = mountConnect(fake.api);
 		const run = connect.connect("postgres", URL);
 		await vi.waitFor(() => expect(reads).toBe(1));
-		wrapper?.unmount();
-		wrapper = undefined;
+		unmountConnect();
 		answer.resolve({ ok: false });
 		await run;
 		expect(fake.analyseDatabase).not.toHaveBeenCalled();

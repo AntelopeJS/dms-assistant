@@ -12,7 +12,8 @@
 				"reload": {
 					"title": "Reloading the project",
 					"gave_up": "The project did not come back within 3 minutes. Restart it by hand: stop the process running the project, then start it again.",
-					"running": "The project reloads to load the connection. This takes about 15 seconds."
+					"running": "The project reloads to load the connection. This takes about 15 seconds.",
+					"restart": "The project runs but has not loaded the connection: it reloads by itself only under ajs project dev -w. Stop the process running the project, then start it again with ajs project dev -w and connect again."
 				},
 				"connect": {
 					"title": "Connecting"

@@ -17,6 +17,8 @@ export type ConnectCheck =
 			key: "schema";
 			status: CheckStatus;
 			problem?: "empty" | "failed" | "gave-up";
+			/** The project answers without the connection, so only a restart loads it. */
+			restart?: boolean;
 			error?: string;
 	  };
 
@@ -101,7 +103,10 @@ function schemaCheck({
 			error: failure,
 		};
 	}
-	if (view === null || view.reloading) {
+	if (view?.restartNeeded) {
+		return { key: "schema", status: "running", restart: true };
+	}
+	if (view === null || view.reload !== undefined) {
 		return { key: "schema", status: connecting ? "running" : "pending" };
 	}
 	if (view.analysisFailed) {

@@ -11,6 +11,7 @@ import type {
 type BuildAnswers = Parameters<typeof buildState>[0]
 
 const THREE_MINUTES_MS = 3 * 60 * 1000
+const TWENTY_SECONDS_MS = 20 * 1000
 
 function proposed<T>(value: T) {
 	return { value, rule: 'R1', kind: 'default' as const }
@@ -80,7 +81,7 @@ describe('the build steps, derived from the three answers', () => {
 	it('reads a failed request as the project reloading', () => {
 		const answers: BuildAnswers = { declared: 'unreachable', listed: 'unreachable', analysis: 'unreachable' }
 		expect(statuses(answers)).toEqual(['done', 'running', 'pending', 'pending'])
-		expect(buildState(answers).reloading).toBe(true)
+		expect(buildState(answers).reload).toBe('down')
 	})
 
 	it('waits on the reload while the connection is declared and not listed yet', () => {
@@ -165,6 +166,22 @@ describe('the build steps, derived from the three answers', () => {
 		expect(late.gaveUp).toBe(true)
 		expect(late.steps[1]).toMatchObject({ status: 'failed' })
 		expect(late.steps[1]?.detail).toContain('Restart it by hand')
+	})
+
+	it('asks for a restart once the project has answered for 20 seconds without the connection, and keeps waiting', () => {
+		const answers: BuildAnswers = { declared: true, listed: null, analysis: null }
+		expect(buildState(answers, TWENTY_SECONDS_MS - 1).restartNeeded).toBe(false)
+		expect(buildState(answers, TWENTY_SECONDS_MS).restartNeeded).toBe(true)
+		const late = buildState(answers, THREE_MINUTES_MS)
+		expect(late.restartNeeded).toBe(true)
+		expect(late.gaveUp).toBe(false)
+		expect(late.steps[1]).toMatchObject({ status: 'running' })
+		expect(late.steps[1]?.detail).toContain('ajs project dev -w')
+	})
+
+	it('asks for no restart while the project does not answer', () => {
+		const answers: BuildAnswers = { declared: 'unreachable', listed: 'unreachable', analysis: 'unreachable' }
+		expect(buildState(answers, TWENTY_SECONDS_MS).restartNeeded).toBe(false)
 	})
 
 	it('fails step 1 when the configuration no longer declares the connection', () => {

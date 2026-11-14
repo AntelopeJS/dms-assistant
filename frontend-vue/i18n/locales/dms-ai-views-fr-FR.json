@@ -282,7 +282,8 @@
 					"schema_done": "Schéma lu",
 					"schema_failed": "Le schéma n’a pas pu être lu : {error}",
 					"empty": "Aucune table lisible par cet utilisateur.",
-					"gave_up": "Le projet n’a pas redémarré. Relancez-le, puis rouvrez cette fenêtre."
+					"gave_up": "Le projet n’a pas redémarré. Relancez-le, puis rouvrez cette fenêtre.",
+					"restart": "Redémarrez le projet pour charger la connexion : sans -w, ajs project dev ne le recharge pas. Arrêtez le projet, lancez ajs project dev -w, puis reconnectez la base."
 				},
 				"analysis": {
 					"title": "Voici le contenu de",

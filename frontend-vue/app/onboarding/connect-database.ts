@@ -4,6 +4,7 @@ import {
 	type BuildView,
 	buildState,
 	preferredSchemas,
+	type Reload,
 	readBuild,
 } from "../../builder/app/runtime/database-build";
 import {
@@ -151,7 +152,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	const refusal = ref<string | null>(null);
 	const failure = ref<string | null>(null);
 	let checked: Checked | undefined;
-	let reloadingSince: number | undefined;
+	let reloadingSince: { reload: Reload; at: number } | undefined;
 	let analysing = false;
 	let answeredSchemas: string | undefined;
 	let written: { connection: string; url: string } | undefined;
@@ -205,13 +206,14 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	): Promise<BuildView | null> {
 		const answers = await readBuild(api, connection);
 		if (!current(loop)) return null;
-		const first = buildState(answers);
-		reloadingSince = first.reloading
-			? (reloadingSince ?? Date.now())
-			: undefined;
+		const { reload } = buildState(answers);
+		if (reload === undefined) reloadingSince = undefined;
+		else if (reloadingSince?.reload !== reload) {
+			reloadingSince = { reload, at: Date.now() };
+		}
 		const next = buildState(
 			answers,
-			reloadingSince === undefined ? 0 : Date.now() - reloadingSince,
+			reloadingSince === undefined ? 0 : Date.now() - reloadingSince.at,
 		);
 		view.value = next;
 		if (next.schemas && !analysing && next.job !== answeredSchemas) {

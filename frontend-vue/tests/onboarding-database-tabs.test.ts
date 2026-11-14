@@ -30,8 +30,11 @@ const ANALYSED = {
 	},
 };
 
-/** The browser's Web Locks, which every tab of the origin shares and a closed tab releases. */
-function sharedLocks() {
+/**
+ * The browser's Web Locks, which every tab of the origin shares and a closed tab releases. A lock
+ * is granted `grantMs` after the request, in a later task, as the browser grants it.
+ */
+function sharedLocks(grantMs = 0) {
 	const held = new Set<string>();
 	return {
 		request: async (
@@ -41,6 +44,7 @@ function sharedLocks() {
 		): Promise<unknown> => {
 			if (held.has(name)) return callback(null);
 			held.add(name);
+			await new Promise((granted) => setTimeout(granted, grantMs));
 			try {
 				return await callback({ name });
 			} finally {
@@ -147,5 +151,34 @@ describe("a tab duplicated while a connection loads", () => {
 		leading.close();
 		await vi.advanceTimersByTimeAsync(2_000);
 		expect(other.analyseDatabase).toHaveBeenCalled();
+	});
+
+	it("leaves the lead to the other tab when it stops before its lock is granted", async () => {
+		Object.defineProperty(window.navigator, "locks", {
+			value: sharedLocks(50),
+			configurable: true,
+		});
+		const fake = fakeBuilder();
+		const first = tab(fake.api);
+		await vi.advanceTimersByTimeAsync(10);
+		first.connect.reset();
+		const duplicate = tab(fake.api);
+		await vi.advanceTimersByTimeAsync(3_000);
+		expect(first.analyseDatabase).not.toHaveBeenCalled();
+		expect(duplicate.analyseDatabase).toHaveBeenCalled();
+	});
+
+	it("follows and analyses where the browser refuses its Web Locks", async () => {
+		Object.defineProperty(window.navigator, "locks", {
+			value: {
+				request: () =>
+					Promise.reject(new DOMException("denied", "SecurityError")),
+			},
+			configurable: true,
+		});
+		const fake = fakeBuilder();
+		const only = tab(fake.api);
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(only.analyseDatabase).toHaveBeenCalled();
 	});
 });

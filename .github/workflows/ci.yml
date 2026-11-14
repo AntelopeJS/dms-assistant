@@ -29,16 +29,13 @@ jobs:
       windows: true
 
   vitest:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - package: sidecar
-            script: test
-          - package: frontend-vue
-            script: test
+        os: [ubuntu-latest, windows-latest]
+        package: [sidecar, frontend-vue]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,13 +49,17 @@ jobs:
             pnpm-lock.yaml
             ${{ matrix.package }}/pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --filter "./${{ matrix.package }}" --frozen-lockfile
-      - run: pnpm --dir ${{ matrix.package }} run ${{ matrix.script }}
+      - run: pnpm --dir ${{ matrix.package }} run test
 
   # `ajs dms verify-source`: the production build of the DMS core layer with
   # this one, the assistant and the builder, then vue-tsc.
   frontend-verify:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -77,8 +78,12 @@ jobs:
   # The builder engine specs write ts-morph fixtures to disk, so they run apart
   # from `checks`, with `mocha --parallel` (`.mocharc.json`).
   engine-specs:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -91,7 +96,9 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --frozen-lockfile
       - run: pnpm run build
-      - run: DMS_PREBUILT=1 pnpm test:specs
+      - run: pnpm test:specs
+        env:
+          DMS_PREBUILT: "1"
 
   ubuntu:
     if: always()

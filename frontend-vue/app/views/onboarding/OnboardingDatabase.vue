@@ -143,6 +143,9 @@ function checkText(check: ConnectCheck): string {
 			if (check.problem === "gave-up") {
 				return t("dms_ai.views.onboarding.database.gave_up");
 			}
+			if (check.restart) {
+				return t("dms_ai.views.onboarding.database.restart");
+			}
 			if (check.problem === "failed") {
 				return t("dms_ai.views.onboarding.database.schema_failed", {
 					error: check.error ?? "",

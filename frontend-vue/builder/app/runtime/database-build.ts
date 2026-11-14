@@ -11,6 +11,13 @@ import type { AnalysisState, DatabaseConnection, MappingProposal, OpenItem } fro
 /** How long the screen waits for the project to come back before it says how to restart by hand. */
 const RELOAD_LIMIT_MS = 3 * 60 * 1000
 
+/**
+ * How long the project may answer without loading the declared connection before the screen asks
+ * for a restart: under `ajs project dev -w` the configuration change restarts it within seconds,
+ * and without `-w` nothing does.
+ */
+const RESTART_AFTER_MS = 20 * 1000
+
 type StepStatus = 'pending' | 'running' | 'done' | 'failed'
 
 type StepKey = 'add' | 'reload' | 'connect' | 'read'
@@ -21,6 +28,12 @@ interface BuildStep {
 	status: StepStatus
 	detail: string
 }
+
+/**
+ * Why the connection is not loaded yet: the project does not answer (`down`), or it answers
+ * without having loaded the connection its configuration declares (`stale`).
+ */
+export type Reload = 'down' | 'stale'
 
 /** What could not be read because the project was down: it counts as reloading. */
 const UNREACHABLE = 'unreachable'
@@ -49,10 +62,12 @@ interface ForkSummary {
 
 export interface BuildView {
 	steps: BuildStep[]
-	/** The project is reloading: a request failed, or the connection is declared but not listed yet. */
-	reloading: boolean
-	/** The reload took longer than {@link RELOAD_LIMIT_MS}. */
+	/** Why the project is reloading, when it is. */
+	reload?: Reload
+	/** The project was down for {@link RELOAD_LIMIT_MS}. */
 	gaveUp: boolean
+	/** The project answered for {@link RESTART_AFTER_MS} without loading the connection. */
+	restartNeeded: boolean
 	/** The connection is listed with an error: step 3 failed with it. */
 	connectionError?: string
 	/** The analysis asks which schemas to read before anything else. */
@@ -149,15 +164,18 @@ function addStep(answers: BuildAnswers): BuildStep {
 	return step('add', title, 'done', detail)
 }
 
-function reloadStep(answers: BuildAnswers, reloading: boolean, gaveUp: boolean): BuildStep {
+function reloadStep(answers: BuildAnswers, view: Pick<BuildView, 'reload' | 'gaveUp' | 'restartNeeded'>): BuildStep {
 	const title = t('database.build.reload.title')
 	if (answers.declared === false) {
 		return step('reload', title, 'pending')
 	}
-	if (gaveUp) {
+	if (view.gaveUp) {
 		return step('reload', title, 'failed', t('database.build.reload.gave_up'))
 	}
-	if (reloading) {
+	if (view.restartNeeded) {
+		return step('reload', title, 'running', t('database.build.reload.restart'))
+	}
+	if (view.reload) {
 		return step('reload', title, 'running', t('database.build.reload.running'))
 	}
 	return step('reload', title, 'done')
@@ -206,15 +224,23 @@ function readStep(analysis: AnalysisState | undefined, connected: boolean, role:
 	return step('read', title, 'done', t('database.build.read.done', { tables: t('database.build.tables', {}, tables) }))
 }
 
+function reloadOf(answers: BuildAnswers, entry: DatabaseConnection | undefined): Reload | undefined {
+	if ([answers.declared, answers.listed, answers.analysis].includes(UNREACHABLE)) {
+		return 'down'
+	}
+	return answers.declared === true && !entry ? 'stale' : undefined
+}
+
 /**
- * Each step's status from the three answers. `reloadingFor` is how long the project has been
- * reloading, as the screen measured it.
+ * Each step's status from the three answers. `reloadingFor` is how long the project has stood in
+ * its current {@link Reload}, as the screen measured it.
  */
 export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
-	const unreachable = [answers.declared, answers.listed, answers.analysis].includes(UNREACHABLE)
 	const entry = listedEntry(answers)
-	const reloading = unreachable || (answers.declared === true && !entry)
-	const gaveUp = reloading && reloadingFor >= RELOAD_LIMIT_MS
+	const reload = reloadOf(answers, entry)
+	const reloading = reload !== undefined
+	const gaveUp = reload === 'down' && reloadingFor >= RELOAD_LIMIT_MS
+	const restartNeeded = reload === 'stale' && reloadingFor >= RESTART_AFTER_MS
 	const connected = !reloading && !!entry && !entry.error
 	const analysis = connected && answers.analysis && answers.analysis !== UNREACHABLE ? answers.analysis : undefined
 	const proposal = analysis?.status === 'done' ? analysis.proposal : undefined
@@ -223,12 +249,13 @@ export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
 	return {
 		steps: [
 			addStep(answers),
-			reloadStep(answers, reloading, gaveUp),
+			reloadStep(answers, { reload, gaveUp, restartNeeded }),
 			connectStep(reloading ? undefined : entry),
 			readStep(analysis, connected, proposal?.database.role ?? entry?.role ?? ''),
 		],
-		reloading,
+		reload,
 		gaveUp,
+		restartNeeded,
 		connectionError: !reloading ? entry?.error : undefined,
 		schemas,
 		needsAnalysis: connected && !analysis,

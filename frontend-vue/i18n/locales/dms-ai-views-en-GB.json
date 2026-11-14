@@ -281,7 +281,7 @@
 					"schema_failed": "The schema could not be read: {error}",
 					"empty": "No table this user can read.",
 					"gave_up": "The project did not come back. Restart it, then reopen this window.",
-					"restart": "Restart the project to load the connection: without -w, ajs project dev does not reload it. Stop the project, run ajs project dev -w, then connect again."
+					"restart": "Restart the project to load the connection: without -w, ajs project dev does not reload it. Stop the project, then run ajs project dev -w."
 				},
 				"analysis": {
 					"title": "Here’s what’s in",

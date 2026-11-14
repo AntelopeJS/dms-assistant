@@ -475,6 +475,31 @@ describe("following the connection's analysis", () => {
 	});
 });
 
+describe("a project that does not reload by itself", () => {
+	it("asks for a restart while the project answers without the connection, then analyses once it is loaded", async () => {
+		vi.useFakeTimers();
+		let listed: (typeof LISTED)[] = [];
+		const fake = fakeBuilder({ databaseConnections: async () => listed });
+		const connect = mountConnect(fake.api);
+		void connect.connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(15_000);
+		expect(schemaCheck(connect)).toEqual({ key: "schema", status: "running" });
+
+		await vi.advanceTimersByTimeAsync(4 * 60_000);
+		expect(schemaCheck(connect)).toEqual({
+			key: "schema",
+			status: "running",
+			restart: true,
+		});
+		expect(fake.analyseDatabase).not.toHaveBeenCalled();
+
+		listed = [LISTED];
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(schemaCheck(connect)).toEqual({ key: "schema", status: "running" });
+		expect(fake.analyseDatabase).toHaveBeenCalled();
+	});
+});
+
 function deferred<T>() {
 	let resolve: (value: T) => void = () => undefined;
 	const promise = new Promise<T>((settle) => {

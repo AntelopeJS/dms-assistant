@@ -36,7 +36,7 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 ## CI
 
-Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify` or `engine-specs` fails, so keep both names.
+Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify`, `engine-specs` or `gitleaks` fails, so keep both names. `gitleaks` scans every commit for secrets and skips only the fingerprints listed in `.gitleaksignore`.
 
 ## Releases
 

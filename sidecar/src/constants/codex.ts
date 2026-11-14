@@ -126,6 +126,12 @@ export const CODEX_ORPHAN_POLL_MS = 50;
 export const CODEX_SURVIVED_STOP_MESSAGE =
   "app-server outlived its termination, left for the next start to reap:";
 export const CODEX_PID_RELEASE_FAILED_MESSAGE = "could not unregister pid";
+/**
+ * How often, and how far apart, removing a home is retried. Windows keeps a
+ * stopped app-server's files open for a moment after it exits, and refuses
+ * their removal with EBUSY until it closes them.
+ */
+export const CODEX_HOME_REMOVAL_RETRIES = { maxRetries: 10, retryDelay: 100 };
 export const CODEX_HOME_REMOVAL_FAILED_MESSAGE =
   "could not remove the app-server's home";
 export const CODEX_PID_TOKEN = "%pid%";

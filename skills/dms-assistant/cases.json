@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "ai-install-codex",
-      "area": "dms-assistant",
+      "area": "dms-ai",
       "style": "clean",
       "prompt": "Install dms-assistant and make it use Codex instead of Claude Code.",
       "expect": {
@@ -13,7 +13,7 @@
     },
     {
       "id": "ai-offline-casual",
-      "area": "dms-assistant",
+      "area": "dms-ai",
       "style": "casual",
       "prompt": "the ai assistant says offline",
       "expect": {
@@ -23,7 +23,7 @@
     },
     {
       "id": "dms-assistant-disable-sidecar",
-      "area": "dms-assistant",
+      "area": "dms-ai",
       "style": "clean",
       "prompt": "How do I start the DMS backend without the dms-assistant sidecar process, for example in a CI job?",
       "expect": {
@@ -34,7 +34,7 @@
     },
     {
       "id": "dms-assistant-not-builder-routes",
-      "area": "dms-assistant",
+      "area": "dms-ai",
       "style": "clean",
       "prompt": "My coding agent has no builder_catalog tool. How do I check that the project serves the DMS builder MCP?",
       "expect": {

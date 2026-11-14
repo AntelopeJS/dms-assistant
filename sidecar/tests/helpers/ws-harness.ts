@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { rawDataToText } from "../../src/server/raw-data.js";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -65,6 +65,8 @@ export interface HarnessOptions {
   chatSocketRegistry?: ChatSocketRegistry;
   moduleRoots?: string[];
   skillDirs?: SkillSource[];
+  /** The contents of `state.json` the conversation store loads at start. */
+  storedState?: string;
 }
 
 export interface WsHarness {
@@ -160,6 +162,9 @@ export async function startWsHarness(
     options.withProject === true
       ? await startProjectCheckpoints(projectRoot)
       : undefined;
+  if (options.storedState !== undefined) {
+    await writeFile(join(tmpDir, STATE_FILE), options.storedState);
+  }
   const conversationStore = createConversationStore({
     store: createStore({ filePath: join(tmpDir, STATE_FILE) }),
   });

@@ -20,6 +20,8 @@ export interface Store {
   read(): Promise<StoredState>;
   write(state: StoredState): void;
   flush(): Promise<void>;
+  /** The ids of the stored conversations the last `read` set aside: this version cannot read them, and writes them back as they were. */
+  setAsideIds(): string[];
 }
 
 const StateFileSchema = z.object({
@@ -54,10 +56,10 @@ function readConversations(stored: StoredEntries): ReadStateFile {
     if (parsed.success) conversations[id] = parsed.data;
     else unreadable[id] = entry;
   }
-  const dropped = Object.keys(unreadable).length;
-  if (dropped > 0) {
+  const dropped = Object.keys(unreadable);
+  if (dropped.length > 0) {
     console.warn(
-      `${STATE_LOG_PREFIX} set aside ${dropped} stored conversation(s) of another shape`,
+      `${STATE_LOG_PREFIX} set aside ${dropped.length} stored conversation(s) of another shape: ${dropped.join(", ")}`,
     );
   }
   return { state: { conversations }, unreadable };
@@ -153,5 +155,6 @@ export function createStore(options: CreateStoreOptions): Store {
     read: () => readState(state),
     write: (next) => enqueueWrite(state, next),
     flush: () => flushStore(state),
+    setAsideIds: () => Object.keys(state.unreadable),
   };
 }

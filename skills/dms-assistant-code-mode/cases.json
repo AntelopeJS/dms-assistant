@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "dms-assistant-code-mode-edit-loop",
-      "area": "dms-ai",
+      "area": "dms-assistant",
       "style": "clean",
       "prompt": "The assistant is in Code mode and I want it to change the orders page and the two other pages that reuse the same custom block. How should it work so I can watch each page update in the dashboard?",
       "expect": {
@@ -14,7 +14,7 @@
     },
     {
       "id": "dms-assistant-code-mode-page-404-casual",
-      "area": "dms-ai",
+      "area": "dms-assistant",
       "style": "casual",
       "prompt": "ai edited my page in code mode and now it 404s, how do i see why",
       "expect": {
@@ -25,7 +25,7 @@
     },
     {
       "id": "dms-assistant-code-mode-not-safe-builder",
-      "area": "dms-ai",
+      "area": "dms-assistant",
       "style": "clean",
       "prompt": "We are in safe mode. Create a Reports page under the pages.reports category with builder_create_page, then add a TableView on the orders resource.",
       "expect": {

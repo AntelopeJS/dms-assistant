@@ -139,7 +139,6 @@
 				"builder_auto": "Builder, automatic",
 				"approved": "Approved by you",
 				"rule": "Allowed by a rule",
-				"full_auto": "Full auto",
 				"auto_approved": "Allowed by Auto review",
 				"auto_denied": "Blocked by Auto review",
 				"blocked": "Blocked · safe mode",

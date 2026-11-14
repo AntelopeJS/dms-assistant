@@ -30,7 +30,12 @@ type StoredMessagePatch = Partial<StoredMessage>;
 
 export interface ConversationStore {
   get(conversationId: string): StoredConversation | null;
-  getOrCreate(conversationId: string): StoredConversation;
+  /**
+   * Whether the id belongs to a stored conversation this version set aside.
+   * Its id is never reused: every write under it is dropped, so the stored
+   * record and its owner stay as they were.
+   */
+  isSetAside(conversationId: string): boolean;
   appendMessage(conversationId: string, message: StoredMessage): void;
   /**
    * Merges `patch` into every stored message `matches` accepts. Used to stamp
@@ -74,6 +79,7 @@ const TITLE_FALLBACK = "New conversation";
 interface CacheState {
   store: Store;
   cache: Map<string, StoredConversation>;
+  setAside: ReadonlySet<string>;
 }
 
 function buildEmptyConversation(nowMs: number): StoredConversation {
@@ -99,12 +105,14 @@ function getConversation(
   return state.cache.get(conversationId) ?? null;
 }
 
+/** The conversation under `conversationId`, created when new; null for a set-aside id. */
 function ensureConversation(
   state: CacheState,
   conversationId: string,
-): StoredConversation {
+): StoredConversation | null {
   const existing = state.cache.get(conversationId);
   if (existing !== undefined) return existing;
+  if (state.setAside.has(conversationId)) return null;
   const created = buildEmptyConversation(Date.now());
   state.cache.set(conversationId, created);
   return created;
@@ -116,6 +124,7 @@ function appendToConversation(
   message: StoredMessage,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   conversation.messages.push(message);
   conversation.updatedAtMs = message.timestampMs;
   persistCache(state);
@@ -144,6 +153,7 @@ function markProvider(
   provider: ProviderName,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   if (conversation.provider === provider) return;
   conversation.provider = provider;
   persistCache(state);
@@ -155,6 +165,7 @@ function markModel(
   model: string,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   if (conversation.model === model) return;
   conversation.model = model;
   persistCache(state);
@@ -174,6 +185,7 @@ function addTokenUsage(
   usage: TokenUsage,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   conversation.tokenUsage = sumUsage(
     conversation.tokenUsage ?? EMPTY_TOKEN_USAGE,
     usage,
@@ -188,6 +200,7 @@ function recordTurnUsage(
   timestampMs: number,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   conversation.usageLog = [
     ...(conversation.usageLog ?? []),
     { ...usage, timestampMs },
@@ -201,6 +214,7 @@ function setModes(
   patch: ConversationModesPatch,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   if (patch.mode !== undefined) conversation.mode = patch.mode;
   if (patch.generationMode !== undefined) {
     conversation.generationMode = patch.generationMode;
@@ -214,6 +228,7 @@ function claimConversation(
   ownerId: string,
 ): void {
   const conversation = ensureConversation(state, conversationId);
+  if (conversation === null) return;
   if (conversation.ownerId !== undefined) return;
   if (conversation.messages.length > 0) return;
   conversation.ownerId = ownerId;
@@ -292,6 +307,7 @@ async function loadCacheFromDisk(state: CacheState): Promise<void> {
   for (const [id, conv] of Object.entries(stored.conversations)) {
     state.cache.set(id, conv);
   }
+  state.setAside = new Set(state.store.setAsideIds());
 }
 
 export function createConversationStore(
@@ -300,10 +316,11 @@ export function createConversationStore(
   const state: CacheState = {
     store: options.store,
     cache: new Map(),
+    setAside: new Set(),
   };
   return {
     get: (id) => getConversation(state, id),
-    getOrCreate: (id) => ensureConversation(state, id),
+    isSetAside: (id) => state.setAside.has(id),
     appendMessage: (id, message) => appendToConversation(state, id, message),
     patchMessages: (id, matches, patch) =>
       patchMessages(state, id, matches, patch),

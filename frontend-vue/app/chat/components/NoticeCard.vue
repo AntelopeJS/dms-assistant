@@ -29,7 +29,6 @@ const LOOKS: Record<Notice["kind"], NoticeLook> = {
 	autofix: { tone: "warning", icon: "i-ph-wrench" },
 	permission_expired: { tone: "neutral", icon: "i-ph-timer" },
 	question_skipped: { tone: "neutral", icon: "i-ph-arrow-bend-down-right" },
-	full_auto_ended: { tone: "neutral", icon: "i-ph-lightning-slash" },
 	model_fallback: { tone: "warning", icon: "i-ph-swap" },
 	auto_unavailable: { tone: "warning", icon: "i-ph-seal-warning" },
 };
@@ -144,9 +143,6 @@ const expiredTool = computed<string>(() => {
 						model: notice.model,
 					})
 				}}
-			</template>
-			<template v-else>
-				{{ t("dms_assistant.panel.notice.full_auto_ended", { time }) }}
 			</template>
 		</div>
 	</div>

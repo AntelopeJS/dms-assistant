@@ -133,25 +133,36 @@ function viewerOf(ctx: ConnectionContext): string | null {
 }
 
 const FOREIGN_CONVERSATION_ERROR = "This conversation belongs to someone else.";
+const SET_ASIDE_CONVERSATION_ERROR =
+  "This conversation was saved by another version of the assistant and cannot be continued. Start a new conversation.";
 
-/** Whether the conversation is stored and owned by someone other than the connection's actor. */
-function isForeign(ctx: ConnectionContext, conversationId: string): boolean {
+/**
+ * Why the connection may not use the conversation: set aside when the store
+ * was read, or owned by someone other than the connection's actor. Null when
+ * it may.
+ */
+function refusalOf(
+  ctx: ConnectionContext,
+  conversationId: string,
+): string | null {
+  if (ctx.conversationStore.isSetAside(conversationId)) {
+    return SET_ASIDE_CONVERSATION_ERROR;
+  }
   const stored = ctx.conversationStore.get(conversationId);
-  return stored !== null && !isVisibleTo(stored, viewerOf(ctx));
+  return stored !== null && !isVisibleTo(stored, viewerOf(ctx))
+    ? FOREIGN_CONVERSATION_ERROR
+    : null;
 }
 
-/** Refuses a request on another person's conversation; true when it may go on. */
+/** Refuses a request on a conversation the connection may not use; true when it may go on. */
 function admit(
   socket: WebSocket,
   ctx: ConnectionContext,
   conversationId: string,
 ): boolean {
-  if (!isForeign(ctx, conversationId)) return true;
-  send(socket, {
-    type: EVENT_TYPES.RUN_ERROR,
-    conversationId,
-    error: FOREIGN_CONVERSATION_ERROR,
-  });
+  const error = refusalOf(ctx, conversationId);
+  if (error === null) return true;
+  send(socket, { type: EVENT_TYPES.RUN_ERROR, conversationId, error });
   return false;
 }
 
@@ -166,7 +177,7 @@ function sendSnapshotIfKnown(
   }
   send(socket, buildSettingsUpdateEvent(ctx));
   if (msg.conversationId === undefined) return;
-  if (isForeign(ctx, msg.conversationId)) return;
+  if (refusalOf(ctx, msg.conversationId) !== null) return;
   sendConversationState(socket, ctx, msg.conversationId);
 }
 
@@ -179,7 +190,10 @@ function registerSocket(
     ctx.hostSocketRegistry.set(socket);
     return;
   }
-  if (msg.conversationId === undefined || isForeign(ctx, msg.conversationId)) {
+  if (
+    msg.conversationId === undefined ||
+    refusalOf(ctx, msg.conversationId) !== null
+  ) {
     ctx.chatSocketRegistry.addChat(socket);
     return;
   }

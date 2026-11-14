@@ -149,12 +149,6 @@ export const QuestionSkippedNoticeSchema = z.object({
   timestampMs: z.number(),
 });
 
-/** Appears only in transcripts written by versions that had Full auto. */
-export const FullAutoEndedNoticeSchema = z.object({
-  kind: z.literal("full_auto_ended"),
-  timestampMs: z.number(),
-});
-
 export const ModelFallbackNoticeSchema = z.object({
   kind: z.literal("model_fallback"),
   requestedModel: z.string(),
@@ -172,7 +166,6 @@ export const NoticeSchema = z.discriminatedUnion("kind", [
   AutoFixNoticeSchema,
   PermissionExpiredNoticeSchema,
   QuestionSkippedNoticeSchema,
-  FullAutoEndedNoticeSchema,
   ModelFallbackNoticeSchema,
   AutoUnavailableNoticeSchema,
 ]);

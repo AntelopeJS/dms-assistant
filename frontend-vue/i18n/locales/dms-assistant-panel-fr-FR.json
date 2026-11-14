@@ -149,7 +149,6 @@
 				"expired_title": "Demande « {tool} » expirée.",
 				"expired_text": "« {summary} » est restée sans réponse : elle a été refusée à {time} et l'assistant en a été informé.",
 				"question_skipped": "Vous avez laissé l'assistant décider pour « {header} ».",
-				"full_auto_ended": "Le mode automatique complet a pris fin à {time}. L'assistant redemande avant d'agir.",
 				"auto_unavailable_title": "La revue automatique n'est pas disponible ici.",
 				"auto_unavailable_text": "{model}, votre offre ou un réglage ne la permet pas. Dans cette conversation, l'assistant demande avant d'agir.",
 				"model_fallback_title": "Passage à {model}.",

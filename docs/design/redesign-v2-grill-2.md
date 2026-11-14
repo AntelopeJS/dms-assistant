@@ -67,7 +67,7 @@ Today they run as if the user had typed "Your last edits broke the build…" (AI
 
 ### Q42. What feeds "How actions were allowed"?
 
-**Decision.** Every tool call is stored with `allowedBy`, one of `read_auto`, `builder_auto`, `approved`, `rule`, `full_auto`, `blocked`, `denied` and `expired`. Deletions also record `alwaysAsk: true`, which feeds "Deletions always asked: N of N". The KPIs and the breakdown read the same field, so Builder operations now count.
+**Decision.** Every tool call is stored with `allowedBy`, one of `read_auto`, `builder_auto`, `approved`, `rule`, `auto_approved`, `blocked`, `denied`, `auto_denied` and `expired`. Deletions also record `alwaysAsk: true`, which feeds "Deletions always asked: N of N". The KPIs and the breakdown read the same field, so Builder operations now count.
 
 ### Q43. Who is "Asked by"?
 

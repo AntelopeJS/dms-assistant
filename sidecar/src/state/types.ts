@@ -84,12 +84,6 @@ export interface QuestionSkippedNotice {
   timestampMs: number;
 }
 
-/** Appears only in transcripts written by versions that had Full auto. */
-export interface FullAutoEndedNotice {
-  kind: "full_auto_ended";
-  timestampMs: number;
-}
-
 /** The configured model was refused; the turn ran on `usedModel` instead. */
 export interface ModelFallbackNotice {
   kind: "model_fallback";
@@ -109,7 +103,6 @@ export type Notice =
   | AutoFixNotice
   | PermissionExpiredNotice
   | QuestionSkippedNotice
-  | FullAutoEndedNotice
   | ModelFallbackNotice
   | AutoUnavailableNotice;
 

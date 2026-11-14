@@ -31,6 +31,7 @@ function build(defaults: Partial<AppSettings> = {}) {
       read: async (): Promise<StoredState> => ({ conversations: {} }),
       write: () => {},
       flush: async () => {},
+      setAsideIds: () => [],
     },
   });
   const settings = settingsStore({ ...DEFAULT_SETTINGS, ...defaults });

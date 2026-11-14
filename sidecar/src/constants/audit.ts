@@ -3,7 +3,6 @@
  * audit log, the Overview's "How actions were allowed" and the approval KPIs.
  * `auto_approved` and `auto_denied` are Claude Code's Auto review deciding
  * without the user; `approved` and `denied` are the user's own answers.
- * `full_auto` appears only in records written by versions that had Full auto.
  */
 export const ALLOWED_BY_VALUES = [
   "read_auto",
@@ -11,7 +10,6 @@ export const ALLOWED_BY_VALUES = [
   "approved",
   "rule",
   "auto_approved",
-  "full_auto",
   "blocked",
   "denied",
   "auto_denied",

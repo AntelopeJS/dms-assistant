@@ -6,6 +6,7 @@ import { construct as constructBuilder } from "./builder";
 import { closeAllBridges } from "./channels/registry";
 import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
+import { moveLegacyBuilderSettings } from "./lifecycle/builder-settings-move";
 import { collectModuleRoots } from "./lifecycle/module-roots";
 import { syncProjectMcpJson } from "./lifecycle/project-mcp-json";
 import { collectSkillSources } from "./lifecycle/skill-sources";
@@ -18,11 +19,6 @@ import { frontendModule } from "./frontend-module";
 export type { AIConfig } from "./config";
 export type { BuilderApiConfig, DmsBuilderConfig } from "./builder";
 
-/**
- * Parses the project config, then constructs the builder: it installs the
- * `@antelopejs/interface-dms-builder` implementation and, when the builder is
- * on, mounts its HTTP API.
- */
 export async function construct(config?: AIConfig): Promise<void> {
   const parsed = ConfigSchema.safeParse(config).data ?? {};
   setConfig(parsed);
@@ -32,10 +28,7 @@ export async function construct(config?: AIConfig): Promise<void> {
 /**
  * Spawns the sidecar from start(), not module load: by now every module is
  * loaded, so interface-core can report their on-disk roots and declared skills
- * authoritatively. The builder's operations ship in this module, so the
- * sidecar always has them for Safe mode. In development, once every module
- * has started, `@antelopejs/dms` included, the project's `.mcp.json` is
- * brought to this version.
+ * authoritatively.
  */
 export async function start() {
   startLogCapture();
@@ -43,6 +36,7 @@ export async function start() {
   if (dev) {
     Events.ModulesStarted.register(() => {
       void syncProjectMcpJson(projectPath);
+      void moveLegacyBuilderSettings(projectPath);
     });
   }
   await AddFrontendModule(frontendModule(getConfig(), { dev }));

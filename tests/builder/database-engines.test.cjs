@@ -3,52 +3,42 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { z } = require("zod");
 
-const CheckEngines = z.object({
-  DATABASE_ENGINES: z.array(z.string()),
-  ENGINE_SCHEMES: z.record(z.string(), z.array(z.string())),
-});
+const coreSchemes = z
+  .record(z.string(), z.array(z.string()))
+  .parse(require("@antelopejs/interface-dms-builder").DATABASE_ENGINE_SCHEMES);
 
-const FormEngines = z.object({
-  ENGINES: z.record(z.string(), z.object({ schemes: z.array(z.string()) })),
-});
-
-/** The engines and schemes the live check accepts, from the built module. */
-const check = CheckEngines.parse(
-  require(
-    path.resolve(
-      __dirname,
-      "../../dist/builder/implementations/dms-builder/engine/database-access.js",
+const popupEngines = z
+  .object({
+    ENGINES: z.record(z.string(), z.object({ schemes: z.array(z.string()) })),
+  })
+  .parse(
+    require(
+      path.resolve(
+        __dirname,
+        "../../frontend-vue/builder/app/runtime/database-engines.ts",
+      ),
     ),
-  ),
-);
-
-/** The engines and schemes the connect form offers, from the frontend's own source. */
-const form = FormEngines.parse(
-  require(
-    path.resolve(
-      __dirname,
-      "../../frontend-vue/builder/app/runtime/database-engines.ts",
-    ),
-  ),
-);
+  );
 
 /** @param {readonly string[]} values */
 function sorted(values) {
   return [...values].toSorted();
 }
 
-void test("the connect form offers exactly the engines the live check accepts", () => {
+/** Fails on a popup that offers an engine core does not connect, or leaves out one it does. */
+void test("the popup offers exactly the engines core connects", () => {
   assert.deepEqual(
-    sorted(Object.keys(form.ENGINES)),
-    sorted(check.DATABASE_ENGINES),
+    sorted(Object.keys(popupEngines.ENGINES)),
+    sorted(Object.keys(coreSchemes)),
   );
 });
 
-void test("the live check accepts each engine's URL schemes as the connect form reads them", () => {
-  for (const engine of check.DATABASE_ENGINES) {
+/** Fails on a popup that reads a URL scheme core refuses for its engine, or misses one core accepts. */
+void test("the popup reads each engine's URLs by the schemes core accepts for it", () => {
+  for (const [engine, schemes] of Object.entries(coreSchemes)) {
     assert.deepEqual(
-      sorted(form.ENGINES[engine]?.schemes ?? []),
-      sorted(check.ENGINE_SCHEMES[engine] ?? []),
+      sorted(popupEngines.ENGINES[engine]?.schemes ?? []),
+      sorted(schemes),
       engine,
     );
   }

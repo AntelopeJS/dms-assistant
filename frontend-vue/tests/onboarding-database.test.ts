@@ -38,6 +38,18 @@ const READER = {
 
 const WRITER = { ...READER, user: "owner", canWrite: true };
 
+const PROJECT = {
+	modules: [] as string[],
+	self: "dms",
+	databasePins: [],
+	dmsDatabase: "dms-database",
+	ownDatabase: "mongodb",
+	interfaceDatabase: "0.3.4",
+	drivers: {
+		postgres: { package: "@antelopejs/postgres", version: ">=0.2.6 <0.4.0" },
+	},
+};
+
 const SCHEMAS_QUESTION = {
 	id: "schemas:shop",
 	kind: "schemas",
@@ -84,11 +96,7 @@ function fakeBuilder(overrides: Record<string, unknown> = {}) {
 	);
 	const api = {
 		checkConnection: vi.fn(async () => READER),
-		projectModules: async () => ({
-			modules: [] as string[],
-			dmsDatabase: "dms-database",
-			ownDatabase: "mongodb",
-		}),
+		projectModules: async () => PROJECT,
 		configureProject,
 		failure: (error: unknown) => ({
 			detail: error instanceof Error ? error.message : String(error),
@@ -193,7 +201,10 @@ describe("the popup's connect form", () => {
 			data: { variable: "SHOP_URL" },
 		}));
 		const fake = fakeBuilder({
-			projectModules: async () => ({ modules: ["builder-db-shop"] }),
+			projectModules: async () => ({
+				...PROJECT,
+				modules: ["builder-db-shop"],
+			}),
 			setConnectionUrl,
 		});
 		const connect = mountConnect(fake.api);
@@ -331,7 +342,10 @@ describe("the access written for the connection", () => {
 		}));
 		const fake = fakeBuilder({
 			checkConnection: vi.fn(async () => WRITER),
-			projectModules: async () => ({ modules: ["builder-db-shop"] }),
+			projectModules: async () => ({
+				...PROJECT,
+				modules: ["builder-db-shop"],
+			}),
 			setConnectionUrl,
 		});
 		const connect = mountConnect(fake.api);
@@ -339,6 +353,44 @@ describe("the access written for the connection", () => {
 		expect(connect.phase.value).toMatchObject({ kind: "analysing" });
 		expect(setConnectionUrl).toHaveBeenCalledTimes(1);
 		expect(fake.configureProject).not.toHaveBeenCalled();
+	});
+});
+
+describe("the driver a new connection adds", () => {
+	/** Fails on a popup that writes a driver range of its own instead of the one core gives the project. */
+	it("adds the driver at the package and range the project's interface-database allows", async () => {
+		const fake = fakeBuilder();
+		const connect = mountConnect(fake.api);
+		await connect.connect("postgres", URL);
+		const [driver] = fake.configureProject.mock.calls[0]?.[0] ?? [];
+		expect(driver).toMatchObject({
+			op: "AddModule",
+			entry: {
+				source: {
+					type: "package",
+					package: "@antelopejs/postgres",
+					version: ">=0.2.6 <0.4.0",
+				},
+			},
+		});
+	});
+
+	/** Fails on a popup that writes an engine the project has no driver for, or that does not say why. */
+	it("refuses an engine the project has no driver for, says why, and writes nothing", async () => {
+		const fake = fakeBuilder({
+			projectModules: async () => ({
+				...PROJECT,
+				interfaceDatabase: "0.4.0",
+				drivers: {},
+			}),
+		});
+		const connect = mountConnect(fake.api);
+		await connect.connect("mysql", URL.replace("postgres:", "mysql:"));
+		expect(fake.configureProject).not.toHaveBeenCalled();
+		expect(connect.phase.value).toEqual({ kind: "form" });
+		expect(connect.refusal.value).toBe(
+			'database.engines.unavailable {"engine":"MySQL / MariaDB","version":"0.4.0"}',
+		);
 	});
 });
 

@@ -7,6 +7,7 @@ import { type DatabaseEngine, ENGINES } from './database-engines'
 import { t } from './i18n'
 import type {
 	ConnectionDetails,
+	DriverPackage,
 	ModuleEntryInput,
 	ProjectConfigStep,
 	ProjectModules,
@@ -25,7 +26,6 @@ const STATEMENT_TIMEOUT_MS = 30000
 const DRIVER_EXPORT_PRIORITY = -1
 const MANAGED_PREFIX = 'builder-db'
 const MODULES_DIRECTORY = 'modules'
-const DMS_ASSISTANT = 'dms-assistant'
 const SSL_PARAMETER = 'sslmode'
 const SSL_DEFAULT_MODE = 'require'
 /** The `sslmode` values the SSL switch stands for; a strict one, or any other, is kept as it is. */
@@ -56,7 +56,6 @@ export interface ManagedNames {
 	variable: string
 	/** Holds the database name, for an engine that reads it beside the URL. */
 	databaseVariable: string
-	version: string
 }
 
 /** What dms-database may do with a connection: read it, or write to it as well. */
@@ -97,19 +96,25 @@ export function connectionId(name: string): string {
 		.replace(/^-+|-+$/g, '')
 }
 
-export function defaultNames(name: string, engine: DatabaseEngine): ManagedNames {
+export function defaultNames(name: string): ManagedNames {
 	const id = connectionId(name)
 	return {
 		driverModule: `${MANAGED_PREFIX}-${id}`,
 		tablesModule: `${MANAGED_PREFIX}-${id}-tables`,
 		variable: `${MANAGED_PREFIX}-${id}-url`.toUpperCase().replace(/-/g, '_'),
 		databaseVariable: `${MANAGED_PREFIX}-${id}-database`.toUpperCase().replace(/-/g, '_'),
-		version: ENGINES[engine].version,
 	}
 }
 
 export function managedNames(form: ConnectForm): ManagedNames {
-	return { ...defaultNames(form.name, form.engine), ...form.overrides }
+	return { ...defaultNames(form.name), ...form.overrides }
+}
+
+export function unavailableReason(engine: DatabaseEngine, interfaceDatabase: string | undefined): string {
+	const label = ENGINES[engine].label
+	return interfaceDatabase === undefined
+		? t('database.engines.unresolved', { engine: label })
+		: t('database.engines.unavailable', { engine: label, version: interfaceDatabase })
 }
 
 /** Whether the URL names a database of this engine, by its scheme. */
@@ -220,7 +225,6 @@ export function missingField(form: ConnectForm): string | undefined {
 		['tables', names.tablesModule],
 		['variable', names.variable],
 		...(ENGINES[form.engine].separateDatabase ? [['database_variable', names.databaseVariable] as [string, string]] : []),
-		['version', names.version],
 	]
 	const missing = required.find(([, value]) => value.trim() === '')?.[0]
 	return missing === undefined ? undefined : t(`database.connect.missing_${missing}`)
@@ -242,11 +246,10 @@ function tablesStep(id: string, names: ManagedNames): ProjectConfigStep {
 	}
 }
 
-/** The driver's entry: its package in external mode, its secrets by variable name only. */
-function driverEntry(engine: DatabaseEngine, names: ManagedNames): ModuleEntryInput {
+function driverEntry(engine: DatabaseEngine, names: ManagedNames, driver: DriverPackage): ModuleEntryInput {
 	const spec = ENGINES[engine]
 	const entry: ModuleEntryInput = {
-		source: { type: 'package', package: spec.package, version: names.version },
+		source: { type: 'package', package: driver.package, version: driver.version },
 		config: { mode: 'external', statementTimeoutMs: STATEMENT_TIMEOUT_MS },
 		env: spec.separateDatabase
 			? { url: names.variable, database: names.databaseVariable }
@@ -309,19 +312,13 @@ function dmsDatabaseStep(
 	}
 }
 
-/**
- * The `ConfigureProject` batch that wires the database into the project: its driver, the module
- * for its tables, a catalog connection for dms-assistant (the builder and the assistant read the
- * same one), its registration with dms-database when the project has it and an own database, and a
- * pin to the project's own database for each module that imports `interface-database` without one.
- */
-export function connectSteps(form: ConnectForm, project: ProjectModules): ProjectConfigStep[] {
+export function connectSteps(form: ConnectForm, project: ProjectModules, driver: DriverPackage): ProjectConfigStep[] {
 	const id = connectionId(form.name)
 	const names = managedNames(form)
 	const steps: ProjectConfigStep[] = [
-		{ op: 'AddModule', id: names.driverModule, entry: driverEntry(form.engine, names) },
+		{ op: 'AddModule', id: names.driverModule, entry: driverEntry(form.engine, names, driver) },
 		tablesStep(id, names),
-		{ op: 'ConfigureModule', id: project.self ?? DMS_ASSISTANT, entry: catalogConnection(id, names.driverModule) },
+		{ op: 'ConfigureModule', id: project.self, entry: catalogConnection(id, names.driverModule) },
 	]
 	if (project.dmsDatabase && project.ownDatabase) {
 		steps.push(
@@ -332,7 +329,7 @@ export function connectSteps(form: ConnectForm, project: ProjectModules): Projec
 			}),
 		)
 	}
-	for (const { module, provider } of project.databasePins ?? []) {
+	for (const { module, provider } of project.databasePins) {
 		steps.push({
 			op: 'ConfigureModule',
 			id: module,

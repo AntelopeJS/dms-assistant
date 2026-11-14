@@ -1,7 +1,7 @@
 import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { builderEnabled } from "./frontend-module";
 
-/** The HTTP API a builder UI talks to. */
+/** The external-database routes the onboarding calls. */
 export interface BuilderApiConfig {
   /**
    * Force the builder on or off. Unset, it follows the project's development
@@ -11,10 +11,8 @@ export interface BuilderApiConfig {
   enabled?: boolean;
 }
 
-/** Runtime configuration for the builder engine, under the module's `builder` key. */
+/** The module's `builder` key. */
 export interface DmsBuilderConfig {
-  /** Absolute path to the app source root where page files live. */
-  projectRoot?: string;
   api?: BuilderApiConfig;
 }
 
@@ -26,10 +24,6 @@ export function setModuleConfig(config?: DmsBuilderConfig): void {
   enabled = undefined;
 }
 
-export function getModuleConfig(): DmsBuilderConfig {
-  return moduleConfig;
-}
-
 async function resolveEnabled(): Promise<boolean> {
   const { dev } = await GetRuntimeInfo();
   return builderEnabled(moduleConfig, dev);
@@ -39,8 +33,9 @@ async function resolveEnabled(): Promise<boolean> {
  * Whether the builder — its HTTP API and its frontend module alike — is
  * available in this process.
  *
- * The builder edits the app's TypeScript sources, which exist only in a
- * development checkout, so the core's own development flag decides: the same
+ * The routes rewrite the app's TypeScript sources through `@antelopejs/dms`,
+ * and those exist only in a development checkout, so the core's own
+ * development flag decides: the same
  * one the DMS uses for dev reload and for its `.antelope/dms-dev.json`
  * handshake. `NODE_ENV` is deliberately not consulted — nothing sets it on the
  * way to `ajs project start`, so a production deployment would have kept the

@@ -1,13 +1,13 @@
 # dms-assistant
 
-An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). `@antelopejs/dms` hosts the builder engine, implements `@antelopejs/interface-dms-builder` and serves the builder tools through its `dms` MCP server. This module keeps the external database connect routes and the engine files they reach. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
+An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). `@antelopejs/dms` hosts the builder engine, implements `@antelopejs/interface-dms-builder` and serves the builder tools through its `dms` MCP server. This module keeps the external database connect routes, which run on the external-database operations of `@antelopejs/dms`. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
 
 ## Layout
 
 | Path           | What it is                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------- |
 | `src`          | The DMS module (CommonJS, built to `dist`); `construct`, `start` and `destroy` in `src/index.ts` run both parts |
-| `src/builder`  | The external database connect routes under `/api/builder/database`, the engine files they reach and, in `src/builder/test`, the mocha specs of those files |
+| `src/builder`  | The external database connect routes under `/api/builder/database`, which call the operations of `@antelopejs/interface-dms-builder` |
 | `sidecar`      | The local agent process, an ESM workspace package with its own lockfile and tsconfig; ships as `sidecar/dist`. Its `dms-ai` MCP server holds only the chat's tools. Every session also gets the `dms` MCP server of `@antelopejs/dms` |
 | `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
 | `frontend-vue/builder` | The client and types of the builder's `/api/builder/database` routes and the builder's message catalog, with its own vitest config. The builder has no editor UI: pages change through the AI and the mockup flow |
@@ -29,14 +29,13 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 `checks` does not run:
 
 - The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test` and `pnpm --dir frontend-vue test` (the assistant and builder unit suites).
-- The builder engine specs, which run in their own CI job: `pnpm test:specs`.
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
 - The full frontend-vue typecheck: `pnpm --dir frontend-vue verify-source` builds the DMS core layer with this one and runs vue-tsc. `checks` typechecks only the chat (`typecheck:chat`).
 
 ## CI
 
-Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify` or `engine-specs` fails, so keep both names.
+Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix or `frontend-verify` fails, so keep both names.
 
 ## Releases
 

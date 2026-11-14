@@ -114,7 +114,6 @@
 				"missing_tables": "a tables module",
 				"missing_variable": "a variable",
 				"missing_database_variable": "a database variable",
-				"missing_version": "a package version",
 				"refusal_typecheck": "The project does not typecheck: {found}",
 				"refusal_not_found": "{ref} was not found",
 				"refusal_blocked": "Still used by {modules}"
@@ -155,7 +154,9 @@
 				"postgres_account": "A role with SELECT on the schemas to map, and writes only where pages edit.",
 				"mongodb_account": "A user with the built-in read role, and writes only on the collections pages edit.",
 				"rethinkdb_account": "A user with read permission on the database, and write only on the tables pages edit.",
-				"not_url": "not a {engine} URL"
+				"not_url": "not a {engine} URL",
+				"unavailable": "{engine}: no driver works with interface-database {version} yet.",
+				"unresolved": "{engine}: this project resolves no interface-database, so no driver can be picked."
 			},
 			"proposal": {
 				"saved_in": "saved in module {module}",

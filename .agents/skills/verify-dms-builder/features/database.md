@@ -2,7 +2,8 @@
 covers:
   - src/builder/routes/database.ts
   - src/builder/constants/routes.ts
-  - src/builder/implementations/**
+  - src/builder/dms-answer.ts
+  - src/builder/refusal.ts
   - frontend-vue/builder/app/runtime/**
 docs:
   - docs/8.database-connection.md
@@ -10,7 +11,7 @@ docs:
 
 # External databases
 
-The `/api/builder/database` routes behind the onboarding's "Start from an existing database" path, the engine files they reach, and the client and types in `frontend-vue/builder` that call them. The analysis and the mapping of a real external database need a catalog provider and a database the run does not hold, so the journeys drive the empty, shape and refusal paths.
+The `/api/builder/database` routes behind the onboarding's "Start from an existing database" path, the `@antelopejs/dms` operations they call, and the client and types in `frontend-vue/builder` that call them. The analysis and the mapping of a real external database need a catalog provider and a database the run does not hold, so the journeys drive the empty, shape and refusal paths.
 
 ## Sub-features
 

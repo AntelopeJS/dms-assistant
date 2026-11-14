@@ -2,6 +2,8 @@
 // and `@antelopejs/interface-database-catalog`, as the module's HTTP API
 // answers them.
 
+import type { DatabaseEngine } from './database-engines'
+
 export type ProposedKind = 'fact' | 'default'
 
 export interface Proposed<T> {
@@ -235,17 +237,27 @@ export interface DatabasePin {
 	provider: string
 }
 
+/** A driver module of an engine, and the range of its versions the project can install. */
+export interface DriverPackage {
+	package: string
+	version: string
+}
+
 /** The modules the project's configuration lists, and what connecting a database needs of them. */
 export interface ProjectModules {
 	modules: string[]
-	/** The id `antelope.config.ts` gives dms-assistant, which holds the catalog connections. */
-	self?: string
+	/** The id `antelope.config.ts` gives `@antelopejs/dms`, which holds the catalog connections. */
+	self: string
 	/** The project's own `interface-database` provider, when it has one. */
 	ownDatabase?: string
 	/** The modules to pin to the own database, each one importing `interface-database` without a pin. */
-	databasePins?: DatabasePin[]
+	databasePins: DatabasePin[]
 	/** The id `antelope.config.ts` gives dms-database, whose console lists the connections registered with it. */
 	dmsDatabase?: string
+	/** The version of `@antelopejs/interface-database` the project resolves, when it resolves one. */
+	interfaceDatabase?: string
+	/** The driver of each engine a project on `interfaceDatabase` can install; an engine without one is absent. */
+	drivers: Partial<Record<DatabaseEngine, DriverPackage>>
 }
 
 /** A variable's development value, sent with the batch that maps it and written into `.env` first. */

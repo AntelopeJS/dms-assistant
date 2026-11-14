@@ -6,59 +6,96 @@ import {
   Parameter,
   Post,
 } from "@antelopejs/interface-api";
-import type { SampleRequest } from "@antelopejs/interface-database-catalog";
 import { AuthTenantOwner } from "@antelopejs/interface-dms/guards";
 import type { User } from "@antelopejs/interface-dms/auth/db";
-import type {
-  AnalyseDatabaseInput,
-  MapResourcesInput,
-  ProjectConfigOpts,
-  ProjectConfigStep,
-} from "@antelopejs/interface-dms-builder";
 import { type QueryValue, queryText } from "../../routes/query-text";
-import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
-import { type ConnectionCheckBody, runConnectionCheck } from "./database-check";
 import {
-  analysisState,
-  latestAnalysis,
-  startAnalysis,
-} from "../implementations/dms-builder/engine/analysis-job";
-import { mapResources } from "../implementations/dms-builder/engine/map-resources";
-import { mappedChoices } from "../implementations/dms-builder/engine/mapped-choices";
-import { configureProject } from "../implementations/dms-builder/engine/project-config-ops";
-import {
-  catalogOf,
-  listCatalogConnections,
-} from "../implementations/dms-builder/engine/catalog-connection";
-import {
-  type DatabasePin,
-  databasePins,
-} from "../implementations/dms-builder/engine/database-pin";
-import { dmsDatabaseId } from "../implementations/dms-builder/engine/dms-database";
-import { configuredModuleIds } from "../implementations/dms-builder/engine/modules";
-import { ownModuleId } from "../implementations/dms-builder/engine/own-connections";
-import {
-  connectionDetails,
-  connectionWiring,
-  isConnectionRefusal,
-  setConnectionUrl,
-} from "../implementations/dms-builder/engine/database-connection";
-import { removeDatabaseConnection } from "../implementations/dms-builder/engine/database-connection-remove";
-import { repairDatabaseConnections } from "../implementations/dms-builder/engine/database-repair";
-import {
-  configureProjectWithVariables,
+  AnalyseDatabase,
+  type AnalyseDatabaseInput,
+  CheckDatabaseConnection,
+  ConfigureProject,
+  type ConfigureProjectOpts,
+  type DatabaseCheckInput,
+  GetAnalysis,
+  GetDatabaseConnection,
+  GetDatabaseProject,
+  GetLatestAnalysis,
+  GetMapping,
+  ListDatabaseConnections,
+  MapResources,
+  type MapResourcesInput,
+  type OpResult,
+  type ProjectConfigOpts,
+  type ProjectConfigStep,
   type ProjectVariable,
-} from "../implementations/dms-builder/engine/project-env";
+  RemoveDatabaseConnection,
+  RepairDatabaseConnections,
+  type RowSampleRequest,
+  SampleDatabaseRows,
+  SetDatabaseConnectionUrl,
+} from "@antelopejs/interface-dms-builder";
+import { z } from "zod";
+import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
+import { withinDmsTimeout } from "../dms-answer";
+import { refusalMessage } from "../refusal";
 
+const HTTP_BAD_REQUEST = 400;
+const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
 const HTTP_REFUSED = 422;
+const HTTP_UNAVAILABLE = 503;
+
+const BUILDER_OFF =
+  "@antelopejs/dms serves no builder operations in this process. Set builder.enabled to true on the dms entry of antelope.config.ts.";
+
+const CORE_BUILDER_DISABLED =
+  "The DMS builder is not enabled in this environment";
+
+const CoreBuilderDisabledSchema = z
+  .object({ message: z.string().startsWith(CORE_BUILDER_DISABLED) })
+  .transform(({ message }) => message);
+
+const QueueFullSchema = z.object({
+  name: z.literal("ProviderQueueFullError"),
+});
+
+let builderOff: Promise<string | undefined> | undefined;
+
+async function probeBuilder(): Promise<string | undefined> {
+  const settled = GetDatabaseProject().then(
+    () => undefined,
+    (error: unknown) =>
+      QueueFullSchema.safeParse(error).success
+        ? BUILDER_OFF
+        : CoreBuilderDisabledSchema.safeParse(error).data,
+  );
+  const off = await withinDmsTimeout(settled).catch(() => BUILDER_OFF);
+  if (off !== undefined) builderOff = undefined;
+  return off;
+}
+
+function unavailable(message: string): HTTPResult {
+  return new HTTPResult(HTTP_UNAVAILABLE, { code: "unavailable", message });
+}
+
+async function fromDms<T>(
+  operation: () => Promise<T>,
+): Promise<T | HTTPResult> {
+  builderOff ??= probeBuilder();
+  const off = await builderOff;
+  if (off !== undefined) return unavailable(off);
+  try {
+    return await operation();
+  } catch (error) {
+    const message = CoreBuilderDisabledSchema.safeParse(error).data;
+    if (message === undefined) throw error;
+    builderOff = undefined;
+    return unavailable(message);
+  }
+}
 
 interface RemoveConnectionBody {
   connection: string;
-  dryRun?: boolean;
-}
-
-interface RepairConnectionsBody {
   dryRun?: boolean;
 }
 
@@ -68,7 +105,7 @@ interface ConnectionUrlBody {
   url: string;
 }
 
-interface SampleBody extends SampleRequest {
+interface SampleBody extends RowSampleRequest {
   connection: string;
 }
 
@@ -79,58 +116,24 @@ interface ProjectBody {
   variables?: ProjectVariable[];
 }
 
-/** The modules the project's configuration lists, by id, and the pins connecting a database needs. */
-interface ProjectModules {
-  modules: string[];
-  /** This module's id in `antelope.config.ts`, where a catalog connection is declared. */
-  self: string;
-  /** The project's own `interface-database` provider, when it has one. */
-  ownDatabase?: string;
-  /** The modules to pin to the own database before another one is connected. */
-  databasePins: DatabasePin[];
-  /** The id `antelope.config.ts` gives dms-database, when the project has it. */
-  dmsDatabase?: string;
-}
-
-/** One of the builder's catalog connections, with what its provider answers about it. */
-interface ConnectionEntry {
-  id: string;
-  engine?: string;
-  version?: string;
-  database?: string;
-  role?: string;
-  error?: string;
-}
-
-async function connectionEntry(id: string): Promise<ConnectionEntry> {
-  try {
-    const info = await catalogOf(id)!.Info();
-    return { id, ...info };
-  } catch (error) {
-    return {
-      id,
-      error: error instanceof Error ? error.message : String(error),
-    };
+function dataOrStatus<T>(result: OpResult<T>): T | HTTPResult {
+  if (result.ok) return result.data;
+  if (result.error.code === "not_found") {
+    return new HTTPResult(HTTP_NOT_FOUND, {
+      code: "not_found",
+      ref: result.error.ref,
+    });
   }
+  return new HTTPResult(HTTP_REFUSED, {
+    code: "refused",
+    message: refusalMessage(result.error),
+  });
 }
 
-function refused(message: string): HTTPResult {
-  return new HTTPResult(HTTP_REFUSED, { code: "refused", message });
-}
-
-/**
- * The routes of the builder's *Database* workspace: its catalog connections, the analysis, the
- * mapping, the project wiring, and the sample of rows. Rows answer the project's owner here and
- * nowhere else: no interface function of the builder passes them on.
- */
 export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Get(ROUTES.databaseConnections)
   async connections(@AuthTenantOwner() _user: User) {
-    const entries: ConnectionEntry[] = [];
-    for (const id of listCatalogConnections()) {
-      entries.push(await connectionEntry(id));
-    }
-    return entries;
+    return fromDms(() => ListDatabaseConnections());
   }
 
   /**
@@ -140,18 +143,29 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Post(ROUTES.databaseConnectionsRepair)
   async repairConnections(
     @AuthTenantOwner() _user: User,
-    @JSONBody() body: RepairConnectionsBody | undefined,
+    @JSONBody() body: ProjectConfigOpts | undefined,
   ) {
-    return repairDatabaseConnections({ dryRun: body?.dryRun });
+    return fromDms(() => RepairDatabaseConnections({ dryRun: body?.dryRun }));
   }
 
-  /** Tests a database live, before the connection is written: owner only, and in development only. */
   @Post(ROUTES.databaseConnectionsCheck)
   async checkConnection(
     @AuthTenantOwner() _user: User,
-    @JSONBody() body: ConnectionCheckBody,
+    @JSONBody() body: DatabaseCheckInput,
   ) {
-    return runConnectionCheck(body);
+    return fromDms(async () => {
+      const result = await CheckDatabaseConnection(body);
+      if (result.ok) return result.data;
+      return result.error.code === "unsupported"
+        ? new HTTPResult(HTTP_FORBIDDEN, {
+            code: "forbidden",
+            message: refusalMessage(result.error),
+          })
+        : new HTTPResult(HTTP_BAD_REQUEST, {
+            code: "bad_request",
+            message: refusalMessage(result.error),
+          });
+    });
   }
 
   @Post(ROUTES.databaseAnalyse)
@@ -159,7 +173,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: AnalyseDatabaseInput,
   ) {
-    return startAnalysis(body);
+    return fromDms(() => AnalyseDatabase(body));
   }
 
   /** One analysis by `id`, or the latest of a `connection`: the running one, or else the last to finish. */
@@ -169,15 +183,14 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @Parameter("id", "query") id: QueryValue,
     @Parameter("connection", "query") connection: QueryValue,
   ) {
-    const analysisId = queryText(id);
-    if (analysisId) {
-      return analysisState(analysisId);
-    }
-    const latest = latestAnalysis(queryText(connection) ?? "");
-    if (!latest.ok) {
-      return new HTTPResult(HTTP_NOT_FOUND, latest.error);
-    }
-    return latest;
+    return fromDms(async () => {
+      const analysisId = queryText(id);
+      if (analysisId) {
+        return GetAnalysis(analysisId);
+      }
+      const latest = await GetLatestAnalysis(queryText(connection) ?? "");
+      return latest.ok ? latest : new HTTPResult(HTTP_NOT_FOUND, latest.error);
+    });
   }
 
   @Post(ROUTES.databaseMap)
@@ -185,7 +198,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: MapResourcesInput,
   ) {
-    return mapResources(body);
+    return fromDms(() => MapResources(body));
   }
 
   @Get(ROUTES.databaseMapping)
@@ -194,36 +207,23 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @Parameter("connection", "query") connection: QueryValue,
     @Parameter("module", "query") module: QueryValue,
   ) {
-    return mappedChoices(queryText(connection) ?? "", queryText(module) ?? "");
+    return fromDms(() =>
+      GetMapping(queryText(connection) ?? "", queryText(module) ?? ""),
+    );
   }
 
   @Get(ROUTES.databaseProject)
-  async projectModules(
-    @AuthTenantOwner() _user: User,
-  ): Promise<ProjectModules | HTTPResult> {
-    try {
-      const { ownDatabase, pins } = databasePins();
-      return {
-        modules: configuredModuleIds(),
-        self: ownModuleId(),
-        ownDatabase,
-        databasePins: pins,
-        dmsDatabase: dmsDatabaseId(),
-      };
-    } catch (error) {
-      if (isConnectionRefusal(error)) {
-        return refused(error.message);
-      }
-      throw error;
-    }
+  async projectModules(@AuthTenantOwner() _user: User) {
+    return fromDms(async () => dataOrStatus(await GetDatabaseProject()));
   }
 
   @Post(ROUTES.databaseProject)
   async project(@AuthTenantOwner() _user: User, @JSONBody() body: ProjectBody) {
-    if (!body.variables?.length || body.opts?.dryRun) {
-      return configureProject(body.steps, body.opts);
-    }
-    return configureProjectWithVariables(body.steps, body.variables);
+    const opts: ConfigureProjectOpts = {
+      ...body.opts,
+      variables: body.variables,
+    };
+    return fromDms(() => ConfigureProject(body.steps, opts));
   }
 
   @Get(ROUTES.databaseConnection)
@@ -231,22 +231,9 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @Parameter("connection", "query") connection: QueryValue,
   ) {
-    try {
-      const wiring = connectionWiring(queryText(connection) ?? "");
-      if (!wiring) {
-        return new HTTPResult(HTTP_NOT_FOUND, {
-          code: "not_found",
-          ref: connection,
-        });
-      }
-      const details = connectionDetails(wiring);
-      return { wiring, details: details.ok ? details.data : undefined };
-    } catch (error) {
-      if (isConnectionRefusal(error)) {
-        return refused(error.message);
-      }
-      throw error;
-    }
+    return fromDms(async () =>
+      dataOrStatus(await GetDatabaseConnection(queryText(connection) ?? "")),
+    );
   }
 
   @Post(ROUTES.databaseConnectionRemove)
@@ -254,9 +241,9 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: RemoveConnectionBody,
   ) {
-    return removeDatabaseConnection(body.connection, {
-      dryRun: body.dryRun,
-    });
+    return fromDms(() =>
+      RemoveDatabaseConnection(body.connection, { dryRun: body.dryRun }),
+    );
   }
 
   @Post(ROUTES.databaseConnectionUrl)
@@ -264,26 +251,16 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @AuthTenantOwner() _user: User,
     @JSONBody() body: ConnectionUrlBody,
   ) {
-    return setConnectionUrl(body.connection, body.url);
+    return fromDms(() => SetDatabaseConnectionUrl(body.connection, body.url));
   }
 
   @Post(ROUTES.databaseSample)
   async sample(@AuthTenantOwner() _user: User, @JSONBody() body: SampleBody) {
-    const catalog = catalogOf(body.connection);
-    if (!catalog) {
-      return new HTTPResult(HTTP_NOT_FOUND, {
-        code: "not_found",
-        ref: body.connection,
-      });
-    }
-    try {
-      return await catalog.SampleRows({
-        relation: body.relation,
-        columns: body.columns,
-        limit: body.limit,
-      });
-    } catch (error) {
-      return refused(error instanceof Error ? error.message : String(error));
-    }
+    const { connection, relation, columns, limit } = body;
+    return fromDms(async () =>
+      dataOrStatus(
+        await SampleDatabaseRows(connection, { relation, columns, limit }),
+      ),
+    );
   }
 }

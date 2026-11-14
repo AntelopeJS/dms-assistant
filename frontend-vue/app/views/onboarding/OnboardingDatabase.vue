@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useBuilderApi } from "../../../builder/app/runtime/api";
 import {
 	type ConnectionAccess,
 	type DatabaseEngine,
 	ENGINES,
 	engineOfScheme,
+	unavailableReason,
 } from "../../../builder/app/runtime/database-connect";
+import type { ProjectModules } from "../../../builder/app/runtime/database-types";
 import { useChatI18n } from "../../chat/composables/useChatI18n";
 import {
 	CONNECTABLE_ENGINES,
@@ -20,11 +22,6 @@ import type {
 import { useOnboarding } from "../../onboarding/runtime";
 import OnboardingFrame from "./OnboardingFrame.vue";
 
-/**
- * "Start from an existing database": the engine, one connection URL, then the live checks before
- * anything is written, the access when the account can write, and the analysis, which opens once
- * it is ready.
- */
 const ENGINE_ICONS: Partial<Record<DatabaseEngine, string>> = {
 	postgres: "i-ph-cylinder",
 	mongodb: "i-ph-leaf",
@@ -73,7 +70,9 @@ const ACCESS_OPTIONS: readonly {
 
 const onboarding = useOnboarding();
 const { t } = useChatI18n();
-const database = useDatabaseConnect(useBuilderApi());
+const api = useBuilderApi();
+const database = useDatabaseConnect(api);
+const project = ref<ProjectModules | null>(null);
 
 const engine = ref<DatabaseEngine>("postgres");
 const url = ref("");
@@ -86,6 +85,18 @@ const stuck = computed(() =>
 );
 const busy = computed(
 	() => database.phase.value.kind !== "form" && !choosing.value && !stuck.value,
+);
+const unavailable = computed(() => {
+	const drivers = project.value?.drivers;
+	return drivers === undefined
+		? []
+		: CONNECTABLE_ENGINES.filter((option) => drivers[option] === undefined);
+});
+const canConnect = computed(
+	() =>
+		url.value.trim() !== "" &&
+		!busy.value &&
+		!unavailable.value.includes(engine.value),
 );
 
 function checkText(check: ConnectCheck): string {
@@ -180,6 +191,10 @@ async function connect(): Promise<void> {
 	urlProblem.value = await database.connect(engine.value, url.value);
 }
 
+onMounted(async () => {
+	project.value = await api.projectModules().catch(() => null);
+});
+
 watch(database.phase, (phase) => {
 	if (phase.kind === "choosing") access.value = "read";
 	if (phase.kind !== "analysed") return;
@@ -208,10 +223,19 @@ watch(database.phase, (phase) => {
 				:color="engine === option ? 'primary' : 'neutral'"
 				:variant="engine === option ? 'soft' : 'outline'"
 				:class="engine === option && 'ring-primary ring-1 ring-inset'"
-				:disabled="busy"
+				:disabled="busy || unavailable.includes(option)"
 				@click="pickEngine(option)"
 			/>
 		</div>
+		<p
+			v-for="option in unavailable"
+			:key="option"
+			class="text-dimmed mt-2 flex items-center gap-1.5 text-xs"
+			:data-unavailable="option"
+		>
+			<UIcon name="i-ph-prohibit" class="size-3.5 shrink-0" />
+			{{ unavailableReason(option, project?.interfaceDatabase) }}
+		</p>
 		<UFormField
 			:label="t('dms_ai.views.onboarding.database.url')"
 			class="mt-4"
@@ -227,7 +251,7 @@ watch(database.phase, (phase) => {
 				:disabled="busy"
 				:ui="{ base: 'font-mono text-[13px]' }"
 				@update:model-value="editUrl(String($event))"
-				@keydown.enter="url.trim() && !busy && connect()"
+				@keydown.enter="canConnect && connect()"
 			/>
 		</UFormField>
 		<ul
@@ -308,7 +332,7 @@ watch(database.phase, (phase) => {
 			<UButton
 				:label="t('dms_ai.views.onboarding.database.connect')"
 				trailing-icon="i-ph-arrow-right"
-				:disabled="url.trim() === '' || busy"
+				:disabled="!canConnect"
 				:loading="busy"
 				@click="connect"
 			/>

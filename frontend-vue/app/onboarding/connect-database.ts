@@ -20,9 +20,11 @@ import {
 	missingField,
 	parseConnectionUrl,
 	refusalText,
+	unavailableReason,
 } from "../../builder/app/runtime/database-connect";
 import type {
 	DatabaseAccess,
+	DriverPackage,
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
@@ -39,7 +41,6 @@ export const CONNECTABLE_ENGINES = Object.keys(ENGINES).filter(
 	(engine): engine is DatabaseEngine => Object.hasOwn(ENGINES, engine),
 );
 
-/** The connectable engines by name, as one "or" list in `locale`: "PostgreSQL, MongoDB or RethinkDB". */
 export function engineNames(locale: string): string {
 	return new Intl.ListFormat(locale, { type: "disjunction" }).format(
 		CONNECTABLE_ENGINES.map((engine) => ENGINES[engine].label),
@@ -91,12 +92,15 @@ export interface DatabaseConnect {
 	reset: () => void;
 }
 
+type ConnectionWriting =
+	| { kind: "url" }
+	| { kind: "new"; project: ProjectModules; driver: DriverPackage };
+
 interface Checked {
 	form: ConnectForm;
 	connection: string;
 	module: string;
-	/** The project's modules, `undefined` when this popup already wrote the connection. */
-	project: ProjectModules | undefined;
+	writing: ConnectionWriting;
 }
 
 /**
@@ -248,23 +252,25 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 	}
 
 	async function write(
-		{ form, connection, project }: Checked,
+		{ form, connection, writing }: Checked,
 		choice: ConnectionAccess,
 		loop: number,
 	): Promise<boolean> {
 		const url = connectionUrl(form.engine, form.fields);
 		if (written?.connection === connection && written.url === url) return true;
-		const exists =
-			project === undefined ||
-			project.modules.includes(managedNames(form).driverModule);
 		try {
-			const result = exists
-				? await api.setConnectionUrl(connection, url)
-				: await api.configureProject(
-						connectSteps({ ...form, access: choice }, project),
-						false,
-						connectVariables(form),
-					);
+			const result =
+				writing.kind === "url"
+					? await api.setConnectionUrl(connection, url)
+					: await api.configureProject(
+							connectSteps(
+								{ ...form, access: choice },
+								writing.project,
+								writing.driver,
+							),
+							false,
+							connectVariables(form),
+						);
 			if (!result.ok) {
 				if (current(loop)) refusal.value = refusalText(result.error);
 				return false;
@@ -322,11 +328,12 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			form,
 			connection,
 			module: managedNames(form).tablesModule,
-			project: undefined,
+			writing: { kind: "url" },
 		};
 		if (written?.connection !== connection) {
+			let project: ProjectModules;
 			try {
-				target.project = await api.projectModules();
+				project = await api.projectModules();
 			} catch (error) {
 				if (!current(loop)) return null;
 				refusal.value = api.failure(error).detail;
@@ -334,13 +341,19 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 				return null;
 			}
 			if (!current(loop)) return null;
-			const fresh = !target.project.modules.includes(
-				managedNames(form).driverModule,
-			);
-			if (fresh && answer.canWrite) {
-				checked = target;
-				phase.value = { kind: "choosing" };
-				return null;
+			if (!project.modules.includes(managedNames(form).driverModule)) {
+				const driver = project.drivers[engine];
+				if (driver === undefined) {
+					refusal.value = unavailableReason(engine, project.interfaceDatabase);
+					phase.value = { kind: "form" };
+					return null;
+				}
+				target.writing = { kind: "new", project, driver };
+				if (answer.canWrite) {
+					checked = target;
+					phase.value = { kind: "choosing" };
+					return null;
+				}
 			}
 		}
 		await proceed(target, "read", loop);

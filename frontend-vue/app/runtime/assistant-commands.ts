@@ -1,4 +1,4 @@
-import type { Ref } from "vue";
+import { type Ref, type WatchStopHandle, watch } from "vue";
 import type { Translate } from "../chat/composables/useChatI18n";
 import type { CurrentPage } from "../chat/types/conversation";
 import { shortcutLabel } from "../chat/utils/platform";
@@ -140,6 +140,21 @@ export function launcherAction(
 		order: LAUNCHER_ORDER,
 		sidePanelId: SIDE_PANEL_ID,
 	};
+}
+
+/**
+ * Registers the launcher now and again whenever its label changes: with the
+ * state, the locale, or the messages of a locale that load after the app
+ * mounted, which `t` reads reactively.
+ */
+export function registerLauncher(
+	t: Translate,
+	state: Readonly<Ref<LauncherState>>,
+	register: (action: LauncherAction) => void,
+): WatchStopHandle {
+	return watch(() => launcherAction(t, state.value), register, {
+		immediate: true,
+	});
 }
 
 /** The palette answers read-only: what it can answer in place comes first. */

@@ -9,10 +9,10 @@ const DECLARATION_OF: Record<ColumnDisplay['kind'], string> = {
 
 /**
  * The display a column is sent with: its own while the column is declared as the display needs and
- * is not a relation column, else none, as a draft of an older builder holds none.
+ * is not a relation column, else none.
  */
 export function sentDisplay(field: FieldDraft): ColumnDisplay | null {
-	const display = field.display ?? null
+	const display = field.display
 	return display && !field.relation && DECLARATION_OF[display.kind] === field.declared ? display : null
 }
 

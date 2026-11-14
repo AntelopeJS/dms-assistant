@@ -1,5 +1,5 @@
 /** A call to a builder operation while its builder is off waits for a provider that never attaches. */
-export const DMS_ANSWER_TIMEOUT_MS = 10_000;
+const DMS_ANSWER_TIMEOUT_MS = 10_000;
 
 export function withinDmsTimeout<T>(work: Promise<T>): Promise<T> {
   let timer: NodeJS.Timeout | undefined;

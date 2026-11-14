@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { draftFromMapped, draftFromProposal, remapInput, settledInput } from '../app/runtime/database'
+import { draftFromProposal, settledInput } from '../app/runtime/database'
 import type {
 	ColumnDisplay,
-	MappedRelation,
 	MappingProposal,
 	ProposedField,
 	ProposedResource,
 } from '../app/runtime/database-types'
 
-/** A column's display and a relation's tabs travel from the proposal to the call Apply sends, and from a mapped relation to a remap. */
+/** A column's display and a relation's tabs travel from the proposal to the call Apply sends. */
 
 const STATUS: ColumnDisplay = {
 	kind: 'badge',
@@ -100,18 +99,6 @@ describe('the display of columns and the tabs of a relation in the draft', () =>
 		const stats = draftFromProposal(proposal)
 		stats.resources[0].tableView = false
 		expect(settledInput(proposal, stats).resources[0].tabs).toBeNull()
-	})
-
-	it('keeps what a mapped relation holds when it is mapped again from its read-back', () => {
-		const mapped: MappedRelation = {
-			ref: 'shop/shop/orders',
-			resource: orders(FIELDS),
-			included: ['status', 'total', 'note'],
-		}
-		const [sent] = remapInput('shop', 'shop-tables', [draftFromMapped(mapped)], new Set()).resources
-		expect(sent.tabs).toEqual({ column: 'status' })
-		expect(sent.fields[0].display).toEqual(STATUS)
-		expect(sent.fields[1].display).toEqual({ kind: 'price' })
 	})
 
 	it('turns a display off when the draft sets it to null', () => {

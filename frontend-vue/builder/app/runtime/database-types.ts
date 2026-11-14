@@ -4,15 +4,15 @@
 
 import type { DatabaseEngine } from './database-engines'
 
-export type ProposedKind = 'fact' | 'default'
+type ProposedKind = 'fact' | 'default'
 
-export interface Proposed<T> {
+interface Proposed<T> {
 	value: T
 	rule: string
 	kind: ProposedKind
 }
 
-export interface ProposedColumnProfile {
+interface ProposedColumnProfile {
 	traits: string[]
 	nulls?: number
 	distinct?: number
@@ -20,9 +20,9 @@ export interface ProposedColumnProfile {
 	categories?: { value: string | number | boolean; rows: number }[]
 }
 
-export type DisplayTone = 'neutral' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
+type DisplayTone = 'neutral' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
 
-export interface BadgeItem {
+interface BadgeItem {
 	value: string
 	label: string
 	tone: DisplayTone
@@ -51,13 +51,13 @@ export interface ProposedField {
 	profile?: ProposedColumnProfile
 }
 
-export interface ProposedLeftOut {
+interface ProposedLeftOut {
 	column: string
 	reason: string
 	rule: string
 }
 
-export interface ProposedWrites {
+interface ProposedWrites {
 	insert: boolean
 	update: boolean
 	delete: boolean
@@ -78,15 +78,15 @@ export interface ProposedResource {
 	profiledRows?: number
 }
 
-export interface ProposedExclusion {
+interface ProposedExclusion {
 	relation: string
 	reason: string
 	rule: string
 }
 
-export type OpenItemKind = 'schemas' | 'purpose' | 'label' | 'reference' | 'field-type'
+type OpenItemKind = 'schemas' | 'purpose' | 'label' | 'reference' | 'field-type'
 
-export interface OpenItemOption {
+interface OpenItemOption {
 	value: unknown
 	title: string
 }
@@ -112,7 +112,7 @@ export interface MappingProposal {
 	open: OpenItem[]
 }
 
-export interface AnalysisProgress {
+interface AnalysisProgress {
 	relations: number
 	described: number
 	toProfile: number
@@ -196,16 +196,16 @@ export interface DatabaseAccess {
 	reason?: string
 }
 
-export interface SampledText {
+interface SampledText {
 	text: string
 	truncated: boolean
 }
 
-export interface SampledBinary {
+interface SampledBinary {
 	bytes: number
 }
 
-export type SampledValue = SampledText | SampledBinary | null
+type SampledValue = SampledText | SampledBinary | null
 
 export interface RowSample {
 	relation: string
@@ -232,7 +232,7 @@ export type ProjectConfigStep =
  * The `interface-database` pin a module needs so the tables module's own pin to the new database
  * leaves it on the project's default one.
  */
-export interface DatabasePin {
+interface DatabasePin {
 	module: string
 	provider: string
 }
@@ -271,7 +271,7 @@ export interface ProjectConfigResult {
 }
 
 /** What a connection wired into the configuration, by module id. */
-export interface ConnectionWiring {
+interface ConnectionWiring {
 	connection: string
 	driver: string
 	/** The local modules holding its tables, their record naming the connection. */
@@ -286,7 +286,7 @@ export interface ConnectionWiring {
 }
 
 /** A connection's details as its URL holds them, the password left out. */
-export interface ConnectionDetails {
+interface ConnectionDetails {
 	scheme: string
 	host: string
 	port: string

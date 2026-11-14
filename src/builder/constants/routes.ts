@@ -1,6 +1,8 @@
 /**
- * Fixed rather than configurable: the builder UI ships in this package and
- * addresses these routes, so a per-app prefix would only let the two drift.
+ * Fixed rather than configurable: the dashboard's database connect flow ships
+ * in this package and addresses these routes through `API_PREFIX` in
+ * `frontend-vue/builder/app/runtime/constants.ts`, so a per-app prefix would
+ * only let the two drift.
  */
 export const DEFAULT_ROUTE_PREFIX = "/api/builder";
 
@@ -20,13 +22,13 @@ export const ROUTES = {
 } as const;
 
 /**
- * The key the module's frontend options sit under. Mirrored in
- * `frontend-vue/builder/dms.frontend.ts`.
+ * The key the module's frontend options sit under. Mirrored as `CONFIG_KEY`
+ * in `frontend-vue/builder/app/runtime/enabled.ts`.
  */
 export const FRONTEND_MODULE_CONFIG_KEY = "dmsBuilder";
 /**
  * Option the backend publishes in the frontend manifest so the Vue module can
- * tell an enabled builder from a stale build. Mirrored in
- * `frontend-vue/builder/dms.frontend.ts`.
+ * tell an enabled builder from a stale build. Mirrored as `ENABLED_OPTION` in
+ * `frontend-vue/builder/app/runtime/enabled.ts`.
  */
 export const FRONTEND_MODULE_ENABLED_OPTION = "enabled";

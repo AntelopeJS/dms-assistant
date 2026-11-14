@@ -6,7 +6,6 @@
 import { type DatabaseEngine, ENGINES } from './database-engines'
 import { t } from './i18n'
 import type {
-	ConnectionDetails,
 	DriverPackage,
 	ModuleEntryInput,
 	ProjectConfigStep,
@@ -33,7 +32,7 @@ const SSL_MODES = new Set(['require', 'verify-ca', 'verify-full'])
 const STRICT_SSL_MODES = new Set(['verify-ca', 'verify-full'])
 
 /** How to reach a database, field by field. `options` holds the URL parameters no field covers. */
-export interface ConnectionFields {
+interface ConnectionFields {
 	host: string
 	port: string
 	database: string
@@ -50,7 +49,7 @@ export function engineOfScheme(scheme: string): DatabaseEngine | undefined {
 }
 
 /** The names the builder manages for a connection, under *Advanced settings*. */
-export interface ManagedNames {
+interface ManagedNames {
 	driverModule: string
 	tablesModule: string
 	variable: string
@@ -73,18 +72,6 @@ export interface ConnectForm {
 	access?: ConnectionAccess
 }
 
-export function emptyFields(engine: DatabaseEngine): ConnectionFields {
-	return {
-		host: '',
-		port: ENGINES[engine].port,
-		database: '',
-		user: '',
-		password: '',
-		ssl: false,
-		options: {},
-	}
-}
-
 /** The connection's id: the name in lower case without accents, words joined by dashes. */
 export function connectionId(name: string): string {
 	return name
@@ -96,7 +83,7 @@ export function connectionId(name: string): string {
 		.replace(/^-+|-+$/g, '')
 }
 
-export function defaultNames(name: string): ManagedNames {
+function defaultNames(name: string): ManagedNames {
 	const id = connectionId(name)
 	return {
 		driverModule: `${MANAGED_PREFIX}-${id}`,
@@ -115,11 +102,6 @@ export function unavailableReason(engine: DatabaseEngine, interfaceDatabase: str
 	return interfaceDatabase === undefined
 		? t('database.engines.unresolved', { engine: label })
 		: t('database.engines.unavailable', { engine: label, version: interfaceDatabase })
-}
-
-/** Whether the URL names a database of this engine, by its scheme. */
-export function isConnectionUrl(engine: DatabaseEngine, text: string): boolean {
-	return ENGINES[engine].schemes.some((scheme) => text.trim().startsWith(`${scheme}//`))
 }
 
 function sslFromMode(mode: string | undefined): Pick<ConnectionFields, 'ssl' | 'options'> {
@@ -269,21 +251,6 @@ export function connectVariables(form: ConnectForm): ProjectVariable[] {
 	return ENGINES[form.engine].separateDatabase
 		? [url, { name: names.databaseVariable, value: form.fields.database }]
 		: [url]
-}
-
-/** The fields a connection's saved details fill, the password left empty and a port left out kept out. */
-export function detailsFields(details: ConnectionDetails): ConnectionFields {
-	const { [SSL_PARAMETER]: mode, ...others } = details.options
-	const ssl = sslFromMode(mode)
-	return {
-		host: details.host,
-		port: details.port,
-		database: details.database,
-		user: details.user,
-		password: '',
-		ssl: ssl.ssl,
-		options: { ...others, ...ssl.options },
-	}
 }
 
 /**

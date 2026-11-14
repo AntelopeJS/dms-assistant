@@ -19,7 +19,8 @@ const frontend = path.resolve(__dirname, "../frontend-vue");
 const builder = path.join(frontend, "builder");
 const app = path.join(builder, "app");
 
-const NAMESPACE_DECLARATION = /^export const I18N_NAMESPACE = '([\w-]+)'$/m;
+const NAMESPACE_DECLARATION =
+  /^(?:export )?const I18N_NAMESPACE = '([\w-]+)'$/m;
 
 /**
  * The database runtime modules, whose texts reach the screen.

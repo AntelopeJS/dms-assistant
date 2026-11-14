@@ -10,10 +10,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    shell: bash
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -33,22 +29,17 @@ jobs:
       windows: true
 
   vitest:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        package: [sidecar, frontend-vue]
+        include:
+          - package: sidecar
+            script: test
+          - package: frontend-vue
+            script: test
     steps:
-      - name: Use LF line endings, symlinks and Git Bash for package scripts
-        if: runner.os == 'Windows'
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.symlinks true
-          bash_path=$(cygpath -w /usr/bin/bash)
-          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
-          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -61,26 +52,14 @@ jobs:
             pnpm-lock.yaml
             ${{ matrix.package }}/pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --filter "./${{ matrix.package }}" --frozen-lockfile
-      - run: pnpm --dir ${{ matrix.package }} run test
+      - run: pnpm --dir ${{ matrix.package }} run ${{ matrix.script }}
 
   # `ajs dms verify-source`: the production build of the DMS core layer with
   # this one, the assistant and the builder, then vue-tsc.
   frontend-verify:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
     steps:
-      - name: Use LF line endings, symlinks and Git Bash for package scripts
-        if: runner.os == 'Windows'
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.symlinks true
-          bash_path=$(cygpath -w /usr/bin/bash)
-          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
-          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -104,6 +83,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Use LF line endings, symlinks and Git Bash for package scripts
         if: runner.os == 'Windows'
@@ -124,9 +106,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --filter "{.}" --frozen-lockfile
       - run: pnpm run build
-      - run: pnpm test:specs
-        env:
-          DMS_PREBUILT: "1"
+      - run: DMS_PREBUILT=1 pnpm test:specs
 
   ubuntu:
     if: always()

@@ -99,7 +99,8 @@
 				"changed": "Fichiers modifiés",
 				"asked": "Demandées",
 				"denied": "Refusées ou bloquées",
-				"failed": "En échec"
+				"failed": "En échec",
+				"held": "Retenues par le DMS"
 			},
 			"quick": {
 				"tool": "Outil",
@@ -126,7 +127,8 @@
 				"changed": "Fichiers modifiés",
 				"asked": "Demandées",
 				"denied": "Refusées ou bloquées",
-				"failed": "En échec"
+				"failed": "En échec",
+				"held": "Retenues par le DMS"
 			},
 			"agent": {
 				"claude": "Claude Code",
@@ -151,7 +153,8 @@
 				"denied": "Non exécutée",
 				"blocked": "Bloquée",
 				"stopped": "Arrêtée",
-				"expired": "Expirée"
+				"expired": "Expirée",
+				"held": "Retenue par le DMS"
 			},
 			"tools": {
 				"Read": "Lire un fichier",

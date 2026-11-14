@@ -23,6 +23,7 @@ export const ACTIVITY_RESULTS: Vocabulary = {
   blocked: { icon: "i-ph-shield-warning", tone: "warning" },
   stopped: { icon: "i-ph-stop-circle", tone: "neutral" },
   expired: { icon: "i-ph-timer", tone: "neutral" },
+  held: { icon: "i-ph-pause-circle", tone: "warning" },
 };
 
 /** The audit log's tabs (activity `category`). */
@@ -31,6 +32,7 @@ export const ACTIVITY_CATEGORIES: Vocabulary = {
   asked: { icon: "i-ph-hand-palm", tone: "warning" },
   denied: { icon: "i-ph-prohibit", tone: "error" },
   failed: { icon: "i-ph-warning-circle", tone: "error" },
+  held: { icon: "i-ph-pause-circle", tone: "warning" },
 };
 
 /** The coding agents. */

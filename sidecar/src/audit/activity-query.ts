@@ -105,6 +105,7 @@ const RESULT_LABELS: Partial<Record<ActivityResult, string>> = {
   done: "Done",
   failed: "Failed",
   stopped: "Stopped",
+  held: "Held by the DMS until you confirm it",
 };
 
 function permissionSteps(record: ActivityRecord): DecisionStep[] {

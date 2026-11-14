@@ -25,6 +25,7 @@ const OUTCOMES: ReadonlySet<string> = new Set<ActivityResult>([
 	"stopped",
 	"pending",
 	"expired",
+	"held",
 ]);
 
 function shorten(text: string): string {

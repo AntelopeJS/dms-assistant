@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseConnect } from "../app/onboarding/connect-database";
-import type { ConnectMemory } from "../app/onboarding/connect-memory";
+import {
+	type ConnectMemory,
+	connectMemory,
+} from "../app/onboarding/connect-memory";
 import {
 	analysisWith,
 	fakeBuilder,
@@ -19,7 +22,20 @@ vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
 afterEach(() => {
 	unmountConnect();
 	vi.useRealTimers();
+	window.sessionStorage.clear();
+	window.localStorage.clear();
 });
+
+function browserStorage(): string {
+	const entries = [window.sessionStorage, window.localStorage].flatMap(
+		(storage) =>
+			Array.from({ length: storage.length }, (_, index) => {
+				const key = storage.key(index) ?? "";
+				return `${key}=${storage.getItem(key) ?? ""}`;
+			}),
+	);
+	return [...entries, document.cookie].join("\n");
+}
 
 describe("a reload of the page while the connection loads", () => {
 	const ANALYSED = {
@@ -35,10 +51,10 @@ describe("a reload of the page while the connection loads", () => {
 		return mountConnect(api, memory);
 	}
 
-	it("follows the connection it wrote to its analysis, with the live check's answer and no URL", async () => {
+	it("follows the connection it wrote to its analysis, with the live check's answer, keeping no part of the URL in the browser", async () => {
 		vi.useFakeTimers();
 		const fake = fakeBuilder();
-		const memory = memoryConnects();
+		const memory = connectMemory(() => window.sessionStorage);
 		void mountConnect(fake.api, memory).connect("postgres", URL);
 		await vi.advanceTimersByTimeAsync(10);
 
@@ -53,7 +69,11 @@ describe("a reload of the page while the connection loads", () => {
 			{ key: "signed-in", status: "done", user: "reader" },
 			{ key: "read", status: "done", canWrite: false },
 		]);
-		expect(JSON.stringify(memory.read())).not.toContain("secret");
+		const stored = browserStorage();
+		expect(stored).toContain("builder-db-shop-tables");
+		for (const part of [URL, "secret", "db.example.com"]) {
+			expect(stored).not.toContain(part);
+		}
 
 		fake.setAnalysis(ANALYSED);
 		await vi.advanceTimersByTimeAsync(2_000);

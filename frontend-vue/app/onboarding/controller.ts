@@ -68,7 +68,8 @@ export interface OnboardingController {
 	 */
 	load: () => Promise<void>;
 	/**
-	 * Opens the popup, on `step` if given, and reads the project's content again so it shows this
+	 * Opens the popup, on `step` if given, else on the connect form while this tab still follows a
+	 * connection it wrote, and reads the project's content again so it shows this
 	 * session's conversations and mockups. While the state is unread, it opens once a read
 	 * answers, and asks for that read again if the last one failed.
 	 */
@@ -154,6 +155,11 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		});
 	}
 
+	function stepOrResumed(step: OnboardingStep | null): OnboardingStep | null {
+		if (step !== null || deps.connecting.read() === null) return step;
+		return "connect-database";
+	}
+
 	function open(step?: OnboardingStep): void {
 		const current = state.value;
 		if (current === null) {
@@ -161,8 +167,9 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			if (loadFailed) void load().catch(() => undefined);
 			return;
 		}
-		show(current, step ?? null);
-		void refresh(step ?? null, flow.value);
+		const shown = stepOrResumed(step ?? null);
+		show(current, shown);
+		void refresh(shown, flow.value);
 	}
 
 	function load(): Promise<void> {
@@ -187,9 +194,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		loadFailed = false;
 		state.value = read;
 		content.value = project;
-		const step =
-			pendingStep ??
-			(deps.connecting.read() === null ? null : "connect-database");
+		const step = stepOrResumed(pendingStep ?? null);
 		const asked = pendingStep !== undefined;
 		pendingStep = undefined;
 		const opens =

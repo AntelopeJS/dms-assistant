@@ -105,6 +105,32 @@ describe("opening on its own", () => {
 		expect(controller.isOpen.value).toBe(true);
 		expect(controller.flow.value.view).toEqual({ kind: "connect-database" });
 	});
+
+	it("reopens on the connect form while this tab follows a connection it wrote, and on its start once it does not", async () => {
+		const connecting = memoryConnects();
+		const { controller } = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+			content: CONVERSATION,
+			connecting,
+		});
+		await controller.load();
+		controller.open("connect-database");
+		connecting.write({
+			engine: "mongodb",
+			connection: "shop",
+			module: "builder-db-shop-tables",
+			access: { reachable: true, canRead: true, canWrite: false },
+		});
+		controller.close();
+
+		controller.open();
+		expect(controller.flow.value.view).toEqual({ kind: "connect-database" });
+
+		connecting.clear();
+		controller.close();
+		controller.open();
+		expect(controller.flow.value.view).toEqual({ kind: "continue" });
+	});
 });
 
 describe("the project's content as this session left it", () => {

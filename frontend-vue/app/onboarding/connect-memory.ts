@@ -4,8 +4,8 @@ import { CONNECTABLE_ENGINES } from "./connect-database";
 
 /**
  * A connection the popup wrote into the project and follows until its analysis is ready. The tab
- * keeps it so that the page reload a restart of the project brings follows it again. The URL is
- * never kept: it holds the password.
+ * keeps it so that a reload of the page, or the popup closed and opened again, follows it again.
+ * The URL is never kept: it holds the password.
  */
 export interface WrittenConnection {
 	engine: DatabaseEngine;

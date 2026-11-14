@@ -42,4 +42,5 @@ export const RESULT_TONES: Record<ActivityResult, Tone> = {
 	stopped: "neutral",
 	pending: "warning",
 	expired: "neutral",
+	held: "warning",
 };

@@ -28,7 +28,8 @@ export type ActivityResult =
 	| "blocked"
 	| "stopped"
 	| "pending"
-	| "expired";
+	| "expired"
+	| "held";
 
 export interface DiffLine {
 	kind: DiffLineKind;

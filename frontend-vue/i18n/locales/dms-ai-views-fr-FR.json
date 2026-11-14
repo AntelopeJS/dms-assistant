@@ -63,7 +63,8 @@
 				"blocked": "Bloqué",
 				"stopped": "Arrêté",
 				"pending": "En attente",
-				"expired": "Expiré"
+				"expired": "Expiré",
+				"held": "Retenu par le DMS"
 			},
 			"changes": {
 				"search": "Rechercher des fichiers ou des modifications",

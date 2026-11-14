@@ -36,7 +36,7 @@ const STATE_CHANGE_TOOLS: readonly string[] = [UNDO_TOOL_NAME, REDO_TOOL_NAME];
 
 function countedCalls(sources: MetricSources): ActivityRecord[] {
   return sources.records.filter(
-    (r) => !STATE_CHANGE_TOOLS.includes(r.tool) && !r.isHeld,
+    (r) => !STATE_CHANGE_TOOLS.includes(r.tool) && r.result !== "held",
   );
 }
 

@@ -63,7 +63,8 @@
 				"blocked": "Blocked",
 				"stopped": "Stopped",
 				"pending": "Pending",
-				"expired": "Expired"
+				"expired": "Expired",
+				"held": "Held by the DMS"
 			},
 			"changes": {
 				"search": "Search files or changes",

@@ -206,7 +206,7 @@ describe("the step and the audit of a call the DMS held", () => {
   );
 
   it(
-    "lists an approval the DMS then held as not run, and counts only the repeat that ran (fails an approval missing from Activity, or a held call shown as a failure or counted)",
+    "lists an approval the DMS then held as held, under its own tab, and counts only the repeat that ran (fails an approval missing from Activity, a held call shown as not run or as a failure, or counted)",
     async () => {
       const gate = coreConfirmationGate.createRepeatConfirmationGate(() => 0);
       const call = (id: string, args: { ref: string }): ScriptedCall => {
@@ -242,13 +242,7 @@ describe("the step and the audit of a call the DMS held", () => {
           ]),
         ),
       ).toEqual({
-        other: [
-          "denied",
-          "Held by the DMS until you confirm it",
-          "approved",
-          true,
-          ["asked"],
-        ],
+        other: ["held", undefined, "approved", true, ["asked", "held"]],
         "other-repeat": [
           "done",
           undefined,

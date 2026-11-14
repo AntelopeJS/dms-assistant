@@ -64,8 +64,6 @@ export interface ActivityRecord extends ActivityRow {
   /** The approval of the call, when the user was asked. */
   permission?: StoredMessage;
   endedAtMs?: number;
-  /** The DMS held the call: it changed nothing. */
-  isHeld: boolean;
 }
 
 export interface ActivitySources {
@@ -94,9 +92,6 @@ const DENIED_RESULTS: readonly ActivityResult[] = [
   "blocked",
   "expired",
 ];
-
-const NOT_RUN_RESULT: ActivityResult = "denied";
-const HELD_DETAIL = "Held by the DMS until you confirm it";
 
 interface ConversationIndex {
   results: Map<string, StoredMessage>;
@@ -137,12 +132,11 @@ function resultOf(
   allowedBy: AllowedBy,
   isRunning: boolean,
 ): ActivityResult {
+  if (result?.outcome === "held") return "held";
   const decided = RESULT_BY_ALLOWED[allowedBy];
   if (decided !== undefined && result?.outcome !== "stopped") return decided;
   if (result === undefined) return isRunning ? "pending" : "stopped";
-  if (result.outcome !== undefined && result.outcome !== "held") {
-    return result.outcome;
-  }
+  if (result.outcome !== undefined) return result.outcome;
   return result.status === "error" ? "failed" : "done";
 }
 
@@ -160,10 +154,9 @@ function categoriesOf(record: ActivityRecord): ActivityCategory[] {
   const categories: ActivityCategory[] = [];
   if (isChange(record)) categories.push("changed");
   if (record.isAsked) categories.push("asked");
-  if (DENIED_RESULTS.includes(record.result) && !record.isHeld) {
-    categories.push("denied");
-  }
+  if (DENIED_RESULTS.includes(record.result)) categories.push("denied");
   if (record.result === "failed") categories.push("failed");
+  if (record.result === "held") categories.push("held");
   return categories;
 }
 
@@ -190,22 +183,6 @@ interface RowInput {
   entry: ConversationEntry;
   index: ConversationIndex;
   sources: ActivitySources;
-}
-
-function endOf(
-  result: StoredMessage | undefined,
-  allowedBy: AllowedBy,
-  isRunning: boolean,
-  permission: StoredMessage | undefined,
-): Pick<ActivityRecord, "result" | "resultDetail" | "isHeld"> {
-  if (result?.outcome === "held") {
-    return { result: NOT_RUN_RESULT, resultDetail: HELD_DETAIL, isHeld: true };
-  }
-  return {
-    result: resultOf(result, allowedBy, isRunning),
-    resultDetail: permission?.feedback,
-    isHeld: false,
-  };
 }
 
 function callRecord(input: RowInput, use: StoredMessage): ActivityRecord {
@@ -235,7 +212,8 @@ function callRecord(input: RowInput, use: StoredMessage): ActivityRecord {
     ),
     agent: entry.conversation.provider ?? DEFAULT_PROVIDER_NAME,
     allowedBy,
-    ...endOf(result, allowedBy, isRunning, permission),
+    result: resultOf(result, allowedBy, isRunning),
+    resultDetail: permission?.feedback,
     changeSetId: changeSet?.id,
     changeSetNumber: changeSet?.number,
     conversationId: entry.id,
@@ -283,7 +261,6 @@ function permissionOnlyRecord(input: RowInput, permission: StoredMessage) {
     isAlwaysAsk: permission.alwaysAsk === true,
     args: permission.args,
     permission,
-    isHeld: false,
   };
   return finish(record);
 }
@@ -313,7 +290,6 @@ function stateChangeRecords(
       isAsked: false,
       isAlwaysAsk: false,
       args: { changeSetId: changeSet.id },
-      isHeld: false,
     }),
   );
 }
@@ -344,7 +320,6 @@ function pendingRecord(
     isAsked: true,
     isAlwaysAsk: request.alwaysAsk,
     args: request.args,
-    isHeld: false,
   };
   return finish({
     ...base,
@@ -356,7 +331,7 @@ function pendingRecord(
 }
 
 function isLogged(record: ActivityRecord): boolean {
-  return !record.isHeld || record.isAsked;
+  return record.result !== "held" || record.isAsked;
 }
 
 function conversationRecords(input: RowInput): ActivityRecord[] {
@@ -419,7 +394,6 @@ const ROW_ONLY_FIELDS: ReadonlyArray<keyof ActivityRecord> = [
   "resultText",
   "permission",
   "endedAtMs",
-  "isHeld",
 ];
 
 export function toActivityRow(record: ActivityRecord): ActivityRow {

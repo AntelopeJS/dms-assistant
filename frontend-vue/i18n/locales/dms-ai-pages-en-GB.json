@@ -99,7 +99,8 @@
 				"changed": "Changed files",
 				"asked": "Asked you",
 				"denied": "Denied or blocked",
-				"failed": "Failed"
+				"failed": "Failed",
+				"held": "Held by the DMS"
 			},
 			"quick": {
 				"tool": "Tool",
@@ -126,7 +127,8 @@
 				"changed": "Changed files",
 				"asked": "Asked you",
 				"denied": "Denied or blocked",
-				"failed": "Failed"
+				"failed": "Failed",
+				"held": "Held by the DMS"
 			},
 			"agent": {
 				"claude": "Claude Code",
@@ -151,7 +153,8 @@
 				"denied": "Not run",
 				"blocked": "Blocked",
 				"stopped": "Stopped",
-				"expired": "Expired"
+				"expired": "Expired",
+				"held": "Held by the DMS"
 			},
 			"tools": {
 				"Read": "Read file",

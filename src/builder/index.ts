@@ -3,6 +3,7 @@ import {
   isBuilderEnabled,
   setModuleConfig,
 } from "./config";
+import { beginRun } from "./run";
 
 export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
 
@@ -12,6 +13,7 @@ export type { BuilderApiConfig, DmsBuilderConfig } from "./config";
  * mounts them.
  */
 export async function construct(config?: DmsBuilderConfig): Promise<void> {
+  beginRun();
   setModuleConfig(config);
   if (!(await isBuilderEnabled())) return;
   await import("./routes");

@@ -19,6 +19,7 @@ export const ROUTES = {
   databaseConnection: "/database/connection",
   databaseConnectionRemove: "/database/connection/remove",
   databaseConnectionUrl: "/database/connection/url",
+  databaseRun: "/database/run",
 } as const;
 
 /**

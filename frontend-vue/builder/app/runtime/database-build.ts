@@ -129,8 +129,33 @@ async function readAnalysis(
 	}
 }
 
-/** Reads the three answers the screen derives from. A request that failed counts as reloading. */
-export async function readBuild(api: ReturnType<typeof useBuilderApi>, connection: string): Promise<BuildAnswers> {
+async function readRun(api: ReturnType<typeof useBuilderApi>): Promise<string | Unreachable> {
+	try {
+		return (await api.projectRun()).run
+	} catch {
+		return UNREACHABLE
+	}
+}
+
+/**
+ * Reads the three answers the screen derives from. A request that failed counts as reloading. Given
+ * `staleRun`, the project run that answered before a new URL was written, the connection and its
+ * analysis that run answers are the old URL's: the connection counts as not loaded yet.
+ */
+export async function readBuild(
+	api: ReturnType<typeof useBuilderApi>,
+	connection: string,
+	staleRun?: string,
+): Promise<BuildAnswers> {
+	if (staleRun !== undefined) {
+		const run = await readRun(api)
+		if (run === UNREACHABLE) {
+			return { declared: UNREACHABLE, listed: UNREACHABLE, analysis: UNREACHABLE }
+		}
+		if (run === staleRun) {
+			return { ...(await readDeclared(api, connection)), listed: null, analysis: null }
+		}
+	}
 	const [wiring, listed, analysis] = await Promise.all([
 		readDeclared(api, connection),
 		readListed(api, connection),

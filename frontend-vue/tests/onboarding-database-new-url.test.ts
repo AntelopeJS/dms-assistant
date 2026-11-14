@@ -13,7 +13,6 @@ import {
 	PROJECT,
 	schemaCheck,
 	unmountConnect,
-	URL,
 } from "./support/database-connect";
 
 vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({

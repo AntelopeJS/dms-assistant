@@ -38,6 +38,7 @@ import { z } from "zod";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
 import { withinDmsTimeout } from "../dms-answer";
 import { refusalMessage } from "../refusal";
+import { projectRun } from "../run";
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_FORBIDDEN = 403;
@@ -252,6 +253,12 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
     @JSONBody() body: ConnectionUrlBody,
   ) {
     return fromDms(() => SetDatabaseConnectionUrl(body.connection, body.url));
+  }
+
+  /** The project run that answers, which a restart of the project replaces. */
+  @Get(ROUTES.databaseRun)
+  run(@AuthTenantOwner() _user: User) {
+    return { run: projectRun() };
   }
 
   @Post(ROUTES.databaseSample)

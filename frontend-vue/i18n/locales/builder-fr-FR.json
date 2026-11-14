@@ -13,7 +13,7 @@
 					"title": "Rechargement du projet",
 					"gave_up": "Le projet n’est pas revenu en 3 minutes. Redémarrez-le à la main : arrêtez le processus qui exécute le projet, puis relancez-le.",
 					"running": "Le projet se recharge pour charger la connexion. Cela prend environ 15 secondes.",
-					"restart": "Le projet tourne mais n’a pas chargé la connexion : il ne se recharge seul que sous ajs project dev -w. Arrêtez le processus qui exécute le projet, puis relancez-le avec ajs project dev -w et reconnectez la base."
+					"restart": "Le projet tourne mais n’a pas chargé la connexion : il ne se recharge seul que sous ajs project dev -w. Arrêtez le processus qui exécute le projet, puis relancez-le avec ajs project dev -w."
 				},
 				"connect": {
 					"title": "Connexion"

@@ -68,15 +68,18 @@ export function memoryConnects(
 	initial: WrittenConnection | null = null,
 ): ConnectMemory {
 	const items = new Map<string, string>();
-	const memory = connectMemory(() => ({
-		getItem: (key) => items.get(key) ?? null,
-		setItem: (key, value) => {
-			items.set(key, value);
-		},
-		removeItem: (key) => {
-			items.delete(key);
-		},
-	}));
+	const memory = connectMemory(
+		() => ({
+			getItem: (key) => items.get(key) ?? null,
+			setItem: (key, value) => {
+				items.set(key, value);
+			},
+			removeItem: (key) => {
+				items.delete(key);
+			},
+		}),
+		() => "owner-1",
+	);
 	if (initial !== null) memory.write(memory.begin(), initial);
 	return memory;
 }

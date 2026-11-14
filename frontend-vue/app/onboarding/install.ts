@@ -31,6 +31,8 @@ export interface OnboardingHost {
 	};
 	provided: ShallowRef<OnboardingController | null>;
 	canConnectDatabase: boolean;
+	/** The signed-in user's id: the connection the tab remembers belongs to that user. */
+	userId: () => string | null;
 	/** Resolves once the app is mounted: the overlay joins the page after hydration. */
 	appMounted: Promise<void>;
 	runWithContext: <T>(callback: () => T) => T;
@@ -141,7 +143,7 @@ export function startOnboarding(host: OnboardingHost): () => void {
 		readContent: () => readContent(session, host.canConnectDatabase),
 		preferences: preferenceStore(() => window.localStorage),
 		canConnectDatabase: host.canConnectDatabase,
-		connecting: connectMemory(() => window.sessionStorage),
+		connecting: connectMemory(() => window.sessionStorage, host.userId),
 		openTab: (url) => void window.open(url, "_blank", "noopener"),
 	});
 	host.provided.value = controller;

@@ -93,6 +93,11 @@ function defaultNames(name: string): ManagedNames {
 	}
 }
 
+/** The tables module the builder names after a connection id when no name is overridden. */
+export function tablesModuleOf(connection: string): string {
+	return defaultNames(connection).tablesModule
+}
+
 export function managedNames(form: ConnectForm): ManagedNames {
 	return { ...defaultNames(form.name), ...form.overrides }
 }

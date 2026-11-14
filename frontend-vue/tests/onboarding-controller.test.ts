@@ -97,7 +97,6 @@ describe("opening on its own", () => {
 			connecting: memoryConnects({
 				engine: "mongodb",
 				connection: "shop",
-				module: "builder-db-shop-tables",
 				access: { reachable: true, canRead: true, canWrite: false },
 			}),
 		});
@@ -118,7 +117,6 @@ describe("opening on its own", () => {
 		connecting.write(connecting.begin(), {
 			engine: "mongodb",
 			connection: "shop",
-			module: "builder-db-shop-tables",
 			access: { reachable: true, canRead: true, canWrite: false },
 		});
 		controller.close();
@@ -141,7 +139,6 @@ describe("opening on its own", () => {
 			connecting: memoryConnects({
 				engine: "mongodb",
 				connection: "shop",
-				module: "builder-db-shop-tables",
 				access: { reachable: true, canRead: true, canWrite: false },
 			}),
 		});

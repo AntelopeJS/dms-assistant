@@ -524,6 +524,7 @@ function wireAssistant(
 ): () => void {
 	const { context, appMounted, provided } = options;
 	const { session } = runtime;
+	const { user } = useDmsUserSession<{ _id: string }>();
 	provided.session.value = session;
 	const stops = [
 		registerOnceMounted(context, appMounted, session, provided.i18n),
@@ -533,6 +534,7 @@ function wireAssistant(
 			router: options.router,
 			provided: provided.onboarding,
 			canConnectDatabase: options.features.builderEnabled,
+			userId: () => user.value?._id ?? null,
 			appMounted,
 			runWithContext: (callback) => context.runWithContext(callback),
 		}),

@@ -68,6 +68,8 @@ export interface BuildView {
 	gaveUp: boolean
 	/** The project answered for {@link RESTART_AFTER_MS} without loading the connection. */
 	restartNeeded: boolean
+	/** The project answered that it does not declare the connection. */
+	undeclared: boolean
 	/** The connection is listed with an error: step 3 failed with it. */
 	connectionError?: string
 	/** The analysis asks which schemas to read before anything else. */
@@ -256,6 +258,7 @@ export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
 		reload,
 		gaveUp,
 		restartNeeded,
+		undeclared: answers.declared === false,
 		connectionError: !reloading ? entry?.error : undefined,
 		schemas,
 		needsAnalysis: connected && !analysis,

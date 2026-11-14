@@ -1,4 +1,8 @@
-import type { DatabaseEngine } from "../../builder/app/runtime/database-connect";
+import {
+	connectionId,
+	type DatabaseEngine,
+	tablesModuleOf,
+} from "../../builder/app/runtime/database-connect";
 import type { DatabaseAccess } from "../../builder/app/runtime/database-types";
 import { CONNECTABLE_ENGINES } from "./connect-database";
 
@@ -9,19 +13,31 @@ import { CONNECTABLE_ENGINES } from "./connect-database";
  */
 export interface WrittenConnection {
 	engine: DatabaseEngine;
+	/** The connection id the popup named after the URL's database. */
 	connection: string;
-	module: string;
 	/** The live check's answer before the write. */
 	access: DatabaseAccess;
 }
 
+/** A written connection as the tab remembers it. */
+export interface RememberedConnection extends WrittenConnection {
+	/** The tables module the builder names after the connection. */
+	module: string;
+	/** When following it again ends, in milliseconds since the epoch: past it, the popup starts over. */
+	until: number;
+}
+
 /**
- * The tab's connect attempts and the connection the latest one wrote. Every popup of the tab shares
- * it, so a write that answers after a later attempt began, in this popup or one opened since, is
- * not kept.
+ * The tab's connect attempts and the connection the latest one wrote, for the signed-in user. Every
+ * popup of the tab shares it, so a write that answers after a later attempt began, in this popup or
+ * one opened since, is not kept.
  */
 export interface ConnectMemory {
-	read: () => WrittenConnection | null;
+	/**
+	 * The connection the signed-in user's latest attempt wrote, until {@link CONNECT_MEMORY_LIMIT_MS}
+	 * after the write; null for another user or another project's user.
+	 */
+	read: () => RememberedConnection | null;
 	/** Starts an attempt: forgets the written connection and every earlier attempt. */
 	begin: () => string;
 	/** Keeps the connection `attempt` wrote, unless a later attempt began or `clear` ran since. */
@@ -29,12 +45,20 @@ export interface ConnectMemory {
 	clear: () => void;
 }
 
-interface Stored {
-	attempt: string;
-	written?: WrittenConnection;
-}
+/** How long after its write a connection is followed again: past it, the popup starts over. */
+export const CONNECT_MEMORY_LIMIT_MS = 15 * 60_000;
 
 export const CONNECT_MEMORY_KEY = "dms-assistant:onboarding-connect";
+
+interface Kept extends WrittenConnection {
+	writtenAt: number;
+}
+
+interface Stored {
+	owner: string | null;
+	attempt: string;
+	written?: Kept;
+}
 
 function textOf(value: object, key: string): string | undefined {
 	const field: unknown = Reflect.get(value, key);
@@ -64,22 +88,26 @@ function accessOf(value: unknown): DatabaseAccess | null {
 	};
 }
 
-function writtenOf(value: unknown): WrittenConnection | null {
+function isConnectionId(text: string | undefined): text is string {
+	return text !== undefined && text !== "" && connectionId(text) === text;
+}
+
+function keptOf(value: unknown): Kept | null {
 	if (value === null || typeof value !== "object") return null;
 	const stored = textOf(value, "engine");
 	const engine = CONNECTABLE_ENGINES.find((known) => known === stored);
 	const connection = textOf(value, "connection");
-	const module = textOf(value, "module");
 	const access = accessOf(Reflect.get(value, "access"));
+	const writtenAt: unknown = Reflect.get(value, "writtenAt");
 	if (
 		engine === undefined ||
-		connection === undefined ||
-		module === undefined ||
-		access === null
+		!isConnectionId(connection) ||
+		access === null ||
+		typeof writtenAt !== "number"
 	) {
 		return null;
 	}
-	return { engine, connection, module, access };
+	return { engine, connection, access, writtenAt };
 }
 
 function parsed(text: string | null): Stored | null {
@@ -93,8 +121,9 @@ function parsed(text: string | null): Stored | null {
 	if (value === null || typeof value !== "object") return null;
 	const attempt = textOf(value, "attempt");
 	if (attempt === undefined) return null;
-	const written = writtenOf(Reflect.get(value, "written"));
-	return written === null ? { attempt } : { attempt, written };
+	const owner = textOf(value, "owner") ?? null;
+	const written = keptOf(Reflect.get(value, "written"));
+	return written === null ? { owner, attempt } : { owner, attempt, written };
 }
 
 function newAttempt(): string {
@@ -107,8 +136,15 @@ export type ConnectStorage = Pick<
 	"getItem" | "setItem" | "removeItem"
 >;
 
-/** The connect attempts in `storage`, the tab's `sessionStorage`; a storage that refuses keeps none. */
-export function connectMemory(storage: () => ConnectStorage): ConnectMemory {
+/**
+ * The connect attempts in `storage`, the tab's `sessionStorage`, for `owner`: the signed-in user's
+ * id, which the project's own database issues, so it tells projects and users apart. A storage
+ * that refuses keeps none.
+ */
+export function connectMemory(
+	storage: () => ConnectStorage,
+	owner: () => string | null,
+): ConnectMemory {
 	function stored(): Stored | null {
 		try {
 			return parsed(storage().getItem(CONNECT_MEMORY_KEY));
@@ -126,14 +162,36 @@ export function connectMemory(storage: () => ConnectStorage): ConnectMemory {
 	}
 
 	return {
-		read: () => stored()?.written ?? null,
+		read: () => {
+			const current = stored();
+			const written = current?.written;
+			if (
+				written === undefined ||
+				current?.owner === null ||
+				current?.owner !== owner()
+			) {
+				return null;
+			}
+			const until = written.writtenAt + CONNECT_MEMORY_LIMIT_MS;
+			if (Date.now() >= until) return null;
+			const { engine, connection, access } = written;
+			return {
+				engine,
+				connection,
+				access,
+				module: tablesModuleOf(connection),
+				until,
+			};
+		},
 		begin: () => {
 			const attempt = newAttempt();
-			keep({ attempt });
+			keep({ owner: owner(), attempt });
 			return attempt;
 		},
 		write: (attempt, written) => {
-			if (stored()?.attempt === attempt) keep({ attempt, written });
+			const current = stored();
+			if (current?.attempt !== attempt) return;
+			keep({ ...current, written: { ...written, writtenAt: Date.now() } });
 		},
 		clear: () => {
 			try {

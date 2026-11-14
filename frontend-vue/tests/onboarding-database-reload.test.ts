@@ -2,12 +2,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseConnect } from "../app/onboarding/connect-database";
 import {
+	CONNECT_MEMORY_LIMIT_MS,
 	type ConnectMemory,
 	connectMemory,
 } from "../app/onboarding/connect-memory";
 import {
 	analysisWith,
 	fakeBuilder,
+	READER,
 	mountConnect,
 	unmountConnect,
 	URL,
@@ -54,7 +56,10 @@ describe("a reload of the page while the connection loads", () => {
 	it("follows the connection it wrote to its analysis, with the live check's answer, keeping no part of the URL in the browser", async () => {
 		vi.useFakeTimers();
 		const fake = fakeBuilder();
-		const memory = connectMemory(() => window.sessionStorage);
+		const memory = connectMemory(
+			() => window.sessionStorage,
+			() => "owner-1",
+		);
 		void mountConnect(fake.api, memory).connect("postgres", URL);
 		await vi.advanceTimersByTimeAsync(10);
 
@@ -70,7 +75,7 @@ describe("a reload of the page while the connection loads", () => {
 			{ key: "read", status: "done", canWrite: false },
 		]);
 		const stored = browserStorage();
-		expect(stored).toContain("builder-db-shop-tables");
+		expect(stored).toContain('"connection":"shop"');
 		for (const part of [URL, "secret", "db.example.com"]) {
 			expect(stored).not.toContain(part);
 		}
@@ -182,6 +187,43 @@ describe("a reload of the page while the connection loads", () => {
 		closed.answer();
 		await vi.advanceTimersByTimeAsync(10);
 
+		expect(memory.read()).toBeNull();
+	});
+
+	it("returns to the form and forgets a remembered connection the project no longer declares", async () => {
+		vi.useFakeTimers();
+		const fake = fakeBuilder({
+			databaseConnection: async () => {
+				throw { data: { code: "not_found" } };
+			},
+			databaseConnections: async () => [],
+		});
+		const memory = memoryConnects({
+			engine: "postgres",
+			connection: "gone",
+			access: READER,
+		});
+		const resumed = mountConnect(fake.api, memory);
+		await vi.advanceTimersByTimeAsync(10);
+
+		expect(resumed.phase.value).toEqual({ kind: "form" });
+		expect(memory.read()).toBeNull();
+	});
+
+	it("returns to the form and forgets a remembered connection once the time to follow it again ran out", async () => {
+		vi.useFakeTimers();
+		const fake = fakeBuilder();
+		const memory = memoryConnects({
+			engine: "postgres",
+			connection: "shop",
+			access: READER,
+		});
+		const resumed = mountConnect(fake.api, memory);
+		await vi.advanceTimersByTimeAsync(CONNECT_MEMORY_LIMIT_MS - 2_000);
+		expect(resumed.phase.value.kind).toBe("analysing");
+
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(resumed.phase.value).toEqual({ kind: "form" });
 		expect(memory.read()).toBeNull();
 	});
 });

@@ -78,6 +78,7 @@ export function startWithBackend(
 		},
 		provided,
 		canConnectDatabase: true,
+		userId: () => "owner-1",
 		appMounted: Promise.resolve(),
 		runWithContext: (callback) => callback(),
 	};

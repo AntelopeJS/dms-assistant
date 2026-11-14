@@ -51,6 +51,9 @@ export function engineNames(locale: string): string {
 
 const POLL_MS = 1_000;
 
+/** The generation of the follow a remembered connection starts; every `connect` or `reset` moves past it. */
+const RESUMED_LOOP = 0;
+
 /**
  * Where "Connect and analyse" stands: the form, the live check (which a failed check ends in),
  * the access to give a database the account can write to, then the connection written and
@@ -87,8 +90,8 @@ export interface DatabaseConnect {
 	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
 	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
 	 * until its analysis is ready, the project's connection or analysis fails, the database has no
-	 * table, or a later `connect` or `reset` in any popup of the tab; the next `useDatabaseConnect`
-	 * follows it again.
+	 * table, the project no longer declares it, its time to be followed again runs out, or a later
+	 * `connect` or `reset` in any popup of the tab; the next `useDatabaseConnect` follows it again.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -167,6 +170,7 @@ export function useDatabaseConnect(
 					module: remembered.module,
 				},
 	);
+	const resumeUntil = remembered?.until;
 	const view = ref<BuildView | null>(null);
 	const access = ref<DatabaseAccess | null>(remembered?.access ?? null);
 	const refusal = ref<string | null>(null);
@@ -176,7 +180,7 @@ export function useDatabaseConnect(
 	let analysing = false;
 	let answeredSchemas: string | undefined;
 	let written: { connection: string; url: string } | undefined;
-	let generation = 0;
+	let generation = RESUMED_LOOP;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
 
@@ -258,6 +262,15 @@ export function useDatabaseConnect(
 			return;
 		}
 		if (next === null || !current(loop)) return;
+		const expired =
+			loop === RESUMED_LOOP &&
+			resumeUntil !== undefined &&
+			Date.now() >= resumeUntil;
+		if (next.undeclared || expired) {
+			memory.clear();
+			phase.value = { kind: "form" };
+			return;
+		}
 		if (next.fork && next.job) {
 			memory.clear();
 			phase.value = { kind: "analysed", connection, module };
@@ -321,7 +334,6 @@ export function useDatabaseConnect(
 		memory.write(target.attempt, {
 			engine: form.engine,
 			connection,
-			module,
 			access: answer,
 		});
 		if (current(loop)) await poll(connection, module, loop);
@@ -411,7 +423,7 @@ export function useDatabaseConnect(
 	});
 
 	if (remembered !== null) {
-		void poll(remembered.connection, remembered.module, generation);
+		void poll(remembered.connection, remembered.module, RESUMED_LOOP);
 	}
 
 	return {

@@ -1,12 +1,13 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { computeCandidates } from "../../src/mcp/tools/find-pages-using.js";
 import type { ScanResult } from "../../src/pages/imports-scanner.js";
 import type { PagesRegistryEntry } from "../../src/pages/types.js";
 
-const ROOT = "/tmp/host";
+const ROOT = path.resolve("/tmp/host");
 
 function abs(rel: string): string {
-  return `${ROOT}/${rel}`;
+  return path.join(ROOT, rel);
 }
 
 function buildPages(): PagesRegistryEntry[] {

@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { TypecheckResult } from "../../src/agent/typecheck.js";
 import type { LogsClient } from "../../src/logs/logs-client.js";
@@ -8,7 +9,9 @@ import {
   uniqueEditedRoots,
 } from "../../src/server/safety-net.js";
 
-const KNOWN_ROOTS = ["/proj", "/proj/modules/dms-ai"];
+const PROJECT = path.resolve("/proj");
+const DMS_AI = path.join(PROJECT, "modules", "dms-ai");
+const KNOWN_ROOTS = [PROJECT, DMS_AI];
 
 function noLogs(): LogsClient {
   return { getLogs: async () => [] };
@@ -35,13 +38,13 @@ describe("uniqueEditedRoots", () => {
   it("dedupes edited files down to their owning roots", () => {
     const roots = uniqueEditedRoots(
       [
-        "/proj/modules/dms-ai/src/a.ts",
-        "/proj/modules/dms-ai/src/b.ts",
-        "/proj/app/c.ts",
+        path.join(DMS_AI, "src", "a.ts"),
+        path.join(DMS_AI, "src", "b.ts"),
+        path.join(PROJECT, "app", "c.ts"),
       ],
       KNOWN_ROOTS,
     );
-    expect(roots.sort()).toEqual(["/proj", "/proj/modules/dms-ai"]);
+    expect(roots.sort()).toEqual([PROJECT, DMS_AI]);
   });
 });
 
@@ -69,7 +72,7 @@ describe("summarizeReloadErrors", () => {
 
 describe("collectBuildIssues", () => {
   const base = {
-    editedFiles: ["/proj/modules/dms-ai/src/a.ts"],
+    editedFiles: [path.join(DMS_AI, "src", "a.ts")],
     knownRoots: KNOWN_ROOTS,
     sinceMs: 0,
     delay: async () => {},
@@ -100,9 +103,7 @@ describe("collectBuildIssues", () => {
       logsClient: noLogs(),
       runTypecheckFn: async () => broken,
     });
-    expect(result).toContain(
-      JSON.stringify({ target: "/proj/modules/dms-ai" }),
-    );
+    expect(result).toContain(JSON.stringify({ target: DMS_AI }));
   });
 
   it("returns a heal prompt when the host log has reload errors", async () => {

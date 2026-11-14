@@ -6,14 +6,18 @@ import type { StopGraces } from "../../src/providers/codex/stop.js";
  */
 export const TEST_STOP_GRACES: StopGraces = { terminateMs: 300, killMs: 300 };
 
+const probe = process.kill.bind(process);
+
 /**
- * Whether a pid is still taken. Signal 0 only asks the question, on every
- * POSIX host, where /proc would limit it to Linux.
+ * Whether a pid is still taken. Signal 0 only asks the question, on Windows as
+ * on every POSIX host, where /proc would limit it to Linux. It goes through
+ * the original `process.kill`, so a test that stubs `process.kill` still sees
+ * the real answer.
  */
 export function isRunning(pid: number | undefined): boolean {
   if (pid === undefined) return false;
   try {
-    process.kill(pid, 0);
+    probe(pid, 0);
     return true;
   } catch {
     return false;

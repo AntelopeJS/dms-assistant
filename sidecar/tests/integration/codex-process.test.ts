@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -100,7 +100,9 @@ describe.skipIf(installation === undefined)("codex app-server process", () => {
         },
       );
       expect(initialized.userAgent).toContain(CODEX_CLIENT_NAME);
-      expect(initialized.codexHome).toBe(running.codexHome);
+      expect(realpathSync.native(initialized.codexHome)).toBe(
+        realpathSync.native(running.codexHome),
+      );
 
       running.client.notify("initialized", {});
       const home = running.codexHome;

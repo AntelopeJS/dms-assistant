@@ -18,6 +18,7 @@ import {
   MOCK_CODEX_BINARY_RELATIVE,
   MOCK_CODEX_FLAG_ENABLED,
   MOCK_CODEX_FLAG_ENV,
+  MOCK_CODEX_NODE_ENV,
   MOCK_CODEX_VERSION,
   WINDOWS_PLATFORM,
 } from "../../constants/codex.js";
@@ -88,7 +89,7 @@ function mockInstallation(): CodexInstallation | undefined {
     return undefined;
   }
   return {
-    binaryPath: process.execPath,
+    binaryPath: process.env[MOCK_CODEX_NODE_ENV] ?? process.execPath,
     launchArgs: [
       fileURLToPath(new URL(MOCK_CODEX_BINARY_RELATIVE, import.meta.url)),
     ],

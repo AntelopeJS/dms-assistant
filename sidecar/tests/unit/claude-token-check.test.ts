@@ -1,5 +1,5 @@
-import { statSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
+import { expectReadableByOwnerOnly } from "../helpers/private-file.js";
 import {
   claudeAuthFile,
   readSavedClaudeToken,
@@ -14,7 +14,6 @@ import {
 } from "../../src/providers/claude/token-check.js";
 
 const TOKEN = "sk-ant-oat01-test-only-not-a-real-token";
-const FILE_MODE_MASK = 0o777;
 
 function answering(status: number): ReturnType<typeof vi.fn<TokenCheckFetch>> {
   return vi.fn<TokenCheckFetch>(async () => ({
@@ -92,7 +91,7 @@ describe("submitting a pasted Claude token", () => {
     });
     expect(result).toEqual({ ok: true });
     expect(readSavedClaudeToken()?.token).toBe(TOKEN);
-    expect(statSync(claudeAuthFile()).mode & FILE_MODE_MASK).toBe(0o600);
+    await expectReadableByOwnerOnly(claudeAuthFile());
   });
 
   it("never returns the token it saved", async () => {

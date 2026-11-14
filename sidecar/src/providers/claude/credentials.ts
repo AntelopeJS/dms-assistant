@@ -1,6 +1,5 @@
-import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { chmod, mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
@@ -11,11 +10,10 @@ import {
 } from "../../constants/chatgpt.js";
 import { WINDOWS_PLATFORM } from "../../constants/codex.js";
 import {
-  ASSISTANT_AUTH_FILE_MODE,
-  ASSISTANT_CONFIG_DIR_MODE,
   ASSISTANT_CONFIG_DIR_NAME,
   CLAUDE_AUTH_FILE_NAME,
 } from "../../constants/onboarding.js";
+import { writePrivateFile } from "../../state/private-file.js";
 
 /** The Claude token a developer pasted into the onboarding popup. */
 export interface SavedClaudeToken {
@@ -68,29 +66,17 @@ export function readSavedClaudeToken(): SavedClaudeToken | undefined {
 }
 
 /**
- * Written to a sibling then renamed over the file, so a reader never sees half
- * a record, and created 0600 in a 0700 directory. The mode is applied again
- * with chmod because the `mode` option is masked by the umask and the token
- * must not be.
+ * Readable by the current account only, and never seen half written: see
+ * {@link writePrivateFile}.
  */
 export async function writeSavedClaudeToken(
   saved: Omit<SavedClaudeToken, "savedAt">,
 ): Promise<void> {
-  const file = claudeAuthFile();
-  await mkdir(path.dirname(file), {
-    recursive: true,
-    mode: ASSISTANT_CONFIG_DIR_MODE,
-  });
-  const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
   const record: SavedClaudeToken = {
     ...saved,
     savedAt: new Date().toISOString(),
   };
-  await writeFile(temporary, JSON.stringify(record, null, 2), {
-    mode: ASSISTANT_AUTH_FILE_MODE,
-  });
-  await chmod(temporary, ASSISTANT_AUTH_FILE_MODE);
-  await rename(temporary, file);
+  await writePrivateFile(claudeAuthFile(), JSON.stringify(record, null, 2));
 }
 
 export async function clearSavedClaudeToken(): Promise<void> {

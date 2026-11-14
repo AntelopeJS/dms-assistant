@@ -1,11 +1,9 @@
-import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readFile, rm } from "node:fs/promises";
+import { join } from "node:path";
 import { z } from "zod";
-import {
-  SIDECAR_LOCK_FILE_NAME,
-  SIDECAR_LOCK_TEMP_SUFFIX,
-} from "../constants/daemon.js";
+import { SIDECAR_LOCK_FILE_NAME } from "../constants/daemon.js";
 import { STATE_DIR_SEGMENTS } from "../constants/paths.js";
+import { writePrivateFile } from "./private-file.js";
 
 export interface SidecarLock {
   port: number;
@@ -17,31 +15,16 @@ export interface SidecarLock {
   clientToken: string;
 }
 
-const PRIVATE_DIRECTORY_MODE = 0o700;
-const PRIVATE_FILE_MODE = 0o600;
-
 export function buildLockPath(root: string): string {
   return join(root, ...STATE_DIR_SEGMENTS, SIDECAR_LOCK_FILE_NAME);
 }
 
+/** Holds the sidecar's tokens, so only the current account can read it. */
 export async function writeLock(
   root: string,
   lock: SidecarLock,
 ): Promise<void> {
-  const lockPath = buildLockPath(root);
-  await mkdir(dirname(lockPath), {
-    recursive: true,
-    mode: PRIVATE_DIRECTORY_MODE,
-  });
-  const tempPath = `${lockPath}${SIDECAR_LOCK_TEMP_SUFFIX}`;
-  const file = await open(tempPath, "w", PRIVATE_FILE_MODE);
-  try {
-    await file.chmod(PRIVATE_FILE_MODE);
-    await file.writeFile(JSON.stringify(lock), "utf8");
-  } finally {
-    await file.close();
-  }
-  await rename(tempPath, lockPath);
+  await writePrivateFile(buildLockPath(root), JSON.stringify(lock));
 }
 
 const LockPidSchema = z.object({

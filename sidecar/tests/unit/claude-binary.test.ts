@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveClaudeBinary } from "../../src/providers/claude/resolve-binary.js";
 import {
@@ -11,7 +12,9 @@ describe("the Claude Code CLI the Agent SDK is pointed at", () => {
   const claudeCode = manifestOf("@anthropic-ai/claude-code");
 
   it("is the native binary of the claude-code dependency, not the SDK's bundled one", () => {
-    expect(binary).toContain("@anthropic-ai/claude-code-");
+    expect(binary.replaceAll(path.sep, "/")).toContain(
+      "@anthropic-ai/claude-code-",
+    );
     expect(binary).not.toContain("claude-agent-sdk");
   });
 

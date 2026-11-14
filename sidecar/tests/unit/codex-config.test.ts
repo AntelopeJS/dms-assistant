@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { matchesGlob } from "node:path";
+import path, { matchesGlob } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -27,8 +27,8 @@ import {
 } from "../../src/state/settings-types.js";
 import { TURN_SETTINGS } from "../helpers/turn-settings.js";
 
-const HOST_ROOT = "/srv/app";
-const MODULE_ROOT = "/srv/app/node_modules/dms-builder";
+const HOST_ROOT = path.resolve("/srv/app");
+const MODULE_ROOT = path.join(HOST_ROOT, "node_modules", "dms-builder");
 const WORKSPACE = { hostProjectRoot: HOST_ROOT, moduleRoots: [MODULE_ROOT] };
 
 function settings(overrides: Partial<TurnSettings>): TurnSettings {
@@ -138,7 +138,7 @@ describe("config.toml", () => {
     const chat = tableLines(toml, "[mcp_servers.dms-ai]");
     expect(tableLines(toml, "[mcp_servers.dms]")).toEqual([
       'command = "node"',
-      'args = ["/srv/app/node_modules/.cache/dms/mcp-bridge.cjs"]',
+      `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}]`,
       chat.find((line) => line.startsWith("tool_timeout_sec = ")),
       'disabled_tools = ["navigate_to_page", "preview_blocks"]',
     ]);
@@ -150,7 +150,7 @@ describe("config.toml", () => {
   });
 
   it("distrusts the host project and ignores its AGENTS.md", () => {
-    expect(toml).toContain('[projects."/srv/app"]');
+    expect(toml).toContain(`[projects.${JSON.stringify(HOST_ROOT)}]`);
     expect(toml).toContain('trust_level = "untrusted"');
     expect(toml).toContain("project_doc_max_bytes = 0");
   });

@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveSkillSources } from "../../src/skills/resolve-sources.js";
 
@@ -12,7 +13,7 @@ describe("resolveSkillSources", () => {
   it("appends the local dir tagged 'local' when on", () => {
     expect(resolveSkillSources(moduleDirs, true, "/home/u")).toEqual([
       ...moduleDirs,
-      { module: "local", dir: "/home/u/.claude/skills" },
+      { module: "local", dir: path.join("/home/u", ".claude", "skills") },
     ]);
   });
   it("dedupes if a module already declares the local path", () => {

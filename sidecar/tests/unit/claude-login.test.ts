@@ -179,7 +179,9 @@ describe("where the Claude CLI's own login is read", () => {
     }
     const home = mkdtempSync(path.join(tmpdir(), "claude-login-home-"));
     vi.stubEnv("HOME", home);
+    vi.stubEnv("USERPROFILE", home);
     vi.stubEnv("XDG_CONFIG_HOME", path.join(home, "xdg"));
+    vi.stubEnv("APPDATA", path.join(home, "xdg"));
     return {
       home,
       configDir: mkdtempSync(path.join(tmpdir(), "claude-login-config-")),

@@ -1,9 +1,10 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createPageFilepathResolver } from "../../src/pages/page-filepath.js";
 import type { RegistryClient } from "../../src/pages/registry-client.js";
 import type { PagesRegistryEntry } from "../../src/pages/types.js";
 
-const PROJECT_ROOT = "/project";
+const PROJECT_ROOT = path.resolve("/project");
 
 const ENTRIES: PagesRegistryEntry[] = [
   {
@@ -31,7 +32,7 @@ describe("createPageFilepathResolver", () => {
 
   it("maps a route to its page file, anchored at the project root", async () => {
     expect(await resolve("/modules/shop/orders/")).toBe(
-      "/project/src/pages/orders.ts",
+      path.join(PROJECT_ROOT, "src", "pages", "orders.ts"),
     );
   });
 

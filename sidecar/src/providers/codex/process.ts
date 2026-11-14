@@ -12,6 +12,7 @@ import {
   CODEX_HOME_DIR_NAME,
   CODEX_HOME_ENV_VAR,
   CODEX_HOME_REMOVAL_FAILED_MESSAGE,
+  CODEX_HOME_REMOVAL_RETRIES,
   CODEX_LOG_PREFIX,
   CODEX_MCP_TOKEN_ENV_VAR,
   CODEX_ORPHAN_POLL_MS,
@@ -467,7 +468,11 @@ async function retireChild(
  */
 async function removeHome(codexHome: string): Promise<void> {
   try {
-    await rm(codexHome, { recursive: true, force: true });
+    await rm(codexHome, {
+      recursive: true,
+      force: true,
+      ...CODEX_HOME_REMOVAL_RETRIES,
+    });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.error(

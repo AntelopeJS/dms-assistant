@@ -4,7 +4,6 @@ import {
   type KeyObject,
   sign,
 } from "node:crypto";
-import { statSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CHATGPT_JWKS_URL,
@@ -21,6 +20,7 @@ import {
   finishLogin,
   finishPastedLogin,
 } from "../../src/providers/codex/chatgpt/login.js";
+import { expectReadableByOwnerOnly } from "../helpers/private-file.js";
 import { pkceChallenge } from "../../src/providers/codex/chatgpt/oauth.js";
 import {
   chatGptAuthFile,
@@ -154,7 +154,7 @@ describe("access token", () => {
 
   it("stores the tokens readable by their owner only", async () => {
     await writeAuthRecord(signedInRecord());
-    expect(statSync(chatGptAuthFile()).mode & 0o777).toBe(0o600);
+    await expectReadableByOwnerOnly(chatGptAuthFile());
   });
 });
 

@@ -1,7 +1,10 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { XDG_CONFIG_HOME_ENV } from "../../src/constants/chatgpt.js";
+import {
+  APPDATA_ENV,
+  XDG_CONFIG_HOME_ENV,
+} from "../../src/constants/chatgpt.js";
 import {
   type ChatGptAuthRecord,
   writeAuthRecord,
@@ -26,17 +29,25 @@ export function signedInRecord(): ChatGptAuthRecord {
   };
 }
 
+const CONFIG_HOME_ENVS = [XDG_CONFIG_HOME_ENV, APPDATA_ENV] as const;
+
 /**
- * Points the ChatGPT auth file at a fresh temporary config home, so no test
- * reads or writes the developer's real sign-in. Returns its removal.
+ * Points the per-user config home, `XDG_CONFIG_HOME` and Windows' `APPDATA`
+ * alike, at a fresh temporary directory, so no test reads or writes the
+ * developer's real sign-ins. Returns its removal.
  */
 export function useTemporaryConfigHome(): () => void {
-  const saved = process.env[XDG_CONFIG_HOME_ENV];
+  const saved = CONFIG_HOME_ENVS.map((name) => ({
+    name,
+    value: process.env[name],
+  }));
   const home = mkdtempSync(path.join(tmpdir(), "dms-ai-config-"));
-  process.env[XDG_CONFIG_HOME_ENV] = home;
+  for (const name of CONFIG_HOME_ENVS) process.env[name] = home;
   return () => {
-    if (saved === undefined) delete process.env[XDG_CONFIG_HOME_ENV];
-    else process.env[XDG_CONFIG_HOME_ENV] = saved;
+    for (const { name, value } of saved) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
     rmSync(home, { recursive: true, force: true });
   };
 }

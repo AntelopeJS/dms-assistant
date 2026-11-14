@@ -126,6 +126,12 @@ export const CODEX_ORPHAN_POLL_MS = 50;
 export const CODEX_SURVIVED_STOP_MESSAGE =
   "app-server outlived its termination, left for the next start to reap:";
 export const CODEX_PID_RELEASE_FAILED_MESSAGE = "could not unregister pid";
+/**
+ * How often, and how far apart, removing a home is retried. Windows keeps a
+ * stopped app-server's files open for a moment after it exits, and refuses
+ * their removal with EBUSY until it closes them.
+ */
+export const CODEX_HOME_REMOVAL_RETRIES = { maxRetries: 10, retryDelay: 100 };
 export const CODEX_HOME_REMOVAL_FAILED_MESSAGE =
   "could not remove the app-server's home";
 export const CODEX_PID_TOKEN = "%pid%";
@@ -259,6 +265,12 @@ export const MOCK_CODEX_FLAG_ENV = "MOCK_CODEX";
 export const MOCK_CODEX_FLAG_ENABLED = "1";
 export const MOCK_CODEX_VERSION_ENV = "MOCK_CODEX_VERSION";
 export const MOCK_CODEX_VERSION = "9999.0.0";
+/**
+ * The node executable that runs the mock, the current one when unset. Windows
+ * reports a process by its image name alone, so a test that needs the mock
+ * recognized as Codex there runs it with a copy of node named `codex.exe`.
+ */
+export const MOCK_CODEX_NODE_ENV = "MOCK_CODEX_NODE";
 export const MOCK_CODEX_BINARY_RELATIVE =
   "../../../tests/fixtures/mock-codex/bin/codex.mjs";
 

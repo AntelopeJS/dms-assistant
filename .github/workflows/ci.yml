@@ -37,6 +37,8 @@ jobs:
         include:
           - os: ubuntu-latest
             package: sidecar
+          - os: windows-latest
+            package: sidecar
           - os: ubuntu-latest
             package: frontend-vue
           - os: windows-latest

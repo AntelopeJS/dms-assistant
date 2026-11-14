@@ -9,80 +9,53 @@ const execFileAsync = promisify(execFile);
 
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PRIVATE_FILE_MODE = 0o600;
-const SID_PATTERN = /S-1-[0-9-]+/;
-const SYSTEM_ROOT_ENV = "SystemRoot";
-const DEFAULT_SYSTEM_ROOT = "C:\\Windows";
+const TARGET_ENV = "DMS_OWNER_ONLY_FILE";
+
+const SET_OWNER_ONLY_DACL = [
+  "$ErrorActionPreference = 'Stop'",
+  "$user = [System.Security.Principal.WindowsIdentity]::GetCurrent().User",
+  "$acl = [System.Security.AccessControl.FileSecurity]::new()",
+  "$acl.SetAccessRuleProtection($true, $false)",
+  "$acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new($user, 'FullControl', 'Allow'))",
+  `[System.IO.File]::SetAccessControl($env:${TARGET_ENV}, $acl)`,
+].join("; ");
 
 /**
- * A Windows tool by its full path: a PATH lookup can find a namesake first,
- * such as the coreutils `whoami` that Git for Windows puts on PATH.
+ * Restricts a file to the current user. POSIX gets mode `0o600`. Windows
+ * ignores modes, so there Windows PowerShell replaces the file's DACL with a
+ * protected one whose only entry grants the process token's user full
+ * control. That drops the inherited entries and the explicit ones the
+ * process's default DACL gives a new file, needs no privilege beyond owning
+ * the file, and parses no output. PowerShell is called by its System32 path
+ * and gets the file path through the environment, never in its command text.
+ * The script calls .NET only, no cmdlet, so a module path inherited from
+ * PowerShell 7 cannot break it.
  */
-function systemTool(name: string): string {
-  const root = process.env[SYSTEM_ROOT_ENV] ?? DEFAULT_SYSTEM_ROOT;
-  return path.win32.join(root, "System32", name);
-}
-
-let currentUserSid: Promise<string> | undefined;
-
-async function readCurrentUserSid(): Promise<string> {
-  const { stdout } = await execFileAsync(
-    systemTool("whoami.exe"),
-    ["/user", "/fo", "csv", "/nh"],
-    { windowsHide: true },
+async function restrictToOwner(file: string): Promise<void> {
+  await chmod(file, PRIVATE_FILE_MODE);
+  if (process.platform !== WINDOWS_PLATFORM) return;
+  const systemRoot = process.env.SystemRoot ?? "C:\\Windows";
+  const powershell = path.win32.join(
+    systemRoot,
+    "System32",
+    "WindowsPowerShell",
+    "v1.0",
+    "powershell.exe",
   );
-  const sid = SID_PATTERN.exec(stdout)?.[0];
-  if (sid === undefined) throw new Error(`whoami reported no SID: ${stdout}`);
-  return sid;
-}
-
-function lookUpCurrentUserSid(): Promise<string> {
-  currentUserSid ??= readCurrentUserSid().catch((error: unknown) => {
-    currentUserSid = undefined;
-    throw error;
-  });
-  return currentUserSid;
-}
-
-/**
- * The ACL file `icacls /restore` reads: in UTF-16LE, each file's name relative
- * to the directory, then its security descriptor in SDDL. `D:P` is a protected
- * DACL, which inherits nothing; its one entry grants the account full access.
- */
-function ownerOnlyAclFile(file: string, sid: string): Buffer {
-  const descriptor = `D:P(A;;FA;;;${sid})`;
-  return Buffer.from(`${path.basename(file)}\r\n${descriptor}\r\n`, "utf16le");
-}
-
-/**
- * Windows ignores the POSIX mode, and a new file gets entries for SYSTEM and
- * the Administrators group, inherited or from the creator's token, so its
- * whole DACL is replaced by one entry for the current account.
- */
-async function restrictToCurrentUser(file: string): Promise<void> {
-  if (process.platform !== WINDOWS_PLATFORM) {
-    await chmod(file, PRIVATE_FILE_MODE);
-    return;
-  }
-  const sid = await lookUpCurrentUserSid();
-  const aclFile = `${file}.acl`;
-  await writeFile(aclFile, ownerOnlyAclFile(file, sid), { flag: "wx" });
-  try {
-    await execFileAsync(
-      systemTool("icacls.exe"),
-      [path.dirname(file), "/restore", aclFile],
-      { windowsHide: true },
-    );
-  } finally {
-    await rm(aclFile, { force: true });
-  }
+  await execFileAsync(
+    powershell,
+    ["-NoProfile", "-NonInteractive", "-Command", SET_OWNER_ONLY_DACL],
+    { env: { ...process.env, [TARGET_ENV]: file }, windowsHide: true },
+  );
 }
 
 /**
  * Writes a file that holds a credential so that only the current account can
- * read it: mode 0600 in a 0700 directory, and on Windows an ACL with one entry.
- * The file is restricted while still empty, then filled, then renamed over the
- * target, so a reader never sees half a record and the secret is never
- * readable by anyone else. Rejects when the restriction cannot be applied.
+ * read it: mode 0600 in a 0700 directory, and on Windows a protected DACL with
+ * one entry. The file is restricted while still empty, then filled, then
+ * renamed over the target, so a reader never sees half a record and the
+ * secret is never readable by anyone else. Rejects, leaving no file behind,
+ * when the restriction cannot be applied.
  */
 export async function writePrivateFile(
   file: string,
@@ -93,8 +66,13 @@ export async function writePrivateFile(
     mode: PRIVATE_DIRECTORY_MODE,
   });
   const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
-  await writeFile(temporary, "", { mode: PRIVATE_FILE_MODE, flag: "wx" });
-  await restrictToCurrentUser(temporary);
-  await writeFile(temporary, contents);
-  await rename(temporary, file);
+  try {
+    await writeFile(temporary, "", { mode: PRIVATE_FILE_MODE, flag: "wx" });
+    await restrictToOwner(temporary);
+    await writeFile(temporary, contents);
+    await rename(temporary, file);
+  } catch (error) {
+    await rm(temporary, { force: true }).catch(() => undefined);
+    throw error;
+  }
 }

@@ -85,8 +85,9 @@ export interface DatabaseConnect {
 	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
 	 * URL, it follows the written connection again without writing; with another URL for the same
 	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
-	 * unmount replaced change nothing. The connection written is remembered until its analysis is
-	 * ready, a later `connect` or `reset`; the next `useDatabaseConnect` follows it again.
+	 * unmount replaced change nothing. The connection written, even after an unmount, is remembered
+	 * until its analysis is ready, the project's connection or analysis fails, the database has no
+	 * table, or a later `connect` or `reset`; the next `useDatabaseConnect` follows it again.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -259,15 +260,16 @@ export function useDatabaseConnect(
 			phase.value = { kind: "analysed", connection, module };
 			return;
 		}
-		const stuck =
-			next.gaveUp ||
+		if (
 			next.connectionError !== undefined ||
 			next.analysisFailed ||
-			next.empty ||
-			failure.value !== null;
-		if (!stuck) {
-			timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
+			next.empty
+		) {
+			memory.clear();
+			return;
 		}
+		if (next.gaveUp || failure.value !== null) return;
+		timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
 	}
 
 	async function write(
@@ -313,9 +315,9 @@ export function useDatabaseConnect(
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
-		if (!current(loop)) return;
+		if (loop !== generation) return;
 		memory.write({ engine: form.engine, connection, module, access: answer });
-		await poll(connection, module, loop);
+		if (current(loop)) await poll(connection, module, loop);
 	}
 
 	function stop(): number {

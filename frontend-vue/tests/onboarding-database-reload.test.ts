@@ -109,4 +109,43 @@ describe("a reload of the page while the connection loads", () => {
 
 		expect(reload(fake.api, memory).phase.value).toEqual({ kind: "form" });
 	});
+
+	it.each([
+		["its analysis failed", { id: "job1", status: "failed", progress: {} }],
+		["the database has no table", analysisWith([])],
+	])("opens on the form once %s", async (_, analysis) => {
+		vi.useFakeTimers();
+		const fake = fakeBuilder();
+		fake.setAnalysis(analysis);
+		const memory = memoryConnects();
+		void mountConnect(fake.api, memory).connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(10);
+
+		expect(memory.read()).toBeNull();
+	});
+
+	it("follows the connection it wrote when the popup closed before the write answered", async () => {
+		vi.useFakeTimers();
+		let answer: (result: { ok: true }) => void = () => undefined;
+		const fake = fakeBuilder({
+			configureProject: vi.fn(
+				() =>
+					new Promise<{ ok: true }>((resolve) => {
+						answer = resolve;
+					}),
+			),
+		});
+		const memory = memoryConnects();
+		void mountConnect(fake.api, memory).connect("postgres", URL);
+		await vi.advanceTimersByTimeAsync(10);
+		unmountConnect();
+		answer({ ok: true });
+		await vi.advanceTimersByTimeAsync(10);
+
+		expect(mountConnect(fake.api, memory).phase.value).toEqual({
+			kind: "analysing",
+			connection: "shop",
+			module: "builder-db-shop-tables",
+		});
+	});
 });

@@ -131,6 +131,23 @@ describe("opening on its own", () => {
 		controller.open();
 		expect(controller.flow.value.view).toEqual({ kind: "continue" });
 	});
+
+	it("stays closed on a remembered connection where the builder does not run", async () => {
+		const { controller } = harnessed({
+			state: onboardingState({ claude: CLAUDE_LOGIN }),
+			content: CONVERSATION,
+			preferences: memoryPreferences({ dontShow: true, seenBootId: "boot-1" }),
+			canConnectDatabase: false,
+			connecting: memoryConnects({
+				engine: "mongodb",
+				connection: "shop",
+				module: "builder-db-shop-tables",
+				access: { reachable: true, canRead: true, canWrite: false },
+			}),
+		});
+		await controller.load();
+		expect(controller.isOpen.value).toBe(false);
+	});
 });
 
 describe("the project's content as this session left it", () => {

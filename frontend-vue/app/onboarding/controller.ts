@@ -156,7 +156,13 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 	}
 
 	function stepOrResumed(step: OnboardingStep | null): OnboardingStep | null {
-		if (step !== null || deps.connecting.read() === null) return step;
+		if (
+			step !== null ||
+			!deps.canConnectDatabase ||
+			deps.connecting.read() === null
+		) {
+			return step;
+		}
 		return "connect-database";
 	}
 

@@ -134,11 +134,11 @@ describe("config.toml", () => {
     expect(toml).toContain('url = "http://127.0.0.1:4321/mcp"');
   });
 
-  it("starts the DMS MCP over its launcher with the chat's navigate_to_page and preview_blocks hidden (fails a config without the server, or one that shows the agent two tools of one name)", () => {
+  it("starts the DMS MCP over its launcher with the chat's navigate_to_page and preview_blocks hidden (fails a config without the server, one that does not name the chat as its client, or one that shows the agent two tools of one name)", () => {
     const chat = tableLines(toml, "[mcp_servers.dms-ai]");
     expect(tableLines(toml, "[mcp_servers.dms]")).toEqual([
       'command = "node"',
-      `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}]`,
+      `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}, "--client=chat"]`,
       chat.find((line) => line.startsWith("tool_timeout_sec = ")),
       'disabled_tools = ["navigate_to_page", "preview_blocks"]',
     ]);

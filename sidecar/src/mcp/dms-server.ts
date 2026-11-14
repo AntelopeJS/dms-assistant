@@ -1,5 +1,9 @@
 import path from "node:path";
-import { DMS_MCP_COMMAND, DMS_MCP_LAUNCHER_PATH } from "../constants/mcp.js";
+import {
+  DMS_MCP_CLIENT_ARG,
+  DMS_MCP_COMMAND,
+  DMS_MCP_LAUNCHER_PATH,
+} from "../constants/mcp.js";
 
 /** How a session starts the DMS MCP server over stdio. */
 export interface DmsMcpLaunch {
@@ -14,6 +18,9 @@ export interface DmsMcpLaunch {
 export function dmsMcpLaunch(hostProjectRoot: string): DmsMcpLaunch {
   return {
     command: DMS_MCP_COMMAND,
-    args: [path.join(path.resolve(hostProjectRoot), ...DMS_MCP_LAUNCHER_PATH)],
+    args: [
+      path.join(path.resolve(hostProjectRoot), ...DMS_MCP_LAUNCHER_PATH),
+      DMS_MCP_CLIENT_ARG,
+    ],
   };
 }

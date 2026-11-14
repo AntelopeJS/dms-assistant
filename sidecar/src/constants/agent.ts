@@ -73,12 +73,6 @@ export const HOST_CONTEXT_TITLE_LABEL = "title: ";
 export const HOST_CONTEXT_MODE_LABEL = "mode: ";
 export const HOST_CONTEXT_BLOCK_LABEL = "mockup block: ";
 export const HOST_CONTEXT_UNKNOWN_VALUE = "unknown";
-/**
- * Who writes a mockup spec from this chat, for the spec's `source`: the chat,
- * not the Claude Code or Codex harness the shared mockup skill names.
- */
-export const HOST_CONTEXT_MOCKUP_SOURCE_LINE =
-  'mockup source: chat (a mockup spec you create sets "source": "chat")';
 
 /**
  * The generation modes as the agent reads them, matching the system prompt and

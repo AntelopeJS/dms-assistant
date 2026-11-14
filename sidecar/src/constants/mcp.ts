@@ -49,6 +49,11 @@ export const DMS_MCP_HOLD_PREVIEW_PREFIX =
 export const DMS_MCP_HOLD_WINDOW_MS = 10 * MS_PER_MINUTE;
 /** How `.mcp.json` starts the DMS MCP server: `node` on the stdio launcher the DMS writes under the project root. */
 export const DMS_MCP_COMMAND = "node";
+/**
+ * The launcher argument that names the dashboard chat as the client, so the
+ * DMS writes `source: "chat"` on a mockup spec the session writes.
+ */
+export const DMS_MCP_CLIENT_ARG = "--client=chat";
 export const DMS_MCP_LAUNCHER_PATH = [
   "node_modules",
   ".cache",

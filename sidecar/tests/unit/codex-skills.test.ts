@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SAFE_MODE_SKILL_NAME } from "../../src/constants/codex.js";
 import type { v2 } from "../../src/providers/codex/protocol/index.js";
@@ -11,8 +12,8 @@ import {
   type SkillCatalogItem,
 } from "../../src/skills/build-catalog.js";
 
-const MODULE_ROOT = "/srv/app/node_modules/dms-builder/skills";
-const HOME_AGENT_SKILLS = "/home/dev/.agents/skills";
+const MODULE_ROOT = path.resolve("/srv/app/node_modules/dms-builder/skills");
+const HOME_AGENT_SKILLS = path.resolve("/home/dev/.agents/skills");
 const REPO_AGENT_SKILLS = "/srv/app/.agents/skills";
 const CODEX_SYSTEM_SKILLS = "/home/dev/.codex-isolated/skills/.system";
 

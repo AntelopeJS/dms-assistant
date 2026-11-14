@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   isAutoAllowedRead,
@@ -5,7 +6,7 @@ import {
 } from "../../src/agent/read-access.js";
 
 describe("isAutoAllowedRead", () => {
-  const ROOTS = ["/work/dms", "/work/dms/app"];
+  const ROOTS = [resolve("/work/dms"), resolve("/work/dms/app")];
   const CWD = "/work/dms/app";
 
   it("allows a read-only tool whose path is inside a root", () => {
@@ -91,13 +92,13 @@ describe("resolveReadRoots", () => {
       "/work/modules/dms-ai",
       "/work/modules/dms-base",
     ]);
-    expect(roots).toContain("/work/app");
-    expect(roots).toContain("/work/modules/dms-ai");
-    expect(roots).toContain("/work/modules/dms-base");
+    expect(roots).toContain(resolve("/work/app"));
+    expect(roots).toContain(resolve("/work/modules/dms-ai"));
+    expect(roots).toContain(resolve("/work/modules/dms-base"));
   });
 
   it("dedupes and ignores blank module roots", () => {
     const roots = resolveReadRoots("/work/app", ["/work/app", ""]);
-    expect(roots).toEqual(["/work/app"]);
+    expect(roots).toEqual([resolve("/work/app")]);
   });
 });

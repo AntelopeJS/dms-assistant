@@ -1,6 +1,6 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   parseTscOutput,
@@ -33,16 +33,20 @@ describe("parseTscOutput", () => {
 });
 
 describe("resolveModuleRootForFile", () => {
-  const roots = ["/proj", "/proj/modules/dms-ai"];
+  const project = resolve("/proj");
+  const dmsAi = join(project, "modules", "dms-ai");
+  const roots = [project, dmsAi];
 
   it("maps a file to the deepest containing root", () => {
-    expect(
-      resolveModuleRootForFile("/proj/modules/dms-ai/src/x.ts", roots),
-    ).toBe("/proj/modules/dms-ai");
+    expect(resolveModuleRootForFile(join(dmsAi, "src", "x.ts"), roots)).toBe(
+      dmsAi,
+    );
   });
 
   it("maps a host file to the host root", () => {
-    expect(resolveModuleRootForFile("/proj/app/y.ts", roots)).toBe("/proj");
+    expect(resolveModuleRootForFile(join(project, "app", "y.ts"), roots)).toBe(
+      project,
+    );
   });
 
   it("returns null for a file outside every root", () => {

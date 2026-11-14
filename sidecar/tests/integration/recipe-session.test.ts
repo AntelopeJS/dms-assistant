@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import { rawDataToText } from "../../src/server/raw-data.js";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -32,6 +31,7 @@ import {
   type WsHarness,
 } from "../helpers/ws-harness.js";
 import { readRecordedPids } from "../helpers/codex-pids.js";
+import { isRunning } from "../helpers/processes.js";
 
 const CONVERSATION_A = "conv-recipe-a";
 const CONVERSATION_B = "conv-recipe-b";
@@ -42,11 +42,12 @@ const SKILL_NAME = "dms-builder-mcp";
 
 /**
  * Claude is handed an allowlist naming the skill; Codex an extra root naming
- * the directory it must scan. Same fact, two shapes.
+ * the directory it must scan, which the JSON trace holds escaped. Same fact,
+ * two shapes.
  */
 const SKILL_EVIDENCE: Record<ProviderName, (skillDir: string) => string> = {
   claude: () => SKILL_NAME,
-  codex: (skillDir) => skillDir,
+  codex: (skillDir) => JSON.stringify(skillDir).slice(1, -1),
 };
 
 /**
@@ -317,14 +318,14 @@ function registerCodexTraceCases(): void {
       const stateDir = join(harness?.tmpDir ?? "", ".state");
       const before = await readRecordedPids(stateDir);
       expect(before).toHaveLength(1);
-      expect(existsSync(`/proc/${before[0]}`)).toBe(true);
+      expect(isRunning(before[0])).toBe(true);
 
       client?.close();
       client = undefined;
       await harness?.close();
       harness = undefined;
       expect(await readRecordedPids(stateDir)).toEqual([]);
-      expect(existsSync(`/proc/${before[0]}`)).toBe(false);
+      expect(isRunning(before[0])).toBe(false);
     },
     TEST_TIMEOUT_MS,
   );

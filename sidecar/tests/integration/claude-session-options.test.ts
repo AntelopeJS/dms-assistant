@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type WebSocket from "ws";
 import {
@@ -81,7 +81,15 @@ describe("the options a Claude session starts with", () => {
         dms: {
           type: "stdio",
           command: "node",
-          args: [`${HOST_ROOT}/node_modules/.cache/dms/mcp-bridge.cjs`],
+          args: [
+            resolve(
+              HOST_ROOT,
+              "node_modules",
+              ".cache",
+              "dms",
+              "mcp-bridge.cjs",
+            ),
+          ],
         },
         "dms-ai": { type: "sdk" },
       });

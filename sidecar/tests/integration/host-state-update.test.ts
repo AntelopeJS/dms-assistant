@@ -1,6 +1,6 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { formatHostContext } from "../../src/agent/host-context.js";
@@ -143,7 +143,7 @@ describe("host_state_update WS message", () => {
     );
     await settle();
     client.close();
-    const resolvedFile = join(TEST_HOST_ROOT, ABOUT_FILE);
+    const resolvedFile = resolve(TEST_HOST_ROOT, ABOUT_FILE);
     expect(handle.hostState.getCurrentPage()).toEqual({
       path: "/about",
       title: "About",

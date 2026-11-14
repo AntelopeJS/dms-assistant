@@ -2,7 +2,16 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { ProviderSession } from "../../src/agent/provider.js";
 import { type AgentRunner, createAgentRunner } from "../../src/agent/runner.js";
 import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
@@ -20,6 +29,7 @@ import {
   type CodexProviderOptions,
   createCodexProvider,
 } from "../../src/providers/codex/provider.js";
+import { useCodexNamedNode } from "../helpers/codex-named-node.js";
 import { isRunning, TEST_STOP_GRACES } from "../helpers/processes.js";
 import {
   CODEX_FIXTURE,
@@ -41,6 +51,11 @@ const LIVE_SESSION_CAP = 4;
 const SETTLE_MS = 400;
 const STRAY_HOME = "conv-life-stray";
 const REFUSED_PID_PATTERN = /\(pid (\d+)\)/;
+/**
+ * Windows stops an app-server through taskkill, which a stub of `process.kill`
+ * cannot hold back, so no orphan can be made to outlive its termination there.
+ */
+const CAN_STUB_TERMINATION = process.platform !== "win32";
 
 function refusedPid(failure: string): number {
   const match = REFUSED_PID_PATTERN.exec(failure);
@@ -63,10 +78,6 @@ async function settle(): Promise<void> {
 
 function killIfRunning(pid: number): void {
   if (isRunning(pid)) process.kill(pid, "SIGKILL");
-}
-
-function isAlive(pid: number): boolean {
-  return existsSync(`/proc/${pid}`);
 }
 
 let dir: string;
@@ -145,11 +156,11 @@ function registerDisposalCases(): void {
     async () => {
       const session = await open(buildProvider(), "conv-life-1");
       const pid = await readFirstPid(stateDir);
-      expect(isAlive(pid)).toBe(true);
+      expect(isRunning(pid)).toBe(true);
 
       await session.dispose();
       expect(await readPids()).toEqual([]);
-      expect(isAlive(pid)).toBe(false);
+      expect(isRunning(pid)).toBe(false);
       expect(existsSync(join(stateDir, "codex-home", "conv-life-1"))).toBe(
         false,
       );
@@ -168,7 +179,7 @@ function registerDisposalCases(): void {
 
       await Promise.all(opened.splice(0).map((session) => session.dispose()));
       expect(await readPids()).toEqual([]);
-      for (const pid of pids) expect(isAlive(pid)).toBe(false);
+      for (const pid of pids) expect(isRunning(pid)).toBe(false);
     },
     TEST_TIMEOUT_MS,
   );
@@ -179,13 +190,13 @@ function registerDisposalCases(): void {
       const pid = await leaveOrphan("conv-life-orphan");
       const home = codexHomeFor(stateDir, "conv-life-orphan");
       const stray = await leaveStrayHome();
-      expect(isAlive(pid)).toBe(true);
+      expect(isRunning(pid)).toBe(true);
       expect(existsSync(home)).toBe(true);
 
       const reaped = await reapOrphanCodexProcesses(stateDir, TEST_STOP_GRACES);
       await settle();
       expect(reaped).toContain(pid);
-      expect(isAlive(pid)).toBe(false);
+      expect(isRunning(pid)).toBe(false);
       expect(await readPids()).toEqual([]);
       expect(existsSync(home)).toBe(false);
       expect(existsSync(stray)).toBe(false);
@@ -193,7 +204,7 @@ function registerDisposalCases(): void {
     TEST_TIMEOUT_MS,
   );
 
-  it(
+  it.runIf(CAN_STUB_TERMINATION)(
     "keeps the home, and the record, of an orphan that outlives its termination",
     async () => {
       const pid = await leaveOrphan("conv-life-survivor");
@@ -202,7 +213,7 @@ function registerDisposalCases(): void {
       vi.spyOn(process, "kill").mockImplementation(() => true);
       try {
         await reapOrphanCodexProcesses(stateDir, TEST_STOP_GRACES);
-        expect(isAlive(pid)).toBe(true);
+        expect(isRunning(pid)).toBe(true);
         expect(existsSync(home)).toBe(true);
         expect(existsSync(stray)).toBe(false);
         expect(await readPidRecords(stateDir)).toEqual([{ pid, home }]);
@@ -276,6 +287,16 @@ function registerFailureAndCapCases(): void {
 }
 
 describe("codex process lifecycle", () => {
+  let restoreNode: () => void;
+
+  beforeAll(() => {
+    restoreNode = useCodexNamedNode();
+  });
+
+  afterAll(() => {
+    restoreNode();
+  });
+
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "dms-ai-life-"));
     stateDir = join(dir, ".state");

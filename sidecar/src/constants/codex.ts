@@ -259,6 +259,12 @@ export const MOCK_CODEX_FLAG_ENV = "MOCK_CODEX";
 export const MOCK_CODEX_FLAG_ENABLED = "1";
 export const MOCK_CODEX_VERSION_ENV = "MOCK_CODEX_VERSION";
 export const MOCK_CODEX_VERSION = "9999.0.0";
+/**
+ * The node executable that runs the mock, the current one when unset. Windows
+ * reports a process by its image name alone, so a test that needs the mock
+ * recognized as Codex there runs it with a copy of node named `codex.exe`.
+ */
+export const MOCK_CODEX_NODE_ENV = "MOCK_CODEX_NODE";
 export const MOCK_CODEX_BINARY_RELATIVE =
   "../../../tests/fixtures/mock-codex/bin/codex.mjs";
 

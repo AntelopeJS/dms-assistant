@@ -204,6 +204,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			]);
 		} catch (error) {
 			loadFailed = true;
+			if (retry !== undefined) clearTimeout(retry);
 			if (!stopped && stepOrResumed(null) !== null) {
 				retry = setTimeout(
 					() => void load().catch(() => undefined),
@@ -213,6 +214,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			throw error;
 		}
 		loadFailed = false;
+		if (retry !== undefined) clearTimeout(retry);
 		state.value = read;
 		content.value = project;
 		const step = stepOrResumed(pendingStep ?? null);

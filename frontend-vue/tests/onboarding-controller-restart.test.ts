@@ -71,4 +71,48 @@ describe("a page loaded while the backend restarts", () => {
 		await vi.advanceTimersByTimeAsync(30_000);
 		expect(api.readState).toHaveBeenCalledTimes(1);
 	});
+
+	it("keeps one read again at a time however often the popup is opened while the backend is down", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = loadedDuringRestart(FOLLOWED);
+		api.readState.mockRejectedValue(new Error("502"));
+		await controller.load().catch(() => undefined);
+		for (let click = 0; click < 4; click += 1) {
+			controller.open();
+			await vi.advanceTimersByTimeAsync(300);
+		}
+		const before = api.readState.mock.calls.length;
+		await vi.advanceTimersByTimeAsync(20_000);
+		expect(api.readState.mock.calls.length - before).toBeLessThanOrEqual(10);
+	});
+
+	it("reads no more once the onboarding stopped, after an open read again while the backend was down", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = loadedDuringRestart(FOLLOWED);
+		api.readState.mockRejectedValueOnce(new Error("502"));
+		await controller.load().catch(() => undefined);
+		await vi.advanceTimersByTimeAsync(1_000);
+		controller.open();
+		await vi.advanceTimersByTimeAsync(10);
+		const reads = api.readState.mock.calls.length;
+		controller.stop();
+		await vi.advanceTimersByTimeAsync(30_000);
+		expect(api.readState).toHaveBeenCalledTimes(reads);
+		expect(controller.isOpen.value).toBe(false);
+	});
+
+	it("reads no more once an open read answered, and leaves a popup the owner closed closed", async () => {
+		vi.useFakeTimers();
+		const { controller, api } = loadedDuringRestart(FOLLOWED);
+		await controller.load().catch(() => undefined);
+		await vi.advanceTimersByTimeAsync(1_000);
+		controller.open();
+		await vi.advanceTimersByTimeAsync(10);
+		expect(controller.isOpen.value).toBe(true);
+		controller.close();
+		const reads = api.readState.mock.calls.length;
+		await vi.advanceTimersByTimeAsync(10_000);
+		expect(api.readState).toHaveBeenCalledTimes(reads);
+		expect(controller.isOpen.value).toBe(false);
+	});
 });

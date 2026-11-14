@@ -5,13 +5,13 @@ import { useChatI18n } from "../composables/useChatI18n";
 import {
 	PLAN_MAX_CELLS,
 	PLAN_MAX_ROWS,
+	SKETCH_BLOCK_TYPES,
 	THUMBNAIL_CANVAS_WIDTH_PX,
 	THUMBNAIL_SCALE,
 	THUMBNAIL_SKETCH_HEIGHT_PX,
 } from "../constants/block-preview";
 import type { PreviewNode, PreviewView } from "../types/protocol";
-import { countLeaves, rootsOf } from "../utils/block-preview";
-import SketchFrame from "./SketchFrame.vue";
+import { countLeaves, rootsOf, sketchNode } from "../utils/block-preview";
 
 interface Props {
 	/** The view the thumbnail draws: its blocks, else its sketch. */
@@ -28,6 +28,17 @@ const canvasStyle = {
 	width: `${THUMBNAIL_CANVAS_WIDTH_PX}px`,
 	transform: `scale(${THUMBNAIL_SCALE})`,
 };
+
+/** The sketch drawn when the view has no blocks: at the thumbnail's height, without its caption, which the card already names. */
+const sketchTree = computed<PreviewNode | null>(() =>
+	props.view.tree === undefined && props.view.sketch !== undefined
+		? sketchNode({
+				html: props.view.sketch.html,
+				css: props.view.sketch.css,
+				height: THUMBNAIL_SKETCH_HEIGHT_PX,
+			})
+		: null,
+);
 
 const roots = computed<PreviewNode[]>(() =>
 	props.view.tree === undefined
@@ -51,15 +62,15 @@ function cellCount(node: PreviewNode): number {
 			<component :is="previewComponent" :tree="view.tree" />
 		</span>
 		<span
-			v-else-if="!view.tree && view.sketch"
+			v-else-if="sketchTree && previewComponent"
 			class="bp-thumb__canvas bp-thumb__canvas--sketch"
 			:style="canvasStyle"
 			inert
 		>
-			<SketchFrame
-				:sketch="view.sketch"
-				:title="t('dms_ai.panel.preview.custom_sketch')"
-				:height="THUMBNAIL_SKETCH_HEIGHT_PX"
+			<component
+				:is="previewComponent"
+				:tree="sketchTree"
+				:block-types="SKETCH_BLOCK_TYPES"
 			/>
 		</span>
 		<span v-else class="bp-thumb__plan">

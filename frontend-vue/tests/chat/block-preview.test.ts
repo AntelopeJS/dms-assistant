@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { defineComponent, h, nextTick, type PropType, ref } from "vue";
 import BlockPreviewCard from "../../app/chat/components/BlockPreviewCard.vue";
 import { useConversation } from "../../app/chat/composables/useConversation";
@@ -14,10 +14,6 @@ import {
 	type ReferenceView,
 } from "../../app/chat/utils/block-preview";
 import { buildUserMessage } from "../../app/chat/utils/conversation-messages";
-import {
-	buildSketchDocument,
-	sketchTokensCss,
-} from "../../app/chat/utils/sketch";
 import { createTestI18n } from "../support/i18n";
 import { PANEL_STUBS } from "../support/stubs";
 
@@ -101,9 +97,19 @@ const UTabs = defineComponent({
 
 const DmsBlockPreview = defineComponent({
 	name: "DmsBlockPreview",
-	props: { tree: { type: [Object, Array], required: true } },
+	props: {
+		tree: { type: [Object, Array], required: true },
+		blockTypes: { type: Object, default: undefined },
+	},
 	setup: (props) => () =>
-		h("div", { class: "dms-block-preview" }, JSON.stringify(props.tree)),
+		h(
+			"div",
+			{
+				class: "dms-block-preview",
+				"data-fetches-block-types": String(props.blockTypes === undefined),
+			},
+			JSON.stringify(props.tree),
+		),
 });
 
 interface MountOptions {
@@ -324,47 +330,14 @@ describe("the block preview attachment", () => {
 	});
 });
 
-describe("sketch documents", () => {
-	const unset = () => "";
-
-	it("puts the CSP first, before anything the agent wrote", () => {
-		const doc = buildSketchDocument(
-			{ html: "<p>x</p>", css: "p{}" },
-			sketchTokensCss("light", unset),
-		);
-		const head = doc.slice(doc.indexOf("<head>") + "<head>".length);
-		expect(head.startsWith('<meta http-equiv="Content-Security-Policy"')).toBe(
-			true,
-		);
-		expect(doc).toContain(
-			"default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:",
-		);
-		expect(doc.indexOf("Content-Security-Policy")).toBeLessThan(
-			doc.indexOf("<p>x</p>"),
-		);
-	});
-
-	it("gives the sketch the dashboard's values, or its defaults", () => {
-		const read = (variable: string) =>
-			variable === "--ui-border" ? " #123456 " : "";
-		const css = sketchTokensCss("dark", read);
-		expect(css).toContain("--sketch-scheme:dark;");
-		expect(css).toContain("--sketch-border:#123456;");
-		expect(css).toContain("--sketch-surface:#10151a;");
-	});
-
-	it("never writes a value that could close the style element", () => {
-		const read = () => "red}</style><p>";
-		const css = sketchTokensCss("light", read);
-		expect(css).not.toContain("</style>");
-		expect(css).toContain("--sketch-border:#e2e7ea;");
-	});
-});
-
 describe("a custom sketch in the preview", () => {
-	afterEach(() => {
-		document.documentElement.classList.remove("dark");
-	});
+	const SKETCH_NODE = { type: "sketch", options: SKETCH };
+
+	function drawnTree(wrapper: VueWrapper, selector: string): unknown {
+		const preview = wrapper.find(`${selector} .dms-block-preview`);
+		expect(preview.attributes("data-fetches-block-types")).toBe("false");
+		return JSON.parse(preview.text());
+	}
 
 	async function openOnSketchTab(wrapper: VueWrapper): Promise<void> {
 		await openModal(wrapper);
@@ -383,38 +356,19 @@ describe("a custom sketch in the preview", () => {
 		expect(wrapper.find(".bp-pane__stage .dms-block-preview").exists()).toBe(
 			true,
 		);
-		expect(wrapper.find("iframe").exists()).toBe(false);
+		expect(wrapper.find(".bp-pane--sketch").exists()).toBe(false);
 		await openOnSketchTab(wrapper);
 		expect(wrapper.find(".bp-pane__stage").exists()).toBe(false);
 		expect(wrapper.find(".bp-pane--sketch").text()).toContain(
 			"Custom sketch — not a DMS block",
 		);
-		expect(wrapper.find(".bp-pane__caption").text()).toBe(SKETCH.caption);
 	});
 
-	it("draws the sketch in a sandboxed frame with no script", async () => {
+	it("draws the sketch as the DMS sketch node without waiting on the block types, never in a frame of its own (fails when the chat builds the sketch document itself, or leaves the sketch to wait on the block types fetch)", async () => {
 		const wrapper = mountCard({ preview: DMS_VS_SKETCH });
 		await openOnSketchTab(wrapper);
-		const frame = wrapper.find(".bp-pane--sketch iframe");
-		expect(frame.attributes("sandbox")).toBe("");
-		expect(frame.attributes("referrerpolicy")).toBe("no-referrer");
-		expect(frame.attributes("src")).toBeUndefined();
-		expect(frame.attributes("style")).toContain("height: 240px");
-		expect(frame.attributes("title")).toContain(SKETCH.caption);
-		const doc = frame.attributes("srcdoc") ?? "";
-		expect(doc).toContain('http-equiv="Content-Security-Policy"');
-		expect(doc).toContain(SKETCH.html);
-		expect(doc).toContain(SKETCH.css);
-		expect(doc).not.toMatch(/<script/i);
-		expect(doc).toContain("--sketch-scheme:light;");
-	});
-
-	it("follows the dashboard into dark mode", async () => {
-		document.documentElement.classList.add("dark");
-		const wrapper = mountCard({ preview: DMS_VS_SKETCH });
-		await openOnSketchTab(wrapper);
-		const doc = wrapper.find("iframe").attributes("srcdoc") ?? "";
-		expect(doc).toContain("--sketch-scheme:dark;");
+		expect(drawnTree(wrapper, ".bp-pane--sketch")).toEqual(SKETCH_NODE);
+		expect(wrapper.find("iframe").exists()).toBe(false);
 	});
 
 	it("labels the attachment as holding a custom sketch", () => {
@@ -425,23 +379,27 @@ describe("a custom sketch in the preview", () => {
 		);
 	});
 
-	it("thumbnails a sketch-only preview with the sandboxed sketch", async () => {
+	it("thumbnails a sketch-only preview with the DMS sketch node at the thumbnail height", async () => {
 		const wrapper = mountCard({ preview: SKETCH_ONLY });
 		await nextTick();
-		const frame = wrapper.find(".bp-thumb iframe");
-		expect(frame.attributes("sandbox")).toBe("");
+		expect(drawnTree(wrapper, ".bp-thumb")).toEqual({
+			type: "sketch",
+			options: { html: SKETCH.html, css: SKETCH.css, height: 360 },
+		});
 		expect(wrapper.find(".bp-card__meta").text()).toBe("custom sketch");
 	});
 
-	it("still draws the sketch when the DMS cannot render blocks", async () => {
+	it("shows the sketch node as JSON when the DMS cannot render it (fails when the chat falls back to a frame of its own)", async () => {
 		const wrapper = mountCard({
 			preview: { ...SKETCH_ONLY, tree: { type: "KpiCard" } },
 			hasPreviewComponent: false,
 		});
 		await openModal(wrapper);
 		await nextTick();
-		expect(wrapper.find(".bp-fallback").exists()).toBe(true);
-		expect(wrapper.find(".bp-pane--sketch iframe").exists()).toBe(true);
+		expect(wrapper.find("iframe").exists()).toBe(false);
+		expect(
+			JSON.parse(wrapper.find(".bp-pane--sketch .bp-fallback__json").text()),
+		).toEqual(SKETCH_NODE);
 		expect(wrapper.find(".bp-modal__panes").classes()).toContain("is-split");
 	});
 

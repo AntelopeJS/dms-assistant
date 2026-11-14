@@ -388,8 +388,7 @@
 				"fallback_body": "Update the DMS to see the real blocks. Here is the tree the assistant sent.",
 				"custom_sketch": "Custom sketch — not a DMS block",
 				"sketch_badge": "Custom sketch",
-				"with_sketch": "custom sketch",
-				"sketch_frame": "Static sketch of a custom component: {caption}"
+				"with_sketch": "custom sketch"
 			},
 			"fold": {
 				"open": "Open the assistant"

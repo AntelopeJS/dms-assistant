@@ -38,9 +38,10 @@ export const PREVIEW_ERROR_CODES = {
 } as const;
 
 /**
- * Markup a sketch may not hold. The chat draws sketches in a sandboxed frame
- * with no scripts and a CSP that loads nothing but `data:` images and fonts;
- * these checks only turn a sketch that would break there into a clear error.
+ * Markup a sketch may not hold. The DMS's `sketch` node draws a sketch in a
+ * sandboxed frame with no scripts and a CSP that loads nothing but `data:`
+ * images and fonts; these checks turn a sketch that would break there into a
+ * clear error.
  */
 export const PREVIEW_SKETCH_FORBIDDEN: ReadonlyArray<
   readonly [RegExp, string]

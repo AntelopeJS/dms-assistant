@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -37,6 +41,14 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         package: [sidecar, frontend-vue]
     steps:
+      - name: Use LF line endings, symlinks and Git Bash for package scripts
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.symlinks true
+          bash_path=$(cygpath -w /usr/bin/bash)
+          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
+          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -61,6 +73,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
+      - name: Use LF line endings, symlinks and Git Bash for package scripts
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.symlinks true
+          bash_path=$(cygpath -w /usr/bin/bash)
+          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
+          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -85,6 +105,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
+      - name: Use LF line endings, symlinks and Git Bash for package scripts
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.symlinks true
+          bash_path=$(cygpath -w /usr/bin/bash)
+          echo "npm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
+          echo "pnpm_config_script_shell=${bash_path}" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

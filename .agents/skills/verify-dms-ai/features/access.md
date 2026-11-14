@@ -13,6 +13,7 @@ covers:
   - sidecar/src/server/http-io.ts
   - sidecar/src/constants/http.ts
   - sidecar/src/state/lock.ts
+  - sidecar/src/state/private-file.ts
   - sidecar/src/mcp/http-binding.ts
   - src/routes/sidecar-answers.ts
   - src/routes/logs.ts

@@ -28,7 +28,7 @@ export default defineConfig({
         type: "local",
         path: ".",
         watchDir: ["src"],
-        installCommand: ["pnpm install", "pnpm build"],
+        installCommand: ["pnpm install --ignore-workspace", "pnpm build"],
       },
     },
     dms: {

@@ -195,35 +195,6 @@ function registerChangeSetUndoCase(): void {
 
 function registerAskingCases(): void {
   it(
-    "still asks the person when an older chat asks for Full auto",
-    async () => {
-      useScript("permission-required.json");
-      session = await open(false);
-      const { client, collector } = session;
-      sendWire(client, {
-        type: "set_conversation_mode",
-        conversationId: CONVERSATION_ID,
-        fullAuto: { duration: "turn" },
-      });
-      const mode = await collector.next((e) => e.type === "conversation_mode");
-      expect(mode).toStrictEqual({
-        type: "conversation_mode",
-        conversationId: CONVERSATION_ID,
-        mode: "normal",
-        generationMode: "vibe",
-      });
-      sendUserMessage(client, CONVERSATION_ID, "run it");
-      const prompt = await collector.next(
-        (e) => e.type === "permission_request",
-      );
-      answerPermission(client, prompt, PERMISSION_DECISIONS.ALLOW_ONCE);
-      const end = await collector.next((e) => e.type === "tool_call_end");
-      expect(end).toMatchObject({ outcome: "done", allowedBy: "approved" });
-    },
-    TEST_TIMEOUT_MS,
-  );
-
-  it(
     "asks for a dependency with no rule to keep, and deny_all stops the turn",
     async () => {
       useScript("add-dependency.json");

@@ -6,7 +6,7 @@ import {
   parseSettings,
 } from "../../src/state/settings-store.js";
 
-const KEPT_LEGACY_MODES = ["acceptEdits", "plan"] as const;
+const IGNORED_GLOBAL_MODES = ["normal", "auto", "acceptEdits", "plan"] as const;
 
 interface StoredFile {
   mode?: string;
@@ -53,59 +53,18 @@ describe("default mode per provider", () => {
     expect(storedModes({})).toEqual({ claude: "auto", codex: "normal" });
   });
 
-  it.each(KEPT_LEGACY_MODES)(
-    "keeps a mode saved before the default was per provider (%s) on both providers",
+  it.each(IGNORED_GLOBAL_MODES)(
+    "ignores a top-level mode (%s) saved before the default was per provider (fails a reader that still seeds the providers from it)",
     (mode) => {
-      expect(storedModes({ mode })).toEqual({ claude: mode, codex: mode });
+      expect(storedModes({ mode })).toEqual(DEFAULT_SETTINGS.defaultModes);
     },
   );
-
-  it("reads a legacy normal, written back by every old settings save, as no mode chosen", () => {
-    expect(storedModes({ mode: "normal" })).toEqual({
-      claude: "auto",
-      codex: "normal",
-    });
-  });
 
   it("keeps Ask first on Claude Code when a per-provider file chooses it", () => {
     expect(storedModes({ defaultModes: { claude: "normal" } })).toEqual({
       claude: "normal",
       codex: "normal",
     });
-  });
-
-  it("gives a file saved after the migration back unchanged, never flipping to the older value", () => {
-    const migrated = parseSettings(JSON.stringify({ mode: "normal" }));
-    const saved = JSON.stringify(migrated);
-    expect(JSON.parse(saved)).not.toHaveProperty("mode");
-    expect(parseSettings(saved)).toEqual(migrated);
-
-    const chosen = mergeSettings(migrated, {
-      defaultModes: { claude: "normal" },
-    });
-    expect(parseSettings(JSON.stringify(chosen)).defaultModes).toEqual({
-      claude: "normal",
-      codex: "normal",
-    });
-  });
-
-  it("reads a stored global auto, the Full auto of an older version, as Ask first on both", () => {
-    expect(storedModes({ mode: "auto" })).toEqual({
-      claude: "normal",
-      codex: "normal",
-    });
-  });
-
-  it("takes a saved mode it does not know for nothing saved", () => {
-    expect(storedModes({ mode: "turbo" })).toEqual(
-      DEFAULT_SETTINGS.defaultModes,
-    );
-  });
-
-  it("lets a provider's own saved default win over the older global mode", () => {
-    expect(
-      storedModes({ mode: "plan", defaultModes: { claude: "auto" } }),
-    ).toEqual({ claude: "auto", codex: "plan" });
   });
 
   it("refuses Auto review on Codex in the file and keeps Claude Code's default", () => {

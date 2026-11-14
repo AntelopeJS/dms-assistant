@@ -29,6 +29,7 @@ import type {
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
+import type { ConnectMemory } from "./connect-memory";
 import {
 	canConnect,
 	type ConnectCheck,
@@ -84,7 +85,8 @@ export interface DatabaseConnect {
 	 * ready or a check fails. It resolves in every case. Called again after a failure with the same
 	 * URL, it follows the written connection again without writing; with another URL for the same
 	 * database, it writes only the new URL. Answers to an attempt that a later `connect`, `reset` or
-	 * unmount replaced change nothing.
+	 * unmount replaced change nothing. The connection written is remembered until its analysis is
+	 * ready, a later `connect` or `reset`; the next `useDatabaseConnect` follows it again.
 	 */
 	connect: (engine: DatabaseEngine, url: string) => Promise<UrlProblem | null>;
 	/** Writes the connection checked in `choosing` with this access, then follows it. */
@@ -101,6 +103,7 @@ interface Checked {
 	form: ConnectForm;
 	connection: string;
 	module: string;
+	access: DatabaseAccess;
 	writing: ConnectionWriting;
 }
 
@@ -143,12 +146,25 @@ export function connectForm(
  * "Connect and analyse" over the builder's live check and connect engine: the check of the URL
  * before anything is written, the `ConfigureProject` batch the builder's form writes with the
  * access chosen, then the builder's build answers polled each second through the project's reload
- * and the analysis, its schemas picked as the builder pre-checks them.
+ * and the analysis, its schemas picked as the builder pre-checks them. A connection `memory` holds
+ * is followed again from the start, without its URL.
  */
-export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
-	const phase = ref<ConnectPhase>({ kind: "form" });
+export function useDatabaseConnect(
+	api: BuilderApi,
+	memory: ConnectMemory,
+): DatabaseConnect {
+	const remembered = memory.read();
+	const phase = ref<ConnectPhase>(
+		remembered === null
+			? { kind: "form" }
+			: {
+					kind: "analysing",
+					connection: remembered.connection,
+					module: remembered.module,
+				},
+	);
 	const view = ref<BuildView | null>(null);
-	const access = ref<DatabaseAccess | null>(null);
+	const access = ref<DatabaseAccess | null>(remembered?.access ?? null);
 	const refusal = ref<string | null>(null);
 	const failure = ref<string | null>(null);
 	let checked: Checked | undefined;
@@ -239,6 +255,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		}
 		if (next === null || !current(loop)) return;
 		if (next.fork && next.job) {
+			memory.clear();
 			phase.value = { kind: "analysed", connection, module };
 			return;
 		}
@@ -290,18 +307,21 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		choice: ConnectionAccess,
 		loop: number,
 	): Promise<void> {
-		const { connection, module } = target;
+		const { form, connection, module, access: answer } = target;
 		phase.value = { kind: "analysing", connection, module };
 		if (!(await write(target, choice, loop))) {
 			if (current(loop)) phase.value = { kind: "form" };
 			return;
 		}
-		if (current(loop)) await poll(connection, module, loop);
+		if (!current(loop)) return;
+		memory.write({ engine: form.engine, connection, module, access: answer });
+		await poll(connection, module, loop);
 	}
 
 	function stop(): number {
 		if (timer !== undefined) clearTimeout(timer);
 		generation += 1;
+		memory.clear();
 		checked = undefined;
 		refusal.value = null;
 		failure.value = null;
@@ -330,6 +350,7 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 			form,
 			connection,
 			module: managedNames(form).tablesModule,
+			access: answer,
 			writing: { kind: "url" },
 		};
 		if (written?.connection !== connection) {
@@ -378,6 +399,10 @@ export function useDatabaseConnect(api: BuilderApi): DatabaseConnect {
 		disposed = true;
 		if (timer !== undefined) clearTimeout(timer);
 	});
+
+	if (remembered !== null) {
+		void poll(remembered.connection, remembered.module, generation);
+	}
 
 	return {
 		phase,

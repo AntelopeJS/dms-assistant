@@ -31,6 +31,12 @@ import type { OnboardingStep } from "./public";
 /** How often the popup asks whether the ChatGPT sign-in in the other tab completed. */
 export const CODEX_POLL_MS = 2_000;
 
+/**
+ * How long after a first read of the onboarding that failed it reads again, while this tab follows
+ * a connection it wrote: a page loaded while the project restarts opens on it once the backend answers.
+ */
+const RESUME_RETRY_MS = 2_000;
+
 export interface OnboardingDeps {
 	api: OnboardingApi;
 	assistant: Pick<
@@ -64,7 +70,8 @@ export interface OnboardingController {
 	/**
 	 * Reads the onboarding state and the project's content, then opens the popup if it should: on
 	 * the connect form when this tab still follows a connection it wrote. Rejects when the backend
-	 * does not answer its state; `open` reads again after that.
+	 * does not answer its state; `open` reads again after that, and while this tab follows a
+	 * connection it wrote, so does the controller itself every {@link RESUME_RETRY_MS} until `stop`.
 	 */
 	load: () => Promise<void>;
 	/**
@@ -116,6 +123,8 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 	let codexTimer: ReturnType<typeof setInterval> | undefined;
 	let loading: Promise<void> | undefined;
 	let loadFailed = false;
+	let stopped = false;
+	let retry: ReturnType<typeof setTimeout> | undefined;
 
 	const done = computed(
 		() =>
@@ -195,6 +204,12 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			]);
 		} catch (error) {
 			loadFailed = true;
+			if (!stopped && stepOrResumed(null) !== null) {
+				retry = setTimeout(
+					() => void load().catch(() => undefined),
+					RESUME_RETRY_MS,
+				);
+			}
 			throw error;
 		}
 		loadFailed = false;
@@ -332,6 +347,8 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			deps.assistant.navigate(path);
 		},
 		stop: () => {
+			stopped = true;
+			if (retry !== undefined) clearTimeout(retry);
 			stopCodexPoll();
 			stopWatchingCodex();
 		},

@@ -1,11 +1,24 @@
 # Coverage: database
 
-Docs: `11.external-databases.md`. Journeys: `journeys/database.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `journeys/database.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |
-| interface-dms-builder/docs/11.external-databases.md:18 | GET /database/connections lists catalog connections | a-project-without-an-external-database-answers-the-documented-empties-and-404s | empty list |
-| dms-builder/docs/5.extending.md:84 | unknown connection, analysis, sample answer 404 | same | 404 for each |
-| dms-builder/docs/5.extending.md:84 | /database/project answers modules | same | a non-empty modules list |
-| interface-dms-builder/docs/11.external-databases.md:89 | removing and re-pointing a connection | same | refused for an unknown connection; Not driven: a real connection |
-| interface-dms-builder/docs/11.external-databases.md:99 | AnalyseDatabase, GetAnalysis, proposals, MapResources and their warnings | - | Not driven: needs an external database and a catalog provider (a SQL engine in Docker plus its module), which this run does not start |
+| docs/8.database-connection.md:54 | `GET /database/connections` answers `[]` before a connection exists | a-project-without-an-external-database-answers-the-documented-empties-and-404s | 200 and an empty array |
+| docs/8.database-connection.md:66 | `GET /database/analysis` answers 404 when the connection has no analysis | same | 404 with `not_found` and the ref |
+| docs/8.database-connection.md:71 | `GET /database/connection` answers 404 for an unknown connection | same | 404 with `not_found` and the ref |
+| docs/8.database-connection.md:74 | `POST /database/sample` answers 404 for an unknown connection | same | 404 with `not_found` and the ref |
+| docs/8.database-connection.md:68 | `GET /database/mapping` answers `GetMapping` | same | Not driven for a real connection; an unknown one answers a refusal, not a 200 mapping |
+| docs/8.database-connection.md:65 | `POST /database/analyse` answers `AnalyseDatabase` and `GET /database/analysis?id=` answers `GetAnalysis` | same, writes-that-are-refused-or-dry-run-leave-the-project-untouched | `not_found` for an unknown id; `invalid_config` for an unknown connection; Not driven: a real analysis needs an external database and a catalog provider (a SQL engine in Docker plus its module), which the run does not start |
+| docs/8.database-connection.md:67 | `POST /database/map` answers `MapResources`, and writes only code that compiles | writes-that-are-refused-or-dry-run-leave-the-project-untouched | `invalid_config` for an unknown connection and no file written; Not driven: `typecheck_failed` and the mapped tables and pages need a real analysis |
+| docs/8.database-connection.md:69 | `GET /database/project` answers `{ modules, self, ownDatabase?, databasePins, dmsDatabase? }` | the-project-answer-carries-the-fields-the-connect-form-reads | the modules by id, `self` among them, `ownDatabase` mongodb, every pin a module and the own database, no `dmsDatabase` |
+| docs/8.database-connection.md:89 | `ownDatabase` and `dmsDatabase` are absent when the project has no such database or module | same | `dmsDatabase` absent; Not driven: a project with no own database |
+| docs/8.database-connection.md:91 | `GET /database/project` refuses with 422 for a configuration it cannot write | - | Not driven: needs a playground configuration written with a spread or a computed name; the 422 body is `{ code: "refused", message }` |
+| docs/8.database-connection.md:70 | `POST /database/project` answers `ConfigureProject`, and `opts.dryRun` answers the changes without writing | writes-that-are-refused-or-dry-run-leave-the-project-untouched | a dry run of `AddModule` is ok with the diff naming the module, the file and `.env` unchanged, the module list unchanged; a step on an existing id is `invalid_config` |
+| docs/8.database-connection.md:70 | With `variables`, the route first writes their development values into `.env` | writes-that-are-refused-or-dry-run-leave-the-project-untouched | a dry run with a variable is ok and leaves `.env` without it; the write itself is Not driven: it would write the run's `.env` with a variable no connection reads |
+| docs/8.database-connection.md:72 | `POST /database/connection/remove` answers an `OpResult` | writes-that-are-refused-or-dry-run-leave-the-project-untouched | `unsupported` for an unknown connection; Not driven: removing a real connection |
+| docs/8.database-connection.md:73 | `POST /database/connection/url` answers an `OpResult` with the `variable` it set | same | `invalid_config` for an unknown connection; Not driven: a real connection's variable and a URL without a password |
+| docs/8.database-connection.md:135 | A configuration that already holds everything answers `{ ok: true, data: { files: [] }, changes: [] }` and a second call changes nothing | same | the dry run, the first and the second call are empty successes and `antelope.config.ts` is byte for byte the same |
+| docs/8.database-connection.md:133 | `POST /database/connections/repair` adds what a connection made before is missing | - | Not driven: needs a catalog connection declared on the module's own entry |
+| docs/8.database-connection.md:100 | The connect form writes the batch of `AddModule`, `CreateLocalModule`, `ConfigureModule` and the pins | - | Not driven: `AddModule` of an engine driver installs a package, which a run must not do |
+| frontend-vue/builder/app/runtime/database*.ts | The client and its types read the answers above and turn a refusal into text | - | Not driven in a browser: the popup opens the form only behind a working Claude or Codex sign-in, which a run never holds. The wire shapes the types declare are pinned by the journeys above; the client's own logic is pinned by `pnpm --dir frontend-vue test` (the Vitest suite in `frontend-vue/builder/tests`) |

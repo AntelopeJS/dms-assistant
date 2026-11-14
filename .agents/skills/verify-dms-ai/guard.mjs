@@ -70,7 +70,7 @@ async function signInHydrated(ctx, tab, account) {
 /**
  * Makes a check that fails because the environment went away NOT VERIFIED: before a step with a failing check is
  * recorded, the backend and the dashboard are probed, and when one is gone the journey ends with an error and no
- * failing check.
+ * failing check. A run started without `up --no-standby` ends every journey the same way before it begins.
  *
  * @template {{ run: (ctx: Ctx) => Promise<void> }} Journey
  * @param {Journey[]} journeys The journeys of a feature
@@ -80,6 +80,9 @@ export function guarded(journeys) {
   return journeys.map((journey) => ({
     ...journey,
     async run(/** @type {Ctx} */ ctx) {
+      if (ctx.state.noStandby !== true) {
+        throw new Error("NOT VERIFIED: a standby backend loads the module and spawns its own sidecar into the folder of the backend under test, so the sidecar cannot be judged. Start the run with `dms-control up --no-standby`.");
+      }
       const openTab = ctx.tab.bind(ctx);
       ctx.tab = async (account, label) => {
         const tab = await openTab(account, label);

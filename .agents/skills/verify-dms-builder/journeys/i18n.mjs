@@ -5,7 +5,7 @@ import { check, isRow, isText } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
-const LOCALES = "packages/dms-builder/frontend-vue/i18n/locales";
+const LOCALES = "frontend-vue/i18n/locales";
 
 /**
  * @param {Ctx} ctx The journey
@@ -32,7 +32,7 @@ export const journeys = guarded([
   {
     id: "english-and-french-catalogs-carry-the-same-keys-under-dms-builder",
     title: "builder-en-GB.json and builder-fr-FR.json both sit under the dms_builder namespace with the same keys, and a message reads the same placeholders in both",
-    entryPoint: "frontend-vue/i18n/locales",
+    entryPoint: "frontend-vue/i18n/locales/builder-*.json",
     async run(/** @type {Ctx} */ ctx) {
       const en = catalog(ctx, "builder-en-GB.json");
       const fr = catalog(ctx, "builder-fr-FR.json");

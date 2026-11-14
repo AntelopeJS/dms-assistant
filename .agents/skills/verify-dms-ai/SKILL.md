@@ -1,6 +1,6 @@
 ---
 name: verify-dms-ai
-description: "Drive the AntelopeJS dms-ai module (the AI assistant: its sidecar, Settings, Changes and Activity pages, the Codex sign-in banner and the owner-only routes) the way the platform owner does, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-ai works before merge, or to verify a PR. A turn with Claude Code or Codex needs credentials a run never holds: that part is NOT VERIFIED, so a verdict is never a plain PASS."
+description: "Drive the AntelopeJS dms-ai module (the AI assistant: its sidecar, Settings, Changes and Activity pages, the Codex sign-in banner, the onboarding routes and the owner-only routes) the way the platform owner does, inside a DMS with free ports and its own MongoDB database, and report a verdict with evidence. Use to prove a change to AntelopeJS/dms-ai works before merge, or to verify a PR. A turn with Claude Code or Codex needs credentials a run never holds: that part is NOT VERIFIED, so a verdict is never a plain PASS."
 ---
 
 # Verify dms-ai
@@ -14,7 +14,7 @@ C="pnpm exec dms-control"
 $C                       # lists every command
 ```
 
-Give `doors` and `--skill` absolute paths. `mongod` comes from `DMS_CONTROL_MONGOD` or `PATH`. A verifier that runs with a temporary `HOME` does not see `~/.cache/mongodb-binaries`: pass the binary in `DMS_CONTROL_MONGOD`.
+Give `doors` and `--skill` absolute paths. The repository holds two verify skills, so `plan`, `map`, `doors` and `verdict` take `--skill` too. `mongod` comes from `DMS_CONTROL_MONGOD` or `PATH`. A verifier that runs with a temporary `HOME` does not see `~/.cache/mongodb-binaries`: pass the binary in `DMS_CONTROL_MONGOD`.
 
 ## What this skill cannot verify
 
@@ -25,7 +25,7 @@ What a turn leaves behind is not out of reach. The Activity rows, the change set
 ## Launch
 
 ```bash
-RUN=$($C up --prepare --base origin/main --skill "$PWD/.agents/skills/verify-dms-ai")
+RUN=$($C up --prepare --no-standby --base origin/main --skill "$PWD/.agents/skills/verify-dms-ai")
 ```
 
 `--prepare` runs the `prepare` commands of `verify.config.ts`: the frozen install, the builds of the module and of the sidecar, the install of the playground's own dependencies, `playwright-core` into this folder and the TypeScript build of the playground's fixture module. `up` reads the playground (`playground/` in this folder) and starts an isolated DMS:
@@ -48,7 +48,7 @@ Do not drive a run that fails doctor.
 ## Drive
 
 ```bash
-$C plan --base origin/main   # the diff mapped to features; unmapped surfaces
+$C plan --skill "$PWD/.agents/skills/verify-dms-ai" --base origin/main   # the diff mapped to features; unmapped surfaces
 $C journey "$RUN" smoke
 $C journey "$RUN" settings [journey-id...]
 ```
@@ -71,7 +71,7 @@ $C down "$RUN"
 ## Verdict rules
 
 1. **Run every feature whose `covers:` globs the diff touches, plus the smoke journey.** `plan` prints that list as `run`. Run every feature instead when the diff touches a shared file, and before a release. The shared files are `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `sidecar/package.json`, `sidecar/pnpm-lock.yaml`, `frontend-vue/package.json` and `frontend-vue/pnpm-lock.yaml` (the sidecar has no workspace file), `.nvmrc`, the `tsconfig.json` of the module and of the sidecar, and this skill's own `verify.config.ts`, `ai.mjs`, `guard.mjs`, `seed.mjs`, `sample.mjs`, `windows.mjs` (every feature loads it through `ai.mjs`) and `playground/`. A manifest pins the `@antelopejs/interface-*` contracts and the runtime every feature runs on, so `plan` naming only `package` or only `smoke` understates the change: for a lockfile, `.nvmrc` or a tsconfig it names only `smoke`.
-2. **Unmapped surface fails the verdict.** User-facing code is `src/**`, `sidecar/src/**`, `frontend-vue/**`, `skills/**` and the two `package.json`, tests and tool configs excluded (`verify.config.ts`). `map` checks the whole tree.
+2. **Unmapped surface fails the verdict.** User-facing code is `src/**`, `sidecar/src/**`, `frontend-vue/**`, `skills/**` and the two `package.json`, tests and tool configs excluded (`verify.config.ts`). The builder surface (`src/builder/**`, `frontend-vue/builder/**` and the builder message catalogs) belongs to [`verify-dms-builder`](../verify-dms-builder/SKILL.md). `map` checks the whole tree.
 3. **Every registered journey of a feature in `run` must have run and passed.** Known findings stay as failing journeys (see Gotchas): they fail a verdict only when the diff touches their feature.
 4. **Docs.** Judge every `docs:` page of each touched feature against what the journeys showed.
 5. **Formal checks.** None.
@@ -82,24 +82,26 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 ## Gotchas
 
+- `up` needs `--no-standby`: without it dms-control starts a standby backend for the next journey's database, every backend of a run loads the module, and each spawns its own sidecar in the checkout's one sidecar folder, overwriting `sidecar.lock`. Every journey ends with a NOT VERIFIED error and no failing check on a run that did not start with it (`guarded` in `guard.mjs`).
 - Every dashboard page renders on the server and hydrates after `load`; `guard.mjs` waits for the sign-in form to hydrate, and `choose` and `clickUntil` click again until a radio, a switch or a dialog responds.
 - A step whose check fails because the backend or the dashboard stopped answering ends the journey with a `NOT VERIFIED` error and no failing check.
 - The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
 - The 24 hour, 7 day and 30 day windows are driven with calls 3 hours, 10 days and 40 days old, not at the edge of each window.
 - Text the dashboard uppercases (section titles) is matched without regard to case.
+- A journey runs `ajs project start` unless it pins `backend: "dev"`: `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` does, because the module touches `.mcp.json` in development only.
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it` sets `DMS_AI_IDLE_SHUTDOWN_MS` to 20 seconds and restarts the backend with it; it takes about a minute, and nothing else may use the checkout while it runs.
 
 ## Not driven
 
 List these under `notVerified` in the judgement of every verdict:
 
-- every model turn (Claude Code, Codex): no credentials in a run. That covers the chat itself, tool calls as they happen, approvals as they are asked and their rules, Full auto, plan mode, questions, queued messages, auto-fix turns, a diff a turn produces, token counts a turn reports, and the Builder and database catalog tools the agent calls. (Their stored results are driven from seeded records.)
+- every model turn (Claude Code, Codex): no credentials in a run. That covers the chat itself, tool calls as they happen, approvals as they are asked and their rules, Full auto, plan mode, questions, queued messages, auto-fix turns, a diff a turn produces, token counts a turn reports, and the tools of the `dms` MCP server of `@antelopejs/dms` the agent calls. (Their stored results are driven from seeded records.)
 - the chat panel, launcher, shortcuts, palette assistant and block-preview dialog: development dashboard only; `dms-control up` has no mode for it (AntelopeJS/dms#749);
 - block previews and custom sketches (`preview_blocks`, the 64 KB and depth limits, the sketch refusals): the agent's tool, reachable only through a turn;
 - the ChatGPT consent page, the token exchange and refresh, `chatgpt-auth.json` with a token, the sign-out of a real session and the pinned `codex` CLI version gate: they need an OpenAI account and the optional peer;
-- Safe mode and the Builder-backed rows (Builder Connected, Safe mode enabled): the playground does not load `@antelopejs/dms-builder`;
+- the first-run popup of the onboarding and the live check of a Claude token against Anthropic: the popup is development-dashboard only, and the check needs Anthropic. Its Start from an existing database path calls the `/api/builder/database` routes, which `verify-dms-builder` drives;
 - the Settings banners "The assistant's last turn failed" with Open activity and "N requests are waiting for you": they read a live turn and live approvals;
-- the MCP bridge process (`src/mcp-bridge.ts`) that an outside Claude Code session runs from the project's `.mcp.json`: the backend only resolves its path, and the journey sends the request the bridge would send to `POST /ai/mcp`;
+- the `dms` MCP server, its stdio bridge and the `dms` entry the DMS writes to `.mcp.json`: they belong to `@antelopejs/dms` and its own verification. This module serves no MCP route; it only removes the old `dms-ai` entry, which `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` drives;
 - the Conversation link of the Changes page, the Open conversation button of the Activity detail, and the reload and toast after Undo: they belong to the chat session;
 - `NODE_ENV=production`: the DMS itself changes with it, so the run cannot start the backend that way;
 - remote access over a LAN, Tailscale, a tunnel or HTTP/2, and the six-connection browser limit (the refusal of a connection to the network address is driven);

@@ -39,7 +39,6 @@ covers:
   - sidecar/src/state/types.ts
   - sidecar/src/state/safe-segment.ts
   - sidecar/src/builder/**
-  - sidecar/src/database/**
   - sidecar/src/pages/**
   - sidecar/src/logs/**
   - sidecar/src/host/**

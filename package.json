@@ -1,6 +1,6 @@
 {
   "name": "@antelopejs/dms-assistant",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Development assistant for the AntelopeJS DMS: a chat panel and coding agent that edit the project in reviewable, undoable change sets, and an onboarding that starts a project from scratch or from a database you already run.",
   "keywords": [
     "ai",

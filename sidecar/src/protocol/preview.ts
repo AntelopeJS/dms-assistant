@@ -62,8 +62,9 @@ export const PreviewTreeSchema = z
   .describe("One block, or a list of blocks stacked in order.");
 
 /**
- * A custom component the agent proposes, drawn as static HTML and CSS in a
- * sandboxed frame next to the DMS option. Never a DMS block.
+ * A custom component the agent proposes as static HTML and CSS, drawn by the
+ * DMS's `sketch` node in a sandboxed frame next to the DMS option. Never a
+ * DMS block.
  */
 export const PreviewSketchSchema = z
   .object({

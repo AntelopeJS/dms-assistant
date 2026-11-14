@@ -97,9 +97,19 @@ const UTabs = defineComponent({
 
 const DmsBlockPreview = defineComponent({
 	name: "DmsBlockPreview",
-	props: { tree: { type: [Object, Array], required: true } },
+	props: {
+		tree: { type: [Object, Array], required: true },
+		blockTypes: { type: Object, default: undefined },
+	},
 	setup: (props) => () =>
-		h("div", { class: "dms-block-preview" }, JSON.stringify(props.tree)),
+		h(
+			"div",
+			{
+				class: "dms-block-preview",
+				"data-fetches-block-types": String(props.blockTypes === undefined),
+			},
+			JSON.stringify(props.tree),
+		),
 });
 
 interface MountOptions {
@@ -324,7 +334,9 @@ describe("a custom sketch in the preview", () => {
 	const SKETCH_NODE = { type: "sketch", options: SKETCH };
 
 	function drawnTree(wrapper: VueWrapper, selector: string): unknown {
-		return JSON.parse(wrapper.find(`${selector} .dms-block-preview`).text());
+		const preview = wrapper.find(`${selector} .dms-block-preview`);
+		expect(preview.attributes("data-fetches-block-types")).toBe("false");
+		return JSON.parse(preview.text());
 	}
 
 	async function openOnSketchTab(wrapper: VueWrapper): Promise<void> {
@@ -352,7 +364,7 @@ describe("a custom sketch in the preview", () => {
 		);
 	});
 
-	it("draws the sketch as the DMS sketch node, never in a frame of its own (fails when the chat builds the sketch document itself)", async () => {
+	it("draws the sketch as the DMS sketch node without waiting on the block types, never in a frame of its own (fails when the chat builds the sketch document itself, or leaves the sketch to wait on the block types fetch)", async () => {
 		const wrapper = mountCard({ preview: DMS_VS_SKETCH });
 		await openOnSketchTab(wrapper);
 		expect(drawnTree(wrapper, ".bp-pane--sketch")).toEqual(SKETCH_NODE);
@@ -372,7 +384,7 @@ describe("a custom sketch in the preview", () => {
 		await nextTick();
 		expect(drawnTree(wrapper, ".bp-thumb")).toEqual({
 			type: "sketch",
-			options: { ...SKETCH, height: 360 },
+			options: { html: SKETCH.html, css: SKETCH.css, height: 360 },
 		});
 		expect(wrapper.find(".bp-card__meta").text()).toBe("custom sketch");
 	});

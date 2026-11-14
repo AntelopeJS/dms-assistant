@@ -3,9 +3,8 @@ import type { PreviewSketchType } from "../protocol/preview.js";
 
 /**
  * What a sketch holds that static HTML and CSS may not, in the order of the
- * checks; empty when it may be shown. Same contract as `sketchRefusals` of
- * `@antelopejs/dms/sketch`, which replaces this check once the stack moves
- * to a dms release that publishes it.
+ * checks; empty when it may be shown. The one place the sidecar checks a
+ * sketch, so the DMS's own sanitizer can take its place.
  */
 export function sketchRefusals(
   sketch: Pick<PreviewSketchType, "html" | "css">,

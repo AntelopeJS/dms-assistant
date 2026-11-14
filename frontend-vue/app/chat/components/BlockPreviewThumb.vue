@@ -5,6 +5,7 @@ import { useChatI18n } from "../composables/useChatI18n";
 import {
 	PLAN_MAX_CELLS,
 	PLAN_MAX_ROWS,
+	SKETCH_BLOCK_TYPES,
 	THUMBNAIL_CANVAS_WIDTH_PX,
 	THUMBNAIL_SCALE,
 	THUMBNAIL_SKETCH_HEIGHT_PX,
@@ -28,11 +29,12 @@ const canvasStyle = {
 	transform: `scale(${THUMBNAIL_SCALE})`,
 };
 
-/** The sketch drawn when the view has no blocks, at the thumbnail's height. */
+/** The sketch drawn when the view has no blocks: at the thumbnail's height, without its caption, which the card already names. */
 const sketchTree = computed<PreviewNode | null>(() =>
 	props.view.tree === undefined && props.view.sketch !== undefined
 		? sketchNode({
-				...props.view.sketch,
+				html: props.view.sketch.html,
+				css: props.view.sketch.css,
 				height: THUMBNAIL_SKETCH_HEIGHT_PX,
 			})
 		: null,
@@ -65,7 +67,11 @@ function cellCount(node: PreviewNode): number {
 			:style="canvasStyle"
 			inert
 		>
-			<component :is="previewComponent" :tree="sketchTree" />
+			<component
+				:is="previewComponent"
+				:tree="sketchTree"
+				:block-types="SKETCH_BLOCK_TYPES"
+			/>
 		</span>
 		<span v-else class="bp-thumb__plan">
 			<span v-for="(node, index) in roots" :key="index" class="bp-thumb__row">

@@ -2,7 +2,10 @@
 import { computed, ref, watch } from "vue";
 import { useBlockPreviewComponent } from "../composables/useBlockPreviewComponent";
 import { useChatI18n } from "../composables/useChatI18n";
-import { BLOCK_PREVIEW_MAIN_TAB } from "../constants/block-preview";
+import {
+	BLOCK_PREVIEW_MAIN_TAB,
+	SKETCH_BLOCK_TYPES,
+} from "../constants/block-preview";
 import type { BlockPreview, PreviewNode } from "../types/protocol";
 import {
 	type BlockPreviewTab,
@@ -167,6 +170,7 @@ watch(open, (isOpen) => {
 								v-if="previewComponent"
 								:key="activeTab"
 								:tree="sketchTree"
+								:block-types="SKETCH_BLOCK_TYPES"
 							/>
 							<div v-else class="bp-fallback">
 								<p class="bp-fallback__title">

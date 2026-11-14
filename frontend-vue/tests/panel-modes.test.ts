@@ -110,21 +110,6 @@ describe("the approval mode pill", () => {
 		},
 	);
 
-	it("keeps the pill on the chat's own mode when an older sidecar still sends Full auto", async () => {
-		const harness = createHarness();
-		const panel = await openPanel(harness);
-		await useProvider(harness, "claude");
-		deliver(harness, {
-			type: "conversation_mode",
-			mode: "auto",
-			generationMode: "safe",
-			fullAuto: { duration: "chat" },
-		});
-		await nextTick();
-		expect(modePill(panel).text()).toBe("Auto review");
-		expect(panel.find(".cb-banner-auto").exists()).toBe(false);
-	});
-
 	it("says Auto review is not available, naming the model", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

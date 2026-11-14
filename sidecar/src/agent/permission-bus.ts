@@ -102,6 +102,8 @@ export interface BusOptions {
 export interface PermissionBus {
   requestPermission(req: PermissionRequest): Promise<PermissionOutcome>;
   resolvePermission(answer: PermissionAnswer): void;
+  /** The conversation a pending request belongs to; undefined once it is answered or gone. */
+  conversationOf(requestId: string): string | undefined;
   getPendingForConversation(conversationId: string): PendingRequest[];
   countPending(conversationId?: string): number;
   /** Denies everything pending for the conversation (turn interrupted). */
@@ -357,6 +359,8 @@ export function createPermissionBus(opts: BusOptions): PermissionBus {
   return {
     requestPermission: (req) => startRequest(state, req),
     resolvePermission: (answer) => handleAnswer(state, answer),
+    conversationOf: (requestId) =>
+      state.pending.get(requestId)?.request.conversationId,
     getPendingForConversation: (conversationId) =>
       pendingOf(state, conversationId).map((p) => p.request),
     countPending: (conversationId) =>

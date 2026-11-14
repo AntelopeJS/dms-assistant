@@ -69,7 +69,7 @@ describe("a conversation set aside on load", () => {
     );
     expect(written).toEqual({ conversations: { [SET_ASIDE_ID]: SET_ASIDE } });
     expect(conversations.get(SET_ASIDE_ID)).toBeNull();
-    expect(conversations.isSetAside(SET_ASIDE_ID)).toBe(true);
+    expect(conversations.closure(SET_ASIDE_ID)).toBe("set_aside");
     expect(conversations.list("user-b")).toEqual([]);
   });
 

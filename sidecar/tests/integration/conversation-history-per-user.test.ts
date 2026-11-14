@@ -22,6 +22,7 @@ const CAMILLE = { userId: "u-camille", name: "Camille" };
 const DANA = { userId: "u-dana", name: "Dana" };
 const CAMILLE_CONVERSATION = "conv-camille";
 const DANA_CONVERSATION = "conv-dana";
+const DANA_SECOND_CONVERSATION = "conv-dana-2";
 const SHARED_CONVERSATION = "conv-shared";
 const REFUSAL = "This conversation belongs to someone else.";
 
@@ -171,30 +172,32 @@ function registerReadCases(): void {
   );
 
   it(
-    "keeps a conversation stored before owners existed everyone's when someone writes into it (fails when the first writer takes it over)",
+    "refuses a named person a conversation with messages and no owner (fails a record with no owner treated as everyone's)",
     async () => {
       const running = await start();
       seedLegacyConversation(running);
-      const camille = await connect(CAMILLE);
       const dana = await connect(DANA);
+      const refused = dana.frames.next(
+        (msg) => msg.type === "run_error" && msg.error === REFUSAL,
+      );
       await ask(dana, LEGACY, "a follow-up");
-      expect(running.conversationStore.get(LEGACY)?.ownerId).toBeUndefined();
-      expect(await listed(camille)).toContain(LEGACY);
+      await refused;
+      const stored = running.conversationStore.get(LEGACY);
+      expect(stored?.ownerId).toBeUndefined();
+      expect(JSON.stringify(stored?.messages)).not.toContain("a follow-up");
     },
     TEST_TIMEOUT_MS,
   );
 
   it(
-    "shows a conversation stored without an owner to everyone, named or not (fails a list that hides unowned conversations)",
+    "shows a conversation with messages and no owner only to a connection that named no actor (fails a list that shows it to a named person)",
     async () => {
       const running = await start();
       seedLegacyConversation(running);
       const camille = await connect(CAMILLE);
       const anonymous = await connect();
       await ask(camille, CAMILLE_CONVERSATION);
-      expect(await listed(camille)).toEqual(
-        expect.arrayContaining([LEGACY, CAMILLE_CONVERSATION]),
-      );
+      expect(await listed(camille)).toEqual([CAMILLE_CONVERSATION]);
       expect(await listed(anonymous)).toEqual([LEGACY]);
     },
     TEST_TIMEOUT_MS,
@@ -256,7 +259,7 @@ function registerDeleteCases(): void {
   );
 
   it(
-    "lets the owner delete their conversation, and anyone delete an unowned one (fails a delete that refuses the owner or the unowned)",
+    "lets the owner delete their conversation, and no named person delete one with messages and no owner (fails a delete that refuses the owner or lets anyone delete the unowned)",
     async () => {
       const running = await start();
       seedLegacyConversation(running);
@@ -274,7 +277,7 @@ function registerDeleteCases(): void {
       await settle(camille);
       await settle(dana);
       expect(running.conversationStore.get(CAMILLE_CONVERSATION)).toBeNull();
-      expect(running.conversationStore.get(LEGACY)).toBeNull();
+      expect(running.conversationStore.get(LEGACY)).not.toBeNull();
     },
     TEST_TIMEOUT_MS,
   );
@@ -282,19 +285,19 @@ function registerDeleteCases(): void {
   it(
     "broadcasts to each socket only the list its actor may see (fails a broadcast built from the acting socket's list)",
     async () => {
-      const running = await start();
-      seedLegacyConversation(running);
+      await start();
       const camille = await connect(CAMILLE);
       const dana = await connect(DANA);
       sendWire(camille.socket, { type: "hello", role: "chat" });
       await ask(dana, DANA_CONVERSATION);
+      await ask(dana, DANA_SECOND_CONVERSATION);
       const before = camille.frames.events.filter(isList).length;
       sendWire(dana.socket, {
         type: "delete_conversation",
-        conversationId: LEGACY,
+        conversationId: DANA_SECOND_CONVERSATION,
       });
       await dana.frames.next(
-        (msg) => isList(msg) && !idsOf(msg).includes(LEGACY),
+        (msg) => isList(msg) && !idsOf(msg).includes(DANA_SECOND_CONVERSATION),
       );
       await settle(camille);
       const lists = camille.frames.events.filter(isList);

@@ -97,6 +97,7 @@ async function startHarness(answer: PermissionOutcome): Promise<Harness> {
       return answer;
     },
     resolvePermission: () => {},
+    conversationOf: () => undefined,
     getPendingForConversation: () => [],
     countPending: () => 0,
     cancelConversation: () => {},

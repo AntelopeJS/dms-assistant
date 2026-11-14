@@ -200,8 +200,9 @@ export interface StoredConversation {
   generationMode?: GenerationMode;
   /**
    * The `userId` of the person whose request first wrote the conversation, set
-   * once and never replaced. Absent on a conversation stored before owners
-   * existed, or written by a connection that named no actor: everyone sees it.
+   * once and never replaced. Absent until the first request of a named actor,
+   * and on a conversation written by a connection that named no actor; see
+   * `isVisibleTo` for who may use it then.
    */
   ownerId?: string;
 }

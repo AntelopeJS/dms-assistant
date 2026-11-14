@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { ToolArgsSchema } from "../agent/edit-targets.js";
 import type { PendingRequest } from "../agent/permission-bus.js";
 import {
@@ -239,7 +240,7 @@ function permissionOnlyRecord(input: RowInput, permission: StoredMessage) {
   const toolName = permission.toolName ?? "";
   const allowedBy = permission.allowedBy ?? undecidedAllowedBy(toolName);
   const record: ActivityRecord = {
-    id: `${entry.id}:${permission.requestId ?? permission.callId ?? permission.timestampMs}`,
+    id: `${entry.id}:${permission.requestId === undefined ? (permission.callId ?? permission.timestampMs) : requestKey(permission.requestId)}`,
     timestampMs: permission.requestedAtMs ?? permission.timestampMs,
     tool: bareToolName(toolName),
     target: activityTarget(
@@ -294,13 +295,27 @@ function stateChangeRecords(
   );
 }
 
+/**
+ * A row key that stands for a permission request without being its id: every
+ * owner reads the feed, and the request id itself answers the request.
+ */
+function requestKey(requestId: string): string {
+  const digest = createHash("sha256").update(requestId).digest("hex");
+  return `request-${digest.slice(0, 16)}`;
+}
+
+/** The row id of a pending request: its call id, else its request key. */
+function pendingRowId(conversationId: string, request: PendingRequest): string {
+  return `${conversationId}:${request.callId ?? requestKey(request.requestId)}`;
+}
+
 function pendingRecord(
   input: RowInput,
   request: PendingRequest,
   existing: ActivityRecord | undefined,
 ): ActivityRecord {
   const base: ActivityRecord = existing ?? {
-    id: `${input.entry.id}:${request.callId ?? request.requestId}`,
+    id: pendingRowId(input.entry.id, request),
     timestampMs: request.createdAtMs,
     tool: bareToolName(request.toolName),
     target: activityTarget(
@@ -365,7 +380,7 @@ function applyPending(
   );
   const byId = new Map(records.map((r) => [r.id, r]));
   for (const request of own) {
-    const id = `${input.entry.id}:${request.callId ?? request.requestId}`;
+    const id = pendingRowId(input.entry.id, request);
     byId.set(id, pendingRecord(input, request, byId.get(id)));
   }
   return [...byId.values()];

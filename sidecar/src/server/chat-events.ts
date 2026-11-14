@@ -121,7 +121,7 @@ function listConversations(
     .map((summary) => enrichSummary(services, summary));
 }
 
-/** The conversations `viewerId` may see: its own, and those with no owner. */
+/** The conversations `viewerId` may see; see `isVisibleTo`. */
 export function buildConversationListEvent(
   services: SidecarServices,
   viewerId: string | null,

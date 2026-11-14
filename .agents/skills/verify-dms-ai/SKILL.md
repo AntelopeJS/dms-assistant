@@ -87,7 +87,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 - The sample holds one more record than every documented limit it drives (29 log records for the 25 of a page, 10,005 for the 10,000 of an export, a usage entry on the first day of the 14 and one the day before), so that N and N+1 look different. Add the same when you add a limit.
 - The 24 hour, 7 day and 30 day windows are driven with calls 3 hours, 10 days and 40 days old, not at the edge of each window.
 - Text the dashboard uppercases (section titles) is matched without regard to case.
-- A journey runs a development backend (`ajs project dev`) unless it pins another `backend`: `guarded` in `guard.mjs` sets `backend: "dev"` on every journey, because the module starts its sidecar in development only. `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` also pins it itself, because the module touches `.mcp.json` in development only.
+- A journey runs a development backend (`ajs project dev`) unless it pins another `backend`: `guarded` in `guard.mjs` sets `backend: "dev"` on every journey, because the module starts its sidecar in development only. `a-development-start-replaces-the-old-dms-ai-server-in-mcp-json` also pins it itself, because the module touches `.mcp.json` in development only. `a-production-start-runs-no-sidecar` pins `backend: "production"` to show that `ajs project start` starts no sidecar.
 - `an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it` sets `DMS_AI_IDLE_SHUTDOWN_MS` to 20 seconds and restarts the backend with it; it takes about a minute, and nothing else may use the checkout while it runs.
 
 ## Not driven

@@ -1,13 +1,13 @@
 ---
 covers:
-  - packages/dms-builder/src/index.ts
+  - src/builder/index.ts
 docs:
-  - packages/dms-builder/docs/1.introduction.md
+  - docs/8.database-connection.md
 ---
 
 # Smoke
 
-The fixed journey every verdict runs, whatever the diff touches: the introduction's "What one change looks like".
+The fixed journey every verdict runs, whatever the diff touches: the first call of the onboarding's "Start from an existing database" path.
 
 ## Sub-features
 
@@ -15,7 +15,7 @@ The fixed journey every verdict runs, whatever the diff touches: the introductio
 
 ## How to get to it (user POV)
 
-- `GET /api/builder/page` on the Board page, then `POST /api/builder/page/blocks` with a card's new title, as the assistant and **Build it** write a page.
+- `GET /api/builder/database/connections` and `GET /api/builder/database/project` as the owner, then the same without signing in.
 
 ## Driving it with dms-control
 

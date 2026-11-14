@@ -9,6 +9,7 @@ covers:
   - sidecar/src/constants/audit.ts
   - sidecar/src/state/legacy-tool-names.ts
   - sidecar/src/state/store.ts
+  - sidecar/src/state/stored-schemas.ts
   - sidecar/src/state/conversations.ts
   - sidecar/src/agent/tool-kinds.ts
   - sidecar/src/constants/tool-kinds.ts

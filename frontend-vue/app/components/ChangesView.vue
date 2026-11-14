@@ -173,7 +173,7 @@ const emptyActions = computed(() =>
 				:placeholder="t('dms_ai.views.changes.search')"
 				:aria-label="t('dms_ai.views.changes.search')"
 			/>
-			<DmsSegmented
+			<DmsSegmentedControl
 				v-model="scope"
 				:items="SCOPE_ITEMS"
 				size="sm"
@@ -181,14 +181,14 @@ const emptyActions = computed(() =>
 			/>
 		</div>
 
-		<DmsCard v-if="isCheckpointOff" :padded="false">
+		<DmsCardPanel v-if="isCheckpointOff" :padded="false">
 			<DmsEmptyState
 				icon="i-ph-git-diff"
 				:title="t('dms_ai.views.changes.off_title')"
 				:description="t('dms_ai.views.changes.off_description')"
 			/>
-		</DmsCard>
-		<DmsCard
+		</DmsCardPanel>
+		<DmsCardPanel
 			v-else-if="list.failure.value && changeSets.length === 0"
 			:padded="false"
 		>
@@ -197,36 +197,36 @@ const emptyActions = computed(() =>
 				:message="list.message.value"
 				@retry="reload"
 			/>
-		</DmsCard>
+		</DmsCardPanel>
 		<div
 			v-else-if="isFirstLoad"
 			class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[380px_minmax(0,1fr)]"
 			:aria-busy="true"
 			:aria-label="t('dms_ai.views.common.loading')"
 		>
-			<DmsCard class="flex flex-col gap-4">
+			<DmsCardPanel class="flex flex-col gap-4">
 				<USkeleton v-for="index in 5" :key="index" class="h-10 w-full" />
-			</DmsCard>
-			<DmsCard class="flex flex-col gap-3">
+			</DmsCardPanel>
+			<DmsCardPanel class="flex flex-col gap-3">
 				<USkeleton class="h-5 w-64" />
 				<USkeleton class="h-48 w-full" />
-			</DmsCard>
+			</DmsCardPanel>
 		</div>
-		<DmsCard v-else-if="changeSets.length === 0" :padded="false">
+		<DmsCardPanel v-else-if="changeSets.length === 0" :padded="false">
 			<DmsEmptyState
 				icon="i-ph-git-diff"
 				:title="t('dms_ai.views.changes.empty_title')"
 				:description="t('dms_ai.views.changes.empty_description')"
 				:actions="emptyActions"
 			/>
-		</DmsCard>
-		<DmsCard v-else-if="items.length === 0" :padded="false">
+		</DmsCardPanel>
+		<DmsCardPanel v-else-if="items.length === 0" :padded="false">
 			<DmsEmptyState
 				variant="no-result"
 				:title="t('dms_ai.views.changes.no_match_title')"
 				:description="t('dms_ai.views.changes.no_match_description')"
 			/>
-		</DmsCard>
+		</DmsCardPanel>
 		<template v-else>
 			<DmsMasterDetail
 				:model-value="selectedId"

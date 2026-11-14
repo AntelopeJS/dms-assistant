@@ -181,13 +181,13 @@ const Stub = (name: string) =>
 
 const GLOBAL_STUBS = Object.fromEntries(
 	[
-		"DmsCard",
+		"DmsCardPanel",
 		"DmsEmptyState",
 		"DmsMasterDetail",
-		"DmsSegmented",
+		"DmsSegmentedControl",
 		"DmsKeyValueList",
 		"DmsIconWell",
-		"DmsEyebrow",
+		"DmsEyebrowLabel",
 		"DmsCodeSnippet",
 		"UButton",
 		"UInput",
@@ -380,7 +380,7 @@ describe("changes view", () => {
 		const wrapper = mount(ChangesView);
 		await flushPromises();
 		wrapper
-			.findComponent({ name: "DmsSegmented" })
+			.findComponent({ name: "DmsSegmentedControl" })
 			.vm.$emit("update:modelValue", "vibe");
 		await flushPromises();
 		expect(listReads().at(-1)).toEqual([

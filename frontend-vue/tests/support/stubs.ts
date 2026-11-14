@@ -136,8 +136,8 @@ const UTextarea = defineComponent({
 			}),
 });
 
-const DmsSegmented = defineComponent({
-	name: "DmsSegmented",
+const DmsSegmentedControl = defineComponent({
+	name: "DmsSegmentedControl",
 	props: {
 		modelValue: { type: [String, Number], default: "" },
 		items: {
@@ -192,7 +192,7 @@ export const PANEL_STUBS = {
 	UPopover,
 	UInput,
 	UTextarea,
-	DmsSegmented,
+	DmsSegmentedControl,
 	DmsEmptyState,
 	DmsStatusPill: defineComponent({
 		props: { label: { type: String, default: "" } },

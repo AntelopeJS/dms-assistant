@@ -137,14 +137,14 @@ function openConversation(): void {
 		</div>
 		<template v-else>
 			<section v-if="args.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrow :label="t('dms_ai.views.activity.arguments')" />
+				<DmsEyebrowLabel :label="t('dms_ai.views.activity.arguments')" />
 				<div class="border-default bg-(--dms-bg-field) rounded-md border px-3">
 					<DmsKeyValueList :items="args" dense />
 				</div>
 			</section>
 
 			<section v-if="trail.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrow :label="t('dms_ai.views.activity.decision_trail')" />
+				<DmsEyebrowLabel :label="t('dms_ai.views.activity.decision_trail')" />
 				<ol class="flex flex-col">
 					<li
 						v-for="(step, index) in trail"
@@ -160,12 +160,12 @@ function openConversation(): void {
 			</section>
 
 			<section v-if="diffFiles.length > 0" class="flex flex-col gap-2">
-				<DmsEyebrow :label="t('dms_ai.views.activity.diff')" />
+				<DmsEyebrowLabel :label="t('dms_ai.views.activity.diff')" />
 				<DiffView :files="diffFiles" />
 			</section>
 
 			<section v-if="output" class="flex flex-col gap-2">
-				<DmsEyebrow :label="t('dms_ai.views.activity.output')" />
+				<DmsEyebrowLabel :label="t('dms_ai.views.activity.output')" />
 				<DmsCodeSnippet
 					:code="output"
 					language="text"

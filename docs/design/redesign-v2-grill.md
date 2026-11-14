@@ -136,7 +136,7 @@ The mockup has a period selector, an assistant status hero with "Open assistant"
 
 The mockup is a master-detail. A change set list sits on the left, the selected set's diff on the right, and Undo previews conflicts in a dialog.
 
-**Decision.** One custom component, `DmsAiChangesView`, built on the public `DmsMasterDetail`, `DmsEmptyState`, `DmsKeyValueList` and `DmsStatusPill` of the DMS, a `DmsConfirmModal`-style modal and Nuxt UI. The list filters All, Safe or Code with `DmsSegmented`. A diff viewer (`DiffView`) is internal to the module. `?set=<id>` deep-links a change set (the panel's "Review diff" opens it).
+**Decision.** One custom component, `DmsAiChangesView`, built on the public `DmsMasterDetail`, `DmsEmptyState`, `DmsKeyValueList` and `DmsStatusPill` of the DMS, a `DmsConfirmModal`-style modal and Nuxt UI. The list filters All, Safe or Code with `DmsSegmentedControl`. A diff viewer (`DiffView`) is internal to the module. `?set=<id>` deep-links a change set (the panel's "Review diff" opens it).
 
 ### Q17. Activity, what are the tabs and the "Allowed" column?
 

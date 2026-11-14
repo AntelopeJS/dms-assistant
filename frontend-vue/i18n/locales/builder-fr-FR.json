@@ -288,7 +288,11 @@
 					"real": "un real converti en nombre n’est pas la décimale telle qu’elle a été écrite",
 					"microseconds": "les microsecondes sont tronquées en millisecondes",
 					"json": "le json est lu comme du jsonb : les clés en double, l’ordre des clés et les espaces ne sont pas conservés",
-					"timestamp": "un timestamp sans fuseau horaire est lu en UTC ; {rest}"
+					"timestamp": "un timestamp sans fuseau horaire est lu en UTC ; {rest}",
+					"decimal": "un decimal perd en précision comme nombre ; déclarez-le en chaîne pour le lire exactement",
+					"float": "un float converti en nombre n’est pas la décimale telle qu’elle a été écrite",
+					"datetime": "un datetime ne contient pas de fuseau horaire et est lu en UTC",
+					"datetime_and": "un datetime ne contient pas de fuseau horaire et est lu en UTC ; {rest}"
 				},
 				"trait": {
 					"identifier-like": "type identifiant",

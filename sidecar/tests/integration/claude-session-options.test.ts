@@ -73,7 +73,7 @@ describe("the options a Claude session starts with", () => {
   }
 
   it(
-    "starts the DMS MCP over its launcher beside the chat's own server, with the DMS MCP's navigate_to_page and preview_blocks hidden (fails a session without the DMS MCP, or one that shows two tools of one name)",
+    "starts the DMS MCP over its launcher beside the chat's own server, with the DMS MCP's navigate_to_page and preview_blocks hidden (fails a session without the DMS MCP, one that does not name the chat as its client, or one that shows two tools of one name)",
     async () => {
       const session = await startedSession([]);
 
@@ -89,6 +89,7 @@ describe("the options a Claude session starts with", () => {
               "dms",
               "mcp-bridge.cjs",
             ),
+            "--client=chat",
           ],
         },
         "dms-ai": { type: "sdk" },

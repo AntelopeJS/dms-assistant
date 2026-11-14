@@ -11,6 +11,14 @@ export interface ChatSocketRegistry {
   follow: (conversationId: string, socket: SocketSender) => void;
   /** A chat socket attached to no conversation yet (still reached by broadcast). */
   addChat: (socket: SocketSender) => void;
+  /**
+   * Stops sending the conversation's events to every socket `keeps` refuses;
+   * they stay chat sockets, reached by broadcast.
+   */
+  detachUnless: (
+    conversationId: string,
+    keeps: (socket: SocketSender) => boolean,
+  ) => void;
   clear: (socket: SocketSender) => void;
   /** Every socket showing the conversation: one per open tab. */
   send: (conversationId: string, event: AnyServerEventType) => void;
@@ -61,6 +69,17 @@ function addTo(
   map.set(conversationId, sockets);
 }
 
+function dropUnless(
+  map: Map<string, Set<SocketSender>>,
+  conversationId: string,
+  keeps: (socket: SocketSender) => boolean,
+): void {
+  const sockets = map.get(conversationId);
+  if (sockets === undefined) return;
+  for (const socket of sockets) if (!keeps(socket)) sockets.delete(socket);
+  if (sockets.size === 0) map.delete(conversationId);
+}
+
 /** Every socket the conversation's events go to, each once. */
 function recipients(
   state: RegistryState,
@@ -102,6 +121,10 @@ export function createChatSocketRegistry(): ChatSocketRegistry {
     },
     addChat: (socket) => {
       state.chats.add(socket);
+    },
+    detachUnless: (conversationId, keeps) => {
+      dropUnless(state.byConversation, conversationId, keeps);
+      dropUnless(state.followers, conversationId, keeps);
     },
     clear: (socket) => {
       removeFrom(state.byConversation, socket);

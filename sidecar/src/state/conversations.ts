@@ -28,14 +28,17 @@ export interface ConversationModesPatch {
 
 type StoredMessagePatch = Partial<StoredMessage>;
 
+/** Why a conversation id takes no more writes: set aside when the store was read, or deleted. */
+export type ConversationClosure = "set_aside" | "deleted";
+
 export interface ConversationStore {
   get(conversationId: string): StoredConversation | null;
   /**
-   * Whether the id belongs to a stored conversation this version set aside.
-   * Its id is never reused: every write under it is dropped, so the stored
-   * record and its owner stay as they were.
+   * Why the id is closed, or null when it is open. A closed id is never
+   * reused: every write under it is dropped, so a set-aside record and its
+   * owner stay as they were, and a deleted conversation stays deleted.
    */
-  isSetAside(conversationId: string): boolean;
+  closure(conversationId: string): ConversationClosure | null;
   appendMessage(conversationId: string, message: StoredMessage): void;
   /**
    * Merges `patch` into every stored message `matches` accepts. Used to stamp
@@ -62,7 +65,7 @@ export interface ConversationStore {
   /**
    * Records `ownerId` as the conversation's owner, creating the conversation
    * when it is new. A conversation that already has an owner or messages keeps
-   * what it has: one stored before owners existed stays everyone's.
+   * what it has.
    */
   claim(conversationId: string, ownerId: string): void;
   /** The conversations `viewerId` may see, newest first; see `isVisibleTo`. */
@@ -79,7 +82,7 @@ const TITLE_FALLBACK = "New conversation";
 interface CacheState {
   store: Store;
   cache: Map<string, StoredConversation>;
-  setAside: ReadonlySet<string>;
+  closed: Map<string, ConversationClosure>;
 }
 
 function buildEmptyConversation(nowMs: number): StoredConversation {
@@ -105,14 +108,14 @@ function getConversation(
   return state.cache.get(conversationId) ?? null;
 }
 
-/** The conversation under `conversationId`, created when new; null for a set-aside id. */
+/** The conversation under `conversationId`, created when new; null for a closed id. */
 function ensureConversation(
   state: CacheState,
   conversationId: string,
 ): StoredConversation | null {
   const existing = state.cache.get(conversationId);
   if (existing !== undefined) return existing;
-  if (state.setAside.has(conversationId)) return null;
+  if (state.closed.has(conversationId)) return null;
   const created = buildEmptyConversation(Date.now());
   state.cache.set(conversationId, created);
   return created;
@@ -237,15 +240,19 @@ function claimConversation(
 
 /**
  * Whether `viewerId` (null: a connection that named no actor) may see and
- * delete the conversation: its owner, and everyone when it has no owner.
+ * use the conversation: its owner. A record with no owner is open to anyone
+ * while it is empty, so its first asker can claim it. Once it holds messages
+ * only a connection that named no actor may use it; the backend names the
+ * actor first on every socket it opens, so in production none does.
  */
 export function isVisibleTo(
   conversation: StoredConversation,
   viewerId: string | null,
 ): boolean {
-  return (
-    conversation.ownerId === undefined || conversation.ownerId === viewerId
-  );
+  if (conversation.ownerId !== undefined) {
+    return conversation.ownerId === viewerId;
+  }
+  return conversation.messages.length === 0 || viewerId === null;
 }
 
 function deriveTitle(conversation: StoredConversation): string {
@@ -297,6 +304,7 @@ function listEntries(state: CacheState): ConversationEntry[] {
 }
 
 function deleteConversation(state: CacheState, conversationId: string): void {
+  state.closed.set(conversationId, "deleted");
   if (!state.cache.delete(conversationId)) return;
   persistCache(state);
 }
@@ -307,7 +315,11 @@ async function loadCacheFromDisk(state: CacheState): Promise<void> {
   for (const [id, conv] of Object.entries(stored.conversations)) {
     state.cache.set(id, conv);
   }
-  state.setAside = new Set(state.store.setAsideIds());
+  state.closed = new Map(
+    state.store
+      .setAsideIds()
+      .map((id): [string, ConversationClosure] => [id, "set_aside"]),
+  );
 }
 
 export function createConversationStore(
@@ -316,11 +328,11 @@ export function createConversationStore(
   const state: CacheState = {
     store: options.store,
     cache: new Map(),
-    setAside: new Set(),
+    closed: new Map(),
   };
   return {
     get: (id) => getConversation(state, id),
-    isSetAside: (id) => state.setAside.has(id),
+    closure: (id) => state.closed.get(id) ?? null,
     appendMessage: (id, message) => appendToConversation(state, id, message),
     patchMessages: (id, matches, patch) =>
       patchMessages(state, id, matches, patch),

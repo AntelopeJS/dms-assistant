@@ -41,7 +41,7 @@ describe("a conversation's owner in the stored state", () => {
     expect(second.get(OWNED)?.ownerId).toBe("u-camille");
   });
 
-  it("loads a state file written before owners existed, and lists it to everyone (fails a schema that requires ownerId)", async () => {
+  it("loads a conversation with messages and no owner, and lists it only to a connection that named no actor (fails a schema that requires ownerId, or a list that shows it to a named person)", async () => {
     const stored = {
       conversations: {
         [LEGACY]: {
@@ -55,7 +55,7 @@ describe("a conversation's owner in the stored state", () => {
     const store = openStore(dir);
     await store.loadFromDisk();
     expect(store.get(LEGACY)?.ownerId).toBeUndefined();
-    expect(store.list("u-camille").map((c) => c.id)).toEqual([LEGACY]);
+    expect(store.list("u-camille")).toEqual([]);
     expect(store.list(null).map((c) => c.id)).toEqual([LEGACY]);
   });
 });

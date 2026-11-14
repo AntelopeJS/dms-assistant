@@ -55,6 +55,8 @@ export interface QuestionBusOptions {
 export interface QuestionBus {
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
   resolveQuestion: (requestId: string, reply: QuestionReply) => void;
+  /** The conversation a pending question belongs to; undefined once it is answered or gone. */
+  conversationOf: (requestId: string) => string | undefined;
   countPending: (conversationId?: string) => number;
   getPendingForConversation: (conversationId: string) => PendingQuestion[];
   /**
@@ -213,6 +215,9 @@ export function createQuestionBus(opts: QuestionBusOptions): QuestionBus {
     countPending(conversationId) {
       if (conversationId === undefined) return state.pending.size;
       return collectPendingForConversation(state, conversationId).length;
+    },
+    conversationOf(requestId) {
+      return state.pending.get(requestId)?.conversationId;
     },
     getPendingForConversation(conversationId) {
       return collectPendingForConversation(state, conversationId);

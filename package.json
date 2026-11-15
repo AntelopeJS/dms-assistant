@@ -86,7 +86,7 @@
   },
   "dependencies": {
     "@antelopejs/agent-skills": ">=0.3.0 <0.4.0",
-    "@antelopejs/dms": ">=0.20.1 <0.21.0",
+    "@antelopejs/dms": ">=0.20.2 <0.21.0",
     "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
     "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
     "@antelopejs/interface-dms": ">=0.14.0 <0.15.0",
@@ -98,7 +98,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@antelopejs/core": "~1.23.2",
+    "@antelopejs/core": "~1.24.0",
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
     "@antelopejs/tooling-configs": ">=0.7.1 <0.8.0",

@@ -103,7 +103,7 @@ describe("the options a Claude session starts with", () => {
   );
 
   it(
-    "starts every session with a skill's inline shell commands switched off (fails a session that lets a skill run `cat .env` as it loads, before any hook or prompt)",
+    "hands every session the setting that switches a skill's inline shell commands off (fails a provider that leaves it out, so a skill runs `cat .env` as it loads; the CLI honouring it is shown on the real CLI, not here)",
     async () => {
       const session = await startedSession([]);
 

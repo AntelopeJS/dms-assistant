@@ -40,6 +40,7 @@ import { buildSystemPrompt } from "../../agent/system-prompt.js";
 import { TURN_IDLE_TIMEOUT_MS } from "../../constants/agent.js";
 import {
   SDK_INCLUDE_PARTIAL_MESSAGES,
+  SDK_SESSION_SETTINGS,
   SDK_SETTING_SOURCES_ISOLATED,
   SKILL_PLUGIN_WRAPPER_DIR,
   SYSTEM_PROMPT_PRESET_NAME,
@@ -95,6 +96,7 @@ interface PromptOptions {
     append: string;
   };
   settingSources: SettingSource[];
+  settings: typeof SDK_SESSION_SETTINGS;
   includePartialMessages: boolean;
   permissionMode: PermissionMode;
   hooks: SdkHooks;
@@ -140,6 +142,7 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
       append: input.systemPrompt,
     },
     settingSources: SDK_SETTING_SOURCES_ISOLATED,
+    settings: SDK_SESSION_SETTINGS,
     includePartialMessages: SDK_INCLUDE_PARTIAL_MESSAGES,
     permissionMode: resolvePermissionMode(input.settings),
     hooks: withSecretFileGuard(input.hooks),

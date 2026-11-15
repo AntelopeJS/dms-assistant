@@ -103,6 +103,16 @@ describe("the options a Claude session starts with", () => {
   );
 
   it(
+    "hands every session the setting that switches a skill's inline shell commands off (fails a provider that leaves it out, so a skill runs `cat .env` as it loads; the CLI honouring it is shown on the real CLI, not here)",
+    async () => {
+      const session = await startedSession([]);
+
+      expect(session?.settings?.disableSkillShellExecution).toBe(true);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "allows only the first source's copy of a skill two sources name alike (fails a loadout that allows every catalog id)",
     async () => {
       const workflow = join(dir, "workflow");

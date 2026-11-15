@@ -2,6 +2,19 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.4
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.3...v0.2.4)
+
+### 🩹 Fixes
+
+- **sidecar:** Keep Claude's Grep and Glob away from .env files ([#70](https://github.com/AntelopeJS/dms-assistant/pull/70))
+- **builder:** Check a connection through the driver's probe and show how to install a missing driver ([#69](https://github.com/AntelopeJS/dms-assistant/pull/69))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.2.3
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.2...v0.2.3)

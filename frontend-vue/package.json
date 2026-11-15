@@ -14,7 +14,7 @@
 		"typecheck:chat": "vue-tsc --noEmit -p tsconfig.chat.json",
 		"verify-source": "ajs dms verify-source --layer \"$PWD/node_modules/@antelopejs/dms/frontend-vue\" --module \"$PWD\"",
 		"format": "prettier --write .",
-		"lint": "eslint . && prettier --check .",
+		"lint": "eslint . && prettier --check . && node --input-type=module -e \"import { assertDmsComponents } from '@antelopejs/dms/checks/dms-components'; await assertDmsComponents({ layer: '.', sources: ['../src'] });\"",
 		"lint:fix": "eslint . --fix && prettier --write .",
 		"test": "vitest run --passWithNoTests && vitest run --config builder/vitest.config.ts"
 	},
@@ -29,7 +29,7 @@
 	},
 	"devDependencies": {
 		"@antelopejs/core": "~1.23.2",
-		"@antelopejs/dms": ">=0.20.0 <0.21.0",
+		"@antelopejs/dms": ">=0.20.1 <0.21.0",
 		"@antelopejs/dms-frontend": ">=0.11.1 <0.12.0",
 		"@antelopejs/interface-api": ">=0.3.3 <0.4.0",
 		"@antelopejs/interface-api-util": ">=0.3.2 <0.4.0",

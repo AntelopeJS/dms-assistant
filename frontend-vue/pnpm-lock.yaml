@@ -4,15 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@antelopejs/dms': file:../.tgz-deps/antelopejs-dms-5e267c7.tgz
-  '@antelopejs/dms>@antelopejs/interface-api': 0.3.3
-  '@antelopejs/dms>@antelopejs/interface-api-util': 0.3.2
-  '@antelopejs/dms>@antelopejs/interface-data-api': 0.8.0
-  '@antelopejs/dms>@antelopejs/interface-database': 0.4.0
-  '@antelopejs/dms>@antelopejs/interface-database-decorators': 0.5.2
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.0
-
 importers:
 
   .:
@@ -43,8 +34,8 @@ importers:
         specifier: ~1.23.2
         version: 1.23.2
       '@antelopejs/dms':
-        specifier: file:../.tgz-deps/antelopejs-dms-5e267c7.tgz
-        version: file:../.tgz-deps/antelopejs-dms-5e267c7.tgz(@antelopejs/core@1.23.2)(bare-buffer@3.7.1)(typescript@5.9.3)
+        specifier: '>=0.20.1 <0.21.0'
+        version: 0.20.1(@antelopejs/core@1.23.2)(bare-buffer@3.7.1)(typescript@5.9.3)
       '@antelopejs/dms-frontend':
         specifier: '>=0.11.1 <0.12.0'
         version: 0.11.1(@antelopejs/core@1.23.2)
@@ -123,13 +114,12 @@ packages:
     peerDependencies:
       '@antelopejs/core': ~1.23.0
 
-  '@antelopejs/dms@file:../.tgz-deps/antelopejs-dms-5e267c7.tgz':
-    resolution: {integrity: sha512-Gv/AWKrk6ye4C2kwuzQ3DL6yqTDiHLQJKy86B5utuUSBoQudyAhoU8ETJ2LPFrT2vjhQmy1zak1FyU1AkJMtvw==, tarball: file:../.tgz-deps/antelopejs-dms-5e267c7.tgz}
-    version: 0.20.1
+  '@antelopejs/dms@0.20.1':
+    resolution: {integrity: sha512-syyuXLfNu3JRVSA4H/JQ1728yQoZRkcHl7EdLxBB0XnNH/Kl/fSyyQ59u7RzBP1b8Ntn3xD8ASkcLp8rEwO9AQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      '@antelopejs/core': '>=1.23.0 <2'
+      '@antelopejs/core': ~1.23.0
       mongodb: ^6.21.0 || ^7.0.0
       mysql2: ^3.24.6
       pg: ^8.22.0
@@ -189,10 +179,10 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
 
-  '@antelopejs/interface-dms-automation@0.6.2':
-    resolution: {integrity: sha512-MdF7aTCMq7NQbrrjWTc3OStxtMp8SKqZvIsvVdnBTo3q06T9C5SOHcEicMPCDT6xYuVRXggLL0dLWuheWLr0IQ==}
+  '@antelopejs/interface-dms-automation@0.7.0':
+    resolution: {integrity: sha512-huGVCIDoJVkpT939wo4yWNYtyuy887QvcuXI9XjwuvYiWXdwNWiDLgs1lIulvkNGc+cf0ZUHYEpERuhhWPcHcQ==}
     peerDependencies:
-      '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
+      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
   '@antelopejs/interface-dms-builder@0.5.1':
     resolution: {integrity: sha512-qNgJeAaCymkMUG2z0wNKGHAHsQXEnp1hU7zuEg+HPjtxHaHtMr6086nji82OEpQyt79VYSGata1tszm3L0/M9A==}
@@ -210,10 +200,10 @@ packages:
       '@antelopejs/interface-database-decorators': '>=0.5.2 <0.6.0'
       '@antelopejs/interface-file-storage': '>=0.1.4 <1.0.0'
 
-  '@antelopejs/interface-email@0.2.0':
-    resolution: {integrity: sha512-+MF/JZADoa0UPZQM7FICM+rjg9Sg9tzb+SjpXkIu0Df2lPv8QVEI021lCCAHecb8rXjUP+9unWCwKRsBytKVVg==}
+  '@antelopejs/interface-email@0.2.1':
+    resolution: {integrity: sha512-qVCJE7dBX90HYSvXXnD4VIEgUn7ZL3FMt8q/BDuNscUcl5pczMb6o480Hyecdsd8c3T1/28n9+1JhM026d8XEQ==}
     peerDependencies:
-      '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
+      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
   '@antelopejs/interface-file-storage@0.1.7':
     resolution: {integrity: sha512-3oM35OjziFFm+VFERcbt5/J/LDODBBK5UoNIxuMnW/t8lff6GdERCsNOl4Gkq5vKhG/83qAk4Cyy6qedxecviQ==}
@@ -3029,6 +3019,9 @@ packages:
   zod@3.24.4:
     resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
@@ -3070,7 +3063,7 @@ snapshots:
       '@oxc-parser/binding-linux-x64-gnu': 0.95.0
       '@oxc-parser/binding-win32-x64-msvc': 0.95.0
 
-  '@antelopejs/dms@file:../.tgz-deps/antelopejs-dms-5e267c7.tgz(@antelopejs/core@1.23.2)(bare-buffer@3.7.1)(typescript@5.9.3)':
+  '@antelopejs/dms@0.20.1(@antelopejs/core@1.23.2)(bare-buffer@3.7.1)(typescript@5.9.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)
@@ -3081,7 +3074,7 @@ snapshots:
       '@antelopejs/interface-database-decorators': 0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.1))
       '@antelopejs/interface-dms': 0.14.0(f5da06a0c98a7b29fb38c747917eadf0)
       '@antelopejs/interface-dms-builder': 0.5.1(@antelopejs/interface-core@0.5.1)
-      '@antelopejs/interface-email': 0.2.0(@antelopejs/interface-core@0.5.1)
+      '@antelopejs/interface-email': 0.2.1(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-file-storage': 0.1.7(@antelopejs/interface-core@0.5.1)
       '@csstools/css-tokenizer': 4.0.0
       '@types/jsonwebtoken': 9.0.10
@@ -3101,12 +3094,12 @@ snapshots:
       striptags: 3.2.0
       ts-morph: 28.0.0
       ua-parser-js: 2.0.10
-      zod: 3.24.4
-      zod-to-json-schema: 3.24.6(zod@3.24.4)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     optionalDependencies:
       '@antelopejs/core': 1.23.2
       '@antelopejs/interface-database-catalog': 0.0.4(@antelopejs/interface-core@0.5.1)
-      '@antelopejs/interface-dms-automation': 0.6.2(@antelopejs/interface-core@0.5.1)
+      '@antelopejs/interface-dms-automation': 0.7.0(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-redis': 0.0.9(@antelopejs/interface-core@0.5.1)
       playwright-core: 1.65.0
       typescript: 5.9.3
@@ -3156,7 +3149,7 @@ snapshots:
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 
-  '@antelopejs/interface-dms-automation@0.6.2(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-automation@0.7.0(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
     optional: true
@@ -3178,7 +3171,7 @@ snapshots:
       zod: 3.24.4
       zod-to-json-schema: 3.24.6(zod@3.24.4)
 
-  '@antelopejs/interface-email@0.2.0(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-email@0.2.1(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 
@@ -5857,6 +5850,12 @@ snapshots:
     dependencies:
       zod: 3.24.4
 
+  zod-to-json-schema@3.24.6(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
+
   zod@3.24.4: {}
+
+  zod@3.25.76: {}
 
   zod@4.6.7: {}

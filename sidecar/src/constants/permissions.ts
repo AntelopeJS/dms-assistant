@@ -83,6 +83,12 @@ export const PROJECT_CONFIG_FILE_NAME = "antelope.config.ts";
 export const MODULE_CONFIG_FILE_PATTERN = /^antelope\..+\.json$/;
 
 /**
+ * The folder a scoped module's configuration file starts in: core writes the
+ * module `@scope/name` as `antelope.@scope/name.json`.
+ */
+export const SCOPED_MODULE_CONFIG_PREFIX = "antelope.@";
+
+/**
  * The project's state directory: the build artifact `ajs project start`
  * launches with its resolved configuration, and the module cache. A path
  * ending, matched on lower-cased segments like `GIT_HOOK_PATHS`.

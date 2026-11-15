@@ -1,10 +1,12 @@
-import { basename } from "node:path";
+import { realpathSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import {
   DEPENDENCY_FILE_NAMES,
   GIT_HOOK_PATHS,
   MODULE_CONFIG_FILE_PATTERN,
   PROJECT_CONFIG_FILE_NAME,
   PROJECT_STATE_PATH,
+  SCOPED_MODULE_CONFIG_PREFIX,
 } from "../constants/permissions.js";
 
 const ANY_TRAILING_SEGMENTS = "**";
@@ -75,17 +77,42 @@ export function isDependencyFile(path: string): boolean {
 
 const PROJECT_STATE_PATTERN = PROJECT_STATE_PATH.split("/");
 
-/**
- * Whether `path`, resolved, is a file AntelopeJS core reads a project's
- * configuration from: `antelope.config.ts`, an `antelope.*.json` merged into a
- * module's config, or a file under `.antelope/`. Matched anywhere on disk,
- * case-insensitively.
- */
-export function isProjectConfigFile(path: string): boolean {
-  const name = basename(path).toLowerCase();
+function namesProjectConfig(path: string): boolean {
+  const segments = pathSegments(path);
+  const name = segments.at(-1) ?? "";
+  const scoped =
+    segments.at(-2)?.startsWith(SCOPED_MODULE_CONFIG_PREFIX) === true &&
+    name.endsWith(".json");
   return (
     name === PROJECT_CONFIG_FILE_NAME ||
     MODULE_CONFIG_FILE_PATTERN.test(name) ||
-    matchesPathEnding(pathSegments(path), PROJECT_STATE_PATTERN)
+    scoped ||
+    matchesPathEnding(segments, PROJECT_STATE_PATTERN)
   );
+}
+
+/** Where `path` leads through links: the file's real path, or its real folder's when the file does not exist yet. */
+function linkTarget(path: string): string | undefined {
+  try {
+    return realpathSync(path);
+  } catch {
+    try {
+      return join(realpathSync(dirname(path)), basename(path));
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+/**
+ * Whether `path`, resolved, is a file AntelopeJS core reads a project's
+ * configuration from, by its own name or through a link: `antelope.config.ts`,
+ * an `antelope.*.json` merged into a module's config (a scoped module's
+ * `antelope.@scope/name.json` included), or a file under `.antelope/`. Matched
+ * anywhere on disk, case-insensitively.
+ */
+export function isProjectConfigFile(path: string): boolean {
+  if (namesProjectConfig(path)) return true;
+  const target = linkTarget(path);
+  return target !== undefined && namesProjectConfig(target);
 }

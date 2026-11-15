@@ -6,6 +6,9 @@ import {
 	type DevReloadWaiter,
 } from "../app/runtime/host-commands";
 
+/** A dashboard that stays on its page while the trips wait. */
+const here = (): string => "/home";
+
 function navigateCommand(path: string): object {
 	return { type: "host_command_navigate", path };
 }
@@ -43,7 +46,11 @@ describe("host command dispatch", () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
 		const dispatch = createHostCommandDispatcher({
-			navigate: createNavigator({ router: { push }, devReload: waiter }),
+			navigate: createNavigator({
+				location: here,
+				router: { push },
+				devReload: waiter,
+			}),
 		});
 		dispatch(navigateCommand("/new-page"));
 		await vi.waitFor(() => expect(calls).toEqual(["/new-page"]));
@@ -58,6 +65,7 @@ describe("host command dispatch", () => {
 		const push = vi.fn();
 		const dispatch = createHostCommandDispatcher({
 			navigate: createNavigator({
+				location: here,
 				router: { push },
 				devReload: { awaitRoute: async () => false },
 			}),
@@ -74,7 +82,11 @@ describe("host command dispatch", () => {
 		const { waiter, calls, reject } = controlledWaiter();
 		const logged = vi.spyOn(console, "error").mockImplementation(() => {});
 		const dispatch = createHostCommandDispatcher({
-			navigate: createNavigator({ router: { push }, devReload: waiter }),
+			navigate: createNavigator({
+				location: here,
+				router: { push },
+				devReload: waiter,
+			}),
 		});
 		dispatch(navigateCommand("/broken-wait"));
 		await vi.waitFor(() => expect(calls).toEqual(["/broken-wait"]));
@@ -93,7 +105,11 @@ describe("host command dispatch", () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
 		const dispatch = createHostCommandDispatcher({
-			navigate: createNavigator({ router: { push }, devReload: waiter }),
+			navigate: createNavigator({
+				location: here,
+				router: { push },
+				devReload: waiter,
+			}),
 		});
 		dispatch(navigateCommand("/stale"));
 		dispatch(navigateCommand("/fresh"));
@@ -109,7 +125,11 @@ describe("host command dispatch", () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
 		const dispatch = createHostCommandDispatcher({
-			navigate: createNavigator({ router: { push }, devReload: waiter }),
+			navigate: createNavigator({
+				location: here,
+				router: { push },
+				devReload: waiter,
+			}),
 		});
 		dispatch(navigateCommand("/first"));
 		await vi.waitFor(() => expect(calls).toEqual(["/first"]));
@@ -128,6 +148,7 @@ describe("host command dispatch", () => {
 		const awaitRoute = vi.fn(async () => true);
 		const dispatch = createHostCommandDispatcher({
 			navigate: createNavigator({
+				location: here,
 				router: { push },
 				devReload: { awaitRoute },
 			}),
@@ -146,6 +167,7 @@ describe("host command dispatch", () => {
 		const awaitRoute = vi.fn(async () => true);
 		const dispatch = createHostCommandDispatcher({
 			navigate: createNavigator({
+				location: here,
 				router: { push },
 				devReload: { awaitRoute },
 			}),
@@ -172,6 +194,7 @@ describe("host command dispatch", () => {
 		const push = vi.fn();
 		const dispatch = createHostCommandDispatcher({
 			navigate: createNavigator({
+				location: here,
 				router: { push },
 				devReload: { awaitRoute: async () => true },
 			}),
@@ -189,7 +212,11 @@ describe("the dashboard's own navigation to a page just written", () => {
 	it("goes there only once the dev reload serves its route", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
-		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		const navigate = createNavigator({
+			location: here,
+			router: { push },
+			devReload: waiter,
+		});
 		navigate("/shop/public-categories");
 		await vi.waitFor(() => expect(calls).toEqual(["/shop/public-categories"]));
 		expect(push).not.toHaveBeenCalled();
@@ -202,7 +229,11 @@ describe("the dashboard's own navigation to a page just written", () => {
 	it("follows the newest target, whether the dashboard or the agent asked for it", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
-		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		const navigate = createNavigator({
+			location: here,
+			router: { push },
+			devReload: waiter,
+		});
 		const dispatch = createHostCommandDispatcher({ navigate });
 		navigate("/first");
 		dispatch(navigateCommand("/agent"));
@@ -221,7 +252,11 @@ describe("the dashboard's own navigation to a page just written", () => {
 	it("opens a page that exists at once while the agent's trip to a page not written yet still waits", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
-		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		const navigate = createNavigator({
+			location: here,
+			router: { push },
+			devReload: waiter,
+		});
 		const dispatch = createHostCommandDispatcher({ navigate });
 		dispatch(navigateCommand("/never-written"));
 		await vi.waitFor(() => expect(calls).toEqual(["/never-written"]));
@@ -241,7 +276,11 @@ describe("the dashboard's own navigation to a page just written", () => {
 	it("waits on the page's own route and keeps its query and hash in the trip", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
-		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		const navigate = createNavigator({
+			location: here,
+			router: { push },
+			devReload: waiter,
+		});
 		navigate("/modules/ai/changes?set=abc#top");
 		await vi.waitFor(() => expect(calls).toEqual(["/modules/ai/changes"]));
 		release("/modules/ai/changes");
@@ -252,19 +291,55 @@ describe("the dashboard's own navigation to a page just written", () => {
 		);
 	});
 
-	it("waits longer than the project restart a page the builder writes may cause", async () => {
+	it("waits again while the project restart outlasts the host's own wait", async () => {
 		const push = vi.fn();
-		const awaitRoute = vi.fn(
-			async (_path: string, _options?: { timeoutMs?: number }) => true,
-		);
+		const answers = [false, false, true];
+		const awaitRoute = vi.fn(async (_path: string) => answers.shift() ?? true);
 		const navigate = createNavigator({
+			location: here,
 			router: { push },
 			devReload: { awaitRoute },
 		});
 		navigate("/shop/public-categories");
-		await vi.waitFor(() => expect(push).toHaveBeenCalled());
-		expect(
-			awaitRoute.mock.calls[0]?.[1]?.timeoutMs ?? 0,
-		).toBeGreaterThanOrEqual(30_000);
+		await vi.waitFor(() =>
+			expect(push).toHaveBeenCalledExactlyOnceWith("/shop/public-categories"),
+		);
+		expect(awaitRoute).toHaveBeenCalledTimes(3);
+	});
+
+	it("stops waiting for a route once a newer navigation took over", async () => {
+		const push = vi.fn();
+		const { waiter, calls, release } = controlledWaiter();
+		const navigate = createNavigator({
+			location: here,
+			router: { push },
+			devReload: waiter,
+		});
+		navigate("/never");
+		await vi.waitFor(() => expect(calls).toEqual(["/never"]));
+		navigate("/new");
+		release("/never", false);
+		release("/new");
+		await vi.waitFor(() =>
+			expect(push).toHaveBeenCalledExactlyOnceWith("/new"),
+		);
+		expect(calls.filter((path) => path === "/never")).toHaveLength(1);
+	});
+
+	it("leaves the user on a page they opened while the route was awaited", async () => {
+		const push = vi.fn();
+		const { waiter, calls, release } = controlledWaiter();
+		let page = "/home";
+		const navigate = createNavigator({
+			location: () => page,
+			router: { push },
+			devReload: waiter,
+		});
+		navigate("/new");
+		await vi.waitFor(() => expect(calls).toEqual(["/new"]));
+		page = "/existing";
+		release("/new");
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		expect(push).not.toHaveBeenCalled();
 	});
 });

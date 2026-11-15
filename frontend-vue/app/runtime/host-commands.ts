@@ -11,31 +11,32 @@ interface RouterLike {
  * timeout.
  */
 export interface DevReloadWaiter {
-	awaitRoute: (
-		path: string,
-		options?: { timeoutMs?: number },
-	) => Promise<boolean>;
+	awaitRoute: (path: string) => Promise<boolean>;
 }
 
 /**
- * How long a navigation waits for its route. A page the builder writes changes the project's
- * configuration, so the whole project restarts before it serves the page: measured from 10 s to
- * 22 s under `ajs project dev -w`, past the host's own 15 s default. A known route answers at once.
+ * How many of the host's waits, of 15 s each, a navigation spends on its route. A page the builder
+ * writes changes the project's configuration, so the whole project restarts before it serves the
+ * page: measured from 10 s to 22 s under `ajs project dev -w`, past one wait. Each wait holds the
+ * host's single refresh no longer than its own default, and a known route answers at once.
  */
-const ROUTE_WAIT_MS = 60_000;
+const ROUTE_WAITS = 4;
 
-/** What navigating the dashboard needs: its router, and the host's dev reload to wait on. */
+/** What navigating the dashboard needs: its router, the host's dev reload, and where it is now. */
 export interface NavigationContext {
 	router: RouterLike;
 	devReload: DevReloadWaiter;
+	/** The dashboard's current page, path and query: a trip whose page changed meanwhile stays. */
+	location: () => string;
 }
 
 /**
  * Sends the dashboard to an in-app path once the host's committed site layout serves it. A page
  * the builder or the agent just wrote is re-registered by a module reload, and a push before the
- * layout lists it lands on a 404. A newer path supersedes the trips still waiting, so the dashboard
- * lands on the newest target only, and a page that exists opens at once whatever waits before it.
- * A lapsed or broken wait still navigates, so a page that never comes 404s.
+ * layout lists it lands on a 404. A newer path supersedes the trips still waiting, and so does a
+ * page the user opened meanwhile, so the dashboard never moves back to an older target; a page that
+ * exists opens at once whatever waits before it. A lapsed or broken wait still navigates, so a page
+ * that never comes 404s.
  */
 export type Navigator = (path: string) => void;
 
@@ -65,18 +66,30 @@ function routeOf(path: string): string {
 	return path.split(/[?#]/, 1)[0] ?? path;
 }
 
+async function waitForRoute(
+	devReload: DevReloadWaiter,
+	route: string,
+	stillWanted: () => boolean,
+): Promise<void> {
+	for (let wait = 0; wait < ROUTE_WAITS && stillWanted(); wait += 1) {
+		if (await devReload.awaitRoute(route)) return;
+	}
+}
+
 export function createNavigator(ctx: NavigationContext): Navigator {
 	let newest = 0;
 	return (path) => {
 		newest += 1;
 		const trip = newest;
-		void ctx.devReload
-			.awaitRoute(routeOf(path), { timeoutMs: ROUTE_WAIT_MS })
+		const from = ctx.location();
+		const stillWanted = (): boolean =>
+			trip === newest && ctx.location() === from;
+		void waitForRoute(ctx.devReload, routeOf(path), stillWanted)
 			.catch((err: unknown) => {
 				console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
 			})
 			.then(() => {
-				if (trip === newest) void ctx.router.push(path);
+				if (stillWanted()) void ctx.router.push(path);
 			});
 	};
 }

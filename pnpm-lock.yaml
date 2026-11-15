@@ -4,15 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@antelopejs/dms': file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz
-  '@antelopejs/dms>@antelopejs/interface-api': 0.3.3
-  '@antelopejs/dms>@antelopejs/interface-core': 0.5.1
-  '@antelopejs/dms>@antelopejs/interface-data-api': 0.8.0
-  '@antelopejs/dms>@antelopejs/interface-database-decorators': 0.5.2
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.0
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.5.0
-
 importers:
 
   .:
@@ -21,8 +12,8 @@ importers:
         specifier: '>=0.3.0 <0.4.0'
         version: 0.3.0
       '@antelopejs/dms':
-        specifier: file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz
-        version: file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz(@antelopejs/core@1.24.0)(typescript@6.0.3)
+        specifier: '>=0.20.5 <0.21.0'
+        version: 0.20.5(@antelopejs/core@1.24.0)(typescript@6.0.3)
       '@antelopejs/interface-api':
         specifier: '>=0.3.3 <0.4.0'
         version: 0.3.3(@antelopejs/interface-core@0.5.1)
@@ -126,9 +117,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz':
-    resolution: {integrity: sha512-cO6id6dNKHtw71jb7VUS0sY9C9UuHqc3zN5aP7zwXgKo0kjkurHYLlincrVtY9kbBNm6w7e5xAu0AuNV9/Hn+A==, tarball: file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz}
-    version: 0.20.5
+  '@antelopejs/dms@0.20.5':
+    resolution: {integrity: sha512-tifNLc4aQShOj3P+hn1jFBuhfdfYsHiwNODX0gCXoAeae/96vIjG39Pl1s9ErMrA1WVRVd34eVfD6jm9jWBBYg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -3601,7 +3591,7 @@ snapshots:
       semver: 7.8.5
       typescript: 5.9.3
 
-  '@antelopejs/dms@file:.tgz-deps/antelopejs-dms-f2d6f4e.tgz(@antelopejs/core@1.24.0)(typescript@6.0.3)':
+  '@antelopejs/dms@0.20.5(@antelopejs/core@1.24.0)(typescript@6.0.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)

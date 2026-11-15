@@ -4,17 +4,13 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@antelopejs/dms': file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.5.0
-
 importers:
 
   .:
     dependencies:
       '@antelopejs/dms':
-        specifier: file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz
-        version: file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz(bare-buffer@3.7.2)(typescript@5.9.3)
+        specifier: '>=0.20.5 <0.21.0'
+        version: 0.20.5(bare-buffer@3.7.2)(typescript@5.9.3)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.3.316
         version: 0.3.316(@anthropic-ai/sdk@0.93.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.29.0(zod@4.6.7))(zod@4.6.7)
@@ -64,9 +60,8 @@ packages:
   2fa@0.1.2:
     resolution: {integrity: sha512-PbQttc6USc2TmZwOPE/zlNWTJTySLt50rWhUbZgPkZ5LAOLpgShT3yclbxwHPfHGUXEjfLrTo3Lunyx8onGnXw==}
 
-  '@antelopejs/dms@file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz':
-    resolution: {integrity: sha512-cO6id6dNKHtw71jb7VUS0sY9C9UuHqc3zN5aP7zwXgKo0kjkurHYLlincrVtY9kbBNm6w7e5xAu0AuNV9/Hn+A==, tarball: file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz}
-    version: 0.20.5
+  '@antelopejs/dms@0.20.5':
+    resolution: {integrity: sha512-tifNLc4aQShOj3P+hn1jFBuhfdfYsHiwNODX0gCXoAeae/96vIjG39Pl1s9ErMrA1WVRVd34eVfD6jm9jWBBYg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -2592,7 +2587,7 @@ snapshots:
       qr-image: 3.2.0
       thirty-two: 0.0.2
 
-  '@antelopejs/dms@file:../.tgz-deps/antelopejs-dms-f2d6f4e.tgz(bare-buffer@3.7.2)(typescript@5.9.3)':
+  '@antelopejs/dms@0.20.5(bare-buffer@3.7.2)(typescript@5.9.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)

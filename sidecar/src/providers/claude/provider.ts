@@ -5,6 +5,7 @@ import type {
   McpServerConfig,
   PermissionMode,
   PermissionResult,
+  SandboxSettings,
   SDKUserMessage,
   SdkPluginConfig,
   SettingSource,
@@ -82,6 +83,13 @@ import { resolveClaudeBinary } from "./resolve-binary.js";
 import { buildSafeModeHooks, type SdkHooks } from "./safe-mode.js";
 import { withSecretFileGuard } from "./secret-files.js";
 import {
+  currentSandboxHost,
+  type SandboxHost,
+  type ShellAccess,
+  shellAccess,
+  withShellAccess,
+} from "./shell-sandbox.js";
+import {
   type LiveSettings,
   type StreamBackend,
   toRunnerEvents,
@@ -105,6 +113,7 @@ interface PromptOptions {
   canUseTool?: CanUseTool;
   mcpServers?: Record<string, McpServerConfig>;
   disallowedTools?: string[];
+  sandbox?: SandboxSettings;
   plugins?: SdkPluginConfig[];
   skills?: string[];
   abortController: AbortController;
@@ -130,6 +139,7 @@ interface PromptOptionsInput {
   abortController: AbortController;
   skillLoadout: SkillLoadout | undefined;
   hostProjectRoot: string;
+  shellAccess: ShellAccess;
 }
 
 function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
@@ -184,9 +194,10 @@ function buildPromptOptions(input: PromptOptionsInput): PromptOptions {
     mcpServers: buildMcpServersMap(input.mcpServer, input.hostProjectRoot),
     disallowedTools: HIDDEN_DMS_MCP_TOOLS,
   };
-  if (input.skillLoadout === undefined) return withMcp;
+  const withShell = withShellAccess(withMcp, input.shellAccess);
+  if (input.skillLoadout === undefined) return withShell;
   return {
-    ...withMcp,
+    ...withShell,
     plugins: input.skillLoadout.plugins,
     skills: input.skillLoadout.skills,
   };
@@ -351,6 +362,7 @@ function resolveCanUseTool(
 
 interface ProviderConfig {
   sdk?: LoadedSdk;
+  sandboxHost: SandboxHost;
   timeoutMs: number;
   moduleRoots: string[];
   skillDirs: SkillSource[];
@@ -490,6 +502,7 @@ async function buildSessionOptions(
     abortController,
     skillLoadout: await buildSkillLoadout(skillSources, ctx.hostProjectRoot),
     hostProjectRoot: ctx.hostProjectRoot,
+    shellAccess: shellAccess(config.sandboxHost, ctx.hostProjectRoot),
   });
 }
 
@@ -537,8 +550,10 @@ function resolveTimeoutMs(options: AgentProviderOptions | undefined): number {
 
 export function createClaudeProvider(
   options?: AgentProviderOptions,
+  sandboxHost: SandboxHost = currentSandboxHost(),
 ): AgentProvider {
   const config: ProviderConfig = {
+    sandboxHost,
     timeoutMs: resolveTimeoutMs(options),
     moduleRoots: options?.moduleRoots ?? [],
     skillDirs: options?.skillDirs ?? [],

@@ -94,10 +94,9 @@ describe("the options a Claude session starts with", () => {
         },
         "dms-assistant": { type: "sdk" },
       });
-      expect(session?.disallowedTools).toEqual([
-        "mcp__dms__navigate_to_page",
-        "mcp__dms__preview_blocks",
-      ]);
+      expect(
+        session?.disallowedTools?.filter((tool) => tool.startsWith("mcp__")),
+      ).toEqual(["mcp__dms__navigate_to_page", "mcp__dms__preview_blocks"]);
     },
     TEST_TIMEOUT_MS,
   );

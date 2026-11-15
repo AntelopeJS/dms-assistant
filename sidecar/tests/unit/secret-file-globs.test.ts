@@ -7,7 +7,7 @@ import {
 import {
   isSecretFileName,
   SECRET_FILE_GLOBS,
-} from "../../src/providers/codex/secret-file-globs.js";
+} from "../../src/agent/secret-file-globs.js";
 
 function isDenied(name: string): boolean {
   return SECRET_FILE_GLOBS.some((glob) => matchesGlob(name, glob));

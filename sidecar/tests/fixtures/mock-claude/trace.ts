@@ -4,6 +4,7 @@ import type {
   Options,
   PermissionMode,
 } from "@anthropic-ai/claude-agent-sdk";
+import { z } from "zod";
 import { MOCK_TRACE_ENV_VAR } from "./constants.js";
 
 export type DecidingLayer =
@@ -25,6 +26,8 @@ interface TraceEntry {
   skills?: Options["skills"];
   mcpServers?: Record<string, TracedMcpServer>;
   disallowedTools?: string[];
+  sandbox?: Options["sandbox"];
+  systemPromptAppend?: string;
 }
 
 interface TracedMcpServer {
@@ -51,6 +54,12 @@ export function appendTrace(entry: TraceEntry): void {
   } catch {}
 }
 
+const promptPresetSchema = z.object({ append: z.string() });
+
+function promptAppend(prompt: Options["systemPrompt"]): string | undefined {
+  return promptPresetSchema.safeParse(prompt).data?.append;
+}
+
 export function traceOptions(options: Options | undefined): void {
   if (options === undefined) return;
   appendTrace({
@@ -65,5 +74,7 @@ export function traceOptions(options: Options | undefined): void {
       ]),
     ),
     disallowedTools: options.disallowedTools,
+    sandbox: options.sandbox,
+    systemPromptAppend: promptAppend(options.systemPrompt),
   });
 }

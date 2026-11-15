@@ -230,6 +230,18 @@ const TRACED_CLAUDE_ENTRY = z.object({
     )
     .optional(),
   disallowedTools: z.array(z.string()).optional(),
+  sandbox: z
+    .looseObject({
+      enabled: z.boolean().optional(),
+      failIfUnavailable: z.boolean().optional(),
+      allowUnsandboxedCommands: z.boolean().optional(),
+      autoAllowBashIfSandboxed: z.boolean().optional(),
+      filesystem: z
+        .looseObject({ denyRead: z.array(z.string()).optional() })
+        .optional(),
+    })
+    .optional(),
+  systemPromptAppend: z.string().optional(),
   permissionMode: z.string().optional(),
   name: z.string().optional(),
   decidedBy: z.string().optional(),

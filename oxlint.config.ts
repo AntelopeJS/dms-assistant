@@ -7,12 +7,14 @@ import { defineConfig } from "oxlint";
 /**
  * The external-database operations of `@antelopejs/interface-dms-builder`: each
  * takes a database URL, writes one, or opens a connection to one. `Operations`
- * maps every operation by name, these included.
+ * maps every operation by name, these included, and `default` is the module
+ * itself.
  */
 const CONNECTION_OPERATIONS = [
   "AnalyseDatabase",
   "CheckDatabaseConnection",
   "ConfigureProject",
+  "default",
   "GetAnalysis",
   "GetDatabaseConnection",
   "GetDatabaseProject",

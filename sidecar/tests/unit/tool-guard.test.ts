@@ -307,15 +307,23 @@ describe.each<ChatMode>(["normal", "acceptEdits"])(
 
 describe("the PreToolUse guard in Plan only", () => {
   /** Fails on a guard that leaves a read-only command such as `cat .env` to the CLI, which runs it unasked in plan mode. */
-  it("refuses every command, read-only ones included", async () => {
+  it("hands every command to the person, read-only ones included", async () => {
     const commands = [...COMMANDS, call("Bash", { command: "cat .env" })];
     expect(await decideAll(commands, "plan", "vibe")).toEqual(
-      each(commands, DENY),
+      each(commands, ASK),
     );
   });
 
-  it("leaves every other call to the CLI, which changes nothing", async () => {
-    const calls = [...GIT_HOOK_FILES, ...UNKNOWN_TOOLS, ...LEFT_TO_THE_CLI];
+  /** Fails on a guard that lets a tool the CLI adds under a new name run unasked in plan mode. */
+  it("hands a tool it does not know to the person", async () => {
+    expect(await decideAll(UNKNOWN_TOOLS, "plan", "vibe")).toEqual(
+      each(UNKNOWN_TOOLS, ASK),
+    );
+  });
+
+  /** Fails on a guard that asks about every edit in plan mode, where the CLI already holds edits back. */
+  it("leaves edits, reads, web access and scheduling to the CLI", async () => {
+    const calls = [...GIT_HOOK_FILES, ...LEFT_TO_THE_CLI];
     expect(await decideAll(calls, "plan", "vibe")).toEqual(each(calls, NONE));
   });
 });

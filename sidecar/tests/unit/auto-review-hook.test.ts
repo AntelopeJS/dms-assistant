@@ -62,14 +62,10 @@ describe("the PreToolUse hook and the permission mode the CLI states", () => {
     expect(run.decisions).toEqual([]);
   });
 
-  /** Fails on a hook that reads the sidecar's chat mode instead of the mode the CLI states, which leaves plan once the plan is approved. */
-  it("refuses a command while the CLI states Plan only, recording it as blocked", async () => {
+  /** Fails on a hook that leaves a command to the CLI in Plan only, which runs a read-only one such as `cat .env` unasked. */
+  it("hands a command to canUseTool in Plan only, recording no review", async () => {
     const run = await preToolUse("node -e 1", "plan");
-    expect(run.output).toMatchObject({
-      hookSpecificOutput: { permissionDecision: "deny" },
-    });
-    expect(run.decisions).toEqual([
-      { callId: CALL_ID, toolName: "Bash", allowedBy: "blocked" },
-    ]);
+    expect(run.output).toEqual(ASK);
+    expect(run.decisions).toEqual([]);
   });
 });

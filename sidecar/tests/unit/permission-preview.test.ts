@@ -147,6 +147,8 @@ describe("permission previews and rules", () => {
     const edits = [
       join(root, "package.json"),
       join(root, "antelope.config.ts"),
+      join(root, "antelope.mongodb.json"),
+      join(root, ".antelope", "build", "build.json"),
       join(root, ".git", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "config"),

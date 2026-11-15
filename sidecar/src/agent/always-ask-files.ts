@@ -2,7 +2,9 @@ import { basename } from "node:path";
 import {
   DEPENDENCY_FILE_NAMES,
   GIT_HOOK_PATHS,
+  MODULE_CONFIG_FILE_PATTERN,
   PROJECT_CONFIG_FILE_NAME,
+  PROJECT_STATE_PATH,
 } from "../constants/permissions.js";
 
 const ANY_TRAILING_SEGMENTS = "**";
@@ -71,10 +73,19 @@ export function isDependencyFile(path: string): boolean {
   return DEPENDENCY_FILE_NAMES.has(basename(path).toLowerCase());
 }
 
+const PROJECT_STATE_PATTERN = PROJECT_STATE_PATH.split("/");
+
 /**
- * Whether `path`, resolved, is a project's `antelope.config.ts` by its name,
- * anywhere on disk, case-insensitively.
+ * Whether `path`, resolved, is a file AntelopeJS core reads a project's
+ * configuration from: `antelope.config.ts`, an `antelope.*.json` merged into a
+ * module's config, or a file under `.antelope/`. Matched anywhere on disk,
+ * case-insensitively.
  */
 export function isProjectConfigFile(path: string): boolean {
-  return basename(path).toLowerCase() === PROJECT_CONFIG_FILE_NAME;
+  const name = basename(path).toLowerCase();
+  return (
+    name === PROJECT_CONFIG_FILE_NAME ||
+    MODULE_CONFIG_FILE_PATTERN.test(name) ||
+    matchesPathEnding(pathSegments(path), PROJECT_STATE_PATTERN)
+  );
 }

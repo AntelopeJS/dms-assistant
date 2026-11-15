@@ -307,11 +307,11 @@
 				},
 				"auto": {
 					"label": "Revue automatique",
-					"description": "Un contrôle de sécurité approuve les modifications de fichiers courantes et l'accès au web. Les commandes shell, les fichiers de dépendances, les hooks git, antelope.config.ts et les suppressions demandent encore votre accord. Sur un modèle ou une offre qui ne la permet pas, l'assistant demande avant d'agir."
+					"description": "Un contrôle de sécurité approuve les modifications de fichiers courantes et l'accès au web. Les commandes shell, les fichiers de dépendances, les hooks git, les fichiers de configuration du projet et les suppressions demandent encore votre accord. Sur un modèle ou une offre qui ne la permet pas, l'assistant demande avant d'agir."
 				},
 				"acceptEdits": {
 					"label": "Accepter les modifications",
-					"description": "Applique les modifications de fichiers, sauf les fichiers de dépendances, les hooks git et antelope.config.ts. Demande pour le reste, chaque commande comprise.",
+					"description": "Applique les modifications de fichiers, sauf les fichiers de dépendances, les hooks git et les fichiers de configuration du projet. Demande pour le reste, chaque commande comprise.",
 					"description_codex": "Avec Codex, fonctionne comme Demander d'abord : demande avant chaque modification de fichier, fichiers de dépendances et hooks git compris, et avant toute commande qui écrit."
 				},
 				"plan": {

@@ -302,10 +302,10 @@
 				"mode_menu": "Mode d'approbation · cette conversation",
 				"mode_desc": {
 					"normal": "Demande avant toute modification, requête web ou commande, même en lecture seule.",
-					"acceptEdits": "Applique les modifications de fichiers, sauf les fichiers de dépendances, les hooks git et antelope.config.ts. Demande avant chaque commande et requête web.",
+					"acceptEdits": "Applique les modifications de fichiers, sauf les fichiers de dépendances, les hooks git et les fichiers de configuration du projet. Demande avant chaque commande et requête web.",
 					"acceptEdits_codex": "Avec Codex, fonctionne comme Demander d'abord : demande avant chaque modification de fichier, fichiers de dépendances et hooks git compris, et avant toute commande qui écrit.",
 					"plan": "Lit et propose un plan. Ne modifie rien.",
-					"auto": "Un contrôle de sécurité approuve les modifications de fichiers courantes et l'accès au web. Les commandes shell, les fichiers de dépendances, les hooks git, antelope.config.ts et les suppressions demandent encore votre accord."
+					"auto": "Un contrôle de sécurité approuve les modifications de fichiers courantes et l'accès au web. Les commandes shell, les fichiers de dépendances, les hooks git, les fichiers de configuration du projet et les suppressions demandent encore votre accord."
 				},
 				"default_mode": "Par défaut pour les nouvelles conversations",
 				"hint_send": "envoyer",

@@ -1,12 +1,13 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-
-  workflow_dispatch: null
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [next]
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -16,7 +17,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: AntelopeJS/.github/.github/workflows/ci-node.yml@v1
+    uses: AntelopeJS/.github/.github/workflows/ci-node.yml@v2
     permissions:
       contents: read
     with:
@@ -26,23 +27,76 @@ jobs:
       docs-typescript-project: docs/tsconfig.json
       renovate-sync: false
       test-job: true
-      windows: true
+
+  # ci-node.yml exposes no outputs, so this copies its tier rule for the jobs
+  # declared here: a draft and the next to main pull request run none of them,
+  # and only the nightly adds the Windows legs.
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tier: ${{ steps.tier.outputs.tier }}
+      tests: ${{ steps.tier.outputs.tests }}
+      os: ${{ steps.tier.outputs.os }}
+    steps:
+      - name: Pick the tier from the event, the target branch and the draft flag
+        id: tier
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPOSITORY: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          case "$EVENT" in
+            pull_request)
+              if [[ "$BASE_REF" == "$DEFAULT_BRANCH" && "$HEAD_REPOSITORY" == "$REPOSITORY" && "$HEAD_REF" =~ ^(next|develop)$ ]]; then
+                tier=none
+              elif [[ "$DRAFT" == true ]]; then
+                tier=draft
+              elif [[ "$BASE_REF" == "$DEFAULT_BRANCH" ]]; then
+                tier=full
+              else
+                tier=fast
+              fi
+              ;;
+            push)
+              if [[ "$REF_NAME" == "$DEFAULT_BRANCH" ]]; then tier=none; else tier=full; fi
+              ;;
+            schedule) tier=nightly ;;
+            *) tier=full ;;
+          esac
+
+          tests=true
+          if [[ "$tier" == none || "$tier" == draft ]]; then
+            tests=false
+          fi
+
+          os='["ubuntu-latest"]'
+          if [[ "$tier" == nightly ]]; then
+            os='["ubuntu-latest","windows-latest"]'
+          fi
+
+          {
+            echo "tier=${tier}"
+            echo "tests=${tests}"
+            echo "os=${os}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Tier \`${tier}\`: tests ${tests} on ${os}" >> "$GITHUB_STEP_SUMMARY"
 
   vitest:
+    needs: select
+    if: needs.select.outputs.tests == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            package: sidecar
-          - os: windows-latest
-            package: sidecar
-          - os: ubuntu-latest
-            package: frontend-vue
-          - os: windows-latest
-            package: frontend-vue
+        os: ${{ fromJSON(needs.select.outputs.os) }}
+        package: [sidecar, frontend-vue]
     defaults:
       run:
         shell: bash
@@ -72,6 +126,8 @@ jobs:
   # `ajs dms verify-source`: the production build of the DMS core layer with
   # this one, the assistant and the builder, then vue-tsc.
   frontend-verify:
+    needs: select
+    if: needs.select.outputs.tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -92,6 +148,8 @@ jobs:
   # Packs the module, installs the tarball as the AntelopeJS module cache
   # does, starts the installed sidecar and checks every import resolves.
   installed-module:
+    needs: select
+    if: needs.select.outputs.tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -109,18 +167,25 @@ jobs:
       - run: pnpm install --filter "{.}" --filter "./sidecar" --frozen-lockfile
       - run: pnpm run test:installed
 
+  # A job the tier skipped does not fail it. A draft pull request fails it, so
+  # merge-when-green cannot merge on the draft run.
   ubuntu:
     if: always()
-    needs: [ci, vitest, frontend-verify, installed-module]
+    needs: [select, ci, vitest, frontend-verify, installed-module]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+      - if: >-
+          needs.select.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || needs.ci.result == 'skipped' || (needs.select.outputs.tests == 'true' && contains(needs.*.result, 'skipped'))
         run: exit 1
+      - if: needs.select.outputs.tier == 'draft'
+        run: |
+          echo "::error::Draft pull request: only lint and typecheck ran. Mark it ready for review to run the tests."
+          exit 1
   renovate-sync:
     if: >-
       github.event_name == 'pull_request' && startsWith(github.head_ref, 'renovate/') && github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: write
       actions: write
-    uses: AntelopeJS/.github/.github/workflows/ci-renovate-sync.yml@v1
+    uses: AntelopeJS/.github/.github/workflows/ci-renovate-sync.yml@v2

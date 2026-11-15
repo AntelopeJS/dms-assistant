@@ -110,7 +110,7 @@ describe("the options a Claude session starts with", () => {
       expect(session?.settings?.disableSkillShellExecution).toBe(true);
       expect(session?.settings?.disableAllHooks).toBe(true);
       expect(session?.settings?.permissions?.deny).toContain(
-        "Read(**/.[eE][nN][vV])",
+        "Read(//**/.[eE][nN][vV])",
       );
     },
     TEST_TIMEOUT_MS,

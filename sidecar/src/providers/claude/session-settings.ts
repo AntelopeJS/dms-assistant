@@ -21,12 +21,13 @@ function withoutNegatedClasses(glob: string): string {
 }
 
 /**
- * `Read` rules that deny every secret file, the templates left readable. The
- * CLI applies them to a file a skill pulls in with an `@` reference, which no
- * hook sees, and through a link to such a file.
+ * `Read` rules that deny every secret file anywhere on the machine (`//` is
+ * the filesystem root, not the session's working directory), the templates
+ * left readable. The CLI applies them to a file a skill pulls in with an `@`
+ * reference, which no hook sees, and through a link to such a file.
  */
 export const SECRET_FILE_READ_DENY_RULES: readonly string[] =
-  SECRET_FILE_GLOBS.map((glob) => `Read(**/${withoutNegatedClasses(glob)})`);
+  SECRET_FILE_GLOBS.map((glob) => `Read(//**/${withoutNegatedClasses(glob)})`);
 
 /**
  * The flag settings every session starts with, so that nothing a skill

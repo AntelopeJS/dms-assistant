@@ -69,6 +69,32 @@ export const GIT_HOOK_PATHS: readonly string[] = [
   ".pre-commit-config.yml",
 ];
 
+/**
+ * The AntelopeJS project configuration. It names each database the project
+ * connects, and the variable or literal that supplies its URL.
+ */
+export const PROJECT_CONFIG_FILE_NAME = "antelope.config.ts";
+
+/**
+ * The files AntelopeJS core merges into a module's configuration, by their
+ * name: `antelope.<module>.json` beside the project configuration, and
+ * `antelope.module.json` in a module.
+ */
+export const MODULE_CONFIG_FILE_PATTERN = /^antelope\..+\.json$/;
+
+/**
+ * The folder a scoped module's configuration file starts in: core writes the
+ * module `@scope/name` as `antelope.@scope/name.json`.
+ */
+export const SCOPED_MODULE_CONFIG_PREFIX = "antelope.@";
+
+/**
+ * The project's state directory: the build artifact `ajs project start`
+ * launches with its resolved configuration, and the module cache. A path
+ * ending, matched on lower-cased segments like `GIT_HOOK_PATHS`.
+ */
+export const PROJECT_STATE_PATH = ".antelope/**";
+
 export const SDK_PERMISSION_BEHAVIOR = {
   ALLOW: "allow",
   DENY: "deny",

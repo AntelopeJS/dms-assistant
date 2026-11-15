@@ -23,6 +23,7 @@ import {
   TOOL_LEXICON,
 } from "../../constants/tool-lexicon.js";
 import { EDIT_PATHS_KEY } from "../../agent/edit-targets.js";
+import { reachesSecretFile } from "../../agent/project-secrets.js";
 import { resolveReadRoots } from "../../agent/read-access.js";
 import type { TurnSettings } from "../../state/settings-types.js";
 import type { CodexFileChange, CodexMcpCall } from "./adapter.js";
@@ -75,6 +76,29 @@ export interface CodexPermissionHandler {
   /** Lifts that refusal for the next turn, which the user is entitled to. */
   resume(): void;
   consecutiveDenials(): number;
+}
+
+/** Every path a patch writes: each change's file, and a rename's destination. */
+function changedPaths(changes: readonly CodexFileChange[]): string[] {
+  return changes.flatMap((change) =>
+    change.movePath === undefined
+      ? [change.path]
+      : [change.path, change.movePath],
+  );
+}
+
+/**
+ * Whether a patch writes `.env` or a variant, a rename's destination
+ * included: those stay closed to the agent, as Claude's hook keeps them.
+ */
+async function writesSecretFile(
+  changes: readonly CodexFileChange[],
+  projectRoot: string,
+): Promise<boolean> {
+  const reached = await Promise.all(
+    changedPaths(changes).map((path) => reachesSecretFile(path, projectRoot)),
+  );
+  return reached.includes(true);
 }
 
 interface ApprovalSubject {
@@ -213,7 +237,7 @@ export function createCodexPermissionHandler(
       toolName: TOOL_LEXICON.EDIT,
       args: {
         [EDIT_FILE_PATH_ARG]: first?.path ?? "",
-        [EDIT_PATHS_KEY]: changes.map((change) => change.path),
+        [EDIT_PATHS_KEY]: changedPaths(changes),
         [CODEX_CHANGE_KIND_ARG]: first?.kind ?? "",
         [CODEX_CHANGE_DIFF_ARG]: first?.diff ?? "",
       },
@@ -262,7 +286,7 @@ export function createCodexPermissionHandler(
     return accept();
   }
 
-  /** Safe and plan modes refuse without asking: the mode blocked the call. */
+  /** Safe and plan modes, and a write of a secret file, refuse without asking: the call is blocked. */
   function block(subject: ApprovalSubject): CodexApprovalDecisionResponse {
     deps.onToolDecision?.({
       callId: subject.callId,
@@ -293,7 +317,10 @@ export function createCodexPermissionHandler(
       }
       if (cancelled) return decline();
       const subject = describe();
-      if (declinesEscalations(deps.getSettings())) {
+      if (
+        declinesEscalations(deps.getSettings()) ||
+        (await writesSecretFile(subject.changes, deps.hostProjectRoot))
+      ) {
         return block(subject);
       }
       return ask(subject);

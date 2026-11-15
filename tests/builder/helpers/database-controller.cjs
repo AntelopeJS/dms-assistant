@@ -102,8 +102,21 @@ function loadDatabaseController(core) {
     exposesController,
   );
   const controller = new DatabaseController();
+  /** @param {string | symbol} key */
+  const readsOf = (key) =>
+    params
+      .filter((param) => param.key === key)
+      .toSorted((a, b) => a.index - b.index)
+      .map((param) => param.reads);
   return {
     prefix: DatabaseController.prefix,
+    /** Every route the controller binds, by verb and path, with what each reads in argument order. */
+    routes: () =>
+      routes.map(({ verb, path: routePath, key }) => ({
+        verb,
+        path: routePath,
+        reads: readsOf(key),
+      })),
     /**
      * @param {string} verb
      * @param {string} routePath
@@ -118,12 +131,8 @@ function loadDatabaseController(core) {
         );
       }
       const [{ key, handler }] = bound;
-      const reads = params
-        .filter((param) => param.key === key)
-        .toSorted((a, b) => a.index - b.index)
-        .map((param) => param.reads);
       return {
-        reads,
+        reads: readsOf(key),
         /** @param {unknown[]} args */
         call: (...args) => handler.apply(controller, args),
       };

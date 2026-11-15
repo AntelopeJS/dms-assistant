@@ -44,14 +44,18 @@ function changesOf(itemId: string) {
   return [{ path: CHANGED_PATH, kind: "update", diff: PATCH_DIFF }];
 }
 
-function buildHandler(current: TurnSettings, outcome = APPROVED) {
+function buildHandler(
+  current: TurnSettings,
+  outcome = APPROVED,
+  getChanges = changesOf,
+) {
   const { bus, requestPermission } = buildBus(outcome);
   const decisions: ToolDecision[] = [];
   const handler = createCodexPermissionHandler({
     conversationId: CONVERSATION,
     permissionBus: bus,
     getSettings: () => current,
-    getChanges: changesOf,
+    getChanges,
     hostProjectRoot: PROJECT_ROOT,
     moduleRoots: [],
     getPendingMcpCalls: () => [],
@@ -71,6 +75,89 @@ const FILE_CHANGE_REQUEST = {
   method: CODEX_FILE_CHANGE_APPROVAL_METHOD,
   params: { itemId: ITEM_ID },
 };
+
+describe("patch paths", () => {
+  /** Fails on a description that drops a rename's destination, which lets a rename onto `antelope.config.ts` or a git hook file escape the files that always ask. */
+  it("lists a rename's destination among the patch's paths", async () => {
+    const destination = `${PROJECT_ROOT}/antelope.config.ts`;
+    const renamed = () => [
+      {
+        path: CHANGED_PATH,
+        movePath: destination,
+        kind: "update",
+        diff: PATCH_DIFF,
+      },
+    ];
+    const { handler, requestPermission } = buildHandler(
+      settings({}),
+      APPROVED,
+      renamed,
+    );
+    await handler.handle(FILE_CHANGE_REQUEST);
+    expect(requestPermission).toHaveBeenCalledWith({
+      conversationId: CONVERSATION,
+      toolName: "Edit",
+      args: {
+        file_path: CHANGED_PATH,
+        file_paths: [CHANGED_PATH, destination],
+        change_kind: "update",
+        diff: PATCH_DIFF,
+      },
+      callId: ITEM_ID,
+    });
+  });
+
+  /** Fails on a handler that asks about, or a kept rule that accepts, a patch writing `.env`, which Claude's hook never lets through. */
+  it("declines a patch that writes or renames onto a secret file, without asking", async () => {
+    const patches = [
+      { path: `${PROJECT_ROOT}/.env`, kind: "update", diff: PATCH_DIFF },
+      {
+        path: CHANGED_PATH,
+        movePath: `${PROJECT_ROOT}/.env.local`,
+        kind: "update",
+        diff: PATCH_DIFF,
+      },
+    ];
+    const results = [];
+    for (const patch of patches) {
+      const { handler, requestPermission, decisions } = buildHandler(
+        settings({}),
+        { isAllowed: true, allowedBy: "rule" },
+        () => [patch],
+      );
+      results.push({
+        result: await handler.handle(FILE_CHANGE_REQUEST),
+        asked: requestPermission.mock.calls.length,
+        decisions: decisions.map((decision) => decision.allowedBy),
+      });
+    }
+    expect(results).toEqual(
+      patches.map(() => ({
+        result: { decision: "decline" },
+        asked: 0,
+        decisions: ["blocked"],
+      })),
+    );
+  });
+
+  it("still asks about a patch to a committed template such as .env.example", async () => {
+    const { handler, requestPermission } = buildHandler(
+      settings({}),
+      APPROVED,
+      () => [
+        {
+          path: `${PROJECT_ROOT}/.env.example`,
+          kind: "update",
+          diff: PATCH_DIFF,
+        },
+      ],
+    );
+    expect(await handler.handle(FILE_CHANGE_REQUEST)).toEqual({
+      decision: "accept",
+    });
+    expect(requestPermission).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("approval routing", () => {
   it("prompts for a command as a Bash request carrying the command", async () => {

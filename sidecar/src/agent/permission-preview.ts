@@ -25,7 +25,11 @@ import {
   type ToolArgs,
   ToolArgsSchema,
 } from "./edit-targets.js";
-import { isDependencyFile, isGitHookFile } from "./always-ask-files.js";
+import {
+  isDependencyFile,
+  isGitHookFile,
+  isProjectConfigFile,
+} from "./always-ask-files.js";
 import type { HoldMatch } from "./held-calls.js";
 import { type DiffStats, diffTexts, parseUnifiedDiff } from "./line-diff.js";
 import {
@@ -289,15 +293,19 @@ function isDependencyChange(options: ParsedOptions): boolean {
 
 /**
  * Whether a request asks the person in every mode and offers no rule: an edit
- * of a file that makes git run code, and, while their settings are on, a block
- * removal and a dependency change by command or by editing a dependency file.
+ * of a file that makes git run code or of `antelope.config.ts`, which names the
+ * URL of each database the project connects, and, while their settings are on,
+ * a block removal and a dependency change by command or by editing a
+ * dependency file.
  */
 export function isAlwaysAsk(options: ParsedOptions): boolean {
   if (options.alwaysAskBlockRemoval && isBlockRemovalTool(options.toolName)) {
     return true;
   }
   return (
-    editedPaths(options).some(isGitHookFile) ||
+    editedPaths(options).some(
+      (path) => isGitHookFile(path) || isProjectConfigFile(path),
+    ) ||
     (options.alwaysAskDependencies && isDependencyChange(options))
   );
 }

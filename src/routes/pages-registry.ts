@@ -4,7 +4,7 @@ import {
   type HTTPResult,
   Parameter,
 } from "@antelopejs/interface-api";
-import * as Builder from "@antelopejs/interface-dms-builder";
+import { ListPages } from "@antelopejs/interface-dms-builder";
 import { ROUTE_PREFIX } from "../constants/module";
 import { SIDECAR_AUTH_HEADER } from "../constants/sidecar";
 import { listPagesRegistry } from "../pages-registry";
@@ -21,7 +21,7 @@ async function withBuilderFilepaths(
   entries: PagesRegistryEntry[],
 ): Promise<PagesRegistryEntry[]> {
   try {
-    const pages = await Builder.ListPages();
+    const pages = await ListPages();
     const byRoute = new Map(pages.map((page) => [page.ref, page.filepath]));
     return entries.map((entry) => ({
       ...entry,

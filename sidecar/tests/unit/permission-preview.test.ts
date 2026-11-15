@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -143,9 +143,13 @@ describe("permission previews and rules", () => {
     expect(description.preview).toMatchObject({ added: 1, removed: 1 });
   });
 
-  it("always asks before an edit of a dependency or git hook file, with no rule to keep", async () => {
+  it("always asks before an edit of a dependency, git hook or project config file, with no rule to keep", async () => {
     const edits = [
       join(root, "package.json"),
+      join(root, "antelope.config.ts"),
+      join(root, "antelope.mongodb.json"),
+      join(root, "antelope.@antelopejs", "dms.json"),
+      join(root, ".antelope", "build", "build.json"),
       join(root, ".git", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "config"),
@@ -233,5 +237,48 @@ describe("a deletion's approval card", () => {
         },
       ],
     ]);
+  });
+});
+
+describe("project config files reached through a link", () => {
+  let root: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), "dms-assistant-preview-link-"));
+  });
+
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  /** Fails on a match by the written name alone, which a link named like any source file leads past, a link to a file not written yet or into folders not made yet included. */
+  it("always asks before an edit through a link onto a project config file", async () => {
+    await writeFile(join(root, "antelope.config.ts"), "export default {};\n");
+    await mkdir(join(root, "src"));
+    await mkdir(join(root, ".antelope"));
+    await symlink(
+      join(root, "antelope.config.ts"),
+      join(root, "src", "cfg.ts"),
+    );
+    await symlink(join(root, ".antelope"), join(root, "src", "state"));
+    await symlink("../antelope.mongodb.json", join(root, "src", "db.json"));
+    const edits = [
+      join(root, "src", "cfg.ts"),
+      join(root, "src", "state", "build.json"),
+      join(root, "src", "state", "build", "build.json"),
+      join(root, "src", "db.json"),
+    ];
+    const descriptions = await Promise.all(
+      edits.map((file_path) =>
+        describeRequest({
+          toolName: "Write",
+          args: { file_path, content: "" },
+          hostProjectRoot: root,
+          alwaysAskDependencies: true,
+          alwaysAskBlockRemoval: true,
+        }),
+      ),
+    );
+    expect(descriptions.map((d) => d.alwaysAsk)).toEqual(edits.map(() => true));
   });
 });

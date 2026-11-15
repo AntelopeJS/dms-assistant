@@ -1,14 +1,13 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { realpath } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { z } from "zod";
 import {
   AGENT_REQUIRED_ENV_NAMES,
   SECRET_FILE_NAME,
   SECRET_FILE_NAME_PREFIX,
   SECRET_FILE_TEMPLATE_NAMES,
 } from "../constants/project-secrets.js";
+import { writeTarget } from "./write-target.js";
 
 type Environment = Record<string, string | undefined>;
 
@@ -24,24 +23,19 @@ export function isSecretFile(filePath: string): boolean {
   return name === SECRET_FILE_NAME || name.startsWith(SECRET_FILE_NAME_PREFIX);
 }
 
-const notFoundSchema = z.object({ code: z.enum(["ENOENT", "ENOTDIR"]) });
-
 /**
  * True when a tool call on `filePath` would reach a secret file: the path
- * names one, or it is a link whose real path does. A relative path is taken
- * from `cwd`. A path that does not exist yet cannot be a link, so its name
- * decides. A path that cannot be resolved for any other reason is refused.
+ * names one, or a link on the way leads to one, a link whose target does not
+ * exist yet included. A relative path is taken from `cwd`. A path whose links
+ * cannot be followed, such as a loop, is refused.
  */
 export async function reachesSecretFile(
   filePath: string,
   cwd: string,
 ): Promise<boolean> {
   if (isSecretFile(filePath)) return true;
-  try {
-    return isSecretFile(await realpath(resolve(cwd, filePath)));
-  } catch (error) {
-    return !notFoundSchema.safeParse(error).success;
-  }
+  const target = writeTarget(filePath, cwd);
+  return target === undefined || isSecretFile(target);
 }
 
 function readSecretFile(path: string): string {

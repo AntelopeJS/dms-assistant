@@ -100,6 +100,22 @@ const GIT_HOOK_FILES: Call[] = [
   write(join(ROOT, ".pre-commit-config.yaml")),
 ];
 
+const PROJECT_CONFIG_FILES: Call[] = [
+  write(join(ROOT, "antelope.config.ts")),
+  write("src/../ANTELOPE.CONFIG.TS"),
+  write(join(ROOT, "antelope.mongodb.json")),
+  write(join(ROOT, "antelope.dms.json")),
+  write(join(ROOT, "antelope.@antelopejs", "dms.json")),
+  write(join(ROOT, "modules", "erp-tables", "antelope.module.json")),
+  write(join(ROOT, ".antelope", "build", "build.json")),
+  write(join(ROOT, ".antelope", "cache", "x", "index.js")),
+  call("Edit", {
+    file_path: join(ROOT, "antelope.config.ts"),
+    old_string: "url: process.env.ERP_URL",
+    new_string: 'url: "postgres://u:p@169.254.169.254:5432/x"',
+  }),
+];
+
 const DEPENDENCY_FILES: Call[] = [
   write(join(ROOT, "package.json")),
   write("src/../PACKAGE.JSON"),
@@ -113,6 +129,11 @@ const LEFT_TO_THE_CLI: Call[] = [
   write(join(ROOT, ".gitignore")),
   write(join(ROOT, "src", ".github", "config")),
   write(join(ROOT, "my-lefthook.yml")),
+  write(join(ROOT, "antelope.config.ts.bak")),
+  write(join(ROOT, "antelope.json")),
+  write(join(ROOT, "src", "my-antelope.json")),
+  write(join(ROOT, "src", "antelope", "config.json")),
+  write(join(ROOT, "antelope.@antelopejs", "notes.md")),
   call("Read", { file_path: join(ROOT, "package.json") }),
   call("WebFetch", { url: "https://example.com", prompt: "read" }),
   call("CronCreate", { cron: "* * * * *", prompt: "hi" }),
@@ -229,6 +250,13 @@ describe("the PreToolUse guard under Auto review in Code scope", () => {
       each(GIT_HOOK_FILES, ASK),
     );
   });
+
+  /** Fails on a guard that lets the classifier approve an edit that changes the URL a database connection reads. */
+  it("hands an edit of a file the project configuration is read from to the person", async () => {
+    expect(await decideAll(PROJECT_CONFIG_FILES, "auto", "vibe")).toEqual(
+      each(PROJECT_CONFIG_FILES, ASK),
+    );
+  });
 });
 
 describe.each<ChatMode>(["normal", "acceptEdits"])(
@@ -243,6 +271,14 @@ describe.each<ChatMode>(["normal", "acceptEdits"])(
     it("hands an edit of a git hook or dependency file to the person", async () => {
       const files = [...GIT_HOOK_FILES, ...DEPENDENCY_FILES];
       expect(await decideAll(files, mode, "vibe")).toEqual(each(files, ASK));
+    });
+
+    /** Fails on a guard that leaves to Accept edits an edit that changes the URL a database connection reads. */
+    it("hands an edit of a file the project configuration is read from to the person, also when dependency files no longer ask", async () => {
+      const settings = { alwaysAskDependencies: false };
+      expect(
+        await decideAll(PROJECT_CONFIG_FILES, mode, "vibe", settings),
+      ).toEqual(each(PROJECT_CONFIG_FILES, ASK));
     });
 
     it("hands a tool it does not know to the person", async () => {

@@ -1,6 +1,6 @@
 import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { HookInput, PermissionMode } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PRE_TOOL_USE_HOOK_EVENT } from "../../src/constants/claude.js";
@@ -64,16 +64,24 @@ describe("the secret file hook on links", () => {
   );
 
   it("refuses a link to .env named from the home directory", async () => {
-    vi.stubEnv("HOME", dir);
-    vi.stubEnv("USERPROFILE", dir);
+    vi.stubEnv("HOME", dirname(dir));
+    vi.stubEnv("USERPROFILE", dirname(dir));
     try {
-      expect(
-        await decide("Grep", { pattern: "TOKEN", path: "~/config.txt" }),
-      ).toEqual(DENIAL);
+      const path = `~/${basename(dir)}/config.txt`;
+      expect(await decide("Grep", { pattern: "TOKEN", path })).toEqual(DENIAL);
     } finally {
       vi.unstubAllEnvs();
     }
   });
+
+  it.skipIf(process.platform === "win32")(
+    "takes ~\\ as a name in the project, as the CLI does",
+    async () => {
+      await symlink(".env", join(dir, "~\\config.txt"));
+      const path = "~\\config.txt";
+      expect(await decide("Grep", { pattern: "TOKEN", path })).toEqual(DENIAL);
+    },
+  );
 
   it("lets a link to .env.example through", async () => {
     expect(await decide("Read", { file_path: "template.txt" })).toEqual({

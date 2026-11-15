@@ -1,5 +1,5 @@
 import path from "node:path";
-import { SECRET_FILE_GLOBS } from "./secret-file-globs.js";
+import { SECRET_FILE_GLOBS } from "../../agent/secret-file-globs.js";
 
 export const CODEX_READ_ONLY_PROFILE = "dms-assistant-read-only";
 

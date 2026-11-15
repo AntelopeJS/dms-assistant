@@ -103,11 +103,15 @@ describe("the options a Claude session starts with", () => {
   );
 
   it(
-    "hands every session the setting that switches a skill's inline shell commands off (fails a provider that leaves it out, so a skill runs `cat .env` as it loads; the CLI honouring it is shown on the real CLI, not here)",
+    "starts every session with a skill's inline shell commands, its hooks and its @ references to secret files switched off (fails a provider that leaves any of the three out; the CLI honouring them is shown on the real CLI, not here)",
     async () => {
       const session = await startedSession([]);
 
       expect(session?.settings?.disableSkillShellExecution).toBe(true);
+      expect(session?.settings?.disableAllHooks).toBe(true);
+      expect(session?.settings?.permissions?.deny).toContain(
+        "Read(**/.[eE][nN][vV])",
+      );
     },
     TEST_TIMEOUT_MS,
   );

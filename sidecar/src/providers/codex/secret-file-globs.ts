@@ -1,3 +1,4 @@
+import { caselessGlob as caseless } from "../../agent/project-secrets.js";
 import {
   SECRET_FILE_NAME,
   SECRET_FILE_NAME_PREFIX,
@@ -7,17 +8,6 @@ import {
 const TEMPLATE_SUFFIXES = [...SECRET_FILE_TEMPLATE_NAMES].map((name) =>
   name.slice(SECRET_FILE_NAME_PREFIX.length),
 );
-
-function caseless(text: string): string {
-  return text
-    .split("")
-    .map((character) => {
-      const lower = character.toLowerCase();
-      const upper = character.toUpperCase();
-      return lower === upper ? character : `[${lower}${upper}]`;
-    })
-    .join("");
-}
 
 function noneOf(characters: ReadonlySet<string>): string {
   const cases = [...characters].flatMap((character) => [

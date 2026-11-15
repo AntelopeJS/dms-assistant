@@ -213,7 +213,11 @@ export function createCodexPermissionHandler(
       toolName: TOOL_LEXICON.EDIT,
       args: {
         [EDIT_FILE_PATH_ARG]: first?.path ?? "",
-        [EDIT_PATHS_KEY]: changes.map((change) => change.path),
+        [EDIT_PATHS_KEY]: changes.flatMap((change) =>
+          change.movePath === undefined
+            ? [change.path]
+            : [change.path, change.movePath],
+        ),
         [CODEX_CHANGE_KIND_ARG]: first?.kind ?? "",
         [CODEX_CHANGE_DIFF_ARG]: first?.diff ?? "",
       },

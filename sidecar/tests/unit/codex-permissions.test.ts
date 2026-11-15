@@ -44,14 +44,18 @@ function changesOf(itemId: string) {
   return [{ path: CHANGED_PATH, kind: "update", diff: PATCH_DIFF }];
 }
 
-function buildHandler(current: TurnSettings, outcome = APPROVED) {
+function buildHandler(
+  current: TurnSettings,
+  outcome = APPROVED,
+  getChanges = changesOf,
+) {
   const { bus, requestPermission } = buildBus(outcome);
   const decisions: ToolDecision[] = [];
   const handler = createCodexPermissionHandler({
     conversationId: CONVERSATION,
     permissionBus: bus,
     getSettings: () => current,
-    getChanges: changesOf,
+    getChanges,
     hostProjectRoot: PROJECT_ROOT,
     moduleRoots: [],
     getPendingMcpCalls: () => [],
@@ -94,6 +98,36 @@ describe("approval routing", () => {
       args: {
         file_path: CHANGED_PATH,
         file_paths: [CHANGED_PATH],
+        change_kind: "update",
+        diff: PATCH_DIFF,
+      },
+      callId: ITEM_ID,
+    });
+  });
+
+  /** Fails on a description that drops a rename's destination, which lets a rename onto `antelope.config.ts` or a git hook file escape the files that always ask. */
+  it("lists a rename's destination among the patch's paths", async () => {
+    const destination = `${PROJECT_ROOT}/antelope.config.ts`;
+    const renamed = () => [
+      {
+        path: CHANGED_PATH,
+        movePath: destination,
+        kind: "update",
+        diff: PATCH_DIFF,
+      },
+    ];
+    const { handler, requestPermission } = buildHandler(
+      settings({}),
+      APPROVED,
+      renamed,
+    );
+    await handler.handle(FILE_CHANGE_REQUEST);
+    expect(requestPermission).toHaveBeenCalledWith({
+      conversationId: CONVERSATION,
+      toolName: "Edit",
+      args: {
+        file_path: CHANGED_PATH,
+        file_paths: [CHANGED_PATH, destination],
         change_kind: "update",
         diff: PATCH_DIFF,
       },

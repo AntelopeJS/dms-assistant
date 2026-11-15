@@ -302,10 +302,10 @@
 				"mode_menu": "Approval mode · this chat",
 				"mode_desc": {
 					"normal": "Asks before any edit, web request or command, read-only commands included.",
-					"acceptEdits": "Applies file edits, except dependency and git hook files. Asks before every command and web request.",
+					"acceptEdits": "Applies file edits, except dependency files, git hooks and antelope.config.ts. Asks before every command and web request.",
 					"acceptEdits_codex": "With Codex, works as Ask first: asks before every file edit, dependency and git hook files included, and before any command that writes.",
 					"plan": "Reads and proposes a plan. Changes nothing.",
-					"auto": "A safety check approves routine file edits and web access. Shell commands, dependency files, git hooks and deletions still ask."
+					"auto": "A safety check approves routine file edits and web access. Shell commands, dependency files, git hooks, antelope.config.ts and deletions still ask."
 				},
 				"default_mode": "Default for new chats",
 				"hint_send": "send",

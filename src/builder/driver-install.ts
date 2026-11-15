@@ -19,10 +19,10 @@ export interface DriverInstall {
 export type CheckedAccess = DatabaseAccess & { install?: DriverInstall };
 
 const ADD_VERBS: Record<PackageManager, string> = {
-  pnpm: "pnpm add",
+  pnpm: "pnpm add --save-prefix=~",
   yarn: "yarn add",
   bun: "bun add",
-  npm: "npm install",
+  npm: "npm install --save-prefix=~",
 };
 
 const LOCKFILES: readonly (readonly [string, PackageManager])[] = [

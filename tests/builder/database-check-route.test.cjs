@@ -150,28 +150,29 @@ function missingDriverRoute(access, projectPath) {
 
 /** Fails on a missing driver answered without the install step, or with a command for another package manager or range. */
 void test("a check that misses the driver answers the command that installs it with the project's package manager", async (t) => {
-  const pnpmProject = projectWith({ "pnpm-lock.yaml": "" });
-  const npmProject = projectWith({
+  const pyarnProject = projectWith({ "pnpm-lock.yaml": "" });
+  const yarnProject = projectWith({
     "package.json": JSON.stringify({ packageManager: "yarn@4.5.0" }),
     "package-lock.json": "{}",
   });
   t.after(() => {
-    rmSync(pnpmProject, { recursive: true });
-    rmSync(npmProject, { recursive: true });
+    rmSync(pyarnProject, { recursive: true });
+    rmSync(yarnProject, { recursive: true });
   });
   const body = { engine: "postgres", url: "postgres://u@h/db" };
   assert.deepEqual(
-    await missingDriverRoute(MISSING_POSTGRES, pnpmProject).call(OWNER, body),
+    await missingDriverRoute(MISSING_POSTGRES, pyarnProject).call(OWNER, body),
     {
       ...MISSING_POSTGRES,
       install: {
         package: "@antelopejs/postgres",
-        command: 'pnpm add "@antelopejs/postgres@>=0.4.2 <0.5.0"',
+        command:
+          'pnpm add --save-prefix=~ "@antelopejs/postgres@>=0.4.2 <0.5.0"',
       },
     },
   );
   assert.deepEqual(
-    await missingDriverRoute(MISSING_POSTGRES, npmProject).call(OWNER, body),
+    await missingDriverRoute(MISSING_POSTGRES, yarnProject).call(OWNER, body),
     {
       ...MISSING_POSTGRES,
       install: {

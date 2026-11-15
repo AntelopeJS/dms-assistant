@@ -34,7 +34,7 @@ const PROJECT = {
 };
 
 const REASON = "Install @antelopejs/postgres to connect a PostgreSQL database.";
-const COMMAND = 'pnpm add "@antelopejs/postgres@>=0.4.2 <0.5.0"';
+const COMMAND = 'pnpm add --save-prefix=~ "@antelopejs/postgres@>=0.4.2 <0.5.0"';
 const MISSING_DRIVER = {
 	reachable: false,
 	canRead: false,

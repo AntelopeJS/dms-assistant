@@ -1,6 +1,6 @@
 const { spawnSync } = require("node:child_process");
 const { existsSync } = require("node:fs");
-const { mkdtemp, readdir, readFile } = require("node:fs/promises");
+const { mkdtemp, readdir, readFile, rm } = require("node:fs/promises");
 const { builtinModules } = require("node:module");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
@@ -12,6 +12,7 @@ const CoreOutputSchema = z.object({
     output: z.unknown(),
   }),
 });
+const ManifestSchema = z.object({ packageManager: z.string().optional() });
 const ROOT = path.resolve(__dirname, "..", "..");
 const BUILTINS = new Set(builtinModules);
 const SPECIFIER =
@@ -48,9 +49,12 @@ async function moduleCacheInstallCommand(folder) {
 }
 
 /**
- * Packs this module as it is published and installs the tarball the way the
- * module cache does: extracted into a folder of its own, then installed there
- * as the root project, production dependencies only.
+ * Packs this module as the release publishes it, with `npm pack`, and
+ * installs the tarball the way the module cache does: extracted into a folder
+ * of its own, then installed there as the root project, production
+ * dependencies only, with the package manager its `packageManager` names.
+ * Throws when the tarball does not name the root's `packageManager`, which
+ * would send the install down another package manager's path.
  *
  * @returns {Promise<{ scratch: string; folder: string }>}
  */
@@ -58,16 +62,32 @@ async function installAsTheModuleCache() {
   const scratch = await mkdtemp(
     path.join(tmpdir(), "dms-assistant-installed-"),
   );
-  const packed = run(`pnpm pack --pack-destination "${scratch}"`, ROOT)
-    .trim()
-    .split("\n")
-    .at(-1)
-    ?.trim();
-  if (packed === undefined) throw new Error("pnpm pack printed no tarball");
-  run(`tar -xzf "${path.resolve(scratch, packed)}"`, scratch);
-  const folder = path.join(scratch, "package");
-  run(await moduleCacheInstallCommand(folder), folder);
-  return { scratch, folder };
+  try {
+    const packed = run(`npm pack --pack-destination "${scratch}"`, ROOT)
+      .trim()
+      .split("\n")
+      .at(-1)
+      ?.trim();
+    if (packed === undefined) throw new Error("npm pack printed no tarball");
+    run(`tar -xzf "${path.resolve(scratch, packed)}"`, scratch);
+    const folder = path.join(scratch, "package");
+    const [shipped, own] = await Promise.all(
+      [folder, ROOT].map(async (dir) =>
+        ManifestSchema.parse(
+          JSON.parse(await readFile(path.join(dir, "package.json"), "utf8")),
+        ),
+      ),
+    );
+    if (shipped.packageManager !== own.packageManager)
+      throw new Error(
+        `the tarball names packageManager ${shipped.packageManager}, not ${own.packageManager}`,
+      );
+    run(await moduleCacheInstallCommand(folder), folder);
+    return { scratch, folder };
+  } catch (error) {
+    await rm(scratch, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 /**

@@ -12,7 +12,6 @@ const ASK = {
     permissionDecision: "ask",
   },
 };
-const NO_DECISION = { continue: true };
 
 interface HookRun {
   output: unknown;
@@ -63,9 +62,10 @@ describe("the PreToolUse hook and the permission mode the CLI states", () => {
     expect(run.decisions).toEqual([]);
   });
 
-  it("leaves a call in Plan only to the CLI, recording nothing", async () => {
+  /** Fails on a hook that leaves a command to the CLI in Plan only, which runs a read-only one such as `cat .env` unasked. */
+  it("hands a command to canUseTool in Plan only, recording no review", async () => {
     const run = await preToolUse("node -e 1", "plan");
-    expect(run.output).toEqual(NO_DECISION);
+    expect(run.output).toEqual(ASK);
     expect(run.decisions).toEqual([]);
   });
 });

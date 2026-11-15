@@ -30,6 +30,7 @@ interface ReachPolicy {
   runsInSafeScope: CallRule;
   isLeftToClassifier: CallRule;
   isLeftToCli: CallRule;
+  isLeftToPlan: CallRule;
 }
 
 const PLANS_DIRECTORY = join(homedir(), ".claude", "plans");
@@ -70,46 +71,55 @@ const POLICY_BY_REACH: Record<ToolReach, ReachPolicy> = {
     runsInSafeScope: always,
     isLeftToClassifier: isReadInsideRoots,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   editsFile: {
     runsInSafeScope: isPlanFile,
     isLeftToClassifier: isNotAlwaysAsk,
     isLeftToCli: isNotAlwaysAsk,
+    isLeftToPlan: always,
   },
   runsCommand: {
     runsInSafeScope: never,
     isLeftToClassifier: never,
     isLeftToCli: never,
+    isLeftToPlan: never,
   },
   runsLater: {
     runsInSafeScope: never,
     isLeftToClassifier: never,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   fetchesWeb: {
     runsInSafeScope: always,
     isLeftToClassifier: isCodeScope,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   startsAgent: {
     runsInSafeScope: runsInThisSession,
     isLeftToClassifier: runsInThisSession,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   asksPerson: {
     runsInSafeScope: always,
     isLeftToClassifier: never,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   inert: {
     runsInSafeScope: always,
     isLeftToClassifier: always,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
   reachesOutside: {
     runsInSafeScope: never,
     isLeftToClassifier: never,
     isLeftToCli: always,
+    isLeftToPlan: always,
   },
 };
 
@@ -117,18 +127,18 @@ type CliSettles = Exclude<keyof ReachPolicy, "runsInSafeScope">;
 
 const STRICTEST_COLUMN: CliSettles = "isLeftToClassifier";
 
-const COLUMN_BY_MODE = new Map<string, CliSettles | null>(
+const COLUMN_BY_MODE = new Map<string, CliSettles>(
   Object.entries({
     default: "isLeftToCli",
     acceptEdits: "isLeftToCli",
     auto: "isLeftToClassifier",
     dontAsk: STRICTEST_COLUMN,
     bypassPermissions: STRICTEST_COLUMN,
-    plan: null,
-  } satisfies Record<PermissionMode, CliSettles | null>),
+    plan: "isLeftToPlan",
+  } satisfies Record<PermissionMode, CliSettles>),
 );
 
-function cliSettlesIn(permissionMode: string | undefined): CliSettles | null {
+function cliSettlesIn(permissionMode: string | undefined): CliSettles {
   if (permissionMode === undefined) return STRICTEST_COLUMN;
   const column = COLUMN_BY_MODE.get(permissionMode);
   return column === undefined ? STRICTEST_COLUMN : column;
@@ -153,10 +163,11 @@ export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
 
 /**
  * Whether the sidecar, not the CLI, must decide a call in the permission mode
- * the CLI runs in. Auto review's classifier and the Ask first and Accept edits
- * rules approve calls without ever asking `canUseTool`, so the PreToolUse hook
- * hands these to it: every command, the always-ask set, and any name the table
- * does not classify, a tool the CLI adds included.
+ * the CLI runs in. Auto review's classifier, the Ask first and Accept edits
+ * rules and Plan only's read-only commands approve calls without ever asking
+ * `canUseTool`, so the PreToolUse hook hands these to it: every command, the
+ * always-ask set outside plan, and any name the table does not classify, a
+ * tool the CLI adds included.
  */
 export function isHostDecided(
   call: GuardedCall,
@@ -164,7 +175,6 @@ export function isHostDecided(
   permissionMode: string | undefined,
 ): boolean {
   const column = cliSettlesIn(permissionMode);
-  if (column === null) return false;
   if (isFirstPartyMcpTool(call.toolName)) return true;
   const reach = toolReachOf(call.toolName);
   if (reach === undefined) return true;

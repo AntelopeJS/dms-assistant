@@ -91,13 +91,15 @@ function decideByMode(
 /**
  * Enforces safe mode as a `PreToolUse` hook. The CLI runs hooks before it
  * applies the permission mode, and a hook denial is final, so the refusal holds
- * in `acceptEdits`, `plan` and `auto`, where `canUseTool` is never asked about
- * an edit. The generation mode is read on every call: a safe/vibe flip applies
+ * in `acceptEdits` and `auto`, where `canUseTool` is never asked about an
+ * edit, and in `plan`. The generation mode is read on every call: a safe/vibe flip applies
  * to the next tool call without a new session. The same hook holds every
  * mutating tool until the turn's checkpoint is taken: it runs before the tool
- * whatever the permission mode, which `canUseTool` does not. In every mode but
- * plan, it also sends to `canUseTool` each call the CLI would otherwise settle
- * without asking the person (see isHostDecided).
+ * whatever the permission mode, which `canUseTool` does not. It also sends to
+ * `canUseTool` each call the CLI would otherwise settle without asking the
+ * person (see isHostDecided). In plan that is every command and every tool it
+ * does not know, which the CLI would otherwise run unasked when it judges it
+ * read-only.
  */
 export function buildSafeModeHooks(deps: PreToolUseDeps): SdkHooks {
   const preToolUse: HookCallback = async (input) => {

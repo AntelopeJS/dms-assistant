@@ -306,8 +306,32 @@ describe.each<ChatMode>(["normal", "acceptEdits"])(
 );
 
 describe("the PreToolUse guard in Plan only", () => {
-  it("leaves every call to the CLI, which changes nothing", async () => {
-    const calls = [...COMMANDS, ...GIT_HOOK_FILES, ...UNKNOWN_TOOLS];
+  /** Fails on a guard that leaves a read-only command such as `cat .env` to the CLI, which runs it unasked in plan mode. */
+  it("hands every command to the person, read-only ones included", async () => {
+    const commands = [...COMMANDS, call("Bash", { command: "cat .env" })];
+    expect(await decideAll(commands, "plan", "vibe")).toEqual(
+      each(commands, ASK),
+    );
+  });
+
+  /** Fails on a guard that lets a tool the CLI adds under a new name run unasked in plan mode. */
+  it("hands a tool it does not know to the person", async () => {
+    expect(await decideAll(UNKNOWN_TOOLS, "plan", "vibe")).toEqual(
+      each(UNKNOWN_TOOLS, ASK),
+    );
+  });
+
+  /** Fails on a guard that asks in plan about an edit, a read outside the roots, a sub-agent or a question, which the CLI settles itself. */
+  it("leaves edits, reads, sub-agents, questions and scheduling to the CLI", async () => {
+    const calls = [
+      ...GIT_HOOK_FILES,
+      ...LEFT_TO_THE_CLI,
+      call("Read", { file_path: "/etc/hostname" }),
+      call("Agent", { prompt: "look around" }),
+      call("Agent", { prompt: "look around", isolation: "worktree" }),
+      call("SendMessage", { to: "peer", message: "hi" }),
+      call("AskUserQuestion", { questions: [] }),
+    ];
     expect(await decideAll(calls, "plan", "vibe")).toEqual(each(calls, NONE));
   });
 });

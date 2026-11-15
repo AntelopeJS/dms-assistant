@@ -1,4 +1,5 @@
 import type {
+  Options,
   SettingSource,
   TerminalReason,
 } from "@anthropic-ai/claude-agent-sdk";
@@ -28,6 +29,16 @@ export const SYSTEM_PROMPT_PRESET_TYPE = "preset" as const;
 export const SYSTEM_PROMPT_PRESET_NAME = "claude_code" as const;
 export const SDK_SETTING_SOURCES_ISOLATED: SettingSource[] = [];
 export const SDK_INCLUDE_PARTIAL_MESSAGES = true;
+
+/**
+ * The flag settings every session starts with. A skill's inline shell line
+ * (`!` and a command in backticks) runs when the skill loads, before any hook
+ * or `canUseTool` sees it, so it would hand the agent a `.env` value unasked
+ * in every mode: the CLI puts a placeholder in its place instead.
+ */
+export const SDK_SESSION_SETTINGS = {
+  disableSkillShellExecution: true,
+} as const satisfies Exclude<Options["settings"], string | undefined>;
 
 /** The hook event the CLI raises before any permission check of a tool call. */
 export const PRE_TOOL_USE_HOOK_EVENT = "PreToolUse" as const;

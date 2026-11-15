@@ -25,6 +25,7 @@ interface TraceEntry {
   skills?: Options["skills"];
   mcpServers?: Record<string, TracedMcpServer>;
   disallowedTools?: string[];
+  settings?: Options["settings"];
 }
 
 interface TracedMcpServer {
@@ -65,5 +66,6 @@ export function traceOptions(options: Options | undefined): void {
       ]),
     ),
     disallowedTools: options.disallowedTools,
+    settings: options.settings,
   });
 }

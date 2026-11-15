@@ -2,6 +2,19 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.5
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.4...v0.2.5)
+
+### 🩹 Fixes
+
+- **sidecar:** Ask before every command in Claude's Plan only ([#71](https://github.com/AntelopeJS/dms-assistant/pull/71))
+- **sidecar:** Switch off skills' inline shell commands in Claude sessions ([#73](https://github.com/AntelopeJS/dms-assistant/pull/73))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.2.4
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.3...v0.2.4)

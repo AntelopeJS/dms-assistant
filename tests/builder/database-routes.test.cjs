@@ -59,7 +59,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/connections/repair",
-    reads: ["owner", "body", "header:x-dms-ui-assistant"],
+    reads: ["owner", "body"],
     args: [{ dryRun: true }],
     operation: "RepairDatabaseConnections",
     called: [{ dryRun: true }],
@@ -69,7 +69,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/analyse",
-    reads: ["owner", "body", "header:x-dms-ui-assistant"],
+    reads: ["owner", "body"],
     args: [{ connection: "erp", module: "erp-tables", schemas: ["public"] }],
     operation: "AnalyseDatabase",
     called: [{ connection: "erp", module: "erp-tables", schemas: ["public"] }],
@@ -99,7 +99,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/map",
-    reads: ["owner", "body", "header:x-dms-ui-assistant"],
+    reads: ["owner", "body"],
     args: [{ module: "erp-tables", connection: "erp", resources: [] }],
     operation: "MapResources",
     called: [{ module: "erp-tables", connection: "erp", resources: [] }],
@@ -149,7 +149,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/connection/remove",
-    reads: ["owner", "body", "header:x-dms-ui-assistant"],
+    reads: ["owner", "body"],
     args: [{ connection: "erp", dryRun: true }],
     operation: "RemoveDatabaseConnection",
     called: ["erp", { dryRun: true }],

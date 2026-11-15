@@ -32,8 +32,8 @@ void test("every connect route reads the owner first", () => {
 
 const MARKER = "header:x-dms-ui-assistant";
 
-/** Fails on a connect route that reads another header, such as the sidecar's token, or a POST that does not read the assistant UI's marker. */
-void test("every POST connect route reads the assistant UI's marker, and no route reads another header", () => {
+/** Fails on a connect route that reads another header, such as the sidecar's token, or a URL-taking route that does not read the assistant UI's marker. */
+void test("every URL-taking route reads the assistant UI's marker, and no route reads another header", () => {
   const reading = bound.map((route) => [
     `${route.verb} ${route.path}`,
     route.reads.filter((read) => read.startsWith("header:")),
@@ -42,7 +42,7 @@ void test("every POST connect route reads the assistant UI's marker, and no rout
     reading,
     bound.map((route) => [
       `${route.verb} ${route.path}`,
-      route.verb === "POST" ? [MARKER] : [],
+      URL_ROUTES.includes(`${route.verb} ${route.path}`) ? [MARKER] : [],
     ]),
   );
 });

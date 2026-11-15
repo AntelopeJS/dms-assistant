@@ -6,7 +6,7 @@ const { loadDatabaseController } = require("./helpers/database-controller.cjs");
 const OWNER = { _id: "owner" };
 const DONE = { ok: true, data: {}, changes: [] };
 
-/** Every route that hands core a connection target or a URL, with a body it takes and the operation it runs. */
+/** Every route that takes a database URL, with a body it takes and the operation it runs. */
 const MARKED_ROUTES = [
   [
     "/database/connections/check",
@@ -26,22 +26,6 @@ const MARKED_ROUTES = [
       variables: [{ name: "DB_URL", value: "postgres://u:p@h/db" }],
     },
   ],
-  [
-    "/database/connections/repair",
-    "RepairDatabaseConnections",
-    { dryRun: false },
-  ],
-  [
-    "/database/connection/remove",
-    "RemoveDatabaseConnection",
-    { connection: "erp" },
-  ],
-  [
-    "/database/analyse",
-    "AnalyseDatabase",
-    { connection: "erp", module: "erp" },
-  ],
-  ["/database/map", "MapResources", { connection: "erp", module: "erp" }],
 ];
 
 /** @param {string} operation */
@@ -95,15 +79,19 @@ void test("each route that takes a database target runs its operation for the as
   }
 });
 
-/** Fails on a POST route of the controller left out of the two tests above. */
-void test("the tests cover every POST route of the controller", () => {
-  const posts = loadDatabaseController({})
+/** Fails on a URL-taking route of the controller left out of the two tests above, or a marker read on a route that takes no URL. */
+void test("the URL-taking routes, and only they, read the assistant UI's header", () => {
+  const reading = loadDatabaseController({})
     .routes()
-    .filter((route) => route.verb === "POST")
-    .map((route) => route.path);
+    .filter((route) => route.reads.includes("header:x-dms-ui-assistant"))
+    .map((route) => [route.verb, route.path].join(" "));
   assert.deepEqual(
-    new Set(posts),
-    new Set(MARKED_ROUTES.map(([routePath]) => routePath)),
+    new Set(reading),
+    new Set([
+      "POST /database/connections/check",
+      "POST /database/connection/url",
+      "POST /database/project",
+    ]),
   );
-  assert.equal(posts.length, MARKED_ROUTES.length);
+  assert.equal(reading.length, MARKED_ROUTES.length);
 });

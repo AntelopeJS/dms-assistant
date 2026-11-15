@@ -7,6 +7,9 @@ import { BOARD, BUILDER, builder, check, fromOwnerUi, list, member, projectPath,
 
 const DENIED = [401, 403];
 
+/** The routes that take a database URL, which answer only a request carrying the assistant UI's header. */
+const URL_ROUTES = new Set(["/database/project", "/database/connection/url"]);
+
 /** A dry run of one added module: the answer names the file it would write. */
 const DRY_RUN = { steps: [{ op: "AddModule", id: "verify-extra", entry: { source: { type: "package", package: "@antelopejs/verify-extra", version: "^1.0.0" } } }], opts: { dryRun: true } };
 
@@ -52,7 +55,7 @@ export const journeys = guarded([
         if (!ownerAnswered) continue;
         const owner = await builder(ctx, `owner ${method} ${path}`, method, path, { body });
         checks.push(check(`${method} ${path}: the owner reaches the route`, !DENIED.includes(owner.status ?? 0) && owner.body !== "Not Found", owner));
-        if (method !== "POST") continue;
+        if (!URL_ROUTES.has(path)) continue;
         const unmarked = await fromOwnerUi(ctx, `owner ${method} ${path} without the assistant UI's header`, `${BUILDER}${path}`, { body, marker: false });
         checks.push(check(`${method} ${path}: the owner's request without the assistant UI's header is refused 403`, unmarked.status === 403 && text(unmarked.body, "code") === "forbidden", unmarked));
       }

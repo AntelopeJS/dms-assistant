@@ -170,10 +170,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async repairConnections(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: ProjectConfigOpts | undefined,
-    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
-    const refused = outsideOwnerUi(marker);
-    if (refused) return refused;
     return fromDms(() => RepairDatabaseConnections({ dryRun: body?.dryRun }));
   }
 
@@ -204,10 +201,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async analyse(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: AnalyseDatabaseInput,
-    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
-    const refused = outsideOwnerUi(marker);
-    if (refused) return refused;
     return fromDms(() => AnalyseDatabase(body));
   }
 
@@ -232,10 +226,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async map(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: MapResourcesInput,
-    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
-    const refused = outsideOwnerUi(marker);
-    if (refused) return refused;
     return fromDms(() => MapResources(body));
   }
 
@@ -284,10 +275,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async removeConnection(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: RemoveConnectionBody,
-    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
-    const refused = outsideOwnerUi(marker);
-    if (refused) return refused;
     return fromDms(() =>
       RemoveDatabaseConnection(body.connection, { dryRun: body.dryRun }),
     );

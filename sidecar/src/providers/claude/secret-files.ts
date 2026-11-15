@@ -11,6 +11,7 @@ import {
   SECRET_FILE_SEARCH_EXCLUSIONS,
 } from "../../agent/project-secrets.js";
 import { PRE_TOOL_USE_HOOK_EVENT } from "../../constants/claude.js";
+import { PLATFORM_WINDOWS } from "../../constants/native-binary.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import {
   SEARCH_TOOL_GLOB_KEYS,
@@ -50,12 +51,22 @@ type ToolCall = z.infer<typeof toolCallSchema>;
 
 const HOME_PREFIX = "~/";
 
+const MSYS_DRIVE_PATH = /^\/([a-z])\//i;
+
+function withWindowsDrive(path: string): string {
+  if (process.platform !== PLATFORM_WINDOWS) return path;
+  const drive = MSYS_DRIVE_PATH.exec(path)?.[1];
+  return drive === undefined
+    ? path
+    : `${drive.toUpperCase()}:${path.slice(2).replaceAll("/", "\\")}`;
+}
+
 function asTheCliReadsIt(path: string): string {
   const trimmed = path.trim();
   if (trimmed === "~") return homedir();
   return trimmed.startsWith(HOME_PREFIX)
     ? join(homedir(), trimmed.slice(HOME_PREFIX.length))
-    : trimmed;
+    : withWindowsDrive(trimmed);
 }
 
 async function pathReachesSecret({
@@ -122,8 +133,9 @@ async function decide(call: ToolCall): Promise<SyncHookJSONOutput> {
  * It refuses any tool call naming a secret file, or a link that resolves to
  * one, and a Grep or Glob whose file-name glob matches one. It leaves secret
  * files out of every other Grep, which searches a whole directory. A path is
- * read as the CLI reads it, trimmed and with a leading `~` or `~/` taken as
- * the home directory, and a call the guard throws on is refused.
+ * read as the CLI reads it: trimmed, a leading `~` or `~/` taken as the home
+ * directory, and on Windows an MSYS drive path such as `/c/Users` taken as
+ * `C:\Users`. A call the guard throws on is refused.
  * The CLI runs hooks before its own permission mode, so the refusal holds
  * where a plain read under the project would be allowed unasked, and a hook
  * denial is final.

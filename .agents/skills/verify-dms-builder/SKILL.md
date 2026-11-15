@@ -85,7 +85,7 @@ Write `$RUN/evidence/judgement.json` (`doors`, `docs`, `notVerified`, `attention
 
 List these under `notVerified` in the judgement of every verdict; the per-feature `coverage/` tables carry the rest.
 
-- connecting an external database, analysing it, mapping its relations and the module changes that follow (`POST /database/analyse`, `/map`, `/project` with a real connection, `/connection/remove`, `/connection/url`, `/connections/repair` with a connection, `/sample`): the run has no catalog provider and no external database, so only the empty, refusal and dry-run paths are driven;
+- connecting an external database, analysing it, mapping its relations and the module changes that follow (`POST /database/analyse`, `/map`, `/project` with a real connection, `/connection/remove`, `/connection/url`, `/connections/repair` with a connection): the run has no catalog provider and no external database, so only the empty, refusal and dry-run paths are driven;
 - the onboarding popup's form and the client in `frontend-vue/builder` in a browser: no AI sign-in, see Gotchas;
 - the check against PostgreSQL and RethinkDB: the run starts a MongoDB only;
 - the page, block, table, data source and theme operations of `@antelopejs/interface-dms-builder` and the MCP tools that serve them: `@antelopejs/dms` owns them, and its `verify-dms` skill drives part of them.

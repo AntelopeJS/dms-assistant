@@ -12,7 +12,6 @@ import type {
 	ProjectConfigStep,
 	ProjectModules,
 	ProjectVariable,
-	RowSample,
 } from './database-types'
 import type { BuilderError, OpResult } from './types'
 
@@ -98,11 +97,5 @@ export function useBuilderApi() {
 			post<{ variable: string }>('/database/connection/url', { connection, url }),
 		/** Whether the project's `.env` changed since the running project loaded it: a restart is due to load it. */
 		reloadDue: () => get<{ due: boolean }>('/database/reload'),
-		/** A few rows for the integrator to look at, held in the panel and nowhere else. */
-		sampleRows: (connection: string, relation: string, limit: number) =>
-			$authFetch<RowSample>(`${API_PREFIX}/database/sample`, {
-				method: 'POST',
-				body: { connection, relation, limit },
-			}),
 	}
 }

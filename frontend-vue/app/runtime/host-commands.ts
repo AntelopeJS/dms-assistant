@@ -11,8 +11,18 @@ interface RouterLike {
  * timeout.
  */
 export interface DevReloadWaiter {
-	awaitRoute: (path: string) => Promise<boolean>;
+	awaitRoute: (
+		path: string,
+		options?: { timeoutMs?: number },
+	) => Promise<boolean>;
 }
+
+/**
+ * How long a navigation waits for its route. A page the builder writes changes the project's
+ * configuration, so the whole project restarts before it serves the page: measured from 10 s to
+ * 22 s under `ajs project dev -w`, past the host's own 15 s default. A known route answers at once.
+ */
+const ROUTE_WAIT_MS = 60_000;
 
 /** What navigating the dashboard needs: its router, and the host's dev reload to wait on. */
 export interface NavigationContext {
@@ -69,7 +79,9 @@ async function awaitRouteThenPush(
 	ctx: NavigationContext,
 ): Promise<void> {
 	try {
-		await ctx.devReload.awaitRoute(routeOf(path));
+		await ctx.devReload.awaitRoute(routeOf(path), {
+			timeoutMs: ROUTE_WAIT_MS,
+		});
 	} catch (err: unknown) {
 		console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
 	}

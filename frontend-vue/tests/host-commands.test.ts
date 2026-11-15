@@ -230,4 +230,20 @@ describe("the dashboard's own navigation to a page just written", () => {
 			),
 		);
 	});
+
+	it("waits longer than the project restart a page the builder writes may cause", async () => {
+		const push = vi.fn();
+		const awaitRoute = vi.fn(
+			async (_path: string, _options?: { timeoutMs?: number }) => true,
+		);
+		const navigate = createNavigator({
+			router: { push },
+			devReload: { awaitRoute },
+		});
+		navigate("/shop/public-categories");
+		await vi.waitFor(() => expect(push).toHaveBeenCalled());
+		expect(
+			awaitRoute.mock.calls[0]?.[1]?.timeoutMs ?? 0,
+		).toBeGreaterThanOrEqual(30_000);
+	});
 });

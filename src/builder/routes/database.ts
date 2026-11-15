@@ -30,8 +30,6 @@ import {
   type ProjectVariable,
   RemoveDatabaseConnection,
   RepairDatabaseConnections,
-  type RowSampleRequest,
-  SampleDatabaseRows,
   SetDatabaseConnectionUrl,
 } from "@antelopejs/interface-dms-builder";
 import { z } from "zod";
@@ -104,10 +102,6 @@ interface ConnectionUrlBody {
   connection: string;
   /** The new URL; with no password, the current one is kept. */
   url: string;
-}
-
-interface SampleBody extends RowSampleRequest {
-  connection: string;
 }
 
 interface ProjectBody {
@@ -259,15 +253,5 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   @Get(ROUTES.databaseReload)
   async reload(@AuthTenantOwner() _user: User) {
     return { due: await reloadDue() };
-  }
-
-  @Post(ROUTES.databaseSample)
-  async sample(@AuthTenantOwner() _user: User, @JSONBody() body: SampleBody) {
-    const { connection, relation, columns, limit } = body;
-    return fromDms(async () =>
-      dataOrStatus(
-        await SampleDatabaseRows(connection, { relation, columns, limit }),
-      ),
-    );
   }
 }

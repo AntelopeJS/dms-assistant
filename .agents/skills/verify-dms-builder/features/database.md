@@ -15,7 +15,7 @@ The `/api/builder/database` routes behind the onboarding's "Start from an existi
 
 ## Sub-features
 
-- `a-project-without-an-external-database-answers-the-documented-empties-and-404s`: the connection list is empty, and an unknown connection, analysis, sample or mapping answers 404 or a not_found refusal.
+- `a-project-without-an-external-database-answers-the-documented-empties-and-404s`: the connection list is empty, an unknown connection, analysis or mapping answers 404 or a not_found refusal, and `POST /database/sample` answers the API server's 404.
 - `the-project-answer-carries-the-fields-the-connect-form-reads`: `GET /database/project` answers the modules, this module's id, the own database and the pins that the client's `ProjectModules` type reads.
 - `writes-that-are-refused-or-dry-run-leave-the-project-untouched`: refused writes, a dry run with and without `variables` and a repair with nothing to repair answer as documented and leave `antelope.config.ts` and `.env` as they were.
 

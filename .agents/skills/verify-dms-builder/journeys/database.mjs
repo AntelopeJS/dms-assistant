@@ -23,21 +23,21 @@ function envFile(ctx) {
 export const journeys = guarded([
   {
     id: "a-project-without-an-external-database-answers-the-documented-empties-and-404s",
-    title: "On a project with no catalog connection the Database routes list no connection and answer 404 or a not_found refusal for an unknown connection, analysis, sample or mapping",
+    title: "On a project with no catalog connection the Database routes list no connection and answer 404 or a not_found refusal for an unknown connection, analysis or mapping, and no route samples rows",
     entryPoint: "GET /api/builder/database/*, POST /api/builder/database/sample",
     async run(/** @type {Ctx} */ ctx) {
       const connections = await builder(ctx, "connections", "GET", "/database/connections");
       const analysis = await builder(ctx, "analysis of an unknown connection", "GET", "/database/analysis?connection=nope");
       const analysisById = await builder(ctx, "analysis by an unknown id", "GET", "/database/analysis?id=nope");
       const connection = await builder(ctx, "an unknown connection", "GET", "/database/connection?connection=nope");
-      const sample = await builder(ctx, "sample of an unknown connection", "POST", "/database/sample", { body: { connection: "nope", relation: "orders", columns: ["id"], limit: 5 } });
+      const sample = await builder(ctx, "the removed sample route", "POST", "/database/sample", { body: { connection: "nope", relation: "orders", columns: ["id"], limit: 5 } });
       const mapping = await builder(ctx, "mapping of an unknown connection", "GET", "/database/mapping?connection=nope&module=nope");
       await ctx.verify("the reads", [
         check("connections is an empty list", connections.status === 200 && Array.isArray(connections.body) && connections.body.length === 0, connections),
         check("an unknown analysis connection is 404 with its ref", analysis.status === 404 && text(analysis.body, "code") === "not_found" && text(analysis.body, "ref") === "nope", analysis),
         check("an unknown analysis id answers a not_found OpResult", pick(analysisById.body, "ok") === false && text(analysisById.body, "error", "code") === "not_found", analysisById),
         check("an unknown connection is 404 with its ref", connection.status === 404 && text(connection.body, "code") === "not_found" && text(connection.body, "ref") === "nope", connection),
-        check("a sample of an unknown connection is 404 with its ref", sample.status === 404 && text(sample.body, "code") === "not_found" && text(sample.body, "ref") === "nope", sample),
+        check("the owner's sample request is the API server's 404: no route answers rows", sample.status === 404 && sample.body === "Not Found", sample),
         check("an unknown mapping answers a refusal, not a 200 mapping", mapping.status !== 200 || pick(mapping.body, "ok") === false, mapping),
       ]);
     },

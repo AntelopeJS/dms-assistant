@@ -196,24 +196,6 @@ export interface DatabaseAccess {
 	reason?: string
 }
 
-interface SampledText {
-	text: string
-	truncated: boolean
-}
-
-interface SampledBinary {
-	bytes: number
-}
-
-type SampledValue = SampledText | SampledBinary | null
-
-export interface RowSample {
-	relation: string
-	columns: string[]
-	rows: SampledValue[][]
-	sample: { percent: number; rows: number } | null
-}
-
 export interface ModuleEntryInput {
 	source?: Record<string, unknown>
 	config?: Record<string, unknown>

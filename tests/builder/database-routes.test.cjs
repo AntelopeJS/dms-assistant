@@ -28,12 +28,6 @@ const PROJECT = {
   },
 };
 const WIRING = { wiring: { connection: "erp", driver: "builder-db-erp" } };
-const ROWS = {
-  relation: "erp.customers",
-  columns: ["name"],
-  rows: [],
-  sample: null,
-};
 const STEPS = [{ op: "RemoveModule", id: "old" }];
 const VARIABLES = [{ name: "ERP_URL", value: "postgres://u@h/erp" }];
 
@@ -172,23 +166,6 @@ const ROUTES = [
     answer: { ok: true, data: { variable: "ERP_URL" }, changes: [] },
     expected: { ok: true, data: { variable: "ERP_URL" }, changes: [] },
   },
-  {
-    verb: "POST",
-    path: "/database/sample",
-    reads: ["owner", "body"],
-    args: [
-      {
-        connection: "erp",
-        relation: "erp.customers",
-        columns: ["name"],
-        limit: 5,
-      },
-    ],
-    operation: "SampleDatabaseRows",
-    called: ["erp", { relation: "erp.customers", columns: ["name"], limit: 5 }],
-    answer: { ok: true, data: ROWS, changes: [] },
-    expected: ROWS,
-  },
 ];
 
 /**
@@ -235,6 +212,21 @@ void test("each database route runs its core operation for the tenant owner and 
         [row.operation, row.called],
       ],
       name,
+    );
+  }
+});
+
+/**
+ * Fails on a controller that binds a handler to `/database/sample` on any verb, so the API server
+ * answers it instead of its 404, and hands the tenant owner raw rows of the external database.
+ */
+void test("no route answers rows of the external database: /database/sample is bound to no verb", () => {
+  const controller = loadDatabaseController({});
+  for (const verb of ["GET", "POST"]) {
+    assert.throws(
+      () => controller.route(verb, "/database/sample"),
+      { message: `0 routes are bound to ${verb} /database/sample` },
+      verb,
     );
   }
 });
@@ -288,30 +280,6 @@ void test("a read the onboarding takes as is answers 404 when core finds nothing
         code: "refused",
         message: "dms-database is written with a spread; write it as an object",
       },
-    },
-    {
-      operation: "SampleDatabaseRows",
-      verb: "POST",
-      path: "/database/sample",
-      args: [{ connection: "gone", relation: "t", limit: 1 }],
-      answer: { ok: false, error: { code: "not_found", ref: "gone" } },
-      status: 404,
-      body: { code: "not_found", ref: "gone" },
-    },
-    {
-      operation: "SampleDatabaseRows",
-      verb: "POST",
-      path: "/database/sample",
-      args: [{ connection: "erp", relation: "t", limit: 1 }],
-      answer: {
-        ok: false,
-        error: {
-          code: "invalid_config",
-          issues: [{ pointer: "", message: 'relation "t" does not exist' }],
-        },
-      },
-      status: 422,
-      body: { code: "refused", message: 'relation "t" does not exist' },
     },
     {
       operation: "GetLatestAnalysis",

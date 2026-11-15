@@ -37,31 +37,6 @@ export const PREVIEW_ERROR_CODES = {
   INVALID_SKETCH: "invalid_sketch",
 } as const;
 
-/**
- * Markup a sketch may not hold. The DMS's `sketch` node draws a sketch in a
- * sandboxed frame with no scripts and a CSP that loads nothing but `data:`
- * images and fonts; these checks turn a sketch that would break there into a
- * clear error.
- */
-export const PREVIEW_SKETCH_FORBIDDEN: ReadonlyArray<
-  readonly [RegExp, string]
-> = [
-  [/<\s*script\b/i, "a <script> element"],
-  [
-    /<\s*(?:iframe|frame|frameset|object|embed|applet|portal|link|base)\b/i,
-    "an embedding or linking element (iframe, object, embed, link, base)",
-  ],
-  [/<\s*meta\b[^>]*http-equiv/i, "a <meta http-equiv>"],
-  [/<[^>]*[\s/"']on[a-z]+\s*=/i, "an on* event handler attribute"],
-  [/(?:java|vb)script\s*:/i, "a javascript: URL"],
-  [/@import\b/i, "a CSS @import"],
-  [/url\(\s*(?!['"]?\s*data:)/i, "a url() that is not a data: URL"],
-  [
-    /<[^>]*\s(?:src|srcset|href|xlink:href|poster|action|formaction|background|data|ping)\s*=\s*(?!['"]?\s*(?:data:|#))/i,
-    "a src, href or similar attribute that is not a data: URL or an #anchor",
-  ],
-];
-
 export const PREVIEW_RESULT_SHOWN =
   "Preview shown to the user as an attachment. If it settles a choice, ask it now with ask_user.";
 export const PREVIEW_ERROR_NO_TYPE =
@@ -78,6 +53,8 @@ export const PREVIEW_ERROR_OPTION_URL =
 export const PREVIEW_ERROR_EMPTY_VIEW =
   "Every view (the preview and each variant) needs a `tree`, a `sketch`, or both.";
 export const PREVIEW_ERROR_SKETCH =
-  "A sketch is static HTML and CSS: inline images and fonts as data: URLs, and use no script, event handler, external resource or embedded frame. Refused: ";
+  "A sketch is static HTML and CSS: images as inline data:image/ URLs, links only to #anchors, and no script, event handler, form, external resource or embedded frame. Refused: ";
+export const PREVIEW_ERROR_EMPTY_SKETCH =
+  "The sketch draws nothing: once its comments are dropped, its `html` holds only whitespace.";
 export const PREVIEW_ERROR_URL =
   "`reference.url` must be a same-origin path (`/media/...`) or an http(s) URL.";

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { checkSketch } from "@antelopejs/dms/sketch";
 import { z } from "zod";
 import {
   PREVIEW_BLOCKS_TOOL_DESCRIPTION,
@@ -6,6 +7,7 @@ import {
   PREVIEW_ERROR_BYTES,
   PREVIEW_ERROR_CODES,
   PREVIEW_ERROR_DEPTH,
+  PREVIEW_ERROR_EMPTY_SKETCH,
   PREVIEW_ERROR_EMPTY_VIEW,
   PREVIEW_ERROR_NO_ATTACHMENTS,
   PREVIEW_ERROR_NO_TYPE,
@@ -40,7 +42,6 @@ import {
   PreviewVariantSchema,
 } from "../../protocol/preview.js";
 import { defineTool, type McpToolResult } from "../define-tool.js";
-import { sketchRefusals } from "../sketch-refusals.js";
 
 export interface PreviewBlocksDeps {
   showPreview: (preview: BlockPreviewType) => void;
@@ -171,16 +172,27 @@ function checkNode(node: PreviewNodeType, depth: number, stats: TreeStats) {
   for (const child of node.children ?? []) checkNode(child, depth + 1, stats);
 }
 
-function checkSketch(sketch: PreviewSketchType): void {
-  const [refused] = sketchRefusals(sketch);
-  if (refused === undefined) return;
+/** The sketch to show: its markup as the DMS's sketch check wrote it back. */
+function drawnSketch(sketch: PreviewSketchType): PreviewSketchType {
+  const checked = checkSketch(sketch);
+  if (checked.ok && checked.sketch.html.trim().length > 0)
+    return { ...sketch, ...checked.sketch };
+  if (checked.ok)
+    throw new PreviewInputError(
+      PREVIEW_ERROR_CODES.INVALID_SKETCH,
+      PREVIEW_ERROR_EMPTY_SKETCH,
+    );
+  const refused = checked.refusals.map(({ what }) => what).join("; ");
   throw new PreviewInputError(
     PREVIEW_ERROR_CODES.INVALID_SKETCH,
     `${PREVIEW_ERROR_SKETCH}${refused}.`,
   );
 }
 
-function checkView(view: PreviewView, stats: TreeStats): void {
+function checkView<View extends PreviewView>(
+  view: View,
+  stats: TreeStats,
+): View {
   if (view.tree === undefined && view.sketch === undefined)
     throw new PreviewInputError(
       PREVIEW_ERROR_CODES.INVALID_TREE,
@@ -188,13 +200,15 @@ function checkView(view: PreviewView, stats: TreeStats): void {
     );
   for (const root of view.tree === undefined ? [] : rootsOf(view.tree))
     checkNode(root, 1, stats);
-  if (view.sketch !== undefined) checkSketch(view.sketch);
+  if (view.sketch === undefined) return view;
+  return { ...view, sketch: drawnSketch(view.sketch) };
 }
 
-function checkViews(input: PreviewInput): void {
-  const views: PreviewView[] = [input, ...(input.variants ?? [])];
+function checkViews(input: PreviewInput): PreviewInput {
   const stats: TreeStats = { nodes: 0 };
-  for (const view of views) checkView(view, stats);
+  const main = checkView(input, stats);
+  const variants = input.variants?.map((variant) => checkView(variant, stats));
+  const views: PreviewView[] = [main, ...(variants ?? [])];
   const content = views.map(({ tree, sketch }) => ({ tree, sketch }));
   const bytes = Buffer.byteLength(JSON.stringify(content));
   if (bytes > PREVIEW_MAX_JSON_BYTES)
@@ -202,6 +216,7 @@ function checkViews(input: PreviewInput): void {
       PREVIEW_ERROR_CODES.TOO_LARGE,
       PREVIEW_ERROR_BYTES,
     );
+  return { ...main, variants };
 }
 
 function resolveAttachment(requested: string, attached: string[]): string {
@@ -248,16 +263,16 @@ function buildPreview(
   input: PreviewInput,
   deps: PreviewBlocksDeps,
 ): BlockPreviewType {
-  checkViews(input);
+  const checked = checkViews(input);
   return {
     id: randomUUID(),
-    title: input.title,
-    description: input.description,
-    label: input.label,
-    tree: input.tree,
-    sketch: input.sketch,
-    reference: resolveReference(input.reference, deps.listAttachedImages),
-    variants: input.variants,
+    title: checked.title,
+    description: checked.description,
+    label: checked.label,
+    tree: checked.tree,
+    sketch: checked.sketch,
+    reference: resolveReference(checked.reference, deps.listAttachedImages),
+    variants: checked.variants,
     timestampMs: Date.now(),
   };
 }

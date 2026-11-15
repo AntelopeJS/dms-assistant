@@ -73,7 +73,7 @@ export const PreviewSketchSchema = z
       .min(1)
       .max(PREVIEW_MAX_JSON_BYTES)
       .describe(
-        "Body markup of the component. Static only: no script, event handler or external resource; images and fonts as data: URLs.",
+        "Body markup of the component. Static only: no script, event handler, form or external resource; images as data:image/ URLs, links only to #anchors.",
       ),
     css: z
       .string()

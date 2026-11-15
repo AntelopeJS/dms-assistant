@@ -216,4 +216,18 @@ describe("the dashboard's own navigation to a page just written", () => {
 			expect(push.mock.calls.flat()).toEqual(["/first", "/mine"]),
 		);
 	});
+
+	it("waits on the page's own route and keeps its query and hash in the trip", async () => {
+		const push = vi.fn();
+		const { waiter, calls, release } = controlledWaiter();
+		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		navigate("/modules/ai/changes?set=abc#top");
+		await vi.waitFor(() => expect(calls).toEqual(["/modules/ai/changes"]));
+		release("/modules/ai/changes");
+		await vi.waitFor(() =>
+			expect(push).toHaveBeenCalledExactlyOnceWith(
+				"/modules/ai/changes?set=abc#top",
+			),
+		);
+	});
 });

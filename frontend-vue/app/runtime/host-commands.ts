@@ -59,12 +59,17 @@ type HostCommandHandler = (
 
 const IN_APP_PATH = /^\/(?![/\\])/;
 
+/** The page's own route: the site layout lists pages without their query or hash. */
+function routeOf(path: string): string {
+	return path.split(/[?#]/, 1)[0] ?? path;
+}
+
 async function awaitRouteThenPush(
 	path: string,
 	ctx: NavigationContext,
 ): Promise<void> {
 	try {
-		await ctx.devReload.awaitRoute(path);
+		await ctx.devReload.awaitRoute(routeOf(path));
 	} catch (err: unknown) {
 		console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
 	}

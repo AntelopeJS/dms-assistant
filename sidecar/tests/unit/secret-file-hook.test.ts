@@ -98,6 +98,10 @@ describe("the secret file hook on searches", () => {
   ];
 
   const reaching: [string, Record<string, string>][] = [
+    ["Grep", { pattern: "TOKEN", path: ".env" }],
+    ["Grep", { pattern: "TOKEN", path: ".env " }],
+    ["Grep", { pattern: "TOKEN", path: " .env.local" }],
+    ["Glob", { pattern: ".env.[lp]*" }],
     ["Grep", { pattern: "TOKEN", glob: ".env*" }],
     ["Grep", { pattern: "TOKEN", glob: "*.ts,.env.local" }],
     ["Grep", { pattern: "TOKEN", glob: "*.ts {.env,.npmrc}" }],
@@ -115,6 +119,13 @@ describe("the secret file hook on searches", () => {
         expect(await decideIn(dir, tool, input, mode)).toEqual(DENIAL);
       },
     );
+
+    it("refuses a Grep whose glob is too long to judge", async () => {
+      const glob = `{.env,${"a".repeat(70_000)}}`;
+      expect(
+        await decideIn(dir, "Grep", { pattern: "TOKEN", glob }, mode),
+      ).toEqual(DENIAL);
+    });
 
     it("leaves .env and .env.* out of a Grep over a directory", async () => {
       const decision = await decideIn(
@@ -161,7 +172,16 @@ describe("the secret file hook on searches", () => {
     },
   );
 
-  it("searches a template named by a Grep's glob, without the secret files", async () => {
+  it.each([
+    ["an exclusion", { pattern: "TOKEN", glob: "!.env" }],
+    ["a regex naming .env", { pattern: "\\.env", path: "src" }],
+  ])("runs a Grep with %s, without the secret files", async (_, input) => {
+    expect(await decideIn(dir, "Grep", input)).toMatchObject({
+      hookSpecificOutput: { updatedInput: { pattern: input.pattern } },
+    });
+  });
+
+  it("does not refuse a Grep whose glob names a template", async () => {
     const decision = await decideIn(dir, "Grep", {
       pattern: "TOKEN",
       glob: ".env.example",

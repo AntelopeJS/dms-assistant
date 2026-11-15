@@ -58,7 +58,7 @@ async function pathReachesSecret({
   const checks = paths.map(
     async (path) =>
       path !== undefined &&
-      (await reachesSecretFile(path, cwd ?? process.cwd())),
+      (await reachesSecretFile(path.trim(), cwd ?? process.cwd())),
   );
   return (await Promise.all(checks)).some(Boolean);
 }
@@ -109,7 +109,9 @@ async function decide(call: ToolCall): Promise<SyncHookJSONOutput> {
  * Adds a `PreToolUse` hook that keeps the agent's tools away from secret files.
  * It refuses any tool call naming a secret file, or a link that resolves to
  * one, and a Grep or Glob whose file-name glob matches one. It leaves secret
- * files out of every other Grep, which searches a whole directory.
+ * files out of every other Grep, which searches a whole directory. A path is
+ * trimmed first, as the CLI trims it, and a call the guard cannot judge is
+ * refused.
  * The CLI runs hooks before its own permission mode, so the refusal holds
  * where a plain read under the project would be allowed unasked, and a hook
  * denial is final.
@@ -117,7 +119,8 @@ async function decide(call: ToolCall): Promise<SyncHookJSONOutput> {
 export function withSecretFileGuard(hooks: SdkHooks): SdkHooks {
   const guard: HookCallback = async (input) => {
     const parsed = toolCallSchema.safeParse(input);
-    return parsed.success ? decide(parsed.data) : NO_DECISION;
+    if (!parsed.success) return NO_DECISION;
+    return decide(parsed.data).catch(() => SECRET_FILE_DENIAL);
   };
   return {
     ...hooks,

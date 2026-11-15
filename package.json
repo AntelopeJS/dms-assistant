@@ -118,6 +118,7 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
+    "@antelopejs/dms": ">=0.20.1 <0.21.0",
     "@openai/codex": "0.166.0"
   },
   "peerDependenciesMeta": {

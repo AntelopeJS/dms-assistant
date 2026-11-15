@@ -1,5 +1,4 @@
-import { realpathSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename } from "node:path";
 import {
   DEPENDENCY_FILE_NAMES,
   GIT_HOOK_PATHS,
@@ -8,6 +7,7 @@ import {
   PROJECT_STATE_PATH,
   SCOPED_MODULE_CONFIG_PREFIX,
 } from "../constants/permissions.js";
+import { writeTarget } from "./write-target.js";
 
 const ANY_TRAILING_SEGMENTS = "**";
 
@@ -91,28 +91,16 @@ function namesProjectConfig(path: string): boolean {
   );
 }
 
-/** Where `path` leads through links: the file's real path, or its real folder's when the file does not exist yet. */
-function linkTarget(path: string): string | undefined {
-  try {
-    return realpathSync(path);
-  } catch {
-    try {
-      return join(realpathSync(dirname(path)), basename(path));
-    } catch {
-      return undefined;
-    }
-  }
-}
-
 /**
  * Whether `path`, resolved, is a file AntelopeJS core reads a project's
  * configuration from, by its own name or through a link: `antelope.config.ts`,
  * an `antelope.*.json` merged into a module's config (a scoped module's
  * `antelope.@scope/name.json` included), or a file under `.antelope/`. Matched
- * anywhere on disk, case-insensitively.
+ * anywhere on disk, case-insensitively. A path whose links cannot be followed
+ * counts as one.
  */
 export function isProjectConfigFile(path: string): boolean {
   if (namesProjectConfig(path)) return true;
-  const target = linkTarget(path);
-  return target !== undefined && namesProjectConfig(target);
+  const target = writeTarget(path, process.cwd());
+  return target === undefined || namesProjectConfig(target);
 }

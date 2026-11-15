@@ -98,6 +98,15 @@ describe("reachesSecretFile", () => {
     expect(await reachesSecretFile("sub/settings.txt", dir)).toBe(true);
   });
 
+  /** Fails on a check that lets the name decide for a link whose target does not exist yet, which a write through it creates. */
+  it("refuses a link to a secret file that does not exist yet", async () => {
+    await symlink(".env.local", join(dir, "settings.txt"));
+    await mkdir(join(dir, "sub"));
+    await symlink("..", join(dir, "sub", "up"));
+    expect(await reachesSecretFile("settings.txt", dir)).toBe(true);
+    expect(await reachesSecretFile("sub/up/.env.production", dir)).toBe(true);
+  });
+
   it("allows a link to the committed .env.example", async () => {
     await symlink(".env.example", join(dir, "template.txt"));
     expect(await reachesSecretFile("template.txt", dir)).toBe(false);

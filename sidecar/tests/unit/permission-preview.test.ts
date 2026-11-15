@@ -251,7 +251,7 @@ describe("project config files reached through a link", () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  /** Fails on a match by the written name alone, which a link named like any source file leads past. */
+  /** Fails on a match by the written name alone, which a link named like any source file leads past, a link to a file not written yet or into folders not made yet included. */
   it("always asks before an edit through a link onto a project config file", async () => {
     await writeFile(join(root, "antelope.config.ts"), "export default {};\n");
     await mkdir(join(root, "src"));
@@ -261,9 +261,12 @@ describe("project config files reached through a link", () => {
       join(root, "src", "cfg.ts"),
     );
     await symlink(join(root, ".antelope"), join(root, "src", "state"));
+    await symlink("../antelope.mongodb.json", join(root, "src", "db.json"));
     const edits = [
       join(root, "src", "cfg.ts"),
       join(root, "src", "state", "build.json"),
+      join(root, "src", "state", "build", "build.json"),
+      join(root, "src", "db.json"),
     ];
     const descriptions = await Promise.all(
       edits.map((file_path) =>
@@ -276,6 +279,6 @@ describe("project config files reached through a link", () => {
         }),
       ),
     );
-    expect(descriptions.map((d) => d.alwaysAsk)).toEqual([true, true]);
+    expect(descriptions.map((d) => d.alwaysAsk)).toEqual(edits.map(() => true));
   });
 });

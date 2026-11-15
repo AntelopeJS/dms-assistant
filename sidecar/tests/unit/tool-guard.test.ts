@@ -321,9 +321,17 @@ describe("the PreToolUse guard in Plan only", () => {
     );
   });
 
-  /** Fails on a guard that asks about every edit in plan mode, where the CLI already holds edits back. */
-  it("leaves edits, reads, web access and scheduling to the CLI", async () => {
-    const calls = [...GIT_HOOK_FILES, ...LEFT_TO_THE_CLI];
+  /** Fails on a guard that asks in plan about an edit, a read outside the roots, a sub-agent or a question, which the CLI settles itself. */
+  it("leaves edits, reads, sub-agents, questions and scheduling to the CLI", async () => {
+    const calls = [
+      ...GIT_HOOK_FILES,
+      ...LEFT_TO_THE_CLI,
+      call("Read", { file_path: "/etc/hostname" }),
+      call("Agent", { prompt: "look around" }),
+      call("Agent", { prompt: "look around", isolation: "worktree" }),
+      call("SendMessage", { to: "peer", message: "hi" }),
+      call("AskUserQuestion", { questions: [] }),
+    ];
     expect(await decideAll(calls, "plan", "vibe")).toEqual(each(calls, NONE));
   });
 });

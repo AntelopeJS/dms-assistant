@@ -40,7 +40,6 @@ import { buildSystemPrompt } from "../../agent/system-prompt.js";
 import { TURN_IDLE_TIMEOUT_MS } from "../../constants/agent.js";
 import {
   SDK_INCLUDE_PARTIAL_MESSAGES,
-  SDK_SESSION_SETTINGS,
   SDK_SETTING_SOURCES_ISOLATED,
   SKILL_PLUGIN_WRAPPER_DIR,
   SYSTEM_PROMPT_PRESET_NAME,
@@ -82,6 +81,7 @@ import { createModelTrack } from "./model-fallback.js";
 import { resolveClaudeBinary } from "./resolve-binary.js";
 import { buildSafeModeHooks, type SdkHooks } from "./safe-mode.js";
 import { withSecretFileGuard } from "./secret-files.js";
+import { SDK_SESSION_SETTINGS } from "./session-settings.js";
 import {
   type LiveSettings,
   type StreamBackend,

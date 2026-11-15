@@ -231,7 +231,13 @@ const TRACED_CLAUDE_ENTRY = z.object({
     .optional(),
   disallowedTools: z.array(z.string()).optional(),
   settings: z
-    .looseObject({ disableSkillShellExecution: z.boolean().optional() })
+    .looseObject({
+      disableSkillShellExecution: z.boolean().optional(),
+      disableAllHooks: z.boolean().optional(),
+      permissions: z
+        .looseObject({ deny: z.array(z.string()).optional() })
+        .optional(),
+    })
     .optional(),
   permissionMode: z.string().optional(),
   name: z.string().optional(),

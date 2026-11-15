@@ -1,9 +1,9 @@
-import { caselessGlob as caseless } from "../../agent/project-secrets.js";
+import { caselessGlob as caseless } from "./project-secrets.js";
 import {
   SECRET_FILE_NAME,
   SECRET_FILE_NAME_PREFIX,
   SECRET_FILE_TEMPLATE_NAMES,
-} from "../../constants/project-secrets.js";
+} from "../constants/project-secrets.js";
 
 const TEMPLATE_SUFFIXES = [...SECRET_FILE_TEMPLATE_NAMES].map((name) =>
   name.slice(SECRET_FILE_NAME_PREFIX.length),

@@ -5,7 +5,7 @@ import {
   resolveInProject,
 } from "../../agent/edit-targets.js";
 import type { CodexFileChange } from "./adapter.js";
-import { isSecretFileName } from "./secret-file-globs.js";
+import { isSecretFileName } from "../../agent/secret-file-globs.js";
 
 export interface PatchRoots {
   hostProjectRoot: string;

@@ -33,8 +33,9 @@ export interface NavigationContext {
 /**
  * Sends the dashboard to an in-app path once the host's committed site layout serves it. A page
  * the builder or the agent just wrote is re-registered by a module reload, and a push before the
- * layout lists it lands on a 404. Trips run one at a time, and a burst collapses into one trip to
- * the newest path. A lapsed or broken wait still navigates, so a page that never comes 404s.
+ * layout lists it lands on a 404. A newer path supersedes the trips still waiting, so the dashboard
+ * lands on the newest target only, and a page that exists opens at once whatever waits before it.
+ * A lapsed or broken wait still navigates, so a page that never comes 404s.
  */
 export type Navigator = (path: string) => void;
 
@@ -52,16 +53,6 @@ type HostCommandMessage = HostCommandNavigateMessage;
 /** Takes a sidecar message already parsed; anything that is not a host command is ignored. */
 export type HostCommandDispatcher = (msg: unknown) => void;
 
-/**
- * Trips run one at a time on `tail`. `nextPath` holds the newest target still waiting for a slot,
- * so a burst collapses into a single trip to the latest path instead of landing on the oldest one.
- */
-interface NavigatorState {
-	ctx: NavigationContext;
-	tail: Promise<void>;
-	nextPath: string | null;
-}
-
 type HostCommandHandler = (
 	msg: HostCommandMessage,
 	ctx: HostCommandContext,
@@ -74,39 +65,18 @@ function routeOf(path: string): string {
 	return path.split(/[?#]/, 1)[0] ?? path;
 }
 
-async function awaitRouteThenPush(
-	path: string,
-	ctx: NavigationContext,
-): Promise<void> {
-	try {
-		await ctx.devReload.awaitRoute(routeOf(path), {
-			timeoutMs: ROUTE_WAIT_MS,
-		});
-	} catch (err: unknown) {
-		console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
-	}
-	void ctx.router.push(path);
-}
-
-async function runNavigate(state: NavigatorState): Promise<void> {
-	const path = state.nextPath;
-	if (path === null) return;
-	state.nextPath = null;
-	await awaitRouteThenPush(path, state.ctx);
-}
-
 export function createNavigator(ctx: NavigationContext): Navigator {
-	const state: NavigatorState = {
-		ctx,
-		tail: Promise.resolve(),
-		nextPath: null,
-	};
+	let newest = 0;
 	return (path) => {
-		state.nextPath = path;
-		state.tail = state.tail
-			.then(() => runNavigate(state))
+		newest += 1;
+		const trip = newest;
+		void ctx.devReload
+			.awaitRoute(routeOf(path), { timeoutMs: ROUTE_WAIT_MS })
 			.catch((err: unknown) => {
-				console.error(`${LOG_PREFIX} host command failed`, err);
+				console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
+			})
+			.then(() => {
+				if (trip === newest) void ctx.router.push(path);
 			});
 	};
 }

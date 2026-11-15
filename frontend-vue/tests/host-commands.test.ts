@@ -97,14 +97,15 @@ describe("host command dispatch", () => {
 		});
 		dispatch(navigateCommand("/stale"));
 		dispatch(navigateCommand("/fresh"));
-		await vi.waitFor(() => expect(calls).toEqual(["/fresh"]));
+		await vi.waitFor(() => expect(calls).toContain("/fresh"));
+		release("/stale");
 		release("/fresh");
 		await vi.waitFor(() =>
 			expect(push).toHaveBeenCalledExactlyOnceWith("/fresh"),
 		);
 	});
 
-	it("keeps navigations in order when one arrives mid-wait", async () => {
+	it("lands on the newest target when one arrives mid-wait, never on the older one", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
 		const dispatch = createHostCommandDispatcher({
@@ -113,14 +114,12 @@ describe("host command dispatch", () => {
 		dispatch(navigateCommand("/first"));
 		await vi.waitFor(() => expect(calls).toEqual(["/first"]));
 		dispatch(navigateCommand("/second"));
-		// The second command must not overtake the first while it is still waiting.
-		expect(calls).toEqual(["/first"]);
 		release("/first");
 		await vi.waitFor(() => expect(calls).toEqual(["/first", "/second"]));
-		expect(push.mock.calls.flat()).toEqual(["/first"]);
+		expect(push).not.toHaveBeenCalled();
 		release("/second");
 		await vi.waitFor(() =>
-			expect(push.mock.calls.flat()).toEqual(["/first", "/second"]),
+			expect(push).toHaveBeenCalledExactlyOnceWith("/second"),
 		);
 	});
 
@@ -200,21 +199,43 @@ describe("the dashboard's own navigation to a page just written", () => {
 		);
 	});
 
-	it("shares one queue with the agent's navigations, the newest target winning", async () => {
+	it("follows the newest target, whether the dashboard or the agent asked for it", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
 		const navigate = createNavigator({ router: { push }, devReload: waiter });
 		const dispatch = createHostCommandDispatcher({ navigate });
 		navigate("/first");
-		await vi.waitFor(() => expect(calls).toEqual(["/first"]));
 		dispatch(navigateCommand("/agent"));
 		navigate("/mine");
+		await vi.waitFor(() =>
+			expect(calls).toEqual(["/first", "/agent", "/mine"]),
+		);
 		release("/first");
-		await vi.waitFor(() => expect(calls).toEqual(["/first", "/mine"]));
+		release("/agent");
 		release("/mine");
 		await vi.waitFor(() =>
-			expect(push.mock.calls.flat()).toEqual(["/first", "/mine"]),
+			expect(push).toHaveBeenCalledExactlyOnceWith("/mine"),
 		);
+	});
+
+	it("opens a page that exists at once while the agent's trip to a page not written yet still waits", async () => {
+		const push = vi.fn();
+		const { waiter, calls, release } = controlledWaiter();
+		const navigate = createNavigator({ router: { push }, devReload: waiter });
+		const dispatch = createHostCommandDispatcher({ navigate });
+		dispatch(navigateCommand("/never-written"));
+		await vi.waitFor(() => expect(calls).toEqual(["/never-written"]));
+		navigate("/modules/ai/settings");
+		await vi.waitFor(() =>
+			expect(calls).toEqual(["/never-written", "/modules/ai/settings"]),
+		);
+		release("/modules/ai/settings");
+		await vi.waitFor(() =>
+			expect(push).toHaveBeenCalledExactlyOnceWith("/modules/ai/settings"),
+		);
+		release("/never-written", false);
+		await Promise.resolve();
+		expect(push).toHaveBeenCalledExactlyOnceWith("/modules/ai/settings");
 	});
 
 	it("waits on the page's own route and keeps its query and hash in the trip", async () => {

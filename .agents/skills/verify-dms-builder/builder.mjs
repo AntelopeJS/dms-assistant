@@ -107,7 +107,58 @@ export function check(name, pass, detail) {
  * @returns {Promise<Answer>} The answer
  */
 export function builder(ctx, label, method, path, options = {}) {
-  return ctx.api(label, { method, path: `${BUILDER}${path}`, body: options.body, as: options.as });
+  if (method !== "POST") return ctx.api(label, { method, path: `${BUILDER}${path}`, body: options.body, as: options.as });
+  return fromOwnerUi(ctx, label, `${BUILDER}${path}`, options);
+}
+
+/** The header the assistant's own UI sends on the module's POST routes; the module refuses those without it. */
+export const OWNER_UI_HEADERS = { "x-dms-ui-assistant": "1" };
+
+/**
+ * A POST as the assistant's own UI sends it: the account's session token and `OWNER_UI_HEADERS`. The
+ * request and the answer are kept in the step's folder as `ctx.api` keeps them.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {string} label What the call does
+ * @param {string} path The path, with its query
+ * @param {{ body?: unknown, as?: string, marker?: boolean }} options The JSON body, the account (`admin` by default, `anon` for nobody), and whether to send the marker (`true` by default)
+ * @returns {Promise<Answer>} The answer
+ */
+export async function fromOwnerUi(ctx, label, path, options) {
+  const as = options.as ?? "admin";
+  if (as !== "anon" && !ctx.state.tokens?.[as]) await ctx.api(`sign ${as} in`, { method: "GET", path: `${BUILDER}/database/reload`, as });
+  const token = as === "anon" ? undefined : ctx.state.tokens?.[as];
+  const folder = ctx.step(`api ${label}`);
+  /** @type {Record<string, string>} */
+  const headers = { accept: "application/json" };
+  if (options.marker !== false) Object.assign(headers, OWNER_UI_HEADERS);
+  if (options.body !== undefined) headers["content-type"] = "application/json";
+  if (token) headers.authorization = `Bearer ${token}`;
+  const url = `${ctx.state.apiUrl}${path}`;
+  writeFileSync(join(folder, "request.json"), `${JSON.stringify({ method: "POST", url, authenticated: Boolean(token), ownerUi: options.marker !== false, body: options.body ?? null }, null, 2)}\n`);
+  /** @type {Answer} */
+  let answer;
+  try {
+    const response = await fetch(url, { method: "POST", headers, body: options.body === undefined ? undefined : JSON.stringify(options.body) });
+    const text = await response.text();
+    answer = { status: response.status, body: parseAnswer(text), error: null, folder };
+  } catch (error) {
+    answer = { status: null, body: null, error: String(error), folder };
+  }
+  writeFileSync(join(folder, "response.json"), `${JSON.stringify({ status: answer.status, body: answer.body, error: answer.error }, null, 2)}\n`);
+  return answer;
+}
+
+/**
+ * @param {string} text A response body
+ * @returns {unknown} Its JSON, or the text when it is not JSON
+ */
+function parseAnswer(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 /**

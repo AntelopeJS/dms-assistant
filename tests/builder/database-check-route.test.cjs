@@ -31,7 +31,7 @@ function checkRoute(answer) {
 /** Fails on a check left open to any tenant user, or that reads its input from elsewhere than the body. */
 void test("the check is bound to the owner guard and reads the body", () => {
   const { route } = checkRoute({ ok: true, data: {}, changes: [] });
-  assert.deepEqual(route.reads, ["owner", "body"]);
+  assert.deepEqual(route.reads, ["owner", "body", "header:x-dms-ui-assistant"]);
 });
 
 /** Fails on a route that changes the body before core checks it, or answers anything else than what core found. */
@@ -49,7 +49,7 @@ void test("the body goes to core as it came, and the route answers what core fou
     changes: [],
   });
   const body = { engine: "mysql", url: "mysql://app@db:3306/shop", extra: 1 };
-  assert.deepEqual(await route.call(OWNER, body), access);
+  assert.deepEqual(await route.callAsUi(OWNER, body), access);
   assert.deepEqual(checked, [body]);
 });
 
@@ -62,7 +62,7 @@ void test("outside development the check answers 403 with core's reason", async 
       detail: "Databases are checked in development only.",
     },
   });
-  const answer = await route.call(OWNER, {
+  const answer = await route.callAsUi(OWNER, {
     engine: "postgres",
     url: "postgres://u@h/db",
   });
@@ -87,7 +87,7 @@ void test("a body core refuses answers 400 with core's message", async () => {
     ok: false,
     error: { code: "invalid_config", issues: [{ pointer: "", message }] },
   });
-  const answer = await route.call(OWNER, {
+  const answer = await route.callAsUi(OWNER, {
     engine: "postgres",
     url: "mongodb://h/db",
   });
@@ -150,18 +150,21 @@ function missingDriverRoute(access, projectPath) {
 
 /** Fails on a missing driver answered without the install step, or with a command for another package manager or range. */
 void test("a check that misses the driver answers the command that installs it with the project's package manager", async (t) => {
-  const pyarnProject = projectWith({ "pnpm-lock.yaml": "" });
+  const pnpmProject = projectWith({ "pnpm-lock.yaml": "" });
   const yarnProject = projectWith({
     "package.json": JSON.stringify({ packageManager: "yarn@4.5.0" }),
     "package-lock.json": "{}",
   });
   t.after(() => {
-    rmSync(pyarnProject, { recursive: true });
+    rmSync(pnpmProject, { recursive: true });
     rmSync(yarnProject, { recursive: true });
   });
   const body = { engine: "postgres", url: "postgres://u@h/db" };
   assert.deepEqual(
-    await missingDriverRoute(MISSING_POSTGRES, pyarnProject).call(OWNER, body),
+    await missingDriverRoute(MISSING_POSTGRES, pnpmProject).callAsUi(
+      OWNER,
+      body,
+    ),
     {
       ...MISSING_POSTGRES,
       install: {
@@ -172,7 +175,10 @@ void test("a check that misses the driver answers the command that installs it w
     },
   );
   assert.deepEqual(
-    await missingDriverRoute(MISSING_POSTGRES, yarnProject).call(OWNER, body),
+    await missingDriverRoute(MISSING_POSTGRES, yarnProject).callAsUi(
+      OWNER,
+      body,
+    ),
     {
       ...MISSING_POSTGRES,
       install: {
@@ -192,7 +198,7 @@ void test("an unreachable database keeps its answer without an install step", as
     reason: "The server did not answer.",
   };
   assert.deepEqual(
-    await missingDriverRoute(refused, "/nonexistent-project").call(OWNER, {
+    await missingDriverRoute(refused, "/nonexistent-project").callAsUi(OWNER, {
       engine: "postgres",
       url: "postgres://u@h/db",
     }),

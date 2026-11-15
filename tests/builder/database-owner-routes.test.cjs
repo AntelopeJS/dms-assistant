@@ -30,12 +30,21 @@ void test("every connect route reads the owner first", () => {
   assert.deepEqual(open, []);
 });
 
-/** Fails on a connect route that reads a header, the only place the agent side's credential, the sidecar's token, travels. */
-void test("no connect route reads a header", () => {
-  const reading = bound
-    .filter((route) => route.reads.some((read) => read.startsWith("header:")))
-    .map((route) => `${route.verb} ${route.path}`);
-  assert.deepEqual(reading, []);
+const MARKER = "header:x-dms-ui-assistant";
+
+/** Fails on a connect route that reads another header, such as the sidecar's token, or a URL-taking route that does not read the assistant UI's marker. */
+void test("every URL-taking route reads the assistant UI's marker, and no route reads another header", () => {
+  const reading = bound.map((route) => [
+    `${route.verb} ${route.path}`,
+    route.reads.filter((read) => read.startsWith("header:")),
+  ]);
+  assert.deepEqual(
+    reading,
+    bound.map((route) => [
+      `${route.verb} ${route.path}`,
+      URL_ROUTES.includes(`${route.verb} ${route.path}`) ? [MARKER] : [],
+    ]),
+  );
 });
 
 /** What a connect route may read: the owner, the owner's request body, and ids that name an analysis, a connection or a module from a query. */
@@ -45,9 +54,10 @@ const ALLOWED_READS = new Set([
   "query:id",
   "query:connection",
   "query:module",
+  MARKER,
 ]);
 
-/** Fails on a route that reads a URL from a query or a path, which a link or an image address the agent writes can fill. */
+/** Fails on a route that reads a URL from a query, a path or a header, which a link or an image address the agent writes can fill. */
 void test("the connect routes read nothing but the owner, the body and ids from a query", () => {
   const reading = bound.flatMap((route) =>
     route.reads
@@ -65,6 +75,6 @@ void test("a route that takes a URL reads it from the owner's request body alone
   });
   assert.deepEqual(
     reads,
-    URL_ROUTES.map((name) => [name, ["owner", "body"]]),
+    URL_ROUTES.map((name) => [name, ["owner", "body", MARKER]]),
   );
 });

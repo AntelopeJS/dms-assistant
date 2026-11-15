@@ -13,6 +13,8 @@ const harness = useRouteHarness();
 
 const JsonSchema = z.json();
 const NO_STORE = "no-store";
+/** The header value the assistant's own UI sends. */
+const UI = "1";
 
 const STATE = {
   bootId: "boot-1",
@@ -53,10 +55,10 @@ void test("relays a pasted token as the only field and answers the check uncache
     ok: false,
     reason: "rejected",
   });
-  const result = await new harness.routes.AIOnboardingController().claudeToken({
-    token: "sk-ant-oat01-test-only",
-    unexpected: "dropped",
-  });
+  const result = await new harness.routes.AIOnboardingController().claudeToken(
+    { token: "sk-ant-oat01-test-only", unexpected: "dropped" },
+    UI,
+  );
   assert.deepEqual(bodyOf(JsonSchema, result), {
     ok: false,
     reason: "rejected",
@@ -80,9 +82,10 @@ void test("relays a working token the sidecar could not save as unsaved", async 
     ok: false,
     reason: "unsaved",
   });
-  const result = await new harness.routes.AIOnboardingController().claudeToken({
-    token: "sk-ant-oat01-test-only",
-  });
+  const result = await new harness.routes.AIOnboardingController().claudeToken(
+    { token: "sk-ant-oat01-test-only" },
+    UI,
+  );
   assert.equal(result.getStatus(), 200);
   assert.deepEqual(bodyOf(JsonSchema, result), {
     ok: false,
@@ -94,7 +97,7 @@ void test("refuses a token body without a token before it reaches the sidecar", 
   reset();
   const controller = new harness.routes.AIOnboardingController();
   for (const body of [undefined, {}, { token: 7 }]) {
-    const result = await controller.claudeToken(body);
+    const result = await controller.claudeToken(body, UI);
     assert.equal(result.getStatus(), 400);
   }
   assert.deepEqual(sidecar.requests, []);
@@ -110,4 +113,18 @@ void test("relays the provider choice and refuses an unknown one before the side
   const refused = await controller.provider({ provider: "gemini" });
   assert.equal(refused.getStatus(), 400);
   assert.equal(sidecar.requests.length, 1);
+});
+
+/** Fails on a token route that relays a token posted with the owner's session but without the assistant UI's header, as a form a page posts does. */
+void test("refuses a token posted without the assistant UI's header before it reaches the sidecar", async () => {
+  reset();
+  const controller = new harness.routes.AIOnboardingController();
+  for (const marker of [undefined, "", "true"]) {
+    const result = await controller.claudeToken(
+      { token: "sk-ant-oat01-test-only" },
+      marker,
+    );
+    assert.equal(result.getStatus(), 403);
+  }
+  assert.deepEqual(sidecar.requests, []);
 });

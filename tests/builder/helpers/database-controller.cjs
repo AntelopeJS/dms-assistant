@@ -6,6 +6,9 @@ const CONTROLLER = path.resolve(
   "../../../dist/builder/routes/database.js",
 );
 
+const MARKER_READ = "header:x-dms-ui-assistant";
+const MARKER_VALUE = "1";
+
 class HTTPResult {
   /**
    * @param {number} status
@@ -135,10 +138,23 @@ function loadDatabaseController(core, projectPath = "/nonexistent-project") {
         );
       }
       const [{ key, handler }] = bound;
+      const reads = readsOf(key);
+      const marker = reads.indexOf(MARKER_READ);
       return {
-        reads: readsOf(key),
+        reads,
         /** @param {unknown[]} args */
         call: (...args) => handler.apply(controller, args),
+        /**
+         * Calls the route as the assistant's own UI does: `args` fill every parameter but the
+         * marker header, which gets the value that UI sends.
+         *
+         * @param {unknown[]} args
+         */
+        callAsUi: (...args) =>
+          handler.apply(
+            controller,
+            marker < 0 ? args : args.toSpliced(marker, 0, MARKER_VALUE),
+          ),
       };
     },
   };

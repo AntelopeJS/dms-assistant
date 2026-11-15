@@ -1,11 +1,14 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { BOARD, builder, check, list, member, projectPath, readProject, text, withConfig } from "../builder.mjs";
+import { BOARD, BUILDER, builder, check, fromOwnerUi, list, member, projectPath, readProject, text, withConfig } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
 const DENIED = [401, 403];
+
+/** The routes that take a database URL, which answer only a request carrying the assistant UI's header. */
+const URL_ROUTES = new Set(["/database/project", "/database/connection/url"]);
 
 /** A dry run of one added module: the answer names the file it would write. */
 const DRY_RUN = { steps: [{ op: "AddModule", id: "verify-extra", entry: { source: { type: "package", package: "@antelopejs/verify-extra", version: "^1.0.0" } } }], opts: { dryRun: true } };
@@ -52,6 +55,9 @@ export const journeys = guarded([
         if (!ownerAnswered) continue;
         const owner = await builder(ctx, `owner ${method} ${path}`, method, path, { body });
         checks.push(check(`${method} ${path}: the owner reaches the route`, !DENIED.includes(owner.status ?? 0) && owner.body !== "Not Found", owner));
+        if (!URL_ROUTES.has(path)) continue;
+        const unmarked = await fromOwnerUi(ctx, `owner ${method} ${path} without the assistant UI's header`, `${BUILDER}${path}`, { body, marker: false });
+        checks.push(check(`${method} ${path}: the owner's request without the assistant UI's header is refused 403`, unmarked.status === 403 && text(unmarked.body, "code") === "forbidden", unmarked));
       }
       await ctx.verify("every route", checks);
       const configAfter = readProject(ctx, "antelope.config.ts after", "antelope.config.ts").text;
@@ -96,11 +102,11 @@ export const journeys = guarded([
       mkdirSync(elsewhere, { recursive: true });
       copyFileSync(projectPath(ctx, "antelope.config.ts"), join(elsewhere, "antelope.config.ts"));
       await withConfig(ctx, { VERIFY_BUILDER_PROJECT_ROOT: elsewhere }, async () => {
-        const moved = await ctx.api("dry run on another root", { method: "POST", path: "/api/builder/database/project", body: DRY_RUN });
+        const moved = await builder(ctx, "dry run on another root", "POST", "/database/project", { body: DRY_RUN });
         await ctx.verify("an absolute projectRoot is where the configuration is read", [check("the change names the file under that root", text(list(moved.body, "changes")[0], "path") === join(elsewhere, "antelope.config.ts"), moved.body)]);
       });
       await withConfig(ctx, { VERIFY_BUILDER_PROJECT_ROOT: "." }, async () => {
-        const dot = await ctx.api("dry run on a relative root", { method: "POST", path: "/api/builder/database/project", body: DRY_RUN });
+        const dot = await builder(ctx, "dry run on a relative root", "POST", "/database/project", { body: DRY_RUN });
         const path = text(list(dot.body, "changes")[0], "path");
         await ctx.verify("a relative projectRoot resolves against the working directory", [
           check("the file is an absolute path", path.startsWith("/") && path.endsWith("/antelope.config.ts"), dot.body),

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { builder, check, isText, member, pick, text } from "../builder.mjs";
+import { BUILDER, builder, check, fromOwnerUi, isText, member, pick, text } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
@@ -69,6 +69,12 @@ export const journeys = guarded([
         check("reachable is true", pick(reachable.body, "reachable") === true, reachable.body),
         check("it measured a round trip", Number.isFinite(pick(reachable.body, "latencyMs")), reachable.body),
         check("the account can read and, with no access control, write", pick(reachable.body, "canRead") === true && pick(reachable.body, "canWrite") === true, reachable.body),
+      ]);
+
+      const unmarked = await fromOwnerUi(ctx, "check the run's MongoDB without the assistant UI's header", `${BUILDER}${CHECK}`, { body: { engine: "mongodb", url: runMongoUrl(ctx) }, marker: false });
+      await ctx.verify("a check the owner's session sends without the assistant UI's header", [
+        check("it is refused 403 forbidden", unmarked.status === 403 && text(unmarked.body, "code") === "forbidden", unmarked),
+        check("it reports nothing of the database", pick(unmarked.body, "reachable") === undefined, unmarked.body),
       ]);
 
       const down = await builder(ctx, "check a MongoDB nothing listens on", "POST", CHECK, { body: { engine: "mongodb", url: `mongodb://nobody:${PASSWORD}@127.0.0.1:1/x` } });

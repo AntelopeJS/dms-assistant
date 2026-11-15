@@ -13,6 +13,7 @@ import type {
 	ProjectModules,
 	ProjectVariable,
 } from './database-types'
+import { OWNER_UI_HEADERS } from './owner-ui'
 import type { BuilderError, OpResult } from './types'
 
 /**
@@ -52,7 +53,7 @@ export function useBuilderApi() {
 		body: object,
 	): Promise<OpResult<T>> {
 		return answered(
-			$authFetch<OpResult<T>>(`${API_PREFIX}${path}`, { method: 'POST', body }),
+			$authFetch<OpResult<T>>(`${API_PREFIX}${path}`, { method: 'POST', body, headers: OWNER_UI_HEADERS }),
 		)
 	}
 
@@ -67,6 +68,7 @@ export function useBuilderApi() {
 			$authFetch<DatabaseAccess>(`${API_PREFIX}/database/connections/check`, {
 				method: 'POST',
 				body: { engine, url },
+				headers: OWNER_UI_HEADERS,
 			}),
 		analyseDatabase: (connection: string, module: string, schemas?: string[]) =>
 			post<AnalysisState>('/database/analyse', { connection, module, schemas }),

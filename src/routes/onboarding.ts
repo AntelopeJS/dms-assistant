@@ -4,12 +4,14 @@ import {
   type HTTPBody,
   HTTPResult,
   JSONBody,
+  Parameter,
   Post,
 } from "@antelopejs/interface-api";
 import { AuthOwnerOnly } from "@antelopejs/interface-dms/auth";
 import { z } from "zod";
 import { HTTP_STATUS } from "../constants/http";
 import { ROUTE_PREFIX } from "../constants/module";
+import { OWNER_UI_HEADER, outsideOwnerUi } from "./owner-ui";
 import { relay } from "./sidecar-results";
 
 const ONBOARDING_PATH = "/onboarding";
@@ -92,7 +94,12 @@ export class AIOnboardingController extends Controller(ROUTE_PREFIX) {
   }
 
   @Post(CLAUDE_TOKEN_PATH)
-  async claudeToken(@JSONBody() body?: unknown): Promise<HTTPResult> {
+  async claudeToken(
+    @JSONBody() body?: unknown,
+    @Parameter(OWNER_UI_HEADER, "header") marker?: string,
+  ): Promise<HTTPResult> {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     const parsed = ClaudeTokenBodySchema.safeParse(body);
     if (!parsed.success) return invalid("Missing token.");
     return noStore(

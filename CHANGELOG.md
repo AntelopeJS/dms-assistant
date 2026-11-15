@@ -2,6 +2,19 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.6
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.5...v0.2.6)
+
+### 🩹 Fixes
+
+- **sidecar:** Stop a skill's hooks and @ references from reading .env in Claude sessions ([#75](https://github.com/AntelopeJS/dms-assistant/pull/75))
+- **builder:** Accept a database URL or the Claude token only from the assistant's own UI ([#74](https://github.com/AntelopeJS/dms-assistant/pull/74))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.2.5
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.4...v0.2.5)

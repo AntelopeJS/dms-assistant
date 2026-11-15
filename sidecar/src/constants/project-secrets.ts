@@ -1,6 +1,16 @@
 export const SECRET_FILE_NAME = ".env";
 export const SECRET_FILE_NAME_PREFIX = ".env.";
 
+/** A secret file name that a pattern reaching `.env.*` matches when its literal start does not. */
+export const SECRET_FILE_SAMPLE_NAME = ".env.local";
+
+/** The search tools, mapped to the input that holds their file-name glob. */
+export const SEARCH_TOOL_GLOB_KEYS: ReadonlyMap<string, "glob" | "pattern"> =
+  new Map([
+    ["Grep", "glob"],
+    ["Glob", "pattern"],
+  ]);
+
 export const SECRET_FILE_TEMPLATE_NAMES: ReadonlySet<string> = new Set([
   ".env.example",
   ".env.sample",

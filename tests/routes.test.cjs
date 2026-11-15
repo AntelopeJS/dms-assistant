@@ -21,6 +21,7 @@ const StatusSchema = z.looseObject({
   hasGivenUp: z.boolean(),
 });
 const harness = useRouteHarness();
+const ASSISTANT_UI_MARKER = "1";
 
 void test("translates the Activity table's query and keys each row by its id", async () => {
   reset();
@@ -174,23 +175,17 @@ void test("offers the sidecar's defaults on the settings form, numbers as text",
   const options = await harness.routes.applySidecarSettings(new Set(), {
     fields: [
       field("provider"),
-      field("defaultModeClaude"),
-      field("defaultModeCodex"),
       {
         id: "unanswered",
         fields: [field("requestTimeoutMinutes"), field("notifyRequests")],
       },
-      field("alwaysAskDeletions"),
+      field("claudeModel"),
     ],
   });
-  const [provider, claudeMode, codexMode, unanswered, deletions] =
-    options.fields;
+  const [provider, unanswered, model] = options.fields;
   assert.ok("fields" in unanswered);
   assert.equal(provider.defaultValue, "claude");
   assert.equal(provider.offersDefault, true);
-  assert.equal(claudeMode.defaultValue, "auto");
-  assert.equal(codexMode.defaultValue, "normal");
-  assert.equal(codexMode.offersDefault, true);
   assert.equal(unanswered.offersDefault, undefined);
   assert.deepEqual(
     unanswered.fields.map((f) => [f.defaultValue, f.offersDefault]),
@@ -199,7 +194,7 @@ void test("offers the sidecar's defaults on the settings form, numbers as text",
       [true, true],
     ],
   );
-  assert.equal(deletions.offersDefault, undefined);
+  assert.equal(model.offersDefault, undefined);
 });
 
 void test("serves the Safe mode switch from the stored scope, beside the scope", async () => {
@@ -219,10 +214,13 @@ void test("saves the Safe mode switch as the stored scope, the switch itself nev
   reset();
   answer("PUT", "/settings", 200, {});
   const settings = new harness.routes.AISettingsController();
-  await settings.updateSettings({ safeMode: false });
-  await settings.updateSettings({ safeMode: true });
-  await settings.updateSettings({ generationMode: "vibe" });
-  await settings.updateSettings({ safeMode: "yes" });
+  await settings.updateSettings({ safeMode: false }, ASSISTANT_UI_MARKER);
+  await settings.updateSettings({ safeMode: true }, ASSISTANT_UI_MARKER);
+  await settings.updateSettings(
+    { generationMode: "vibe" },
+    ASSISTANT_UI_MARKER,
+  );
+  await settings.updateSettings({ safeMode: "yes" }, ASSISTANT_UI_MARKER);
   assert.deepEqual(
     sidecar.requests.map((request) => request.body),
     [
@@ -237,11 +235,14 @@ void test("saves the Safe mode switch as the stored scope, the switch itself nev
 void test("forwards no default back to the sidecar", async () => {
   reset();
   answer("PUT", "/settings", 200, {});
-  await new harness.routes.AISettingsController().updateSettings({
-    defaultModeClaude: "plan",
-    defaultModeCodex: "acceptEdits",
-    defaults: { defaultModes: { claude: "auto", codex: "normal" } },
-  });
+  await new harness.routes.AISettingsController().updateSettings(
+    {
+      defaultModeClaude: "plan",
+      defaultModeCodex: "acceptEdits",
+      defaults: { defaultModes: { claude: "auto", codex: "normal" } },
+    },
+    ASSISTANT_UI_MARKER,
+  );
   assert.deepEqual(sidecar.requests[0].body, {
     defaultModes: { claude: "plan", codex: "acceptEdits" },
   });

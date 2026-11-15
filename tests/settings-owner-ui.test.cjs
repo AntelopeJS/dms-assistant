@@ -11,6 +11,10 @@ const {
 } = require("./helpers/route-harness.cjs");
 
 const harness = useRouteHarness();
+const {
+  DefaultDataTypes,
+} = require("@antelopejs/interface-dms/base/data-types");
+const { SETTINGS_SECTIONS } = require("../dist/pages/settings/sections.js");
 const MARKER = "1";
 
 /** Every form a request can write a guard rail in: the form's own fields, then the sidecar's stored keys. */
@@ -83,4 +87,50 @@ void test("refuses a key the module does not name as free", async () => {
   assert.ok(result instanceof HTTPResult);
   assert.equal(result.getStatus(), 403);
   assert.deepEqual(sidecar.requests, []);
+});
+
+const ChoicesSchema = z.object({
+  items: z.array(z.object({ value: z.string() })).min(1),
+});
+
+/**
+ * A value the form's field saves: its first choice, text or a switched-on switch.
+ * @param {import("@antelopejs/interface-dms/base/form-types").FormField} field
+ * @returns {string | boolean}
+ */
+function savedValue(field) {
+  if (field.type instanceof DefaultDataTypes.SelectType) {
+    return ChoicesSchema.parse(field.type.options).items[0].value;
+  }
+  if (field.type instanceof DefaultDataTypes.BooleanType) return true;
+  return "claude-opus-5-5";
+}
+
+/** Fails on a guard rail kept in the settings form, whose save cannot send the header, or on a free key the route gates: the page would stop saving. */
+void test("saves every field the settings form has without the assistant UI's header", async () => {
+  const fields = SETTINGS_SECTIONS.flatMap((section) => section.fields)
+    .flatMap((entry) => ("fields" in entry ? entry.fields : [entry]))
+    .filter((field) => !field.readonly);
+  assert.deepEqual(
+    fields.map((field) => field.id),
+    [
+      "provider",
+      "claudeModel",
+      "thinking",
+      "requestTimeoutMinutes",
+      "notifyRequests",
+      "checkpointRetentionDays",
+    ],
+  );
+  for (const field of fields) {
+    reset();
+    answer("PUT", "/settings", 200, {});
+    const result = await putSettings({ [field.id]: savedValue(field) });
+    assert.ok(!(result instanceof HTTPResult), field.id);
+    assert.deepEqual(
+      sidecar.requests.map((request) => Object.keys(request.body ?? {})),
+      [[field.id]],
+      field.id,
+    );
+  }
 });

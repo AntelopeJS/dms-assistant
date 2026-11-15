@@ -233,10 +233,11 @@ const COMPONENTS_DIR = path.resolve(
   __dirname,
   "../frontend-vue/app/components",
 );
-/** What no DMS block draws: the Changes view and the Activity row drawer. */
+/** What no DMS block draws: the Changes view, the Activity row drawer and the Guard rails card. */
 const PAGE_CUSTOM_COMPONENTS = [
   "DmsAssistantActivityDetail",
   "DmsAssistantChangesView",
+  "DmsAssistantGuardRails",
 ];
 
 void test("names only the custom components the frontend registers, where no DMS block fits", async () => {

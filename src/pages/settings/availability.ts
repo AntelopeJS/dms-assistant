@@ -31,7 +31,6 @@ function reasonOf(provider: ProviderAvailability): string {
 /** What the sidecar's settings say this install can do, and its defaults. */
 interface SidecarCapabilities {
   providers?: Record<string, ProviderAvailability | undefined>;
-  builderAvailable?: boolean;
   /** The sidecar's `DEFAULT_SETTINGS`: the one source of the module defaults. */
   defaults?: SettingsBody;
 }
@@ -50,7 +49,6 @@ const CAPABILITIES_ANSWER: z.ZodType<SidecarCapabilities> = z.looseObject({
         .optional(),
     )
     .optional(),
-  builderAvailable: z.boolean().optional(),
   defaults: z.record(z.string(), JSON_ANSWER).optional(),
 });
 
@@ -101,20 +99,6 @@ function locksFor(capabilities: SidecarCapabilities): OptionLock[] {
   return locks;
 }
 
-const SAFE_MODE_FIELD = "safeMode";
-
-/** Safe mode needs the Builder: without it the switch stays, off the table, saying why. */
-function lockSafeMode(
-  entry: FormFieldOrGroupSerialized,
-): FormFieldOrGroupSerialized {
-  if (!("component" in entry) || entry.id !== SAFE_MODE_FIELD) return entry;
-  return {
-    ...entry,
-    disabled: true,
-    description: settingsText("safe_mode", "builder_missing"),
-  };
-}
-
 const DEFAULT_VALUE: z.ZodType<DefaultValue> = z.lazy(() =>
   z.union([
     z.string(),
@@ -149,8 +133,8 @@ function withDefaults(
 
 /**
  * Per request, from the sidecar's settings: each field offers the sidecar's
- * default, and the agent choice and the Safe mode switch this install cannot run
- * are shown disabled, each saying why (Codex not set up, no Builder).
+ * default, and the agent choice this install cannot run is shown disabled,
+ * saying why (Codex not set up).
  */
 export async function applySidecarSettings(
   _permissions: Set<string>,
@@ -163,13 +147,11 @@ export async function applySidecarSettings(
   );
   const defaults = asFormValues(capabilities.defaults ?? {});
   const locks = locksFor(capabilities);
-  const isBuilderMissing = capabilities.builderAvailable === false;
-  const fields = options.fields.map((entry) => {
-    const locked = locks.reduce(
+  const fields = options.fields.map((entry) =>
+    locks.reduce(
       (current, lock) => lockField(current, lock),
       withDefaults(entry, defaults),
-    );
-    return isBuilderMissing ? lockSafeMode(locked) : locked;
-  });
+    ),
+  );
   return { ...options, fields };
 }

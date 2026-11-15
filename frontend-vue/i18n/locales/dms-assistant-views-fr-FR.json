@@ -104,6 +104,11 @@
 				"collapse": "Replier {path}",
 				"expand": "Déplier {path}"
 			},
+			"guard_rails": {
+				"title": "Garde-fous",
+				"description": "Ce que l'agent peut faire sans vous demander. Chaque changement s'enregistre dès que vous le faites.",
+				"not_saved": "Non enregistré. Le réglage n'a pas changé."
+			},
 			"toast": {
 				"undone": "Annulé · point de restauration #{number} restauré",
 				"undone_description": "La page se recharge avec les fichiers tels qu'ils étaient. | {count} lots ont été annulés ; la page se recharge avec les fichiers tels qu'ils étaient.",

@@ -263,6 +263,8 @@
 					"reachable": "Server reachable",
 					"reachable_latency": "Server reachable · {ms} ms",
 					"unreachable": "Server not reachable: {error}",
+					"install_copy": "Copy the install command",
+					"install_retry": "Run it in the project folder, then select Connect and analyse again.",
 					"signed_in": "Signed in as {user}",
 					"signed_in_pending": "Signing in",
 					"signed_in_no_user": "Signed in, no account needed",

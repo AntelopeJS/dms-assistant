@@ -10,6 +10,8 @@ export type ConnectCheck =
 			status: CheckStatus;
 			latencyMs?: number;
 			error?: string;
+			/** The command that installs the engine's driver, when the project lacks it. */
+			install?: string;
 	  }
 	| { key: "signed-in"; status: CheckStatus; user?: string; error?: string }
 	| { key: "read"; status: CheckStatus; canWrite?: boolean; error?: string }
@@ -53,7 +55,12 @@ function accessChecks(access: DatabaseAccess | null): ConnectCheck[] {
 	}
 	if (!access.reachable) {
 		return [
-			{ key: "reachable", status: "failed", error: access.reason },
+			{
+				key: "reachable",
+				status: "failed",
+				error: access.reason,
+				install: access.install?.command,
+			},
 			{ key: "signed-in", status: "pending" },
 			{ key: "read", status: "pending" },
 		];

@@ -107,6 +107,9 @@ function checkText(check: ConnectCheck): string {
 			if (check.status === "running") {
 				return t("dms_assistant.views.onboarding.database.reachable_running");
 			}
+			if (check.status === "failed" && check.install !== undefined) {
+				return check.error ?? "";
+			}
 			if (check.status === "failed") {
 				return t("dms_assistant.views.onboarding.database.unreachable", {
 					error: check.error ?? "",
@@ -161,6 +164,17 @@ function checkText(check: ConnectCheck): string {
 	}
 }
 
+const copiedInstall = ref(false);
+
+async function copyInstall(command: string): Promise<void> {
+	try {
+		await navigator.clipboard.writeText(command);
+	} catch {
+		return;
+	}
+	copiedInstall.value = true;
+}
+
 const urlHint = computed(() => {
 	const problem = urlProblem.value;
 	if (problem === null) return null;
@@ -195,6 +209,7 @@ async function connect(): Promise<void> {
 		await database.choose(access.value);
 		return;
 	}
+	copiedInstall.value = false;
 	urlProblem.value = await database.connect(engine.value, url.value);
 }
 
@@ -279,7 +294,35 @@ watch(database.phase, (phase) => {
 					class="mt-0.5 size-3.5 shrink-0"
 					:class="STATUS_ICONS[check.status].tone"
 				/>
-				{{ checkText(check) }}
+				<span class="min-w-0">
+					{{ checkText(check) }}
+					<span
+						v-if="check.key === 'reachable' && check.install !== undefined"
+						class="text-default mt-1.5 block"
+						data-driver-install
+					>
+						<span class="flex items-center gap-1.5">
+							<code
+								class="bg-elevated select-all rounded px-1.5 py-0.5 font-mono text-xs"
+							>
+								{{ check.install }}
+							</code>
+							<UButton
+								size="xs"
+								color="neutral"
+								variant="ghost"
+								:icon="copiedInstall ? 'i-ph-check' : 'i-ph-copy'"
+								:aria-label="
+									t('dms_assistant.views.onboarding.database.install_copy')
+								"
+								@click="copyInstall(check.install)"
+							/>
+						</span>
+						<span class="text-muted mt-1 block text-xs">
+							{{ t("dms_assistant.views.onboarding.database.install_retry") }}
+						</span>
+					</span>
+				</span>
 			</li>
 		</ul>
 		<fieldset v-if="choosing" class="mt-4" data-access-choice>

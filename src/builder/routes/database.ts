@@ -6,6 +6,7 @@ import {
   Parameter,
   Post,
 } from "@antelopejs/interface-api";
+import { GetRuntimeInfo } from "@antelopejs/interface-core/runtime";
 import { AuthTenantOwner } from "@antelopejs/interface-dms/guards";
 import type { User } from "@antelopejs/interface-dms/auth/db";
 import { type QueryValue, queryText } from "../../routes/query-text";
@@ -14,6 +15,7 @@ import {
   type AnalyseDatabaseInput,
   CheckDatabaseConnection,
   ConfigureProject,
+  type DatabaseAccess,
   type ConfigureProjectOpts,
   type DatabaseCheckInput,
   GetAnalysis,
@@ -35,6 +37,13 @@ import {
 import { z } from "zod";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
 import { withinDmsTimeout } from "../dms-answer";
+import {
+  type CheckedAccess,
+  driverPackageName,
+  installCommand,
+  missesDriver,
+  projectPackageManager,
+} from "../driver-install";
 import { refusalMessage } from "../refusal";
 import { reloadDue } from "../reload";
 
@@ -111,6 +120,27 @@ interface ProjectBody {
   variables?: ProjectVariable[];
 }
 
+async function withInstall(
+  access: DatabaseAccess,
+  input: DatabaseCheckInput,
+): Promise<CheckedAccess> {
+  const driver = driverPackageName(input.engine);
+  if (!missesDriver(access, driver)) return access;
+  const project = await GetDatabaseProject();
+  const version = project.ok
+    ? project.data.drivers[input.engine]?.version
+    : undefined;
+  const { projectPath } = await GetRuntimeInfo();
+  const manager = await projectPackageManager(projectPath);
+  return {
+    ...access,
+    install: {
+      package: driver,
+      command: installCommand(manager, driver, version),
+    },
+  };
+}
+
 function dataOrStatus<T>(result: OpResult<T>): T | HTTPResult {
   if (result.ok) return result.data;
   if (result.error.code === "not_found") {
@@ -150,7 +180,7 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   ) {
     return fromDms(async () => {
       const result = await CheckDatabaseConnection(body);
-      if (result.ok) return result.data;
+      if (result.ok) return withInstall(result.data, body);
       return result.error.code === "unsupported"
         ? new HTTPResult(HTTP_FORBIDDEN, {
             code: "forbidden",

@@ -9,7 +9,12 @@
     "releaseName": "v${version}"
   },
   "hooks": {
-    "before:init": ["pnpm lint", "pnpm format:check", "pnpm run typecheck"],
+    "before:init": [
+      "pnpm lint",
+      "pnpm format:check",
+      "pnpm run typecheck",
+      "pnpm run test:installed"
+    ],
     "after:bump": "git add CHANGELOG.md"
   },
   "plugins": {

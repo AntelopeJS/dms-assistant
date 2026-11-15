@@ -24,12 +24,13 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 ## Tests
 
-`pnpm test`, and so `pnpm run checks`, runs `pnpm test:node`: it builds `dist` once and runs every `tests/*.test.cjs` suite except `sidecar-build.test.cjs`, and every `tests/builder/*.test.cjs` suite, against it. Run the tests on the Node version in `.nvmrc`: under Node 26, 51 frontend-vue tests fail.
+`pnpm test`, and so `pnpm run checks`, runs `pnpm test:node`: it builds `dist` once and runs every `tests/*.test.cjs` suite except `sidecar-build.test.cjs` and `installed-module.test.cjs`, and every `tests/builder/*.test.cjs` suite, against it. Run the tests on the Node version in `.nvmrc`: under Node 26, 51 frontend-vue tests fail.
 
 `checks` does not run:
 
 - The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test` and `pnpm --dir frontend-vue test` (the assistant and builder unit suites).
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
+- `pnpm test:installed`, which packs the module, installs the tarball as the AntelopeJS module cache does, starts the installed sidecar and checks that every package its built files import resolves. CI runs it in the `installed-module` job, which `ubuntu` needs, and the release runs it before it starts.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
 - The full frontend-vue typecheck: `pnpm --dir frontend-vue verify-source` builds the DMS core layer with this one and runs vue-tsc. `checks` typechecks only the chat (`typecheck:chat`).
 

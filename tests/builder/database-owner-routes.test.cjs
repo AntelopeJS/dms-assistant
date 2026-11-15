@@ -1,0 +1,51 @@
+const assert = require("node:assert/strict");
+const { test } = require("node:test");
+const { ROUTES } = require("../../dist/builder/constants/routes.js");
+const { loadDatabaseController } = require("./helpers/database-controller.cjs");
+
+const controller = loadDatabaseController({});
+const bound = controller.routes();
+
+/** The routes whose body holds a database URL: the check's, a connection's new URL, and the `.env` values of a connect batch. */
+const URL_ROUTES = [
+  "POST /database/connections/check",
+  "POST /database/connection/url",
+  "POST /database/project",
+];
+
+/** Fails on a route of the controller that the test does not see, which would leave it out of the checks below. */
+void test("the test sees every route of the connect flow", () => {
+  const paths = new Set(bound.map((route) => route.path));
+  assert.deepEqual(
+    Object.values(ROUTES).filter((routePath) => !paths.has(routePath)),
+    [],
+  );
+});
+
+/** Fails on a connect route that a caller without the owner's session reaches, such as one checking the sidecar's token in place of the owner. */
+void test("every connect route reads the owner first", () => {
+  const open = bound
+    .filter((route) => route.reads[0] !== "owner")
+    .map((route) => `${route.verb} ${route.path}`);
+  assert.deepEqual(open, []);
+});
+
+/** Fails on a connect route that reads a header, the only place the agent side's credential, the sidecar's token, travels. */
+void test("no connect route reads a header", () => {
+  const reading = bound
+    .filter((route) => route.reads.some((read) => read.startsWith("header:")))
+    .map((route) => `${route.verb} ${route.path}`);
+  assert.deepEqual(reading, []);
+});
+
+/** Fails on a route that takes its URL from anywhere else than the body of the owner's request, such as a query an agent's link could fill. */
+void test("a route that takes a URL reads it from the owner's request body alone", () => {
+  const reads = URL_ROUTES.map((name) => {
+    const [verb, routePath] = name.split(" ");
+    return [name, controller.route(verb, routePath).reads];
+  });
+  assert.deepEqual(
+    reads,
+    URL_ROUTES.map((name) => [name, ["owner", "body"]]),
+  );
+});

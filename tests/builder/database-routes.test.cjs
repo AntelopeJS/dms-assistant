@@ -59,7 +59,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/connections/repair",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ dryRun: true }],
     operation: "RepairDatabaseConnections",
     called: [{ dryRun: true }],
@@ -69,7 +69,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/analyse",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ connection: "erp", module: "erp-tables", schemas: ["public"] }],
     operation: "AnalyseDatabase",
     called: [{ connection: "erp", module: "erp-tables", schemas: ["public"] }],
@@ -99,7 +99,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/map",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ module: "erp-tables", connection: "erp", resources: [] }],
     operation: "MapResources",
     called: [{ module: "erp-tables", connection: "erp", resources: [] }],
@@ -129,7 +129,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/project",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ steps: STEPS, opts: { dryRun: false }, variables: VARIABLES }],
     operation: "ConfigureProject",
     called: [STEPS, { dryRun: false, variables: VARIABLES }],
@@ -149,7 +149,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/connection/remove",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ connection: "erp", dryRun: true }],
     operation: "RemoveDatabaseConnection",
     called: ["erp", { dryRun: true }],
@@ -159,7 +159,7 @@ const ROUTES = [
   {
     verb: "POST",
     path: "/database/connection/url",
-    reads: ["owner", "body"],
+    reads: ["owner", "body", "header:x-dms-assistant-ui"],
     args: [{ connection: "erp", url: "postgres://u@h/erp" }],
     operation: "SetDatabaseConnectionUrl",
     called: ["erp", "postgres://u@h/erp"],
@@ -204,7 +204,11 @@ void test("each database route runs its core operation for the tenant owner and 
     assert.equal(controller.prefix, "/api/builder", name);
     const route = controller.route(row.verb, row.path);
     assert.deepEqual(route.reads, row.reads, name);
-    assert.deepEqual(await route.call(OWNER, ...row.args), row.expected, name);
+    assert.deepEqual(
+      await route.callAsUi(OWNER, ...row.args),
+      row.expected,
+      name,
+    );
     assert.deepEqual(
       calls,
       [
@@ -295,7 +299,7 @@ void test("a read the onboarding takes as is answers 404 when core finds nothing
     const route = loadDatabaseController(
       answering(operation, answer).core,
     ).route(verb, path);
-    const answered = await route.call(OWNER, ...args);
+    const answered = await route.callAsUi(OWNER, ...args);
     assert.ok(answered instanceof HTTPResult, `${operation} ${status}`);
     assert.deepEqual(
       { status: answered.status, body: answered.body },
@@ -335,7 +339,7 @@ void test(
       rows.map((row) =>
         controller
           .route(row.verb, row.path)
-          .call(OWNER, ...row.args)
+          .callAsUi(OWNER, ...row.args)
           .finally(() => {
             answered += 1;
           }),
@@ -372,14 +376,14 @@ void test(
       ...core,
       GetDatabaseProject: () => project(),
     }).route("GET", "/database/connections");
-    const unanswered = route.call(OWNER);
+    const unanswered = route.callAsUi(OWNER);
     t.mock.timers.tick(10_000);
     const first = await unanswered;
     assert.ok(first instanceof HTTPResult);
     assert.equal(first.status, 503);
     assert.deepEqual(calls, []);
     project = async () => ({ ok: true, data: PROJECT, changes: [] });
-    assert.deepEqual(await route.call(OWNER), []);
+    assert.deepEqual(await route.callAsUi(OWNER), []);
     assert.deepEqual(calls, [["ListDatabaseConnections", []]]);
   },
 );
@@ -412,7 +416,7 @@ void test(
       const name = `${row.verb} ${row.path}`;
       const answer = await controller
         .route(row.verb, row.path)
-        .call(OWNER, ...row.args);
+        .callAsUi(OWNER, ...row.args);
       assert.ok(answer instanceof HTTPResult, name);
       assert.deepEqual(
         { status: answer.status, body: answer.body },
@@ -441,7 +445,7 @@ void test(
     const route = loadDatabaseController({
       ListDatabaseConnections: () => list(),
     }).route("GET", "/database/connections");
-    const answer = await route.call(OWNER);
+    const answer = await route.callAsUi(OWNER);
     assert.ok(answer instanceof HTTPResult);
     assert.deepEqual(
       { status: answer.status, body: answer.body },
@@ -451,7 +455,7 @@ void test(
       },
     );
     list = async () => [{ id: "erp", engine: "postgresql" }];
-    assert.deepEqual(await route.call(OWNER), [
+    assert.deepEqual(await route.callAsUi(OWNER), [
       { id: "erp", engine: "postgresql" },
     ]);
   },
@@ -475,7 +479,7 @@ void test(
       GetDatabaseProject: () =>
         Promise.reject(new Error("antelope.config.ts could not be read")),
     }).route("GET", "/database/connections");
-    assert.deepEqual(await route.call(OWNER), [
+    assert.deepEqual(await route.callAsUi(OWNER), [
       { id: "erp", engine: "postgresql" },
     ]);
     assert.deepEqual(calls, [["ListDatabaseConnections", []]]);

@@ -36,6 +36,7 @@ import {
 } from "@antelopejs/interface-dms-builder";
 import { z } from "zod";
 import { DEFAULT_ROUTE_PREFIX, ROUTES } from "../constants/routes";
+import { OWNER_UI_HEADER, outsideOwnerUi } from "../../routes/owner-ui";
 import { withinDmsTimeout } from "../dms-answer";
 import {
   type CheckedAccess,
@@ -169,7 +170,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async repairConnections(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: ProjectConfigOpts | undefined,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(() => RepairDatabaseConnections({ dryRun: body?.dryRun }));
   }
 
@@ -177,7 +181,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async checkConnection(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: DatabaseCheckInput,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(async () => {
       const result = await CheckDatabaseConnection(body);
       if (result.ok) return withInstall(result.data, body);
@@ -197,7 +204,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async analyse(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: AnalyseDatabaseInput,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(() => AnalyseDatabase(body));
   }
 
@@ -222,7 +232,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async map(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: MapResourcesInput,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(() => MapResources(body));
   }
 
@@ -243,7 +256,13 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   }
 
   @Post(ROUTES.databaseProject)
-  async project(@AuthTenantOwner() _user: User, @JSONBody() body: ProjectBody) {
+  async project(
+    @AuthTenantOwner() _user: User,
+    @JSONBody() body: ProjectBody,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
+  ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     const opts: ConfigureProjectOpts = {
       ...body.opts,
       variables: body.variables,
@@ -265,7 +284,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async removeConnection(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: RemoveConnectionBody,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(() =>
       RemoveDatabaseConnection(body.connection, { dryRun: body.dryRun }),
     );
@@ -275,7 +297,10 @@ export class DatabaseController extends Controller(DEFAULT_ROUTE_PREFIX) {
   async connectionUrl(
     @AuthTenantOwner() _user: User,
     @JSONBody() body: ConnectionUrlBody,
+    @Parameter(OWNER_UI_HEADER, "header") marker: string | undefined,
   ) {
+    const refused = outsideOwnerUi(marker);
+    if (refused) return refused;
     return fromDms(() => SetDatabaseConnectionUrl(body.connection, body.url));
   }
 

@@ -87,6 +87,7 @@ import { installNavigationCompleteEmitter } from "../runtime/navigation-complete
 import { createMockupFold } from "../runtime/mockup-fold";
 import { createPanelIntents } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
+import { OWNER_UI_HEADERS } from "../../builder/app/runtime/owner-ui";
 import { installToggleShortcut } from "../runtime/shortcuts";
 import {
 	createSidecarStatusController,
@@ -126,7 +127,7 @@ function postJson(
 	return $authFetch(path, {
 		method: "POST",
 		body: JSON.stringify(body ?? {}),
-		headers: { "content-type": JSON_CONTENT_TYPE },
+		headers: { "content-type": JSON_CONTENT_TYPE, ...OWNER_UI_HEADERS },
 	});
 }
 

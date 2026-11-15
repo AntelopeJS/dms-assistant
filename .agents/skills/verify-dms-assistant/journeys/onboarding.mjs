@@ -1,5 +1,5 @@
 import { guarded } from "../guard.mjs";
-import { AI, ai, check, freshSidecar, pick, raw, same, sidecarLock, statusIs, text, withEnv } from "../ai.mjs";
+import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, pick, raw, same, sidecarLock, statusIs, text, withEnv } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
@@ -70,11 +70,14 @@ export const journeys = guarded([
       await freshSidecar(ctx);
       await withEnv(ctx, NO_CREDENTIAL, async () => {
         const secret = "sk-ant-secret value";
-        const missing = await ai(ctx, "no token", "POST", "/onboarding/claude-token", { body: {} });
-        const malformed = await raw(ctx, "a token that is not one", { path: `${AI}/onboarding/claude-token`, method: "POST", as: "admin", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: secret }) });
+        const ui = { "content-type": "application/json", ...OWNER_UI_HEADERS };
+        const missing = await raw(ctx, "no token", { path: `${AI}/onboarding/claude-token`, method: "POST", as: "admin", headers: ui, body: "{}" });
+        const malformed = await raw(ctx, "a token that is not one", { path: `${AI}/onboarding/claude-token`, method: "POST", as: "admin", headers: ui, body: JSON.stringify({ token: secret }) });
+        const unmarked = await raw(ctx, "a token without the assistant UI's header", { path: `${AI}/onboarding/claude-token`, method: "POST", as: "admin", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: secret }) });
         const after = await state(ctx, "the state after");
         await ctx.verify("the token", [
-          same("a missing token is 400 with its reason", [missing.status, text(missing.body, "message")], [400, "Missing token."]),
+          same("a missing token is 400 with its reason", [missing.status, text(missing.json, "message")], [400, "Missing token."]),
+          same("the owner's token without the assistant UI's header is refused 403", [unmarked.status, text(unmarked.json, "code")], [403, "forbidden"]),
           same("a malformed one answers malformed", [malformed.status, malformed.json], [200, { ok: false, reason: "malformed" }]),
           same("nothing is echoed", [malformed.text.includes("secret"), malformed.headers["cache-control"]], [false, "no-store"]),
           same("nothing is stored: Claude Code stays signed out", pick(after.json, "logins", "claude"), { status: "signed-out" }),

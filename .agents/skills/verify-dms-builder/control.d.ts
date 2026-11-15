@@ -76,6 +76,8 @@ export interface RunState {
   runPlayground?: string;
   extraEnv: Record<string, string>;
   accounts: Record<string, { email: string; password: string; userId?: string | null }>;
+  /** The session token of each account signed in so far. */
+  tokens?: Record<string, string>;
 }
 
 /** What a journey drives the run through. */

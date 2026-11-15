@@ -2,7 +2,7 @@ import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HookInput, PermissionMode } from "@anthropic-ai/claude-agent-sdk";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PRE_TOOL_USE_HOOK_EVENT } from "../../src/constants/claude.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../src/constants/permissions.js";
 import { SECRET_FILE_DENIED_MESSAGE } from "../../src/constants/project-secrets.js";
@@ -63,6 +63,18 @@ describe("the secret file hook on links", () => {
     },
   );
 
+  it("refuses a link to .env named from the home directory", async () => {
+    vi.stubEnv("HOME", dir);
+    vi.stubEnv("USERPROFILE", dir);
+    try {
+      expect(
+        await decide("Grep", { pattern: "TOKEN", path: "~/config.txt" }),
+      ).toEqual(DENIAL);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("lets a link to .env.example through", async () => {
     expect(await decide("Read", { file_path: "template.txt" })).toEqual({
       continue: true,
@@ -114,7 +126,7 @@ describe("the secret file hook on searches", () => {
 
   describe.each(modes)("in %s", (mode) => {
     it.each(reaching)(
-      "refuses a %s whose glob reaches a secret file: %j",
+      "refuses a %s whose path or glob reaches a secret file: %j",
       async (tool, input) => {
         expect(await decideIn(dir, tool, input, mode)).toEqual(DENIAL);
       },

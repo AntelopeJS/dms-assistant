@@ -2,6 +2,8 @@ import type {
   HookCallback,
   SyncHookJSONOutput,
 } from "@anthropic-ai/claude-agent-sdk";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 import {
   globReachesSecretFile,
@@ -46,6 +48,16 @@ const toolCallSchema = z.object({
 
 type ToolCall = z.infer<typeof toolCallSchema>;
 
+const HOME_PREFIXES = ["~/", "~\\"];
+
+function asTheCliReadsIt(path: string): string {
+  const trimmed = path.trim();
+  if (trimmed === "~") return homedir();
+  return HOME_PREFIXES.some((prefix) => trimmed.startsWith(prefix))
+    ? join(homedir(), trimmed.slice(2))
+    : trimmed;
+}
+
 async function pathReachesSecret({
   cwd,
   tool_input,
@@ -58,7 +70,7 @@ async function pathReachesSecret({
   const checks = paths.map(
     async (path) =>
       path !== undefined &&
-      (await reachesSecretFile(path.trim(), cwd ?? process.cwd())),
+      (await reachesSecretFile(asTheCliReadsIt(path), cwd ?? process.cwd())),
   );
   return (await Promise.all(checks)).some(Boolean);
 }
@@ -110,8 +122,8 @@ async function decide(call: ToolCall): Promise<SyncHookJSONOutput> {
  * It refuses any tool call naming a secret file, or a link that resolves to
  * one, and a Grep or Glob whose file-name glob matches one. It leaves secret
  * files out of every other Grep, which searches a whole directory. A path is
- * trimmed first, as the CLI trims it, and a call the guard cannot judge is
- * refused.
+ * read as the CLI reads it, trimmed and with a leading `~` taken as the home
+ * directory, and a call the guard throws on is refused.
  * The CLI runs hooks before its own permission mode, so the refusal holds
  * where a plain read under the project would be allowed unasked, and a hook
  * denial is final.

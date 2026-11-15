@@ -1,7 +1,0 @@
-@antelopejs/dms-frontend	.agents/skills/verify-dms-assistant/playground/package.json	devDependencies	>=0.11.4 <0.12.0
-@antelopejs/dms-frontend	.agents/skills/verify-dms-builder/playground/package.json	devDependencies	>=0.11.4 <0.12.0
-@antelopejs/dms-frontend	playground/package.json	devDependencies	>=0.11.4 <0.12.0
-@antelopejs/dms-frontend	.agents/skills/verify-dms-assistant/playground/package.json	pnpm.overrides	
-@antelopejs/dms-frontend	.agents/skills/verify-dms-builder/playground/package.json	pnpm.overrides	
-@antelopejs/dms-frontend	frontend-vue/package.json	pnpm.overrides	
-@antelopejs/dms-frontend	playground/package.json	pnpm.overrides	

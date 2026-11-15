@@ -18,7 +18,7 @@ export const AI = "/ai";
 export const FIXTURE = "/verify-ai";
 
 /** The header the assistant's own UI sends on the routes that take a secret; the module refuses those without it. */
-export const OWNER_UI_HEADERS = { "x-dms-assistant-ui": "1" };
+export const OWNER_UI_HEADERS = { "x-dms-ui-assistant": "1" };
 
 /**
  * @param {unknown} value Anything a JSON answer holds

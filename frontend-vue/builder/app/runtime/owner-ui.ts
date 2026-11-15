@@ -3,4 +3,4 @@
  * target or a secret; the module refuses those requests without it. The value pairs with
  * `OWNER_UI_HEADER` and `OWNER_UI_VALUE` in `src/routes/owner-ui.ts`.
  */
-export const OWNER_UI_HEADERS: Readonly<Record<string, string>> = { 'x-dms-assistant-ui': '1' }
+export const OWNER_UI_HEADERS: Readonly<Record<string, string>> = { 'x-dms-ui-assistant': '1' }

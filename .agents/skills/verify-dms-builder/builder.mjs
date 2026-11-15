@@ -112,7 +112,7 @@ export function builder(ctx, label, method, path, options = {}) {
 }
 
 /** The header the assistant's own UI sends on the module's POST routes; the module refuses those without it. */
-export const OWNER_UI_HEADERS = { "x-dms-assistant-ui": "1" };
+export const OWNER_UI_HEADERS = { "x-dms-ui-assistant": "1" };
 
 /**
  * A POST as the assistant's own UI sends it: the account's session token and `OWNER_UI_HEADERS`. The

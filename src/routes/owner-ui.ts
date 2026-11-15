@@ -5,7 +5,7 @@ import { HTTPResult } from "@antelopejs/interface-api";
  * connection target or a secret. An HTML form, a dashboard block and a fetched page send the owner's
  * session but cannot set a request header, so a route that requires it answers its own UI alone.
  */
-export const OWNER_UI_HEADER = "x-dms-assistant-ui";
+export const OWNER_UI_HEADER = "x-dms-ui-assistant";
 
 /** The value the assistant's client sends in `OWNER_UI_HEADER`. */
 export const OWNER_UI_VALUE = "1";

@@ -30,7 +30,7 @@ void test("every connect route reads the owner first", () => {
   assert.deepEqual(open, []);
 });
 
-const MARKER = "header:x-dms-assistant-ui";
+const MARKER = "header:x-dms-ui-assistant";
 
 /** Fails on a connect route that reads another header, such as the sidecar's token, or a POST that does not read the assistant UI's marker. */
 void test("every POST connect route reads the assistant UI's marker, and no route reads another header", () => {

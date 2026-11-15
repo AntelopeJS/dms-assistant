@@ -6,7 +6,7 @@ const CONTROLLER = path.resolve(
   "../../../dist/builder/routes/database.js",
 );
 
-const MARKER_READ = "header:x-dms-assistant-ui";
+const MARKER_READ = "header:x-dms-ui-assistant";
 const MARKER_VALUE = "1";
 
 class HTTPResult {

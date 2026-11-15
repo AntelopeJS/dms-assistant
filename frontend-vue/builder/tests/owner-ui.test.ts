@@ -21,7 +21,7 @@ describe('the builder client', () => {
 		const { api, calls } = recordingApi()
 		await api.checkConnection('postgres', 'postgres://u:p@h/db')
 		await api.analyseDatabase('erp', 'erp')
-		expect(calls.map((call) => [call.path, call.options.method, call.options.headers?.['x-dms-assistant-ui']])).toEqual([
+		expect(calls.map((call) => [call.path, call.options.method, call.options.headers?.['x-dms-ui-assistant']])).toEqual([
 			['/api/builder/database/connections/check', 'POST', '1'],
 			['/api/builder/database/analyse', 'POST', '1'],
 		])

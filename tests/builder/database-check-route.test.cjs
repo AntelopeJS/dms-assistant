@@ -31,7 +31,7 @@ function checkRoute(answer) {
 /** Fails on a check left open to any tenant user, or that reads its input from elsewhere than the body. */
 void test("the check is bound to the owner guard and reads the body", () => {
   const { route } = checkRoute({ ok: true, data: {}, changes: [] });
-  assert.deepEqual(route.reads, ["owner", "body", "header:x-dms-assistant-ui"]);
+  assert.deepEqual(route.reads, ["owner", "body", "header:x-dms-ui-assistant"]);
 });
 
 /** Fails on a route that changes the body before core checks it, or answers anything else than what core found. */

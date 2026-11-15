@@ -50,5 +50,10 @@
 		"vite": "^7.3.2",
 		"vitest": "^4.1.8",
 		"vue-tsc": "^3.1.1"
+	},
+	"pnpm": {
+		"overrides": {
+			"@antelopejs/dms-frontend": "file:../.tgz-deps/antelopejs-dms-frontend-3337061.tgz"
+		}
 	}
 }

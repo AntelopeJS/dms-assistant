@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@antelopejs/dms-frontend': file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz
+
 importers:
 
   .:
@@ -55,8 +58,8 @@ importers:
         specifier: ~1.24.0
         version: 1.24.0
       '@antelopejs/dms-frontend':
-        specifier: '>=0.11.4 <0.12.0'
-        version: 0.11.4(@antelopejs/core@1.24.0)
+        specifier: file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz
+        version: file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz(@antelopejs/core@1.24.0)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
@@ -83,8 +86,9 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms-frontend@0.11.4':
-    resolution: {integrity: sha512-/YD6LapIXKonGsyiru+zuI1kFvLlh+KwhPW41SxowYmPPMP9DyYg+n5jSKEx+ht3P3BPixPVr79VTguZCjJAAg==}
+  '@antelopejs/dms-frontend@file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz':
+    resolution: {integrity: sha512-F5kJ98dyXxUeC+fQbpotjYt8CfDsp+lDew/idKDjdAsq0o4A4Q07boelPoJJIc5LbOJpcD8f9rzo6Ih9ZufJ0Q==, tarball: file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz}
+    version: 0.11.5
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -315,12 +319,14 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-linux-x64-gnu@0.95.0':
     resolution: {integrity: sha512-8huzHlK/N98wrnYKxIcYsK8ZGBWomQchu/Mzi6m+CtbhjWOv9DmK0jQ2fUWImtluQVpTwS0uZT06d3g7XIkJrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-win32-x64-msvc@0.95.0':
     resolution: {integrity: sha512-BQpgl7rDjFvCIHudmUR0dCwc4ylBYZl4CPVinlD3NhkMif4WD5dADckoo5ES/KOpFyvwcbKZX+grP63cjHi26g==}
@@ -1607,7 +1613,7 @@ snapshots:
       semver: 7.8.6
       typescript: 5.9.3
 
-  '@antelopejs/dms-frontend@0.11.4(@antelopejs/core@1.24.0)':
+  '@antelopejs/dms-frontend@file:../../../../.tgz-deps/antelopejs-dms-frontend-3337061.tgz(@antelopejs/core@1.24.0)':
     dependencies:
       '@antelopejs/core': 1.24.0
       '@intlify/message-compiler': 11.4.18

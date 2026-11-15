@@ -81,7 +81,10 @@ import { createModelTrack } from "./model-fallback.js";
 import { resolveClaudeBinary } from "./resolve-binary.js";
 import { buildSafeModeHooks, type SdkHooks } from "./safe-mode.js";
 import { withSecretFileGuard } from "./secret-files.js";
-import { SDK_SESSION_SETTINGS } from "./session-settings.js";
+import {
+  SDK_SEARCH_TOOL_RULES,
+  SDK_SESSION_SETTINGS,
+} from "./session-settings.js";
 import {
   type LiveSettings,
   type StreamBackend,
@@ -97,6 +100,7 @@ interface PromptOptions {
   };
   settingSources: SettingSource[];
   settings: typeof SDK_SESSION_SETTINGS;
+  allowedTools: string[];
   includePartialMessages: boolean;
   permissionMode: PermissionMode;
   hooks: SdkHooks;
@@ -143,6 +147,7 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
     },
     settingSources: SDK_SETTING_SOURCES_ISOLATED,
     settings: SDK_SESSION_SETTINGS,
+    allowedTools: [...SDK_SEARCH_TOOL_RULES],
     includePartialMessages: SDK_INCLUDE_PARTIAL_MESSAGES,
     permissionMode: resolvePermissionMode(input.settings),
     hooks: withSecretFileGuard(input.hooks),

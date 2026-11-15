@@ -2,6 +2,18 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.1
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.0...v0.2.1)
+
+### 🩹 Fixes
+
+- **sidecar:** Resolve the sketch check in an installed module ([#65](https://github.com/AntelopeJS/dms-assistant/pull/65))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.2.0
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.1.0...v0.2.0)

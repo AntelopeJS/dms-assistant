@@ -143,9 +143,10 @@ describe("permission previews and rules", () => {
     expect(description.preview).toMatchObject({ added: 1, removed: 1 });
   });
 
-  it("always asks before an edit of a dependency or git hook file, with no rule to keep", async () => {
+  it("always asks before an edit of a dependency, git hook or project config file, with no rule to keep", async () => {
     const edits = [
       join(root, "package.json"),
+      join(root, "antelope.config.ts"),
       join(root, ".git", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "hooks", "pre-commit"),
       join(root, ".git", "modules", "sub", "config"),

@@ -9,6 +9,10 @@ const HOST_COMMAND_PREFIX = "host_command_";
 /** Words of a field name that make it a connection's address, or part of one. */
 const CONNECTION_WORDS: ReadonlySet<string> = new Set([
   "address",
+  "conn",
+  "connstring",
+  "database",
+  "db",
   "dsn",
   "endpoint",
   "host",
@@ -16,6 +20,7 @@ const CONNECTION_WORDS: ReadonlySet<string> = new Set([
   "href",
   "ip",
   "port",
+  "server",
   "socket",
   "uri",
   "url",
@@ -45,13 +50,23 @@ const NOT_CONNECTIONS: ReadonlyMap<string, string> = new Map([
     "preview_blocks: reference.url",
     "the same-origin path of an image the preview shows; an external URL only shows as a link",
   ],
+  [
+    "preview_blocks: options.*",
+    "a block's options, drawn in the preview frame whose CSP blocks network loads; a URL option must be a same-origin path",
+  ],
 ]);
 
-interface SchemaInput {
-  path: string;
-  name: string;
-  format?: string;
-}
+/** A field the schema names, a string format it sets, or a record whose keys the model names. */
+type SchemaInput =
+  | { kind: "field"; path: string; name: string }
+  | { kind: "format"; path: string; format: string }
+  | { kind: "open"; path: string };
+
+const OPEN_KEYWORDS: ReadonlySet<string> = new Set([
+  "additionalProperties",
+  "patternProperties",
+  "propertyNames",
+]);
 
 function words(name: string): string[] {
   return name
@@ -69,11 +84,14 @@ function fieldsOf(properties: JsonValue, path: string): SchemaInput[] {
   if (!fields.success) return [];
   return Object.entries(fields.data).flatMap(([name, field]) => {
     const fieldPath = path === "" ? name : `${path}.${name}`;
-    return [{ path: fieldPath, name }, ...inputsOf(field, fieldPath)];
+    return [
+      { kind: "field" as const, path: fieldPath, name },
+      ...inputsOf(field, fieldPath),
+    ];
   });
 }
 
-/** Every field a JSON Schema declares at any depth, by its path, and every string format it sets. */
+/** Every field a JSON Schema declares at any depth, by its path, every string format it sets, and every record whose keys are free. */
 function inputsOf(schema: JsonValue, path: string): SchemaInput[] {
   const list = JsonListSchema.safeParse(schema);
   if (list.success) return list.data.flatMap((item) => inputsOf(item, path));
@@ -83,15 +101,24 @@ function inputsOf(schema: JsonValue, path: string): SchemaInput[] {
     if (key === "properties") return fieldsOf(value, path);
     const format = FormatSchema.safeParse(value);
     if (key === "format" && format.success)
-      return [{ path, name: "", format: format.data }];
+      return [{ kind: "format", path, format: format.data }];
+    if (OPEN_KEYWORDS.has(key) && JsonObjectSchema.safeParse(value).success) {
+      const keys = `${path}.*`;
+      return [{ kind: "open", path: keys }, ...inputsOf(value, keys)];
+    }
     return inputsOf(value, path);
   });
 }
 
 function isAddress(input: SchemaInput): boolean {
-  return input.format === undefined
-    ? words(input.name).some((word) => CONNECTION_WORDS.has(word))
-    : ADDRESS_FORMATS.has(input.format);
+  switch (input.kind) {
+    case "field":
+      return words(input.name).some((word) => CONNECTION_WORDS.has(word));
+    case "format":
+      return ADDRESS_FORMATS.has(input.format);
+    case "open":
+      return true;
+  }
 }
 
 /** The address-shaped inputs of `schema` outside `NOT_CONNECTIONS`, as `<subject>: <path>`. */

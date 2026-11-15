@@ -38,7 +38,26 @@ void test("no connect route reads a header", () => {
   assert.deepEqual(reading, []);
 });
 
-/** Fails on a route that takes its URL from anywhere else than the body of the owner's request, such as a query an agent's link could fill. */
+/** What a connect route may read: the owner, the owner's request body, and ids that name an analysis, a connection or a module from a query. */
+const ALLOWED_READS = new Set([
+  "owner",
+  "body",
+  "query:id",
+  "query:connection",
+  "query:module",
+]);
+
+/** Fails on a route that reads a URL from a query or a path, which a link or an image address the agent writes can fill. */
+void test("the connect routes read nothing but the owner, the body and ids from a query", () => {
+  const reading = bound.flatMap((route) =>
+    route.reads
+      .filter((read) => !ALLOWED_READS.has(read))
+      .map((read) => `${route.verb} ${route.path} ${read}`),
+  );
+  assert.deepEqual(reading, []);
+});
+
+/** Fails on a route that takes its URL from anywhere else than the body of the owner's request. */
 void test("a route that takes a URL reads it from the owner's request body alone", () => {
   const reads = URL_ROUTES.map((name) => {
     const [verb, routePath] = name.split(" ");

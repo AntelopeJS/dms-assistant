@@ -69,6 +69,12 @@ export const GIT_HOOK_PATHS: readonly string[] = [
   ".pre-commit-config.yml",
 ];
 
+/**
+ * The AntelopeJS project configuration. It names each database the project
+ * connects, and the variable or literal that supplies its URL.
+ */
+export const PROJECT_CONFIG_FILE_NAME = "antelope.config.ts";
+
 export const SDK_PERMISSION_BEHAVIOR = {
   ALLOW: "allow",
   DENY: "deny",

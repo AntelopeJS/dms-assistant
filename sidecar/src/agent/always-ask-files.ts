@@ -2,6 +2,7 @@ import { basename } from "node:path";
 import {
   DEPENDENCY_FILE_NAMES,
   GIT_HOOK_PATHS,
+  PROJECT_CONFIG_FILE_NAME,
 } from "../constants/permissions.js";
 
 const ANY_TRAILING_SEGMENTS = "**";
@@ -68,4 +69,12 @@ export function isGitHookFile(path: string): boolean {
  */
 export function isDependencyFile(path: string): boolean {
   return DEPENDENCY_FILE_NAMES.has(basename(path).toLowerCase());
+}
+
+/**
+ * Whether `path`, resolved, is a project's `antelope.config.ts` by its name,
+ * anywhere on disk, case-insensitively.
+ */
+export function isProjectConfigFile(path: string): boolean {
+  return basename(path).toLowerCase() === PROJECT_CONFIG_FILE_NAME;
 }

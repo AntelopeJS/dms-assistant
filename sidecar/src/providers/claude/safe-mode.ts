@@ -7,10 +7,14 @@ import type {
 import {
   CLAUDE_AUTO_PERMISSION_MODE,
   HOOK_ASK_DECISION,
+  PLAN_PERMISSION_MODE,
   PRE_TOOL_USE_HOOK_EVENT,
 } from "../../constants/claude.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
-import { SAFE_MODE_DENIED_MESSAGE } from "../../constants/settings.js";
+import {
+  PLAN_MODE_DENIED_MESSAGE,
+  SAFE_MODE_DENIED_MESSAGE,
+} from "../../constants/settings.js";
 import { z } from "zod";
 import { ToolArgsSchema } from "../../agent/edit-targets.js";
 import type { ToolCallHooks } from "../../agent/provider.js";
@@ -21,6 +25,7 @@ import {
   type GuardedCall,
   type GuardScope,
   isHostDecided,
+  runsInPlan,
   runsInSafeScope,
 } from "./tool-guard.js";
 
@@ -32,6 +37,14 @@ const SAFE_MODE_DENIAL: SyncHookJSONOutput = {
     hookEventName: PRE_TOOL_USE_HOOK_EVENT,
     permissionDecision: SDK_PERMISSION_BEHAVIOR.DENY,
     permissionDecisionReason: SAFE_MODE_DENIED_MESSAGE,
+  },
+};
+
+const PLAN_MODE_DENIAL: SyncHookJSONOutput = {
+  hookSpecificOutput: {
+    hookEventName: PRE_TOOL_USE_HOOK_EVENT,
+    permissionDecision: SDK_PERMISSION_BEHAVIOR.DENY,
+    permissionDecisionReason: PLAN_MODE_DENIED_MESSAGE,
   },
 };
 
@@ -97,7 +110,9 @@ function decideByMode(
  * mutating tool until the turn's checkpoint is taken: it runs before the tool
  * whatever the permission mode, which `canUseTool` does not. In every mode but
  * plan, it also sends to `canUseTool` each call the CLI would otherwise settle
- * without asking the person (see isHostDecided).
+ * without asking the person (see isHostDecided). In plan it refuses every
+ * command, which the CLI would otherwise run unasked when it judges it
+ * read-only (see runsInPlan).
  */
 export function buildSafeModeHooks(deps: PreToolUseDeps): SdkHooks {
   const preToolUse: HookCallback = async (input) => {
@@ -118,6 +133,17 @@ export function buildSafeModeHooks(deps: PreToolUseDeps): SdkHooks {
         allowedBy: "blocked",
       });
       return SAFE_MODE_DENIAL;
+    }
+    if (
+      call.permission_mode === PLAN_PERMISSION_MODE &&
+      !runsInPlan(guarded, scope)
+    ) {
+      deps.onToolDecision?.({
+        callId: call.tool_use_id,
+        toolName: call.tool_name,
+        allowedBy: "blocked",
+      });
+      return PLAN_MODE_DENIAL;
     }
     if (isMutatingTool(call.tool_name)) await deps.beforeMutation?.();
     return decideByMode(deps, call, guarded, scope);

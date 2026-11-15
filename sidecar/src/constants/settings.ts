@@ -22,5 +22,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export const MS_PER_MINUTE = 60_000;
 
+export const PLAN_MODE_DENIED_MESSAGE =
+  "Plan only is active: it reads and proposes and changes nothing, so it runs no shell command, read-only ones included. Read files with Read, Grep and Glob, and put the commands to run in the plan.";
+
 export const SAFE_MODE_DENIED_MESSAGE =
   'Safe mode is active: shell commands, raw file edits and tools that act outside this chat are blocked. Make the change with the Builder ("Builder…") MCP tools instead. If it genuinely cannot be done through the Builder, ask the user to switch to Code mode for this step.';

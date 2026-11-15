@@ -28,6 +28,7 @@ type CallRule = (call: GuardedCall, scope: GuardScope) => boolean;
 
 interface ReachPolicy {
   runsInSafeScope: CallRule;
+  runsInPlan: CallRule;
   isLeftToClassifier: CallRule;
   isLeftToCli: CallRule;
 }
@@ -68,52 +69,61 @@ const runsInThisSession: CallRule = (call) => call.args.isolation === undefined;
 const POLICY_BY_REACH: Record<ToolReach, ReachPolicy> = {
   readsPath: {
     runsInSafeScope: always,
+    runsInPlan: always,
     isLeftToClassifier: isReadInsideRoots,
     isLeftToCli: always,
   },
   editsFile: {
     runsInSafeScope: isPlanFile,
+    runsInPlan: always,
     isLeftToClassifier: isNotAlwaysAsk,
     isLeftToCli: isNotAlwaysAsk,
   },
   runsCommand: {
     runsInSafeScope: never,
+    runsInPlan: never,
     isLeftToClassifier: never,
     isLeftToCli: never,
   },
   runsLater: {
     runsInSafeScope: never,
+    runsInPlan: always,
     isLeftToClassifier: never,
     isLeftToCli: always,
   },
   fetchesWeb: {
     runsInSafeScope: always,
+    runsInPlan: always,
     isLeftToClassifier: isCodeScope,
     isLeftToCli: always,
   },
   startsAgent: {
     runsInSafeScope: runsInThisSession,
+    runsInPlan: always,
     isLeftToClassifier: runsInThisSession,
     isLeftToCli: always,
   },
   asksPerson: {
     runsInSafeScope: always,
+    runsInPlan: always,
     isLeftToClassifier: never,
     isLeftToCli: always,
   },
   inert: {
     runsInSafeScope: always,
+    runsInPlan: always,
     isLeftToClassifier: always,
     isLeftToCli: always,
   },
   reachesOutside: {
     runsInSafeScope: never,
+    runsInPlan: always,
     isLeftToClassifier: never,
     isLeftToCli: always,
   },
 };
 
-type CliSettles = Exclude<keyof ReachPolicy, "runsInSafeScope">;
+type CliSettles = Exclude<keyof ReachPolicy, "runsInSafeScope" | "runsInPlan">;
 
 const STRICTEST_COLUMN: CliSettles = "isLeftToClassifier";
 
@@ -149,6 +159,17 @@ export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
   const reach = toolReachOf(call.toolName);
   if (reach === undefined) return false;
   return POLICY_BY_REACH[reach].runsInSafeScope(call, scope);
+}
+
+/**
+ * Whether Plan only lets a call run: it reads and proposes and changes
+ * nothing, so it runs no command, read-only ones included. The CLI's own plan
+ * mode settles every other call.
+ */
+export function runsInPlan(call: GuardedCall, scope: GuardScope): boolean {
+  const reach = toolReachOf(call.toolName);
+  if (reach === undefined) return true;
+  return POLICY_BY_REACH[reach].runsInPlan(call, scope);
 }
 
 /**

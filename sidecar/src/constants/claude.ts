@@ -34,6 +34,7 @@ export const PRE_TOOL_USE_HOOK_EVENT = "PreToolUse" as const;
 
 /** The permission mode in which Claude Code's Auto review decides each call. */
 export const CLAUDE_AUTO_PERMISSION_MODE = "auto" as const;
+export const PLAN_PERMISSION_MODE = "plan" as const;
 
 /**
  * The hook decision that sends a call to `canUseTool` in every permission

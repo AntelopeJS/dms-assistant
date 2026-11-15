@@ -12,7 +12,6 @@ const ASK = {
     permissionDecision: "ask",
   },
 };
-const NO_DECISION = { continue: true };
 
 interface HookRun {
   output: unknown;
@@ -63,9 +62,14 @@ describe("the PreToolUse hook and the permission mode the CLI states", () => {
     expect(run.decisions).toEqual([]);
   });
 
-  it("leaves a call in Plan only to the CLI, recording nothing", async () => {
+  /** Fails on a hook that reads the sidecar's chat mode instead of the mode the CLI states, which leaves plan once the plan is approved. */
+  it("refuses a command while the CLI states Plan only, recording it as blocked", async () => {
     const run = await preToolUse("node -e 1", "plan");
-    expect(run.output).toEqual(NO_DECISION);
-    expect(run.decisions).toEqual([]);
+    expect(run.output).toMatchObject({
+      hookSpecificOutput: { permissionDecision: "deny" },
+    });
+    expect(run.decisions).toEqual([
+      { callId: CALL_ID, toolName: "Bash", allowedBy: "blocked" },
+    ]);
   });
 });

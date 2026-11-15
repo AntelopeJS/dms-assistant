@@ -89,9 +89,29 @@ jobs:
       - run: pnpm install --filter "{.}" --filter "./frontend-vue" --frozen-lockfile
       - run: pnpm --dir frontend-vue run verify-source
 
+  # Packs the module, installs the tarball as the AntelopeJS module cache
+  # does, starts the installed sidecar and checks every import resolves.
+  installed-module:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            sidecar/pnpm-lock.yaml
+      - run: pnpm install --filter "{.}" --filter "./sidecar" --frozen-lockfile
+      - run: pnpm run test:installed
+
   ubuntu:
     if: always()
-    needs: [ci, vitest, frontend-verify]
+    needs: [ci, vitest, frontend-verify, installed-module]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

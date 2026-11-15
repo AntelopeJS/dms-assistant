@@ -194,6 +194,8 @@ export interface DatabaseAccess {
 	canWrite: boolean
 	/** Why the database cannot be read, in a sentence that never holds the URL or the password. */
 	reason?: string
+	/** Set when the project lacks the engine's driver: the package, and the command that installs it with the project's package manager. */
+	install?: { package: string; command: string }
 }
 
 export interface ModuleEntryInput {

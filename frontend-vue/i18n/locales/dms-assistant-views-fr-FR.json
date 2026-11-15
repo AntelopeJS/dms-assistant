@@ -263,6 +263,8 @@
 					"reachable": "Serveur joignable",
 					"reachable_latency": "Serveur joignable · {ms} ms",
 					"unreachable": "Serveur injoignable : {error}",
+					"install_copy": "Copier la commande d'installation",
+					"install_retry": "Lancez-la dans le dossier du projet, puis cliquez de nouveau sur Connecter et analyser.",
 					"signed_in": "Connecté en tant que {user}",
 					"signed_in_pending": "Connexion",
 					"signed_in_no_user": "Connecté, sans compte requis",

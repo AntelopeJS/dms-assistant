@@ -30,38 +30,26 @@ const buildFailures = requirements
       `${file}: the playground must build the sidecar before startup (\`${SIDECAR_BUILD}\`).`,
   );
 
-const DATABASE_CLIENTS = ["mongodb", "mysql2", "pg", "rethinkdb-ts"];
+const DATABASE_DRIVERS = [
+  "@antelopejs/mongodb",
+  "@antelopejs/mysql",
+  "@antelopejs/postgres",
+  "@antelopejs/rethinkdb",
+];
 
-const RangesSchema = z.record(z.string(), z.string()).default({});
 const ManifestSchema = z.object({
-  dependencies: RangesSchema,
-  peerDependencies: RangesSchema,
+  dependencies: z.record(z.string(), z.string()).default({}),
 });
 
-/**
- * @param {string} file A package.json, relative to the repository root
- * @returns {z.infer<typeof ManifestSchema>} Its dependency ranges
- */
-function manifest(file) {
-  return ManifestSchema.parse(
-    JSON.parse(readFileSync(join(root, file), "utf8")),
-  );
-}
+const playgroundDependencies = ManifestSchema.parse(
+  JSON.parse(readFileSync(join(root, "playground/package.json"), "utf8")),
+).dependencies;
 
-const coreClients = new Map(
-  Object.entries(
-    manifest("node_modules/@antelopejs/dms/package.json").peerDependencies,
-  ),
-);
-const playgroundDependencies = new Map(
-  Object.entries(manifest("playground/package.json").dependencies),
-);
-
-const clientFailures = DATABASE_CLIENTS.filter(
-  (client) => playgroundDependencies.get(client) !== coreClients.get(client),
+const clientFailures = DATABASE_DRIVERS.filter(
+  (driver) => !Object.hasOwn(playgroundDependencies, driver),
 ).map(
-  (client) =>
-    `playground/package.json: @antelopejs/dms loads ${client} from the project to check a database; declare it in dependencies at ${coreClients.get(client)}.`,
+  (driver) =>
+    `playground/package.json: @antelopejs/dms runs the probe of ${driver} from the project to check a database; declare it in dependencies.`,
 );
 
 const OUTDATED_LOCKFILE = "ERR_PNPM_OUTDATED_LOCKFILE";

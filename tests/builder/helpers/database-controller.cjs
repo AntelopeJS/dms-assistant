@@ -47,8 +47,9 @@ const SERVED = {
 
 /**
  * @param {Record<string, unknown>} core
+ * @param {string} [projectPath] The project the runtime reports.
  */
-function loadDatabaseController(core) {
+function loadDatabaseController(core, projectPath = "/nonexistent-project") {
   /** @type {Route[]} */
   const routes = [];
   /** @type {Param[]} */
@@ -90,6 +91,9 @@ function loadDatabaseController(core) {
         JSONBody: () => paramOf("body"),
         Parameter: (/** @type {string} */ name, /** @type {string} */ source) =>
           paramOf(`${source}:${name}`),
+      },
+      "@antelopejs/interface-core/runtime": {
+        GetRuntimeInfo: async () => ({ projectPath, dev: true }),
       },
       "@antelopejs/interface-dms/guards": {
         AuthTenantOwner: () => paramOf("owner"),

@@ -1,4 +1,7 @@
 const assert = require("node:assert/strict");
+const { mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { tmpdir } = require("node:os");
+const path = require("node:path");
 const { test } = require("node:test");
 const {
   HTTPResult,
@@ -92,5 +95,107 @@ void test("a body core refuses answers 400 with core's message", async () => {
   assert.deepEqual(
     { status: answer.status, body: answer.body },
     { status: 400, body: { code: "bad_request", message } },
+  );
+});
+
+const MISSING_POSTGRES = {
+  reachable: false,
+  canRead: false,
+  canWrite: false,
+  reason: "Install @antelopejs/postgres to connect a PostgreSQL database.",
+};
+
+/**
+ * @param {Record<string, string>} files
+ */
+function projectWith(files) {
+  const root = mkdtempSync(path.join(tmpdir(), "dms-assistant-check-"));
+  for (const [name, text] of Object.entries(files)) {
+    writeFileSync(path.join(root, name), text);
+  }
+  return root;
+}
+
+/**
+ * @param {unknown} access
+ * @param {string} projectPath
+ */
+function missingDriverRoute(access, projectPath) {
+  return loadDatabaseController(
+    {
+      CheckDatabaseConnection: async () => ({
+        ok: true,
+        data: access,
+        changes: [],
+      }),
+      GetDatabaseProject: async () => ({
+        ok: true,
+        data: {
+          modules: ["dms"],
+          self: "dms",
+          databasePins: [],
+          drivers: {
+            postgres: {
+              package: "@antelopejs/postgres",
+              version: ">=0.4.2 <0.5.0",
+            },
+          },
+        },
+        changes: [],
+      }),
+    },
+    projectPath,
+  ).route("POST", "/database/connections/check");
+}
+
+/** Fails on a missing driver answered without the install step, or with a command for another package manager or range. */
+void test("a check that misses the driver answers the command that installs it with the project's package manager", async (t) => {
+  const pyarnProject = projectWith({ "pnpm-lock.yaml": "" });
+  const yarnProject = projectWith({
+    "package.json": JSON.stringify({ packageManager: "yarn@4.5.0" }),
+    "package-lock.json": "{}",
+  });
+  t.after(() => {
+    rmSync(pyarnProject, { recursive: true });
+    rmSync(yarnProject, { recursive: true });
+  });
+  const body = { engine: "postgres", url: "postgres://u@h/db" };
+  assert.deepEqual(
+    await missingDriverRoute(MISSING_POSTGRES, pyarnProject).call(OWNER, body),
+    {
+      ...MISSING_POSTGRES,
+      install: {
+        package: "@antelopejs/postgres",
+        command:
+          'pnpm add --save-prefix=~ "@antelopejs/postgres@>=0.4.2 <0.5.0"',
+      },
+    },
+  );
+  assert.deepEqual(
+    await missingDriverRoute(MISSING_POSTGRES, yarnProject).call(OWNER, body),
+    {
+      ...MISSING_POSTGRES,
+      install: {
+        package: "@antelopejs/postgres",
+        command: 'yarn add "@antelopejs/postgres@>=0.4.2 <0.5.0"',
+      },
+    },
+  );
+});
+
+/** Fails on an install step added to an answer whose reason is another failure, such as a refused sign-in. */
+void test("an unreachable database keeps its answer without an install step", async () => {
+  const refused = {
+    reachable: false,
+    canRead: false,
+    canWrite: false,
+    reason: "The server did not answer.",
+  };
+  assert.deepEqual(
+    await missingDriverRoute(refused, "/nonexistent-project").call(OWNER, {
+      engine: "postgres",
+      url: "postgres://u@h/db",
+    }),
+    refused,
   );
 });

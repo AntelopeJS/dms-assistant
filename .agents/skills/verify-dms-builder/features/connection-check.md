@@ -9,7 +9,7 @@ docs:
 
 # Connection check
 
-`POST /api/builder/database/connections/check`: the live test of a database before the connection is written. The route asks `CheckDatabaseConnection` of `@antelopejs/dms`, which opens the database with the engine's client library, for the owner and in development only.
+`POST /api/builder/database/connections/check`: the live test of a database before the connection is written. The route asks `CheckDatabaseConnection` of `@antelopejs/dms`, which runs the `probe` of the engine's driver package, for the owner and in development only.
 
 ## Sub-features
 

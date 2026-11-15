@@ -2,6 +2,55 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.0
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.1.0...v0.2.0)
+
+### 🩹 Fixes
+
+- **verify:** Run every verify-dms-ai journey on a development backend ([#40](https://github.com/AntelopeJS/dms-assistant/pull/40))
+- **onboarding:** Stop asking to connect again after the restart that loads the connection ([#44](https://github.com/AntelopeJS/dms-assistant/pull/44))
+- **verify:** Map the sidecar's private-file module to the access feature ([#48](https://github.com/AntelopeJS/dms-assistant/pull/48))
+- **onboarding:** Resume the connect popup after a reload or a reopen mid-connect ([#45](https://github.com/AntelopeJS/dms-assistant/pull/45))
+- **sidecar:** Refuse every conversation request on another person's conversation ([#57](https://github.com/AntelopeJS/dms-assistant/pull/57))
+- **playground:** Install the playground outside the pnpm workspace ([#58](https://github.com/AntelopeJS/dms-assistant/pull/58))
+- **onboarding:** Wait for the project to load a corrected URL before following its connection ([#50](https://github.com/AntelopeJS/dms-assistant/pull/50))
+- **sidecar:** Check who answers a request and keep a deleted conversation deleted ([#59](https://github.com/AntelopeJS/dms-assistant/pull/59))
+- **sidecar:** Keep a deleted conversation closed to turns, restarts and other people ([#60](https://github.com/AntelopeJS/dms-assistant/pull/60))
+- **launcher:** Name the assistant once the locale messages load ([#62](https://github.com/AntelopeJS/dms-assistant/pull/62))
+- **sidecar:** Give each owner's turn their own page and their own host ([#61](https://github.com/AntelopeJS/dms-assistant/pull/61))
+- **onboarding:** Start and answer a connection's analysis from one tab at a time ([#63](https://github.com/AntelopeJS/dms-assistant/pull/63))
+- **onboarding:** Open the connect popup once the backend answers after a page load during a restart ([#64](https://github.com/AntelopeJS/dms-assistant/pull/64))
+- **sidecar:** ⚠️  Check preview_blocks sketches with the sketch check of @antelopejs/dms ([#54](https://github.com/AntelopeJS/dms-assistant/pull/54))
+
+### 💅 Refactors
+
+- ⚠️  Rename the dms-ai log prefix, sidecar package and sign-in folder to dms-assistant ([#43](https://github.com/AntelopeJS/dms-assistant/pull/43))
+- ⚠️  Drop the dms-ai and dms-builder legacy migration steps ([#47](https://github.com/AntelopeJS/dms-assistant/pull/47))
+- ⚠️  Rename the remaining dms-ai identifiers to dms-assistant ([#49](https://github.com/AntelopeJS/dms-assistant/pull/49))
+- ⚠️  Drop the Full auto readers of stored audit records and transcripts ([#53](https://github.com/AntelopeJS/dms-assistant/pull/53))
+- ⚠️  Stop reading the global mode saved before per-provider defaults ([#55](https://github.com/AntelopeJS/dms-assistant/pull/55))
+- Lint with the shared assertDmsComponents check of @antelopejs/dms ([#52](https://github.com/AntelopeJS/dms-assistant/pull/52))
+
+### ✅ Tests
+
+- **verify:** Show that a production start runs no sidecar in verify-dms-ai ([#46](https://github.com/AntelopeJS/dms-assistant/pull/46))
+- **auth:** Show the retired dms-ai names are refused ([#51](https://github.com/AntelopeJS/dms-assistant/pull/51))
+- **evals:** Name the dms-assistant area in the skill cases ([#56](https://github.com/AntelopeJS/dms-assistant/pull/56))
+
+#### ⚠️ Breaking Changes
+
+- **sidecar:** ⚠️  Check preview_blocks sketches with the sketch check of @antelopejs/dms ([#54](https://github.com/AntelopeJS/dms-assistant/pull/54))
+- ⚠️  Rename the dms-ai log prefix, sidecar package and sign-in folder to dms-assistant ([#43](https://github.com/AntelopeJS/dms-assistant/pull/43))
+- ⚠️  Drop the dms-ai and dms-builder legacy migration steps ([#47](https://github.com/AntelopeJS/dms-assistant/pull/47))
+- ⚠️  Rename the remaining dms-ai identifiers to dms-assistant ([#49](https://github.com/AntelopeJS/dms-assistant/pull/49))
+- ⚠️  Drop the Full auto readers of stored audit records and transcripts ([#53](https://github.com/AntelopeJS/dms-assistant/pull/53))
+- ⚠️  Stop reading the global mode saved before per-provider defaults ([#55](https://github.com/AntelopeJS/dms-assistant/pull/55))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli ([@Upd4ting](http://github.com/Upd4ting))
+
 ## v0.1.0
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/a433f6f6f71a329d5ba437c50fbbba2e59c9dfa8...v0.1.0)

@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { check } from "../../ai.mjs";
+import { check, parseJson, text } from "../../ai.mjs";
 
 /** @typedef {import("../../ai.mjs").Ctx} Ctx */
 /** @typedef {import("../../ai.mjs").Tab} Tab */
@@ -9,6 +9,7 @@ const URL_FIELD = { role: "textbox", name: "Connection URL" };
 const CONNECT = { role: "button", name: "Connect and analyse" };
 const STEP_HEADING = { role: "heading", name: "Connect your database" };
 const RESTART = /Restart the project to load the connection/;
+const CONNECT_MEMORY = "dms-assistant:onboarding-connect";
 const WATCH_RESTART_HANGS =
   "the -w restart that the written connection triggers never finishes: the backend logs \"Module 'dms-assistant' is still starting after 10 s\", starts no sidecar and stops answering, so the reloaded page opens no popup and the analysis never comes";
 const READER = "reader";
@@ -66,8 +67,26 @@ async function checkReaches(tab, key, status, timeoutMs) {
 }
 
 /**
+ * Waits until the tab remembers the connection the popup wrote, which a reload or a reopened popup follows.
+ *
+ * @param {Tab} tab The tab
+ * @param {number} timeoutMs How long to wait
+ * @returns {Promise<import("../../ai.mjs").Check>} The check, with the connection the tab remembers
+ */
+async function remembered(tab, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let connection = "";
+  while (Date.now() < deadline && connection === "") {
+    const stored = await tab.page.evaluate((key) => sessionStorage.getItem(key) ?? "", CONNECT_MEMORY);
+    connection = stored === "" ? "" : text(parseJson(stored), "written", "connection");
+    if (connection === "") await tab.page.waitForTimeout(500);
+  }
+  return check("the tab remembers the written connection", connection !== "", connection || "nothing written yet");
+}
+
+/**
  * Opens the popup on its connect step, picks MongoDB, connects with a wrong password, sees the sign-in refused, then
- * connects the corrected URL and sees it pass the live checks that come before anything is written.
+ * connects the corrected URL, sees it pass the live checks, and waits until the tab remembers the connection it wrote.
  *
  * @param {Ctx} ctx The journey
  * @param {Tab} tab A signed-in tab of the owner
@@ -90,6 +109,7 @@ async function connectAfterACorrection(ctx, tab, url) {
     await checkReaches(tab, "signed-in", "done", 30_000),
     await checkReaches(tab, "read", "done", 30_000),
   ]);
+  await ctx.verify("the connection is written", [await remembered(tab, 60_000)]);
 }
 
 /**

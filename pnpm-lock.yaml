@@ -91,7 +91,7 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0
       playwright-core:
-        specifier: ^1.65.1
+        specifier: ~1.65.1
         version: 1.65.1
       release-it:
         specifier: ^19.2.4

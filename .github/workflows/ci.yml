@@ -217,12 +217,12 @@ jobs:
       - if: env.TIER == 'full'
         run: pnpm e2e --grep @smoke
       - if: env.TIER == 'nightly'
-        run: pnpm e2e --shard=${{ matrix.shard }}/1 --reporter=blob
+        run: pnpm e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=blob
         env:
           PLAYWRIGHT_BLOB_OUTPUT_DIR: e2e/blob-report
       # The journeys that only the development dashboard serves.
       - if: (success() || failure()) && env.TIER == 'nightly'
-        run: pnpm e2e:dev --shard=${{ matrix.shard }}/1 --reporter=blob
+        run: pnpm e2e:dev --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=blob
         env:
           PLAYWRIGHT_BLOB_OUTPUT_DIR: e2e/blob-report-dev
       - if: always() && env.TIER == 'nightly'

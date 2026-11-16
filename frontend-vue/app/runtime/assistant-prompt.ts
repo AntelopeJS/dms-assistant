@@ -41,9 +41,21 @@ const BuildPromptSchema = z.object({
 	target: z.optional(z.object({ pageRef: NameSchema })),
 });
 
+/**
+ * "Resolve with AI": `prompt` is the name of the mockup whose open comments
+ * the assistant applies and resolves. `page` limits the run to the comments of
+ * one page of its spec.
+ */
+const ResolveCommentsPromptSchema = z.object({
+	prompt: NameSchema,
+	source: z.literal("resolve-comments"),
+	page: z.optional(NameSchema),
+});
+
 /** The `detail` of {@link MOCKUP_ASSISTANT_PROMPT_EVENT}. Mirrors `MockupAssistantPrompt` of dms. */
 export const MockupAssistantPromptSchema = z.union([
 	BuildPromptSchema,
+	ResolveCommentsPromptSchema,
 	BlockPromptSchema,
 ]);
 

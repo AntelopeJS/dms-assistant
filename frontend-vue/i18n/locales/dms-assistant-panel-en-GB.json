@@ -406,6 +406,10 @@
 				"title_stopped": "Build of “{mockup}” stopped",
 				"message_into": "Build mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one.",
 				"failures": "Checks that did not pass"
+			},
+			"resolve_comments": {
+				"message": "Use the dms-mockup skill to resolve the open comments of mockup “{mockup}”. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question.",
+				"message_page": "Use the dms-mockup skill to resolve the open comments of page {page} of mockup “{mockup}”, and only that page. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question."
 			}
 		},
 		"tools": {

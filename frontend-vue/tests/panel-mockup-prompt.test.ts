@@ -6,6 +6,7 @@ import {
 	installAssistantPromptListener,
 	MOCKUP_ASSISTANT_PROMPT_EVENT,
 } from "../app/runtime/assistant-prompt";
+import { intentOfPrompt } from "../app/runtime/panel-intents";
 import {
 	buttonWithText,
 	CONVERSATION_ID,
@@ -78,12 +79,19 @@ describe("the mockup editor's prompt event", () => {
 			source: "custom-zone",
 		});
 		const buildWithoutName = dispatch({ prompt: "", source: "build" });
+		const resolveWithoutName = dispatch({
+			prompt: "",
+			source: "resolve-comments",
+		});
 		stop();
 		expect(
-			[unknownSource, blockWithoutPath, buildWithoutName].map(
-				(event) => event.defaultPrevented,
-			),
-		).toEqual([false, false, false]);
+			[
+				unknownSource,
+				blockWithoutPath,
+				buildWithoutName,
+				resolveWithoutName,
+			].map((event) => event.defaultPrevented),
+		).toEqual([false, false, false, false]);
 		expect(onPrompt).not.toHaveBeenCalled();
 	});
 });
@@ -234,5 +242,87 @@ describe("building a mockup", () => {
 		expect(dialog.findAll(".cb-build__step")).toHaveLength(1);
 		await buttonWithText(dialog, "Run in background").trigger("click");
 		expect(panel.find(".u-modal").exists()).toBe(false);
+	});
+});
+
+describe("resolving the comments of a mockup", () => {
+	it("takes the mockup and the optional page from the event (fails when the source is refused, the page dropped or read as a block prompt)", () => {
+		const onPrompt = vi.fn();
+		const stop = installAssistantPromptListener(onPrompt);
+		const whole = dispatch({ prompt: "bikes", source: "resolve-comments" });
+		const onePage = dispatch({
+			prompt: "bikes",
+			source: "resolve-comments",
+			page: "home",
+		});
+		const blankPage = dispatch({
+			prompt: "bikes",
+			source: "resolve-comments",
+			page: "",
+		});
+		stop();
+		expect([whole, onePage, blankPage].map((e) => e.defaultPrevented)).toEqual([
+			true,
+			true,
+			false,
+		]);
+		expect(onPrompt.mock.calls).toEqual([
+			[{ prompt: "bikes", source: "resolve-comments" }],
+			[{ prompt: "bikes", source: "resolve-comments", page: "home" }],
+		]);
+	});
+
+	it("sends the request in a new chat without a click, naming the mockup and the tools (fails when it only fills the composer)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		harness.session.intents.push({
+			kind: "resolve-comments",
+			mockup: "bikes",
+		});
+		await flushPromises();
+		const [request] = sentOfType(harness, "user_message");
+		expect(request.conversationId).not.toBe(CONVERSATION_ID);
+		expect(request.content).toBe(
+			"Use the dms-mockup skill to resolve the open comments of mockup “bikes”. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question.",
+		);
+		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
+			"",
+		);
+	});
+
+	it("limits the request to the page when one is given (fails when the page is dropped)", async () => {
+		const harness = createHarness();
+		await openPanel(harness);
+		harness.session.intents.push({
+			kind: "resolve-comments",
+			mockup: "bikes",
+			page: "home",
+		});
+		await flushPromises();
+		const requests = sentOfType(harness, "user_message");
+		expect(requests).toHaveLength(1);
+		expect(requests[0].content).toContain(
+			"open comments of page home of mockup “bikes”, and only that page",
+		);
+	});
+
+	it("turns each source into its own intent, so only resolving and building send (fails when a source takes another one's intent)", () => {
+		expect(
+			intentOfPrompt({ prompt: "bikes", source: "resolve-comments" }),
+		).toEqual({ kind: "resolve-comments", mockup: "bikes" });
+		expect(
+			intentOfPrompt({
+				prompt: "bikes",
+				source: "resolve-comments",
+				page: "home",
+			}),
+		).toEqual({ kind: "resolve-comments", mockup: "bikes", page: "home" });
+		expect(intentOfPrompt({ prompt: "bikes", source: "build" })).toEqual({
+			kind: "build",
+			mockup: "bikes",
+		});
+		expect(
+			intentOfPrompt({ prompt: "Hi", block: BLOCK, source: "custom-zone" }),
+		).toEqual({ kind: "prompt", prompt: "Hi", block: BLOCK });
 	});
 });

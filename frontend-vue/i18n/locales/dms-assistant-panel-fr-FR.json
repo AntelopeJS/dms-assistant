@@ -406,6 +406,10 @@
 				"title_stopped": "Construction de « {mockup} » arrêtée",
 				"message_into": "Construis la maquette {mockup} dans la page existante {page} avec le skill dms-mockup-build. Mets cette page à jour ; n’en crée pas de nouvelle.",
 				"failures": "Vérifications en échec"
+			},
+			"resolve_comments": {
+				"message": "Utilise le skill dms-mockup pour résoudre les commentaires ouverts de la maquette « {mockup} ». Liste-les avec mockup_annotations, applique chacun à la spec avec mockup_patch_spec, puis résous-le avec mockup_resolve_annotation. Un commentaire est épinglé sur un bloc ou sur une page entière : traite un commentaire épinglé sur une page seule comme un commentaire sur toute la page. Laisse ouvert un commentaire que tu ne peux pas appliquer et pose-moi ta question. Termine en me disant ce qui a changé et ce qui reste ouvert, avec sa question.",
+				"message_page": "Utilise le skill dms-mockup pour résoudre les commentaires ouverts de la page {page} de la maquette « {mockup} », et de cette page seulement. Liste-les avec mockup_annotations, applique chacun à la spec avec mockup_patch_spec, puis résous-le avec mockup_resolve_annotation. Un commentaire est épinglé sur un bloc ou sur une page entière : traite un commentaire épinglé sur une page seule comme un commentaire sur toute la page. Laisse ouvert un commentaire que tu ne peux pas appliquer et pose-moi ta question. Termine en me disant ce qui a changé et ce qui reste ouvert, avec sa question."
 			}
 		},
 		"tools": {

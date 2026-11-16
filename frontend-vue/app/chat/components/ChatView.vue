@@ -178,6 +178,17 @@ const mockup = useMockupIntents({
 						page: target.pageRef,
 					}),
 		),
+	requestResolve: (intent) =>
+		sendUserMessage(
+			intent.page === undefined
+				? t("dms_assistant.panel.resolve_comments.message", {
+						mockup: intent.mockup,
+					})
+				: t("dms_assistant.panel.resolve_comments.message_page", {
+						mockup: intent.mockup,
+						page: intent.page,
+					}),
+		),
 	navigate,
 });
 const outlinedBlock = computed(() =>
@@ -398,6 +409,9 @@ const INTENT_HANDLERS: Record<
 	},
 	build: (intent) => {
 		if (intent.kind === "build") mockup.startBuild(intent);
+	},
+	"resolve-comments": (intent) => {
+		if (intent.kind === "resolve-comments") mockup.startResolve(intent);
 	},
 	focus: () => void nextTick(() => composerRef.value?.focus()),
 	approvals: () => {

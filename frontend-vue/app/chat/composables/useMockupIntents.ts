@@ -3,6 +3,7 @@ import type { MockupBlock } from "../../runtime/assistant-prompt";
 import type {
 	BuildMockupIntent,
 	MockupPromptIntent,
+	ResolveCommentsIntent,
 } from "../../runtime/panel-intents";
 import type { ConversationMessage } from "../types/conversation";
 import {
@@ -20,6 +21,8 @@ export interface MockupIntentsDeps {
 	whenConnected: (run: () => void) => void;
 	/** Sends the message that asks the agent to build `target`. */
 	requestBuild: (target: BuildTarget) => void;
+	/** Sends the message that asks the agent to resolve the open comments of a mockup. */
+	requestResolve: (intent: ResolveCommentsIntent) => void;
 	navigate: (path: string) => void;
 }
 
@@ -30,8 +33,9 @@ interface Building {
 
 /**
  * What the mockup editor hands the chat: a prompt about one of its blocks,
- * put in the composer with the block as context, or a mockup to build,
- * followed in the build dialog while its chat is the one on screen.
+ * put in the composer with the block as context, a mockup to build, followed
+ * in the build dialog while its chat is the one on screen, or the comments of
+ * a mockup to resolve, sent in a new chat.
  */
 export function useMockupIntents(deps: MockupIntentsDeps) {
 	const focusBlock = ref<MockupBlock | null>(null);
@@ -68,6 +72,11 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		deps.whenConnected(() => deps.requestBuild(target));
 	}
 
+	function startResolve(intent: ResolveCommentsIntent): void {
+		deps.newConversation();
+		deps.whenConnected(() => deps.requestResolve(intent));
+	}
+
 	/** The block of the message being sent, as its extra fields; the chip goes with it. */
 	function takeFocusBlock(): { focusBlock?: MockupBlock } {
 		const block = focusBlock.value;
@@ -80,6 +89,7 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		build,
 		takePrompt,
 		startBuild,
+		startResolve,
 		takeFocusBlock,
 		closeBuild: (): void => {
 			building.value = null;

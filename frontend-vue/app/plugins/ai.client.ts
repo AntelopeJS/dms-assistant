@@ -87,7 +87,7 @@ import {
 } from "../runtime/launcher-state";
 import { installNavigationCompleteEmitter } from "../runtime/navigation-complete";
 import { createMockupFold } from "../runtime/mockup-fold";
-import { createPanelIntents } from "../runtime/panel-intents";
+import { createPanelIntents, intentOfPrompt } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
 import { OWNER_UI_HEADERS } from "../../builder/app/runtime/owner-ui";
 import { installToggleShortcut } from "../runtime/shortcuts";
@@ -319,17 +319,7 @@ function installFold(app: App, session: AssistantSession): () => void {
 	});
 	const unmountBar = mountFoldBar(app, fold, session.launcherState);
 	const stopPrompts = installAssistantPromptListener((prompt) => {
-		session.intents.push(
-			prompt.source === "build"
-				? {
-						kind: "build",
-						mockup: prompt.prompt,
-						...(prompt.target === undefined
-							? {}
-							: { pageRef: prompt.target.pageRef }),
-					}
-				: { kind: "prompt", prompt: prompt.prompt, block: prompt.block },
-		);
+		session.intents.push(intentOfPrompt(prompt));
 		fold.unfold();
 	});
 	return () => {

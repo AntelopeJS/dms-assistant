@@ -33,8 +33,8 @@ importers:
         specifier: '>=0.14.0 <0.15.0'
         version: 0.14.0(4733d7e4752f4374387b43e760a27566)
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.5.0 <0.6.0'
-        version: 0.5.0(@antelopejs/interface-core@0.5.1)
+        specifier: 0.5.2-next.926.gdaa3203
+        version: 0.5.2-next.926.gdaa3203(@antelopejs/interface-core@0.5.1)
       '@antelopejs/mongodb':
         specifier: ~1.8.6
         version: 1.8.6
@@ -152,6 +152,11 @@ packages:
     resolution: {integrity: sha512-BlNSGyIWYP96630jdDu3jmi34cDC+ul43VI/itVZVqHdE5+3TNeCu/e8Nawm4EiwA18JaL+eqoEFqLbdu4gf9w==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <1.0.0'
+
+  '@antelopejs/interface-dms-builder@0.5.2-next.926.gdaa3203':
+    resolution: {integrity: sha512-VEk26raehO7QRuTlF7eyMuMR90qjkN9KO7qA6K4fPqGbJxKDJJOJ0JCCaiD/CZ5oeaYGeg2b0wn1YPEGY+LBTg==}
+    peerDependencies:
+      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
   '@antelopejs/interface-dms@0.14.0':
     resolution: {integrity: sha512-ijkyQtL+ofdOf3VYRb6Ws/dPhERwL4Yhe088aiOMofb9c+zUtEv+tymDSRSCh40dC7xA8AVIC8IMjEhu1/gcMA==}
@@ -315,14 +320,12 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@oxc-parser/binding-linux-x64-gnu@0.95.0':
     resolution: {integrity: sha512-8huzHlK/N98wrnYKxIcYsK8ZGBWomQchu/Mzi6m+CtbhjWOv9DmK0jQ2fUWImtluQVpTwS0uZT06d3g7XIkJrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@oxc-parser/binding-win32-x64-msvc@0.95.0':
     resolution: {integrity: sha512-BQpgl7rDjFvCIHudmUR0dCwc4ylBYZl4CPVinlD3NhkMif4WD5dADckoo5ES/KOpFyvwcbKZX+grP63cjHi26g==}
@@ -1716,6 +1719,10 @@ snapshots:
     optional: true
 
   '@antelopejs/interface-dms-builder@0.5.0(@antelopejs/interface-core@0.5.1)':
+    dependencies:
+      '@antelopejs/interface-core': 0.5.1
+
+  '@antelopejs/interface-dms-builder@0.5.2-next.926.gdaa3203(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 

@@ -28,8 +28,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.5.0 <0.6.0'
-        version: 0.5.0(@antelopejs/interface-core@0.5.1)
+        specifier: 0.5.2-next.926.gdaa3203
+        version: 0.5.2-next.926.gdaa3203(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
         specifier: '>=0.8.0 <0.9.0'
         version: 0.8.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
@@ -122,6 +122,11 @@ packages:
     resolution: {integrity: sha512-BlNSGyIWYP96630jdDu3jmi34cDC+ul43VI/itVZVqHdE5+3TNeCu/e8Nawm4EiwA18JaL+eqoEFqLbdu4gf9w==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <1.0.0'
+
+  '@antelopejs/interface-dms-builder@0.5.2-next.926.gdaa3203':
+    resolution: {integrity: sha512-VEk26raehO7QRuTlF7eyMuMR90qjkN9KO7qA6K4fPqGbJxKDJJOJ0JCCaiD/CZ5oeaYGeg2b0wn1YPEGY+LBTg==}
+    peerDependencies:
+      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
   '@antelopejs/interface-dms@0.14.0':
     resolution: {integrity: sha512-ijkyQtL+ofdOf3VYRb6Ws/dPhERwL4Yhe088aiOMofb9c+zUtEv+tymDSRSCh40dC7xA8AVIC8IMjEhu1/gcMA==}
@@ -2794,6 +2799,10 @@ snapshots:
     optional: true
 
   '@antelopejs/interface-dms-builder@0.5.0(@antelopejs/interface-core@0.5.1)':
+    dependencies:
+      '@antelopejs/interface-core': 0.5.1
+
+  '@antelopejs/interface-dms-builder@0.5.2-next.926.gdaa3203(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 

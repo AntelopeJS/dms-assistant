@@ -1,13 +1,5 @@
 import { homedir } from "node:os";
-import {
-  dirname,
-  isAbsolute,
-  join,
-  parse,
-  posix,
-  resolve,
-  sep,
-} from "node:path";
+import { join, resolve, sep } from "node:path";
 import { READ_ONLY_TOOL_PATH_KEYS } from "../constants/read-access.js";
 import { readStringArg, type ToolArgs } from "./edit-targets.js";
 
@@ -41,10 +33,20 @@ export function asTheCliReadsIt(path: string): string {
 
 const GLOB_TOOL_NAME = "Glob";
 const GLOB_PATTERN_KEY = "pattern";
-const GLOB_START = /[*?[{]/;
+const SEGMENT_SEPARATOR = /[\\/]/;
+const ROOTED_PATTERN = /^(?:[\\/~]|[A-Za-z]:)/;
+const PARENT_SEGMENT = "..";
 
 function isWithin(root: string, target: string): boolean {
   return target === root || target.startsWith(`${root}${sep}`);
+}
+
+function segmentsOf(path: string): string[] {
+  return path.split(SEGMENT_SEPARATOR);
+}
+
+function hasPaddedSegment(path: string): boolean {
+  return segmentsOf(path).some((segment) => segment !== segment.trim());
 }
 
 interface ReadPathArg {
@@ -59,34 +61,27 @@ function readPathArg(toolName: string, input: ToolArgs): ReadPathArg {
 }
 
 /**
- * The directory the CLI lists for an absolute Glob pattern: everything before
- * the last separator ahead of its first glob character, or the pattern's
- * `dirname` when it has none.
+ * Whether a Glob's pattern provably stays under its search directory: relative,
+ * with no `..` segment and no segment padded with white space. Any other
+ * pattern, an absolute or drive one included, is the person's to allow.
  */
-function absolutePatternDirectory(
-  toolName: string,
-  input: ToolArgs,
-): string | undefined {
-  if (toolName !== GLOB_TOOL_NAME) return undefined;
-  const pattern = readStringArg(input, GLOB_PATTERN_KEY)?.trim();
-  if (pattern === undefined || !isAbsolute(pattern)) return undefined;
-  const firstGlob = pattern.search(GLOB_START);
-  if (firstGlob === -1) return dirname(pattern);
-  const literal = pattern.slice(0, firstGlob);
-  const lastSeparator = Math.max(
-    literal.lastIndexOf(posix.sep),
-    literal.lastIndexOf(sep),
-  );
-  return literal.slice(0, lastSeparator) || parse(pattern).root;
+function isPatternPlaceable(toolName: string, input: ToolArgs): boolean {
+  if (toolName !== GLOB_TOOL_NAME) return true;
+  const pattern = readStringArg(input, GLOB_PATTERN_KEY);
+  if (pattern === undefined) return true;
+  const trimmed = pattern.trim();
+  if (ROOTED_PATTERN.test(trimmed) || hasPaddedSegment(trimmed)) return false;
+  return !segmentsOf(trimmed).includes(PARENT_SEGMENT);
 }
 
 /**
- * True when `toolName` is a read-only file tool whose every target resolves
- * inside one of the allowed roots, read as the CLI reads it. A missing/blank
- * path means the tool targets the project cwd (e.g. Glob/Grep with no `path`),
- * which is in-scope. A Glob whose pattern is absolute also targets that
- * pattern's directory. `..` segments are collapsed by resolve(), so they can't
- * escape a root.
+ * True only when `toolName` is a read-only file tool that provably stays inside
+ * one of the allowed roots; anything the check cannot place goes to the
+ * person, so a CLI parsing detail it misses costs a question, never an unasked
+ * read. A missing/blank path means the project cwd. A path is read as the CLI
+ * reads it (`~` expanded, trimmed) and must have no segment padded with white
+ * space; a Glob's pattern must pass {@link isPatternPlaceable}. `..` segments
+ * in a path are collapsed by resolve(), so they can't escape a root.
  */
 export function isAutoAllowedRead(
   toolName: string,
@@ -95,13 +90,9 @@ export function isAutoAllowedRead(
   cwd: string,
 ): boolean {
   const { managed, value } = readPathArg(toolName, input);
-  if (!managed) return false;
+  if (!managed || !isPatternPlaceable(toolName, input)) return false;
   const path = value === undefined ? "" : asTheCliReadsIt(value);
-  const targets = [
-    path.length === 0 ? cwd : resolve(cwd, path),
-    absolutePatternDirectory(toolName, input),
-  ].flatMap((target) => (target === undefined ? [] : [resolve(target)]));
-  return targets.every((target) =>
-    roots.some((root) => isWithin(root, target)),
-  );
+  if (hasPaddedSegment(path)) return false;
+  const target = resolve(path.length === 0 ? cwd : resolve(cwd, path));
+  return roots.some((root) => isWithin(root, target));
 }

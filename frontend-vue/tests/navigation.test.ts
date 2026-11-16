@@ -69,7 +69,7 @@ describe("Inertia host navigation", () => {
 		navigate("https://example.test/finished?view=graph#node");
 		expect(send).toHaveBeenCalledExactlyOnceWith({
 			type: "host_navigation_complete",
-			path: "/finished",
+			path: "/finished?view=graph",
 			blocksWithinMs: BLOCK_SETTLE_BUDGET_MS,
 		});
 		stop();

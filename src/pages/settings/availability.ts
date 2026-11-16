@@ -7,6 +7,7 @@ import type {
 } from "@antelopejs/interface-dms/base/form-types";
 import type { DefaultValue } from "@antelopejs/interface-dms/base/types/form-values";
 import { asFormValues, type SettingsBody } from "../../sidecar/settings-values";
+import { isSidecarDisabled } from "../../lifecycle/spawn-sidecar";
 import { isJsonBody, type JsonBody, readSidecar } from "../../sidecar";
 import { CODEX_PROVIDER, settingsText } from "./options";
 
@@ -148,14 +149,26 @@ function withDefaults(
 }
 
 /**
+ * The form with nothing to read, save or show: the sidecar that holds the
+ * settings never starts, and the status banner above says so.
+ */
+function withoutSettings(options: FormPropsSerialized): FormPropsSerialized {
+  const { fetchUrl: _fetchUrl, submitUrl: _submitUrl, ...rest } = options;
+  return { ...rest, saveMode: "none", fields: [], sections: [] };
+}
+
+/**
  * Per request, from the sidecar's settings: each field offers the sidecar's
  * default, and the agent choice and the Safe mode switch this install cannot run
- * are shown disabled, each saying why (Codex not set up, no Builder).
+ * are shown disabled, each saying why (Codex not set up, no Builder). Where
+ * the sidecar is turned off, the form is served empty, so the page shows the
+ * offline banner and no failed load.
  */
 export async function applySidecarSettings(
   _permissions: Set<string>,
   options: FormPropsSerialized,
 ): Promise<FormPropsSerialized> {
+  if (await isSidecarDisabled()) return withoutSettings(options);
   const capabilities = await readSidecar(
     SETTINGS_PATH,
     CAPABILITIES_ANSWER,

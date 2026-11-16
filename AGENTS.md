@@ -1,6 +1,6 @@
 # dms-assistant
 
-An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). `@antelopejs/dms` hosts the builder engine, implements `@antelopejs/interface-dms-builder` and serves the builder tools through its `dms` MCP server. This module keeps the external database connect routes, which run on the external-database operations of `@antelopejs/dms`. CONTRIBUTING.md explains how `scripts/import-history.sh` imported both histories.
+An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant`. It merges two former modules: the assistant (`@antelopejs/dms-ai`: an owner-only AI workspace in the dashboard, backed by a local sidecar supporting Claude Code and optional Codex) and the builder (`@antelopejs/dms-builder`: the engine that changes pages, tables and data sources as AST rewrites of the project sources, and the external database connect flow). `@antelopejs/dms` hosts the builder engine, implements `@antelopejs/interface-dms-builder` and serves the builder tools through its `dms` MCP server. This module keeps the external database connect routes, which run on the external-database operations of `@antelopejs/dms`.
 
 ## Layout
 
@@ -41,10 +41,6 @@ Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/wo
 ## Releases
 
 The release commit writes `CHANGELOG.md`. Upgrade notes for that version follow in a separate `docs(changelog)` pull request.
-
-## Orb
-
-`.agents/setup` belongs to the guardrail pack. The AntelopeJS CLI and MongoDB install and the playground build live in `.agents/playground`, which the `dms-backend` service runs before it starts.
 
 <!-- antelopejs-guardrails:start -->
 <!-- Managed by @antelopejs/tooling-configs. `antelopejs-sync` rewrites everything between these markers; write repository-specific guidance outside them. -->

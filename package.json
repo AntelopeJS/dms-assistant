@@ -1,6 +1,6 @@
 {
   "name": "@antelopejs/dms-assistant",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Development assistant for the AntelopeJS DMS: a chat panel and coding agent that edit the project in reviewable, undoable change sets, and an onboarding that starts a project from scratch or from a database you already run.",
   "keywords": [
     "ai",
@@ -25,6 +25,10 @@
   "files": [
     "dist",
     "frontend-vue",
+    "!frontend-vue/tests",
+    "!frontend-vue/builder/tests",
+    "!frontend-vue/vitest.config.ts",
+    "!frontend-vue/builder/vitest.config.ts",
     "skills",
     "sidecar/dist",
     "sidecar/package.json"
@@ -64,12 +68,6 @@
     "test:frontend": "pnpm --dir frontend-vue test",
     "test:sidecar-smoke": "pnpm run build:sidecar && node --test tests/sidecar-build.test.cjs",
     "test:installed": "node --test tests/installed-module.test.cjs",
-    "test:frontend-registration": "pnpm run build && node --test tests/frontend-registration.test.cjs",
-    "test:channels": "pnpm run build && node --test tests/channels.test.cjs tests/channel-limits.test.cjs",
-    "test:routes": "pnpm run build && node --test tests/routes.test.cjs tests/banner-routes.test.cjs",
-    "test:spawn-args": "node --test tests/spawn-args.test.cjs",
-    "test:sidecar-lifecycle": "node --test tests/sidecar-lifecycle.test.cjs",
-    "test:build-id": "node --test tests/build-id.test.cjs",
     "test:e2e": "cd sidecar && pnpm test:e2e",
     "format": "oxfmt . && pnpm --dir frontend-vue format",
     "knip": "knip --dependencies && pnpm --dir sidecar knip",

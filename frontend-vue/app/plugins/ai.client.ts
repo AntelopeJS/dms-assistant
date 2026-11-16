@@ -77,6 +77,8 @@ import { mountFoldBar } from "../runtime/fold-bar";
 import { createFrameRouter } from "../runtime/frame-router";
 import {
 	createHostCommandDispatcher,
+	createNavigator,
+	type Navigator,
 	type HostCommandDispatcher,
 } from "../runtime/host-commands";
 import {
@@ -272,6 +274,7 @@ interface SessionParts {
 	activity: AssistantActivity;
 	launcher: LauncherStateHandle;
 	currentPage: Ref<CurrentPage | null>;
+	navigate: Navigator;
 }
 
 function createSession(parts: SessionParts): AssistantSession {
@@ -281,7 +284,7 @@ function createSession(parts: SessionParts): AssistantSession {
 		status: parts.status,
 		chat: parts.chat.transport,
 		panel,
-		navigate: (path) => void deps.router.push(path),
+		navigate: parts.navigate,
 		openConversation: (conversationId) => {
 			intents.push({ kind: "open", conversationId });
 			panel.open();
@@ -448,10 +451,12 @@ function createRuntime(
 	deps: DashboardDeps,
 	controller: SidecarStatusController,
 ): AssistantRuntime {
-	const dispatchHostCommand = createHostCommandDispatcher({
+	const navigate = createNavigator({
 		router: deps.router,
 		devReload: deps.devReload,
+		location: () => window.location.pathname,
 	});
+	const dispatchHostCommand = createHostCommandDispatcher({ navigate });
 	const { client, chat } = createAssistantChannel({
 		$authFetch: deps.$authFetch,
 		controller,
@@ -494,6 +499,7 @@ function createRuntime(
 		activity,
 		launcher,
 		currentPage,
+		navigate,
 	});
 	const stops = [
 		installToggleShortcut({ onToggle: panel.toggle }),

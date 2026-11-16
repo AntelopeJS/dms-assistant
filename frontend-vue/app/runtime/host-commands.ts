@@ -26,7 +26,7 @@ const ROUTE_WAITS = 4;
 export interface NavigationContext {
 	router: RouterLike;
 	devReload: DevReloadWaiter;
-	/** The dashboard's current page, path and query: a trip whose page changed meanwhile stays. */
+	/** The dashboard's current path: a trip whose page changed meanwhile does not push. */
 	location: () => string;
 }
 

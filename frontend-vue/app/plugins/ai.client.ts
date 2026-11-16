@@ -454,7 +454,7 @@ function createRuntime(
 	const navigate = createNavigator({
 		router: deps.router,
 		devReload: deps.devReload,
-		location: () => window.location.pathname + window.location.search,
+		location: () => window.location.pathname,
 	});
 	const dispatchHostCommand = createHostCommandDispatcher({ navigate });
 	const { client, chat } = createAssistantChannel({

@@ -1,9 +1,10 @@
 /**
  * The host waits for its dev hot reload to serve the target route before
- * pushing it (up to ~15s), so this budget must outlast that wait: a shorter one
+ * pushing it: up to four of the host's 15 s waits, since a page the builder
+ * writes restarts the project. This budget must outlast that wait: a shorter one
  * would report a timeout for a navigation that is merely waiting on the reload.
  */
-export const NAVIGATE_TIMEOUT_MS = 18_000;
+export const NAVIGATE_TIMEOUT_MS = 63_000;
 
 /**
  * Slack past the time the host announced for its block report, covering the

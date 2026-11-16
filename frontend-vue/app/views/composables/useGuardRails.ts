@@ -3,6 +3,7 @@ import { OWNER_UI_HEADERS } from "../../../builder/app/runtime/owner-ui";
 import { JSON_CONTENT_TYPE } from "../../runtime/constants";
 import { AI_ROUTES } from "../constants";
 import type { GuardRailField, GuardRailValues } from "../guard-rails";
+import type { AssistantStatus } from "../types";
 import { classifyFailure, useAiData, type RequestFailure } from "./useAiData";
 
 export interface GuardRails {
@@ -11,6 +12,8 @@ export interface GuardRails {
 	 * flight over its field; none until the first read answers.
 	 */
 	values: ComputedRef<GuardRailValues | null>;
+	/** The module's configuration turns the sidecar off: the page's offline banner says so alone. */
+	isTurnedOff: ComputedRef<boolean>;
 	failure: ComputedRef<RequestFailure | null>;
 	message: ComputedRef<string>;
 	reload: () => Promise<void>;
@@ -35,6 +38,7 @@ export function useGuardRails(): GuardRails {
 	const { $authFetch } = useAuthFetch();
 	const { presentError } = useApiErrorPresenter();
 	const read = useAiData<GuardRailValues>(AI_ROUTES.settings);
+	const status = useAiData<AssistantStatus>(AI_ROUTES.status);
 	const confirmed = ref<GuardRailValues | null>(null);
 	const pending = ref<Partial<GuardRailValues>>({});
 
@@ -92,6 +96,7 @@ export function useGuardRails(): GuardRails {
 
 	return {
 		values,
+		isTurnedOff: computed(() => status.data.value?.disabled === true),
 		failure: computed(() => read.failure.value),
 		message: computed(() => read.message.value),
 		reload: () => read.refresh(),

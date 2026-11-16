@@ -77,6 +77,7 @@ function pickSwitch(row: SwitchRow, value: boolean): void {
 
 <template>
 	<DmsCardPanel
+		v-if="!guard.isTurnedOff.value"
 		:padded="false"
 		:title="t('dms_assistant.views.guard_rails.title')"
 	>

@@ -13,6 +13,7 @@ import { URadioGroup } from "./support/stand-ins/URadioGroup";
 import { USwitch } from "./support/stand-ins/USwitch";
 
 const SETTINGS_URL = "/ai/settings";
+const STATUS_URL = "/ai/status";
 const NOT_SAVED = views.dms_assistant.views.guard_rails.not_saved;
 
 const SETTINGS = {
@@ -30,6 +31,7 @@ const authFetch = vi.fn();
 const reads: string[] = [];
 const readData: Ref<Record<string, unknown> | null>[] = [];
 let answer: Record<string, unknown> | Error;
+let status: Record<string, unknown>;
 let add: ReturnType<typeof installApiErrorPresenter>["add"];
 
 const UnavailableStateStub = defineComponent({
@@ -42,9 +44,10 @@ function useApiData(url: string) {
 	reads.push(url);
 	const data = ref<Record<string, unknown> | null>(null);
 	const error = ref<unknown>(null);
-	if (answer instanceof Error) error.value = answer;
+	if (url === STATUS_URL) data.value = structuredClone(status);
+	else if (answer instanceof Error) error.value = answer;
 	else data.value = structuredClone(answer);
-	readData.push(data);
+	if (url !== STATUS_URL) readData.push(data);
 	return {
 		data,
 		error,
@@ -57,6 +60,7 @@ beforeEach(() => {
 	reads.length = 0;
 	readData.length = 0;
 	answer = SETTINGS;
+	status = { status: "ready", disabled: false };
 	authFetch.mockReset();
 	authFetch.mockResolvedValue({});
 	({ add } = installApiErrorPresenter({
@@ -292,7 +296,7 @@ describe("the Guard rails card", () => {
 			submitUrl: "/api/anything",
 		});
 		await switchOf(card, LOCAL_SKILLS).trigger("click");
-		expect(reads).toEqual([SETTINGS_URL]);
+		expect(reads.filter((url) => url !== STATUS_URL)).toEqual([SETTINGS_URL]);
 		expect(authFetch.mock.calls.map(([url]) => url)).toEqual([SETTINGS_URL]);
 	});
 
@@ -344,6 +348,16 @@ describe("the Guard rails card", () => {
 		expect(switchOf(card, DEPENDENCIES).attributes("disabled")).toBeUndefined();
 		await switchOf(card, LOCAL_SKILLS).trigger("click");
 		expect(authFetch).toHaveBeenCalledOnce();
+	});
+
+	it("shows nothing while the module's configuration turns the sidecar off, the page's offline banner saying so alone", async () => {
+		status = { status: "offline", disabled: true };
+		answer = Object.assign(new Error("Service Unavailable"), {
+			statusCode: 503,
+		});
+		const card = await mountCard();
+		expect(card.text()).toBe("");
+		expect(card.find(".unavailable").exists()).toBe(false);
 	});
 
 	it("says the assistant is not running, with no switch to flip, while the first read fails", async () => {

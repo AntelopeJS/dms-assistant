@@ -111,8 +111,9 @@ async function decide(call: ToolCall): Promise<SyncHookJSONOutput> {
  * It refuses any tool call naming a secret file, or a link that resolves to
  * one, and a Grep or Glob whose file-name glob matches one. It leaves secret
  * files out of every other Grep, which searches a whole directory. A path is
- * read as the CLI reads it, trimmed and with a leading `~` or `~/` taken as
- * the home directory, and a call the guard throws on is refused.
+ * read as the CLI reads it: trimmed, a leading `~` or `~/` taken as the home
+ * directory, and on Windows an MSYS drive path such as `/c/Users` taken as
+ * `C:\Users`. A call the guard throws on is refused.
  * The CLI runs hooks before its own permission mode, so the refusal holds
  * where a plain read under the project would be allowed unasked, and a hook
  * denial is final.

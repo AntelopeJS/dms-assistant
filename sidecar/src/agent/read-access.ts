@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
+import { PLATFORM_WINDOWS } from "../constants/native-binary.js";
 import { READ_ONLY_TOOL_PATH_KEYS } from "../constants/read-access.js";
 import { readStringArg, type ToolArgs } from "./edit-targets.js";
 
@@ -22,13 +23,26 @@ export function resolveReadRoots(
 
 const HOME_PREFIX = "~/";
 
-/** A tool's path argument as the CLI opens it: trimmed, with `~` expanded. */
+const MSYS_DRIVE_PATH = /^\/([a-z])\//i;
+
+function withWindowsDrive(path: string): string {
+  if (process.platform !== PLATFORM_WINDOWS) return path;
+  const drive = MSYS_DRIVE_PATH.exec(path)?.[1];
+  return drive === undefined
+    ? path
+    : `${drive.toUpperCase()}:${path.slice(2).replaceAll("/", "\\")}`;
+}
+
+/**
+ * A tool's path argument as the CLI opens it: trimmed, with `~` expanded, and
+ * on Windows an MSYS drive path such as `/c/Users` taken as `C:\Users`.
+ */
 export function asTheCliReadsIt(path: string): string {
   const trimmed = path.trim();
   if (trimmed === "~") return homedir();
   return trimmed.startsWith(HOME_PREFIX)
     ? join(homedir(), trimmed.slice(HOME_PREFIX.length))
-    : trimmed;
+    : withWindowsDrive(trimmed);
 }
 
 const GLOB_TOOL_NAME = "Glob";

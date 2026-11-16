@@ -7,6 +7,7 @@ import {
 	MOCKUP_ASSISTANT_PROMPT_EVENT,
 } from "../app/runtime/assistant-prompt";
 import { intentOfPrompt } from "../app/runtime/panel-intents";
+import { STORAGE_CONVERSATION_ID_KEY } from "../app/chat/constants/conversation";
 import {
 	buttonWithText,
 	CONVERSATION_ID,
@@ -324,5 +325,68 @@ describe("resolving the comments of a mockup", () => {
 		expect(
 			intentOfPrompt({ prompt: "Hi", block: BLOCK, source: "custom-zone" }),
 		).toEqual({ kind: "prompt", prompt: "Hi", block: BLOCK });
+	});
+});
+
+describe("the + New mockup card", () => {
+	const STARTER = "Draft a mockup of ";
+
+	it("takes the starter sentence and cancels the event, and refuses an empty one (fails when the source is left to the copy fallback)", () => {
+		const onPrompt = vi.fn();
+		const stop = installAssistantPromptListener(onPrompt);
+		const event = dispatch({ prompt: STARTER, source: "new-mockup" });
+		const empty = dispatch({ prompt: "", source: "new-mockup" });
+		stop();
+		expect([event, empty].map((e) => e.defaultPrevented)).toEqual([
+			true,
+			false,
+		]);
+		expect(onPrompt.mock.calls).toEqual([
+			[{ prompt: STARTER, source: "new-mockup" }],
+		]);
+	});
+
+	it("still takes the connect-data source that dms 0.20.x sends (fails when older dms lose their assistant handoff)", () => {
+		const onPrompt = vi.fn();
+		const stop = installAssistantPromptListener(onPrompt);
+		const event = dispatch({
+			prompt: "Connect this chart",
+			block: BLOCK,
+			source: "connect-data",
+		});
+		stop();
+		expect(event.defaultPrevented).toBe(true);
+		expect(intentOfPrompt(onPrompt.mock.calls[0][0])).toEqual({
+			kind: "prompt",
+			prompt: "Connect this chart",
+			block: BLOCK,
+		});
+	});
+
+	it("starts a conversation with the prompt to put in the composer and not to send (fails when it is read as a block prompt or sent)", () => {
+		expect(intentOfPrompt({ prompt: STARTER, source: "new-mockup" })).toEqual({
+			kind: "start",
+			prompt: STARTER,
+		});
+	});
+
+	it("opens a new conversation, prefills the composer focused with the caret at the end, and sends nothing (fails on an auto-send, a reused conversation, or a caret at the start)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		harness.session.intents.push(
+			intentOfPrompt({ prompt: STARTER, source: "new-mockup" }),
+		);
+		await flushPromises();
+		const textarea = panel.find("textarea").element as HTMLTextAreaElement;
+		expect(textarea.value).toBe(STARTER);
+		expect(document.activeElement).toBe(textarea);
+		expect([textarea.selectionStart, textarea.selectionEnd]).toEqual([
+			STARTER.length,
+			STARTER.length,
+		]);
+		expect(localStorage.getItem(STORAGE_CONVERSATION_ID_KEY)).not.toBe(
+			CONVERSATION_ID,
+		);
+		expect(sentOfType(harness, "user_message")).toEqual([]);
 	});
 });

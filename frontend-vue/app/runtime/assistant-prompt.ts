@@ -52,10 +52,20 @@ const ResolveCommentsPromptSchema = z.object({
 	page: z.optional(NameSchema),
 });
 
+/**
+ * "+ New mockup": `prompt` is the start of a sentence the user finishes, such
+ * as "Draft a mockup of ". It opens a new conversation and is never sent.
+ */
+const NewMockupPromptSchema = z.object({
+	prompt: z.string().check(z.minLength(1), z.maxLength(MAX_TEXT_LENGTH)),
+	source: z.literal("new-mockup"),
+});
+
 /** The `detail` of {@link MOCKUP_ASSISTANT_PROMPT_EVENT}. Mirrors `MockupAssistantPrompt` of dms. */
 export const MockupAssistantPromptSchema = z.union([
 	BuildPromptSchema,
 	ResolveCommentsPromptSchema,
+	NewMockupPromptSchema,
 	BlockPromptSchema,
 ]);
 

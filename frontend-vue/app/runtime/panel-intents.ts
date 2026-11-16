@@ -112,6 +112,8 @@ export function intentOfPrompt(prompt: MockupAssistantPrompt): PanelIntent {
 				mockup: prompt.prompt,
 				...(prompt.page === undefined ? {} : { page: prompt.page }),
 			};
+		case "new-mockup":
+			return { kind: "start", prompt: prompt.prompt };
 		default:
 			return { kind: "prompt", prompt: prompt.prompt, block: prompt.block };
 	}

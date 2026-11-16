@@ -3,7 +3,6 @@ dist/
 .antelope/
 # The production frontend workspace `ajs dms build` writes into a project
 .dms-frontend
-.amp/portals/*
 .ai/
 sidecar/.state/
 .nuxt/

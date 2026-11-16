@@ -197,6 +197,24 @@ void test("offers the sidecar's defaults on the settings form, numbers as text",
   assert.equal(model.offersDefault, undefined);
 });
 
+void test("serves the settings form empty while the sidecar is turned off, so the page loads nothing that fails", async () => {
+  reset();
+  sidecar.isDisabled = true;
+  const options = await harness.routes.applySidecarSettings(new Set(), {
+    fetchUrl: "/ai/settings",
+    submitUrl: "/ai/settings",
+    saveMode: "instant",
+    fields: [{ id: "provider", type: "select", component: { type: "x" } }],
+    sections: [{ id: "agent", label: "Agent", fieldIds: ["provider"] }],
+  });
+  assert.deepEqual(
+    [options.fetchUrl, options.submitUrl, options.saveMode],
+    [undefined, undefined, "none"],
+  );
+  assert.deepEqual([options.fields, options.sections], [[], []]);
+  assert.deepEqual(sidecar.requests, []);
+});
+
 void test("serves the Safe mode switch from the stored scope, beside the scope", async () => {
   reset();
   const settings = new harness.routes.AISettingsController();

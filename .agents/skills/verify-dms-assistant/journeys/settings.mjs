@@ -70,7 +70,7 @@ export const journeys = guarded([
   },
   {
     id: "a-stored-settings-file-is-read-back-by-the-next-start",
-    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and the single mode of a file from before the default mode was per agent is ignored",
+    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and the retired single mode is ignored so a file that holds only it starts both agents on their defaults",
     entryPoint: "<project>/node_modules/.cache/dms-assistant/settings.json, GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -93,10 +93,14 @@ export const journeys = guarded([
       ]);
       const refused = await startOn("read a mode Codex has not", { defaultModes: { claude: "plan", codex: "auto" } });
       await ctx.verify("a mode the agent has not", [same("Codex keeps its default and Claude Code its choice", modes(refused), ["plan", "normal"])]);
-      const retired = await startOn("read a file with the retired single mode", { mode: "plan" });
-      await ctx.verify("a file with the single mode of an earlier version", [
-        same("both agents keep their default", modes(retired), ["auto", "normal"]),
-        same("the retired key is not served", pick(retired, "mode"), undefined),
+      /** @type {{ mode: string, read: unknown }[]} */
+      const retired = [];
+      for (const mode of ["normal", "auto", "acceptEdits", "plan"]) {
+        retired.push({ mode, read: await startOn(`read a file with only the retired mode ${mode}`, { mode }) });
+      }
+      await ctx.verify("a file with only the retired single mode", [
+        ...retired.map(({ mode, read }) => same(`${mode} is ignored and both agents start on their defaults`, modes(read), ["auto", "normal"])),
+        ...retired.map(({ mode, read }) => same(`${mode} is not served`, pick(read, "mode"), undefined)),
       ]);
     },
   },

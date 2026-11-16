@@ -42,10 +42,6 @@ Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/wo
 
 The release commit writes `CHANGELOG.md`. Upgrade notes for that version follow in a separate `docs(changelog)` pull request.
 
-## Orb
-
-`.agents/setup` belongs to the guardrail pack. The AntelopeJS CLI and MongoDB install and the playground build live in `.agents/playground`, which the `dms-backend` service runs before it starts.
-
 <!-- antelopejs-guardrails:start -->
 <!-- Managed by @antelopejs/tooling-configs. `antelopejs-sync` rewrites everything between these markers; write repository-specific guidance outside them. -->
 

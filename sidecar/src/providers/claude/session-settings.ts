@@ -48,9 +48,9 @@ export const SDK_SESSION_SETTINGS = {
  * The `allowedTools` every session starts with. The native CLI gives a
  * session the Glob and Grep tools only when its `--tools` or `--allowedTools`
  * names one of them; otherwise it leaves them out for the `find` and `grep`
- * it embeds in Bash. Each rule covers only the working directory, the host
- * project, whose reads the CLI and the sidecar already allow unasked, so a
- * search outside it still reaches `canUseTool`.
+ * it embeds in Bash. Each rule carries a path, so it is not a bare allow of
+ * the whole tool: the CLI matches a search's path against `Read` rules only,
+ * and a search outside the project still reaches `canUseTool`.
  */
 export const SDK_SEARCH_TOOL_RULES: readonly string[] = [
   "Glob(./**)",

@@ -117,7 +117,7 @@ describe("the options a Claude session starts with", () => {
   );
 
   it(
-    "names Glob and Grep in allowedTools, each scoped to the working directory, so the native CLI keeps both tools (fails a session without them, which the CLI starts with search only through Bash, or one whose rule allows a search outside the project unasked; the CLI's tool list is shown on the real CLI, not here)",
+    "names Glob and Grep in allowedTools with a path, so the native CLI keeps both tools (fails a session without them, which the CLI starts with search only through Bash, or a bare Glob or Grep rule, which allows a search outside the project unasked; the CLI's tool list is shown on the real CLI, not here)",
     async () => {
       const session = await startedSession([]);
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h, ref, type Ref } from "vue";
 import GuardRails from "../app/components/GuardRails.vue";
 import pages from "../i18n/locales/dms-assistant-pages-en-GB.json";
 import views from "../i18n/locales/dms-assistant-views-en-GB.json";
@@ -28,6 +28,7 @@ const SETTINGS = {
 
 const authFetch = vi.fn();
 const reads: string[] = [];
+const readData: Ref<Record<string, unknown> | null>[] = [];
 let answer: Record<string, unknown> | Error;
 let add: ReturnType<typeof installApiErrorPresenter>["add"];
 
@@ -43,6 +44,7 @@ function useApiData(url: string) {
 	const error = ref<unknown>(null);
 	if (answer instanceof Error) error.value = answer;
 	else data.value = structuredClone(answer);
+	readData.push(data);
 	return {
 		data,
 		error,
@@ -53,6 +55,7 @@ function useApiData(url: string) {
 
 beforeEach(() => {
 	reads.length = 0;
+	readData.length = 0;
 	answer = SETTINGS;
 	authFetch.mockReset();
 	authFetch.mockResolvedValue({});
@@ -116,6 +119,23 @@ function checkedLabel(card: VueWrapper, row: number): string | undefined {
 
 const SAFE_MODE = "Safe mode";
 const LOCAL_SKILLS = "Use machine-local skills";
+const DEPENDENCIES = "Adding or removing dependencies";
+
+/** A save the test answers when it chooses. */
+function heldSave() {
+	let accept: (value: unknown) => void = () => undefined;
+	let refuse: (reason: unknown) => void = () => undefined;
+	const answered = new Promise((resolve, reject) => {
+		accept = resolve;
+		refuse = reject;
+	});
+	return { answered, accept, refuse };
+}
+
+const REFUSED = Object.assign(new Error("Forbidden"), {
+	statusCode: 403,
+	data: { code: "forbidden", message: "Send the header." },
+});
 
 describe("the Guard rails card", () => {
 	it.each([
@@ -280,6 +300,50 @@ describe("the Guard rails card", () => {
 		const card = await mountCard();
 		expect(card.text()).not.toContain("dms_assistant.");
 		expect(card.text()).toContain(views.dms_assistant.views.guard_rails.title);
+	});
+
+	it("keeps an accepted value when a read answered before the save lands while it is in flight", async () => {
+		const save = heldSave();
+		authFetch.mockReturnValueOnce(save.answered);
+		const card = await mountCard();
+		const control = switchOf(card, LOCAL_SKILLS);
+		await control.trigger("click");
+		readData[0].value = structuredClone(SETTINGS);
+		await flushPromises();
+		expect(control.attributes("aria-checked")).toBe("true");
+		save.accept({});
+		await flushPromises();
+		expect(control.attributes("aria-checked")).toBe("true");
+	});
+
+	it("keeps another field's save in flight showing when one save is refused", async () => {
+		const held = heldSave();
+		authFetch.mockReturnValueOnce(held.answered).mockRejectedValueOnce(REFUSED);
+		const card = await mountCard();
+		await switchOf(card, LOCAL_SKILLS).trigger("click");
+		await switchOf(card, DEPENDENCIES).trigger("click");
+		await flushPromises();
+		expect(switchOf(card, DEPENDENCIES).attributes("aria-checked")).toBe(
+			"true",
+		);
+		expect(switchOf(card, LOCAL_SKILLS).attributes("aria-checked")).toBe(
+			"true",
+		);
+		held.accept({});
+		await flushPromises();
+		expect(switchOf(card, LOCAL_SKILLS).attributes("aria-checked")).toBe(
+			"true",
+		);
+	});
+
+	it("disables only the control whose save is in flight", async () => {
+		authFetch.mockReturnValueOnce(heldSave().answered);
+		const card = await mountCard();
+		await switchOf(card, LOCAL_SKILLS).trigger("click");
+		expect(switchOf(card, LOCAL_SKILLS).attributes("disabled")).toBeDefined();
+		expect(switchOf(card, DEPENDENCIES).attributes("disabled")).toBeUndefined();
+		await switchOf(card, LOCAL_SKILLS).trigger("click");
+		expect(authFetch).toHaveBeenCalledOnce();
 	});
 
 	it("says the assistant is not running, with no switch to flip, while the first read fails", async () => {

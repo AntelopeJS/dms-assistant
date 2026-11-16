@@ -1,4 +1,4 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
+import { computed, ref, watch, type ComputedRef } from "vue";
 import { OWNER_UI_HEADERS } from "../../../builder/app/runtime/owner-ui";
 import { JSON_CONTENT_TYPE } from "../../runtime/constants";
 import { AI_ROUTES } from "../constants";
@@ -6,16 +6,19 @@ import type { GuardRailField, GuardRailValues } from "../guard-rails";
 import { classifyFailure, useAiData, type RequestFailure } from "./useAiData";
 
 export interface GuardRails {
-	/** The confirmed values; none until the first read answers. */
-	values: Readonly<Ref<GuardRailValues | null>>;
+	/**
+	 * The values shown: the confirmed ones, with the value of each save in
+	 * flight over its field; none until the first read answers.
+	 */
+	values: ComputedRef<GuardRailValues | null>;
 	failure: ComputedRef<RequestFailure | null>;
 	message: ComputedRef<string>;
 	reload: () => Promise<void>;
 	isSaving: (field: GuardRailField) => boolean;
 	/**
 	 * Saves one field on its own, with the assistant UI's header: the value
-	 * shows at once, and goes back to the confirmed one when the save is
-	 * refused or fails.
+	 * shows at once, becomes the confirmed one when the save is accepted, and
+	 * gives way to the confirmed one when the save is refused or fails.
 	 */
 	save: <Field extends GuardRailField>(
 		field: Field,
@@ -32,38 +35,50 @@ export function useGuardRails(): GuardRails {
 	const { $authFetch } = useAuthFetch();
 	const { presentError } = useApiErrorPresenter();
 	const read = useAiData<GuardRailValues>(AI_ROUTES.settings);
-	const values = ref<GuardRailValues | null>(null);
-	const saving = ref<readonly GuardRailField[]>([]);
+	const confirmed = ref<GuardRailValues | null>(null);
+	const pending = ref<Partial<GuardRailValues>>({});
 
 	watch(
 		() => read.data.value,
 		(settings) => {
-			if (settings) values.value = { ...settings };
+			if (settings) confirmed.value = { ...settings };
 		},
 		{ immediate: true },
 	);
 
+	const values = computed(() =>
+		confirmed.value ? { ...confirmed.value, ...pending.value } : null,
+	);
+
 	function isSaving(field: GuardRailField): boolean {
-		return saving.value.includes(field);
+		return Object.hasOwn(pending.value, field);
+	}
+
+	function settle(field: GuardRailField): void {
+		pending.value = Object.fromEntries(
+			Object.entries(pending.value).filter(([name]) => name !== field),
+		);
 	}
 
 	async function save<Field extends GuardRailField>(
 		field: Field,
 		value: GuardRailValues[Field],
 	): Promise<void> {
-		const current = values.value;
-		if (!current || isSaving(field)) return;
-		const confirmed = current[field];
-		values.value = { ...current, [field]: value };
-		saving.value = [...saving.value, field];
+		if (!confirmed.value || isSaving(field)) return;
+		pending.value = { ...pending.value, [field]: value };
 		try {
 			await $authFetch(AI_ROUTES.settings, {
 				method: "PUT",
 				body: JSON.stringify({ [field]: value }),
 				headers: { "content-type": JSON_CONTENT_TYPE, ...OWNER_UI_HEADERS },
 			});
+			if (confirmed.value) {
+				confirmed.value = {
+					...confirmed.value,
+					[field]: value,
+				};
+			}
 		} catch (error) {
-			if (values.value) values.value = { ...values.value, [field]: confirmed };
 			presentError(error, {
 				fallbackKey:
 					classifyFailure(error) === "unavailable"
@@ -71,7 +86,7 @@ export function useGuardRails(): GuardRails {
 						: "dms_assistant.views.guard_rails.not_saved",
 			});
 		} finally {
-			saving.value = saving.value.filter((name) => name !== field);
+			settle(field);
 		}
 	}
 

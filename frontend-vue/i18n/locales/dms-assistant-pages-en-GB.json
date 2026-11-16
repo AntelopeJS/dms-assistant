@@ -52,6 +52,10 @@
 					"name": "Assistant settings",
 					"description": "AI and Builder defaults"
 				},
+				"guard_rails": {
+					"name": "Guard rails",
+					"description": "Default approval modes, Safe mode, what always asks and machine-local skills"
+				},
 				"usage": {
 					"name": "Usage",
 					"description": "Tokens the conversations used",
@@ -232,7 +236,7 @@
 			"sections": {
 				"ai": {
 					"label": "AI",
-					"description": "Which agent answers, how it thinks, and what it may do without asking."
+					"description": "Which agent answers and how it thinks."
 				},
 				"builder": {
 					"label": "Builder",

@@ -52,6 +52,10 @@
 					"name": "Réglages de l'assistant",
 					"description": "Valeurs par défaut de l'IA et du Builder"
 				},
+				"guard_rails": {
+					"name": "Garde-fous",
+					"description": "Modes d'approbation par défaut, mode sûr, demandes systématiques et skills de la machine"
+				},
 				"usage": {
 					"name": "Consommation",
 					"description": "Les tokens utilisés par les conversations",
@@ -232,7 +236,7 @@
 			"sections": {
 				"ai": {
 					"label": "IA",
-					"description": "Quel agent répond, comment il réfléchit et ce qu'il peut faire sans demander."
+					"description": "Quel agent répond et comment il réfléchit."
 				},
 				"builder": {
 					"label": "Builder",

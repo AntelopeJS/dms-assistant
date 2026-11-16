@@ -1,7 +1,7 @@
 import { guarded } from "../guard.mjs";
 import { writeFileSync } from "node:fs";
 import { ai, check, freshSidecar, pick, same, sidecarPath, statusIs, stopBackend, text, until } from "../ai.mjs";
-import { DEFAULTS, settings, picked } from "./settings/helpers.mjs";
+import { DEFAULTS, putSettings, settings, picked } from "./settings/helpers.mjs";
 import { pageJourneys } from "./settings/page.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -25,7 +25,7 @@ export const journeys = guarded([
   },
   {
     id: "every-setting-saves-alone-and-survives-a-restart",
-    title: "each field saves on its own, the others stay, and all of them survive a sidecar restart and a backend restart",
+    title: "each field saves on its own, the form's fields without the assistant UI's header and each guard rail with it, the others stay, and all of them survive a sidecar restart and a backend restart",
     entryPoint: "PUT /ai/settings, POST /ai/sidecar/restart",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -35,7 +35,7 @@ export const journeys = guarded([
       ];
       const expected = { ...DEFAULTS };
       for (const [key, value] of changes) {
-        const answer = await ai(ctx, `save ${key}`, "PUT", "/settings", { body: { [key]: value } });
+        const answer = await putSettings(ctx, `save ${key}`, { [key]: value });
         expected[key] = value;
         await ctx.verify(`${key} saved alone`, [same("the answer is the whole form", picked(answer.body), expected), same("a read agrees", picked(await settings(ctx, `read after ${key}`)), expected)]);
       }
@@ -54,10 +54,10 @@ export const journeys = guarded([
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
       const initial = await settings(ctx, "read the default");
-      const off = await ai(ctx, "switch Safe mode off", "PUT", "/settings", { body: { safeMode: false } });
+      const off = await putSettings(ctx, "switch Safe mode off", { safeMode: false });
       const stored = await settings(ctx, "read after off");
-      const on = await ai(ctx, "switch Safe mode on", "PUT", "/settings", { body: { safeMode: true } });
-      const refused = await ai(ctx, "a switch that is not a boolean", "PUT", "/settings", { body: { safeMode: "yes" } });
+      const on = await putSettings(ctx, "switch Safe mode on", { safeMode: true });
+      const refused = await putSettings(ctx, "a switch that is not a boolean", { safeMode: "yes" });
       await ctx.verify("the switch and the scope", [
         same("on by default, beside the scope", [pick(initial, "safeMode"), pick(initial, "generationMode")], [true, "safe"]),
         same("off answers vibe", [pick(off.body, "safeMode"), pick(off.body, "generationMode")], [false, "vibe"]),
@@ -130,16 +130,41 @@ export const journeys = guarded([
       ];
       const checks = [];
       for (const [body, reason] of refused) {
-        const answer = await ai(ctx, `refuse ${JSON.stringify(body)}`, "PUT", "/settings", { body });
+        const answer = await putSettings(ctx, `refuse ${JSON.stringify(body)}`, body);
         checks.push(same(`${JSON.stringify(body)} is 400`, answer.status, 400), check(`${JSON.stringify(body)} says why`, reason.test(text(answer.body, "message")), text(answer.body, "message")));
       }
       await ctx.verify("every refusal", checks);
-      const odd = await ai(ctx, "unknown field and the locked switch", "PUT", "/settings", { body: { nonsense: 1, mode: "plan", alwaysAskDeletions: false } });
+      const odd = await putSettings(ctx, "unknown field and the locked switch", { nonsense: 1, mode: "plan", alwaysAskDeletions: false });
       await ctx.verify("what cannot be written", [
         same("200", odd.status, 200),
         same("deletions still ask", pick(odd.body, "alwaysAskDeletions"), true),
         same("the unknown field is not stored", pick(odd.body, "nonsense"), undefined),
         same("nothing else moved", picked(await settings(ctx, "read")), DEFAULTS),
+      ]);
+    },
+  },
+  {
+    id: "a-guard-rail-needs-the-assistant-uis-header",
+    title: "the owner's PUT of a guard rail (a default mode, Safe mode, an ask, local skills, or a key the module does not name as free) without the assistant UI's header answers 403 and changes nothing, a free key mixed with one is refused whole, a free key saves without the header, and the same guard rail with the header saves",
+    entryPoint: "PUT /ai/settings",
+    async run(/** @type {Ctx} */ ctx) {
+      await freshSidecar(ctx);
+      const forged = [
+        { defaultModeClaude: "plan" }, { defaultModeCodex: "plan" }, { safeMode: false }, { generationMode: "vibe" }, { defaultModes: { claude: "plan" } },
+        { alwaysAskDependencies: false }, { alwaysAskBlockRemoval: false }, { allowLocalSkills: true }, { thinking: "high", allowLocalSkills: true }, { nonsense: 1 },
+      ];
+      const checks = [];
+      for (const body of forged) {
+        const answer = await ai(ctx, `without the header ${JSON.stringify(body)}`, "PUT", "/settings", { body });
+        checks.push(same(`${JSON.stringify(body)} is refused`, [answer.status, text(answer.body, "code")], [403, "forbidden"]));
+      }
+      await ctx.verify("the forged writes", [...checks, same("and nothing changed", picked(await settings(ctx, "read after the refusals")), DEFAULTS)]);
+      const free = await ai(ctx, "a free key without the header", "PUT", "/settings", { body: { thinking: "high" } });
+      const marked = await putSettings(ctx, "a guard rail with the header", { allowLocalSkills: true });
+      await ctx.verify("what the form and the card may write", [
+        same("a free key saves without the header", [free.status, pick(free.body, "thinking")], [200, "high"]),
+        same("a guard rail saves with it", [marked.status, pick(marked.body, "allowLocalSkills")], [200, true]),
+        same("a read agrees", picked(await settings(ctx, "read")), { ...DEFAULTS, thinking: "high", allowLocalSkills: true }),
       ]);
     },
   },

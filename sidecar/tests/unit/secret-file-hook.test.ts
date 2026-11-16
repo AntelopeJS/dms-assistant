@@ -83,6 +83,19 @@ describe("the secret file hook on links", () => {
     },
   );
 
+  it.runIf(process.platform === "win32").each([
+    ["Read", "file_path"],
+    ["Grep", "path"],
+  ])(
+    "refuses a %s of a link to .env named as /c/..., which the CLI reads as C:\\...",
+    async (tool, key) => {
+      const [drive = "", ...rest] = join(dir, "config.txt").split(/[\\/]/);
+      const msysPath = `/${drive.replace(":", "").toLowerCase()}/${rest.join("/")}`;
+      const input = { pattern: "TOKEN", [key]: msysPath };
+      expect(await decide(tool, input)).toEqual(DENIAL);
+    },
+  );
+
   it("lets a link to .env.example through", async () => {
     expect(await decide("Read", { file_path: "template.txt" })).toEqual({
       continue: true,

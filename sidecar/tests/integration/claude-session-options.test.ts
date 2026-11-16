@@ -117,6 +117,16 @@ describe("the options a Claude session starts with", () => {
   );
 
   it(
+    "names Glob and Grep in allowedTools with a path, so the native CLI keeps both tools (fails a session without them, which the CLI starts with search only through Bash, or a bare Glob or Grep rule, which allows a search outside the project unasked; the CLI's tool list is shown on the real CLI, not here)",
+    async () => {
+      const session = await startedSession([]);
+
+      expect(session?.allowedTools).toEqual(["Glob(./**)", "Grep(./**)"]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "allows only the first source's copy of a skill two sources name alike (fails a loadout that allows every catalog id)",
     async () => {
       const workflow = join(dir, "workflow");

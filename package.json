@@ -1,6 +1,6 @@
 {
   "name": "@antelopejs/dms-assistant",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Development assistant for the AntelopeJS DMS: a chat panel and coding agent that edit the project in reviewable, undoable change sets, and an onboarding that starts a project from scratch or from a database you already run.",
   "keywords": [
     "ai",
@@ -25,6 +25,10 @@
   "files": [
     "dist",
     "frontend-vue",
+    "!frontend-vue/tests",
+    "!frontend-vue/builder/tests",
+    "!frontend-vue/vitest.config.ts",
+    "!frontend-vue/builder/vitest.config.ts",
     "skills",
     "sidecar/dist",
     "sidecar/package.json"

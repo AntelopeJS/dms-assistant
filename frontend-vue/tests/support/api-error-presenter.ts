@@ -4,10 +4,13 @@ import { useApiErrorPresenter } from "../../../node_modules/@antelopejs/dms/fron
 
 afterEach(() => vi.unstubAllEnvs());
 
-export function installApiErrorPresenter() {
+export function installApiErrorPresenter(
+	extraMessages: Record<string, string> = {},
+) {
 	vi.stubEnv("SSR", false);
 	const add = vi.fn(() => ({ id: "notice" }));
 	const messages: Record<string, string> = {
+		...extraMessages,
 		"error.read_only_demo": "This demo is read-only.",
 		"error.500.description": "Something went wrong.",
 		"dms_assistant.views.error.description":

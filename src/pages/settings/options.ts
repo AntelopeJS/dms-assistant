@@ -11,8 +11,6 @@ export function settingsText(...segments: string[]): string {
 interface ChoiceDeclaration {
   value: string;
   icon?: string;
-  /** The description key under `<field>.<value>`, `description` by default. */
-  descriptionKey?: string;
   /** Shown, never picked. */
   disabled?: boolean;
 }
@@ -22,10 +20,10 @@ function choices(
   field: string,
   declarations: readonly ChoiceDeclaration[],
 ): VocabularyOption[] {
-  return declarations.map(({ value, icon, descriptionKey, disabled }) => ({
+  return declarations.map(({ value, icon, disabled }) => ({
     value,
     label: settingsText(field, value, "label"),
-    description: settingsText(field, value, descriptionKey ?? "description"),
+    description: settingsText(field, value, "description"),
     icon,
     disabled,
   }));
@@ -51,36 +49,6 @@ export const THINKING_OPTIONS = labels("thinking", [
   "low",
   "medium",
   "high",
-]);
-
-const NORMAL_MODE: ChoiceDeclaration = {
-  value: "normal",
-  icon: "i-ph-hand-palm",
-};
-const AUTO_REVIEW_MODE: ChoiceDeclaration = {
-  value: "auto",
-  icon: "i-ph-seal-check",
-};
-const ACCEPT_EDITS_MODE: ChoiceDeclaration = {
-  value: "acceptEdits",
-  icon: "i-ph-pencil-simple-line",
-};
-const PLAN_MODE: ChoiceDeclaration = {
-  value: "plan",
-  icon: "i-ph-list-checks",
-};
-
-export const CLAUDE_MODE_OPTIONS = choices("mode", [
-  NORMAL_MODE,
-  AUTO_REVIEW_MODE,
-  ACCEPT_EDITS_MODE,
-  PLAN_MODE,
-]);
-
-export const CODEX_MODE_OPTIONS = choices("mode", [
-  NORMAL_MODE,
-  { ...ACCEPT_EDITS_MODE, descriptionKey: "description_codex" },
-  PLAN_MODE,
 ]);
 
 /** Numeric settings travel as strings: a select's values are text. */

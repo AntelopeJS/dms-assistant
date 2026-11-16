@@ -152,6 +152,8 @@ export interface AssistantStatus {
 	version?: string;
 	lastError?: string;
 	checkpointsAvailable: boolean;
+	/** The module's configuration turns the sidecar off. */
+	disabled?: boolean;
 }
 
 /** One fact of a change set, a row of a DmsKeyValueList. */

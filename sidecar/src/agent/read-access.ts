@@ -1,5 +1,13 @@
 import { homedir } from "node:os";
-import { isAbsolute, join, resolve, sep } from "node:path";
+import {
+  dirname,
+  isAbsolute,
+  join,
+  parse,
+  posix,
+  resolve,
+  sep,
+} from "node:path";
 import { READ_ONLY_TOOL_PATH_KEYS } from "../constants/read-access.js";
 import { readStringArg, type ToolArgs } from "./edit-targets.js";
 
@@ -33,7 +41,7 @@ export function asTheCliReadsIt(path: string): string {
 
 const GLOB_TOOL_NAME = "Glob";
 const GLOB_PATTERN_KEY = "pattern";
-const GLOB_SYNTAX = /[*?[\]{}]/;
+const GLOB_START = /[*?[{]/;
 
 function isWithin(root: string, target: string): boolean {
   return target === root || target.startsWith(`${root}${sep}`);
@@ -50,20 +58,26 @@ function readPathArg(toolName: string, input: ToolArgs): ReadPathArg {
   return { managed: true, value: readStringArg(input, key) };
 }
 
-/** The directory an absolute Glob pattern lists, up to its first glob segment. */
+/**
+ * The directory the CLI lists for an absolute Glob pattern: everything before
+ * the last separator ahead of its first glob character, or the pattern's
+ * `dirname` when it has none.
+ */
 function absolutePatternDirectory(
   toolName: string,
   input: ToolArgs,
 ): string | undefined {
   if (toolName !== GLOB_TOOL_NAME) return undefined;
-  const pattern = readStringArg(input, GLOB_PATTERN_KEY);
-  if (pattern === undefined) return undefined;
-  const expanded = asTheCliReadsIt(pattern);
-  if (!isAbsolute(expanded)) return undefined;
-  const segments = expanded.split(sep);
-  const firstGlob = segments.findIndex((segment) => GLOB_SYNTAX.test(segment));
-  const literal = firstGlob === -1 ? segments : segments.slice(0, firstGlob);
-  return literal.join(sep) || sep;
+  const pattern = readStringArg(input, GLOB_PATTERN_KEY)?.trim();
+  if (pattern === undefined || !isAbsolute(pattern)) return undefined;
+  const firstGlob = pattern.search(GLOB_START);
+  if (firstGlob === -1) return dirname(pattern);
+  const literal = pattern.slice(0, firstGlob);
+  const lastSeparator = Math.max(
+    literal.lastIndexOf(posix.sep),
+    literal.lastIndexOf(sep),
+  );
+  return literal.slice(0, lastSeparator) || parse(pattern).root;
 }
 
 /**

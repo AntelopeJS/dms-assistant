@@ -58,15 +58,18 @@ describe("isAutoAllowedRead", () => {
     expect(isAutoAllowedRead("Grep", {}, ROOTS, CWD)).toBe(true);
   });
 
-  /** Fails on a check that resolves `~/…` or a padded path under the cwd, or ignores an absolute Glob pattern, while the CLI searches the home directory or the pattern's own directory. */
-  it("reads a path as the CLI does: `~` expanded, spaces trimmed, an absolute Glob pattern as its directory", () => {
+  /** Fails on a check that resolves `~/…` or a padded path under the cwd, ignores an absolute Glob pattern, or ends its directory at another character than the CLI's (`]`, `}`) or keeps a glob-free pattern whole, while the CLI searches the home directory, the pattern's directory or a root's parent. */
+  it("reads a path as the CLI does: `~` expanded, spaces trimmed, an absolute Glob pattern as the directory the CLI lists", () => {
     const escapes: [string, Record<string, string>][] = [
       ["Grep", { pattern: "PRIVATE KEY", path: "~/.ssh" }],
       ["Glob", { pattern: "*", path: "~" }],
       ["Grep", { pattern: "x", path: " /home/user/.aws" }],
       ["Glob", { pattern: "/home/user/.ssh/*" }],
-      ["Glob", { pattern: "~/.ssh/*" }],
       ["Glob", { pattern: "/work/dms/../../etc/*" }],
+      ["Glob", { pattern: "/work/dms/x]/../../outside/*" }],
+      ["Glob", { pattern: "/work/dms/x}/../../outside/*" }],
+      ["Glob", { pattern: "/work/dms" }],
+      ["Glob", { pattern: "/work/dms/" }],
     ];
     for (const [tool, input] of escapes) {
       expect(isAutoAllowedRead(tool, input, ROOTS, CWD)).toBe(false);
@@ -81,6 +84,14 @@ describe("isAutoAllowedRead", () => {
     ).toBe(true);
     expect(
       isAutoAllowedRead("Grep", { pattern: "x", path: " src " }, ROOTS, CWD),
+    ).toBe(true);
+    expect(
+      isAutoAllowedRead(
+        "Glob",
+        { pattern: "/work/dms/app/page.vue" },
+        ROOTS,
+        CWD,
+      ),
     ).toBe(true);
   });
 

@@ -35,9 +35,16 @@ const CLIENT_TOKEN = "client-secret";
  *   requests: SidecarRequest[],
  *   routes: Map<string, SidecarAnswer>,
  *   isDown: boolean,
+ *   isDisabled: boolean,
  * }}
  */
-const sidecar = { port: null, requests: [], routes: new Map(), isDown: false };
+const sidecar = {
+  port: null,
+  requests: [],
+  routes: new Map(),
+  isDown: false,
+  isDisabled: false,
+};
 
 /**
  * @param {string} method
@@ -102,6 +109,15 @@ function loadControllers() {
     JSONBody: decorator,
     RawBody: decorator,
   };
+  const lifecycle = {
+    ensureSidecarRunning: async () => undefined,
+    getSidecarPort: () => (sidecar.isDown ? null : sidecar.port),
+    getSidecarClientToken: () => CLIENT_TOKEN,
+    hasSidecarGivenUp: () => false,
+    isSidecarDisabled: async () => sidecar.isDisabled,
+    isSidecarRunning: () => !sidecar.isDown,
+    restartSidecar: async () => undefined,
+  };
   /** @type {Map<string, unknown>} */
   const mocks = new Map([
     ["@antelopejs/interface-api", api],
@@ -109,18 +125,8 @@ function loadControllers() {
       "@antelopejs/interface-dms/auth",
       { AuthOwnerOnly: decorator, AuthRawUser: decorator },
     ],
-    [
-      "../lifecycle/spawn-sidecar",
-      {
-        ensureSidecarRunning: async () => undefined,
-        getSidecarPort: () => (sidecar.isDown ? null : sidecar.port),
-        getSidecarClientToken: () => CLIENT_TOKEN,
-        hasSidecarGivenUp: () => false,
-        isSidecarDisabled: () => false,
-        isSidecarRunning: () => !sidecar.isDown,
-        restartSidecar: async () => undefined,
-      },
-    ],
+    ["../lifecycle/spawn-sidecar", lifecycle],
+    ["../../lifecycle/spawn-sidecar", lifecycle],
   ]);
   const restoreRequire = installRequireMocks(mocks);
   try {
@@ -166,6 +172,7 @@ function reset() {
   sidecar.requests = [];
   sidecar.routes = new Map();
   sidecar.isDown = false;
+  sidecar.isDisabled = false;
 }
 
 /**

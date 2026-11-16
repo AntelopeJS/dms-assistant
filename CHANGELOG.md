@@ -2,6 +2,36 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.7
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.6...v0.2.7)
+
+### 🩹 Fixes
+
+- **settings:** Show only the offline notice while the sidecar is off ([#82](https://github.com/AntelopeJS/dms-assistant/pull/82))
+- Keep the frontend-vue test files out of the published package ([#93](https://github.com/AntelopeJS/dms-assistant/pull/93))
+
+### 📦 Build
+
+- Move to @antelopejs/tooling-configs 0.8 and the three-tier CI ([#77](https://github.com/AntelopeJS/dms-assistant/pull/77))
+
+### 🏡 Chore
+
+- **ci:** Remove the claude-freshness check ([#76](https://github.com/AntelopeJS/dms-assistant/pull/76))
+- Remove the leftovers of the dms-ai and dms-builder merge ([#80](https://github.com/AntelopeJS/dms-assistant/pull/80))
+- Remove the Orb section and the Amp scripts ([#91](https://github.com/AntelopeJS/dms-assistant/pull/91))
+
+### ✅ Tests
+
+- **verify:** Expect the retired single mode to be ignored at the next start ([#86](https://github.com/AntelopeJS/dms-assistant/pull/86))
+- **formal:** Add formal targets for the assistant's ownership, deletion and stored-state rules ([#83](https://github.com/AntelopeJS/dms-assistant/pull/83))
+- **formal:** Add formal targets for connection analysis and agent file access ([#87](https://github.com/AntelopeJS/dms-assistant/pull/87))
+- **formal:** Read generated stored entries back from JSON in the load check ([#88](https://github.com/AntelopeJS/dms-assistant/pull/88))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.2.6
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.5...v0.2.6)

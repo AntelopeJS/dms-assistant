@@ -4,6 +4,7 @@ import { connect } from "node:net";
 import { guarded } from "../guard.mjs";
 import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, stopBackend, text, until, withEnv } from "../ai.mjs";
 import { mcpJsonJourneys } from "./lifecycle/mcp-json.mjs";
+import { settingsWithoutSidecar } from "./lifecycle/settings-page.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
@@ -218,13 +219,7 @@ export const journeys = guarded([
           same("a write is unavailable too", put.status, 503),
           same("a figure answers empty, not an error", usage.status, 200),
         ]);
-        const tab = await ctx.tab();
-        await tab.signIn("admin");
-        await tab.goto("/modules/ai/settings");
-        await ctx.verify("the Settings page", [
-          pageHas(tab, "says it is turned off", /Its sidecar is turned off in this module's configuration\./),
-          pageHas(tab, "has no Restart assistant button", /Restart assistant/, false),
-        ]);
+        await ctx.verify("the Settings page", await settingsWithoutSidecar(ctx));
       });
       const back = await statusIs(ctx, READY, 60_000);
       await ctx.verify("without the variable it starts again", [same("ready", text(back.status, "status"), "ready")]);
@@ -261,8 +256,8 @@ export const journeys = guarded([
   },
   {
     id: "a-production-start-runs-no-sidecar",
-    title: "a production start (ajs project start, NODE_ENV unset) reports the sidecar disabled and not running, and writes no sidecar.lock",
-    entryPoint: "ajs project start, GET /ai/sidecar-info, /ai/status",
+    title: "a production start (ajs project start, NODE_ENV unset) reports the sidecar disabled and not running, writes no sidecar.lock, and the Settings page shows the offline banner with no failed load and no error toast",
+    entryPoint: "ajs project start, GET /ai/sidecar-info, /ai/status, the Settings page",
     backend: "production",
     async run(/** @type {Ctx} */ ctx) {
       await stopBackend(ctx);
@@ -277,6 +272,7 @@ export const journeys = guarded([
         same("no sidecar.lock", existsSync(sidecarPath(ctx, "sidecar.lock")), false),
         same("no sidecar folder, which a spawn creates before the sidecar runs", existsSync(sidecarPath(ctx)), false),
       ]);
+      await ctx.verify("the Settings page", await settingsWithoutSidecar(ctx));
     },
   },
   ...mcpJsonJourneys,

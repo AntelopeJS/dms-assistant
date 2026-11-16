@@ -321,12 +321,27 @@ describe("the PreToolUse guard in Plan only", () => {
     );
   });
 
-  /** Fails on a guard that asks in plan about an edit, a read outside the roots, a sub-agent or a question, which the CLI settles itself. */
+  /** Fails on a guard that leaves a read outside the roots to the CLI, whose plan classifier runs it unasked: a Grep of `~` for private keys, say. */
+  it("hands a read, a listing or a search outside the roots to the person", async () => {
+    const calls = [
+      call("Read", { file_path: "/etc/hostname" }),
+      call("Glob", { pattern: "*", path: "/etc/ssh" }),
+      call("Grep", { pattern: "PRIVATE KEY", path: homedir() }),
+      call("Grep", { pattern: "x", path: join(ROOT, "..", "other") }),
+    ];
+    expect(await decideAll(calls, "plan", "vibe")).toEqual(each(calls, ASK));
+  });
+
+  /** Fails on a guard that asks in plan about an edit, a read inside the roots or of the plan file, a sub-agent or a question, which the CLI settles itself. */
   it("leaves edits, reads, sub-agents, questions and scheduling to the CLI", async () => {
     const calls = [
       ...GIT_HOOK_FILES,
       ...LEFT_TO_THE_CLI,
-      call("Read", { file_path: "/etc/hostname" }),
+      call("Glob", { pattern: "**/*.ts" }),
+      call("Grep", { pattern: "x", path: join(ROOT, "src") }),
+      call("Read", {
+        file_path: join(homedir(), ".claude", "plans", "p.md"),
+      }),
       call("Agent", { prompt: "look around" }),
       call("Agent", { prompt: "look around", isolation: "worktree" }),
       call("SendMessage", { to: "peer", message: "hi" }),

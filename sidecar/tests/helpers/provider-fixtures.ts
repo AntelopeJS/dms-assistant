@@ -230,6 +230,7 @@ const TRACED_CLAUDE_ENTRY = z.object({
     )
     .optional(),
   disallowedTools: z.array(z.string()).optional(),
+  allowedTools: z.array(z.string()).optional(),
   settings: z
     .looseObject({
       disableSkillShellExecution: z.boolean().optional(),

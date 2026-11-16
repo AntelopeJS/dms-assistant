@@ -2,14 +2,13 @@ import type {
   HookCallback,
   SyncHookJSONOutput,
 } from "@anthropic-ai/claude-agent-sdk";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { z } from "zod";
 import {
   globReachesSecretFile,
   reachesSecretFile,
   SECRET_FILE_SEARCH_EXCLUSIONS,
 } from "../../agent/project-secrets.js";
+import { asTheCliReadsIt } from "../../agent/read-access.js";
 import { PRE_TOOL_USE_HOOK_EVENT } from "../../constants/claude.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import {
@@ -47,16 +46,6 @@ const toolCallSchema = z.object({
 });
 
 type ToolCall = z.infer<typeof toolCallSchema>;
-
-const HOME_PREFIX = "~/";
-
-function asTheCliReadsIt(path: string): string {
-  const trimmed = path.trim();
-  if (trimmed === "~") return homedir();
-  return trimmed.startsWith(HOME_PREFIX)
-    ? join(homedir(), trimmed.slice(HOME_PREFIX.length))
-    : trimmed;
-}
 
 async function pathReachesSecret({
   cwd,

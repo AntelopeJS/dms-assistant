@@ -1,4 +1,5 @@
-import { isAbsolute, resolve, sep } from "node:path";
+import { homedir } from "node:os";
+import { join, resolve, sep } from "node:path";
 import { READ_ONLY_TOOL_PATH_KEYS } from "../constants/read-access.js";
 import { readStringArg, type ToolArgs } from "./edit-targets.js";
 
@@ -19,8 +20,33 @@ export function resolveReadRoots(
   return [...roots];
 }
 
+const HOME_PREFIX = "~/";
+
+/** A tool's path argument as the CLI opens it: trimmed, with `~` expanded. */
+export function asTheCliReadsIt(path: string): string {
+  const trimmed = path.trim();
+  if (trimmed === "~") return homedir();
+  return trimmed.startsWith(HOME_PREFIX)
+    ? join(homedir(), trimmed.slice(HOME_PREFIX.length))
+    : trimmed;
+}
+
+const GLOB_TOOL_NAME = "Glob";
+const GLOB_PATTERN_KEY = "pattern";
+const SEGMENT_SEPARATOR = /[\\/]/;
+const ROOTED_PATTERN = /^(?:[\\/~]|[A-Za-z]:)/;
+const PARENT_SEGMENT = "..";
+
 function isWithin(root: string, target: string): boolean {
   return target === root || target.startsWith(`${root}${sep}`);
+}
+
+function segmentsOf(path: string): string[] {
+  return path.split(SEGMENT_SEPARATOR);
+}
+
+function hasPaddedSegment(path: string): boolean {
+  return segmentsOf(path).some((segment) => segment !== segment.trim());
 }
 
 interface ReadPathArg {
@@ -35,10 +61,27 @@ function readPathArg(toolName: string, input: ToolArgs): ReadPathArg {
 }
 
 /**
- * True when `toolName` is a read-only file tool whose target resolves inside one
- * of the allowed roots. A missing/blank path means the tool targets the project
- * cwd (e.g. Glob/Grep with no `path`), which is in-scope. `..` segments are
- * collapsed by resolve(), so they can't escape a root.
+ * Whether a Glob's pattern provably stays under its search directory: relative,
+ * with no `..` segment and no segment padded with white space. Any other
+ * pattern, an absolute or drive one included, is the person's to allow.
+ */
+function isPatternPlaceable(toolName: string, input: ToolArgs): boolean {
+  if (toolName !== GLOB_TOOL_NAME) return true;
+  const pattern = readStringArg(input, GLOB_PATTERN_KEY);
+  if (pattern === undefined) return true;
+  const trimmed = pattern.trim();
+  if (ROOTED_PATTERN.test(trimmed) || hasPaddedSegment(trimmed)) return false;
+  return !segmentsOf(trimmed).includes(PARENT_SEGMENT);
+}
+
+/**
+ * True only when `toolName` is a read-only file tool that provably stays inside
+ * one of the allowed roots; anything the check cannot place goes to the
+ * person, so a CLI parsing detail it misses costs a question, never an unasked
+ * read. A missing/blank path means the project cwd. A path is read as the CLI
+ * reads it (`~` expanded, trimmed) and must have no segment padded with white
+ * space; a Glob's pattern must pass {@link isPatternPlaceable}. `..` segments
+ * in a path are collapsed by resolve(), so they can't escape a root.
  */
 export function isAutoAllowedRead(
   toolName: string,
@@ -47,8 +90,9 @@ export function isAutoAllowedRead(
   cwd: string,
 ): boolean {
   const { managed, value } = readPathArg(toolName, input);
-  if (!managed) return false;
-  if (value === undefined || value.length === 0) return true;
-  const abs = isAbsolute(value) ? resolve(value) : resolve(cwd, value);
-  return roots.some((root) => isWithin(root, abs));
+  if (!managed || !isPatternPlaceable(toolName, input)) return false;
+  const path = value === undefined ? "" : asTheCliReadsIt(value);
+  if (hasPaddedSegment(path)) return false;
+  const target = resolve(path.length === 0 ? cwd : resolve(cwd, path));
+  return roots.some((root) => isWithin(root, target));
 }

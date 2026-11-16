@@ -70,7 +70,7 @@ export const journeys = guarded([
   },
   {
     id: "a-stored-settings-file-is-read-back-by-the-next-start",
-    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and a file from before the default mode was per agent seeds both agents from its one mode",
+    title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and the retired single mode is ignored so a file that holds only it starts both agents on their defaults",
     entryPoint: "<project>/node_modules/.cache/dms-assistant/settings.json, GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -93,14 +93,14 @@ export const journeys = guarded([
       ]);
       const refused = await startOn("read a mode Codex has not", { defaultModes: { claude: "plan", codex: "auto" } });
       await ctx.verify("a mode the agent has not", [same("Codex keeps its default and Claude Code its choice", modes(refused), ["plan", "normal"])]);
-      const planned = await startOn("read a file with the old mode", { mode: "plan" });
-      const reviewed = await startOn("read a file with the old Auto review", { mode: "auto" });
-      const asked = await startOn("read a file with the old Ask first", { mode: "normal" });
-      await ctx.verify("a file with the one mode of the earlier version", [
-        same("Plan only seeds both agents", modes(planned), ["plan", "plan"]),
-        same("Auto review, which Codex has not, seeds Ask first on both", modes(reviewed), ["normal", "normal"]),
-        same("the old Ask first was never a choice over the default, so Claude Code keeps Auto review", modes(asked), ["auto", "normal"]),
-        same("the old key is not served", pick(asked, "mode"), undefined),
+      /** @type {{ mode: string, read: unknown }[]} */
+      const retired = [];
+      for (const mode of ["normal", "auto", "acceptEdits", "plan"]) {
+        retired.push({ mode, read: await startOn(`read a file with only the retired mode ${mode}`, { mode }) });
+      }
+      await ctx.verify("a file with only the retired single mode", [
+        ...retired.map(({ mode, read }) => same(`${mode} is ignored and both agents start on their defaults`, modes(read), ["auto", "normal"])),
+        ...retired.map(({ mode, read }) => same(`${mode} is not served`, pick(read, "mode"), undefined)),
       ]);
     },
   },

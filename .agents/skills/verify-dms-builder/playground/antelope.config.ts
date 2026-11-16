@@ -39,11 +39,7 @@ export default defineConfig({
       config: { builder: { api: builderApi() } },
     },
     dms: {
-      source: {
-        type: "package",
-        package: "@antelopejs/dms",
-        version: ">=0.20.5 <0.21.0",
-      },
+      source: { type: "local", path: "node_modules/@antelopejs/dms" },
       config: {
         apiBaseUrl: "${@api.API_PUBLIC_BASE_URL}",
         clientBaseUrl: dmsClientUrl,

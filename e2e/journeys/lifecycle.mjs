@@ -18,6 +18,7 @@ const PRODUCTION_SETTLE_MS = 5000;
 export const journeys = guarded([
   {
     id: "the-status-reads-ready-and-names-the-sidecar",
+    tag: "@smoke",
     title: "the status and its banner describe a ready assistant, the probe says the sidecar runs, and the health route answers without a session",
     entryPoint: "GET /ai/status, /ai/status/banner, /ai/sidecar-info, /ai/health",
     async run(/** @type {Ctx} */ ctx) {

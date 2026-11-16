@@ -65,6 +65,7 @@ export const journeys = guarded([
   },
   {
     id: "the-log-lists-every-call-with-its-tabs-filters-and-pages",
+    tag: "@smoke",
     title: "seeded calls fill the log newest first, 25 rows a page; each tab, the tool, agent and read-only filters, the search over tool, target and conversation, and the periods give exactly their rows",
     entryPoint: "GET /ai/activity, /modules/ai/activity",
     async run(/** @type {Ctx} */ ctx) {

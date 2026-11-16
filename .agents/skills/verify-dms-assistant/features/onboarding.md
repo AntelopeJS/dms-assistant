@@ -1,6 +1,7 @@
 ---
 covers:
   - src/routes/onboarding.ts
+  - src/routes/owner-ui.ts
   - sidecar/src/server/onboarding.ts
   - sidecar/src/providers/login.ts
   - frontend-vue/app/onboarding/**

@@ -16,12 +16,13 @@ export interface VerifyConfig {
   notUserFacing: string[];
   smoke: string;
   smokeJourney: string;
+  /** The folder of the journeys modules, relative to the repository root. */
+  journeys: string;
   doors: Record<DoorKind, DoorRule | null>;
   formal: never[];
 }
 
-const SKILL = ".agents/skills/verify-dms-assistant";
-const PLAYGROUND = `${SKILL}/playground`;
+const PLAYGROUND = "e2e/playground";
 
 const config: VerifyConfig = {
   playground: PLAYGROUND,
@@ -30,7 +31,6 @@ const config: VerifyConfig = {
     ["pnpm", "run", "build"],
     ["pnpm", "run", "build:sidecar"],
     ["pnpm", "install", "--dir", PLAYGROUND, "--ignore-workspace", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts"],
-    ["npm", "install", "--no-save", "--no-package-lock", "--no-audit", "--no-fund", "--prefix", SKILL, "playwright-core@1.56.1"],
     [`${PLAYGROUND}/node_modules/.bin/tsc`, "-p", `${PLAYGROUND}/tsconfig.build.json`],
   ],
   userFacing: ["src/**", "sidecar/src/**", "frontend-vue/**", "skills/**", "package.json", "sidecar/package.json"],
@@ -47,6 +47,7 @@ const config: VerifyConfig = {
   ],
   smoke: "smoke",
   smokeJourney: "onboard, read the assistant's status, open Settings, change a setting and see it kept",
+  journeys: "e2e/journeys",
   doors: {
     data: {
       globs: ["sidecar/src/state/**", "sidecar/src/checkpoints/**", "sidecar/src/server/change-set-actions.ts"],

@@ -7,6 +7,7 @@ import { ai, check, choose, same, selected, text, until } from "../ai.mjs";
 export const journeys = guarded([
   {
     id: "smoke",
+    tag: "@smoke",
     title: "an owner reads Ready and Claude Code from the status, opens the Settings landing page, changes Thinking to High and sees it kept after a reload",
     entryPoint: "/modules/ai/settings, GET /ai/status, PUT /ai/settings",
     async run(/** @type {Ctx} */ ctx) {

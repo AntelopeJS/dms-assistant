@@ -20,6 +20,7 @@ covers:
   - sidecar/src/server/chat-socket-registry.ts
   - sidecar/src/server/conversation-runs.ts
   - sidecar/src/server/host-command-router.ts
+  - sidecar/src/server/host-page.ts
   - sidecar/src/server/host-socket-registry.ts
   - sidecar/src/server/live-turns.ts
   - sidecar/src/server/navigation-completer.ts

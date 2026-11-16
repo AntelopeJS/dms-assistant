@@ -75,14 +75,14 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 
 <!-- antelopejs-docs-compat:start -->
 
-| Package                             | Supported          | Tested with |
-| ----------------------------------- | ------------------ | ----------- |
-| `@antelopejs/agent-skills`          | `>=0.3.0 <0.4.0`   | `0.3.0`     |
-| `@antelopejs/dms`                   | `>=0.20.5 <0.21.0` | `0.20.5`    |
-| `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`   | `0.3.3`     |
-| `@antelopejs/interface-core`        | `>=0.5.1 <0.6.0`   | `0.5.1`     |
-| `@antelopejs/interface-dms`         | `>=0.14.0 <0.15.0` | `0.14.0`    |
-| `@antelopejs/interface-dms-builder` | `>=0.5.0 <0.6.0`   | `0.5.0`     |
+| Package                             | Supported                  | Tested with                |
+| ----------------------------------- | -------------------------- | -------------------------- |
+| `@antelopejs/agent-skills`          | `>=0.3.0 <0.4.0`           | `0.3.0`                    |
+| `@antelopejs/dms`                   | `0.20.8-next.944.g57d8ba9` | `0.20.8-next.944.g57d8ba9` |
+| `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`           | `0.3.3`                    |
+| `@antelopejs/interface-core`        | `>=0.5.1 <0.6.0`           | `0.5.1`                    |
+| `@antelopejs/interface-dms`         | `0.14.3-next.916.gd319141` | `0.14.3-next.916.gd319141` |
+| `@antelopejs/interface-dms-builder` | `0.5.2-next.936.g1313dd7`  | `0.5.2-next.936.g1313dd7`  |
 
 <!-- antelopejs-docs-compat:end -->
 

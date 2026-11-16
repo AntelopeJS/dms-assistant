@@ -6,7 +6,7 @@ import {
   type ConversationStore,
   createConversationStore,
 } from "../../src/state/conversations.js";
-import { createStore } from "../../src/state/store.js";
+import { createStore, type Store } from "../../src/state/store.js";
 
 const TMP_PREFIX = "dms-assistant-formal-deletion-";
 const CONVERSATION = "conv-deleted";
@@ -27,11 +27,16 @@ const MESSAGE = { role: "user", content: "hi", timestampMs: 1 } as const;
  */
 describe("a deleted conversation (formal target: deleted conversations staying closed)", () => {
   let dir: string;
+  let opened: Store[];
 
-  const open = (): ConversationStore =>
-    createConversationStore({
-      store: createStore({ filePath: join(dir, "state.json"), debounceMs: 0 }),
+  const open = (): ConversationStore => {
+    const store = createStore({
+      filePath: join(dir, "state.json"),
+      debounceMs: 0,
     });
+    opened.push(store);
+    return createConversationStore({ store });
+  };
 
   const viewsOf = (store: ConversationStore) => ({
     stored: store.get(CONVERSATION),
@@ -41,9 +46,11 @@ describe("a deleted conversation (formal target: deleted conversations staying c
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), TMP_PREFIX));
+    opened = [];
   });
 
   afterEach(async () => {
+    await Promise.all(opened.map((store) => store.flush()));
     await rm(dir, { recursive: true, force: true });
   });
 

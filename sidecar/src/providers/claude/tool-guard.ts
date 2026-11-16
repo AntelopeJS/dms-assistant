@@ -18,7 +18,7 @@ export interface GuardedCall {
 
 /** What the guard reads about the session the call runs in. */
 export interface GuardScope {
-  /** Where read-only file tools run unasked. */
+  /** Where read-only file tools run unasked. The safe-mode hook adds the session's `tool-results` folder. */
   readRoots: string[];
   hostProjectRoot: string;
   settings: TurnSettings;

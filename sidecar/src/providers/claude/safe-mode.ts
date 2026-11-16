@@ -13,6 +13,7 @@ import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import { SAFE_MODE_DENIED_MESSAGE } from "../../constants/settings.js";
 import { z } from "zod";
 import { ToolArgsSchema } from "../../agent/edit-targets.js";
+import { sessionToolResultsRoot } from "../../agent/read-access.js";
 import type { ToolCallHooks } from "../../agent/provider.js";
 import { isMutatingTool, isWebTool } from "../../agent/tool-kinds.js";
 import { effectiveGenerationMode } from "../../builder/capability.js";
@@ -45,6 +46,8 @@ const HOST_DECISION: SyncHookJSONOutput = {
 const NO_DECISION: SyncHookJSONOutput = { continue: true };
 
 const preToolUseInputSchema = z.object({
+  session_id: z.string().catch(""),
+  transcript_path: z.string().catch(""),
   tool_name: z.string().catch(""),
   tool_use_id: z.string().catch(""),
   tool_input: ToolArgsSchema,
@@ -89,6 +92,20 @@ function decideByMode(
 }
 
 /**
+ * Adds the session's own `tool-results` folder to the read roots, the one
+ * place outside the project Claude Code saves a result too large for the
+ * conversation. The hook runs before the call it announces, so the folder is a
+ * root by the time the agent reads a saved result.
+ */
+function allowSessionToolResults(
+  readRoots: string[],
+  call: PreToolUseCall,
+): void {
+  const root = sessionToolResultsRoot(call.session_id, call.transcript_path);
+  if (root !== undefined && !readRoots.includes(root)) readRoots.push(root);
+}
+
+/**
  * Enforces safe mode as a `PreToolUse` hook. The CLI runs hooks before it
  * applies the permission mode, and a hook denial is final, so the refusal holds
  * in `acceptEdits` and `auto`, where `canUseTool` is never asked about an
@@ -104,6 +121,7 @@ function decideByMode(
 export function buildSafeModeHooks(deps: PreToolUseDeps): SdkHooks {
   const preToolUse: HookCallback = async (input) => {
     const call = preToolUseInputSchema.parse(input);
+    allowSessionToolResults(deps.readRoots, call);
     const scope: GuardScope = {
       readRoots: deps.readRoots,
       hostProjectRoot: deps.hostProjectRoot,

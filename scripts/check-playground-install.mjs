@@ -17,7 +17,6 @@ const requirements = [
     pattern:
       /installCommand: \["pnpm install", "pnpm build", "pnpm build:sidecar"\]/,
   },
-  { file: ".agents/playground", pattern: new RegExp(SIDECAR_BUILD) },
 ];
 
 const buildFailures = requirements

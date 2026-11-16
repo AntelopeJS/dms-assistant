@@ -26,7 +26,7 @@ The Settings page, the landing page of the module, holds the defaults of new con
 
 - `the-defaults-are-the-documented-ones`: a new install answers the documented defaults and says what the install can do.
 - `every-setting-saves-alone-and-survives-a-restart`: each field, each agent's default mode included, saves on its own and survives a sidecar restart and a backend restart.
-- `a-stored-settings-file-is-read-back-by-the-next-start`: a settings file left by an earlier run is read when the assistant starts; wrong values and unknown keys are ignored, a mode the agent has not keeps its default, and a file from before the default mode was per agent seeds both agents from its one `mode`.
+- `a-stored-settings-file-is-read-back-by-the-next-start`: a settings file left by an earlier run is read when the assistant starts; wrong values and unknown keys are ignored, a mode the agent has not keeps its default, and the retired single `mode` is ignored and not served, so a file that holds only it starts both agents on their defaults.
 - `the-safe-mode-switch-saves-the-stored-scope`: the form field `safeMode` reads and writes the stored `generationMode`, the switch itself never reaches the sidecar, and a value that is not a boolean is refused.
 - `a-value-outside-the-options-is-refused-and-changes-nothing`: values outside Deny after (5, 15, 30), Undo history (7, 30, 90), Claude Code's modes, Codex's modes (no Auto review) and the other options answer 400, nothing changes, an unknown field (the retired `mode` included) is ignored and the deletions switch cannot be turned off.
 - `the-page-saves-each-change-as-you-make-it`: a choice, a switch and a menu save at once, each agent's default mode on its own, and a reload shows them kept.

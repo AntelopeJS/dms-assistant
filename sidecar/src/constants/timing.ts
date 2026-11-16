@@ -1,8 +1,8 @@
 /**
  * The host waits for its dev hot reload to serve the target route before
- * pushing it: up to four of the host's 15 s waits, since a page the builder
- * writes restarts the project. This budget must outlast that wait: a shorter one
- * would report a timeout for a navigation that is merely waiting on the reload.
+ * pushing it, 60 s at most in all, since a page the builder writes restarts the
+ * project. This budget must outlast that wait: a shorter one would report a
+ * timeout for a navigation that is merely waiting on the reload.
  */
 export const NAVIGATE_TIMEOUT_MS = 63_000;
 

@@ -22,6 +22,21 @@ export interface DevReloadWaiter {
  */
 const ROUTE_WAITS = 4;
 
+/**
+ * The most a navigation waits in all, whatever the host's waits last: a burst of reloads can make
+ * one of them run past its own 15 s. The sidecar's `navigate_to_page` budget outlasts it.
+ */
+const TRIP_WAIT_MS = 60_000;
+
+/** Resolves `false` after `ms`, or never once `cancel` ran. */
+function lapse(ms: number): { lapsed: Promise<boolean>; cancel: () => void } {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const lapsed = new Promise<boolean>((resolve) => {
+		timer = setTimeout(() => resolve(false), ms);
+	});
+	return { lapsed, cancel: () => clearTimeout(timer) };
+}
+
 /** What navigating the dashboard needs: its router, the host's dev reload, and where it is now. */
 export interface NavigationContext {
 	router: RouterLike;
@@ -71,8 +86,16 @@ async function waitForRoute(
 	route: string,
 	stillWanted: () => boolean,
 ): Promise<void> {
+	const deadline = Date.now() + TRIP_WAIT_MS;
 	for (let wait = 0; wait < ROUTE_WAITS && stillWanted(); wait += 1) {
-		if (await devReload.awaitRoute(route)) return;
+		const left = deadline - Date.now();
+		if (left <= 0) return;
+		const { lapsed, cancel } = lapse(left);
+		try {
+			if (await Promise.race([devReload.awaitRoute(route), lapsed])) return;
+		} finally {
+			cancel();
+		}
 	}
 }
 

@@ -342,4 +342,23 @@ describe("the dashboard's own navigation to a page just written", () => {
 		await new Promise((resolve) => setTimeout(resolve, 10));
 		expect(push).not.toHaveBeenCalled();
 	});
+
+	it("navigates within a minute even when one of the host's waits never settles", async () => {
+		vi.useFakeTimers();
+		try {
+			const push = vi.fn();
+			const navigate = createNavigator({
+				location: here,
+				router: { push },
+				devReload: { awaitRoute: () => new Promise<boolean>(() => undefined) },
+			});
+			navigate("/new-page");
+			await vi.advanceTimersByTimeAsync(59_000);
+			expect(push).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1_000);
+			expect(push).toHaveBeenCalledExactlyOnceWith("/new-page");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

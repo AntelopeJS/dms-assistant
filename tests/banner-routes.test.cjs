@@ -169,95 +169,22 @@ void test("hands a pasted return address to the sidecar, and its refusal back", 
   assert.deepEqual(sidecar.requests.at(-1).body, { url: pasted });
 });
 
-const SAFE_MODE_FIELD = {
-  id: "safeMode",
-  type: "boolean",
-  description: "$dms_assistant.settings.safe_mode.description",
-  component: { type: "x", options: {} },
-};
-
-const SafeModeFormSchema = z.object({
-  fields: z.array(
-    z.object({ disabled: z.boolean().optional(), description: z.string() }),
-  ),
-});
-
-void test("turns the Safe mode switch off the table, saying why, while the Builder is missing", async () => {
-  reset();
-  answer("GET", "/settings", 200, { builderAvailable: false });
-  const missing = SafeModeFormSchema.parse(
-    await harness.routes.applySidecarSettings(new Set(), {
-      fields: [SAFE_MODE_FIELD],
-    }),
-  );
-  answer("GET", "/settings", 200, { builderAvailable: true });
-  const present = SafeModeFormSchema.parse(
-    await harness.routes.applySidecarSettings(new Set(), {
-      fields: [SAFE_MODE_FIELD],
-    }),
-  );
-  assert.deepEqual(
-    [missing.fields[0].disabled, missing.fields[0].description],
-    [true, "$dms_assistant.settings.safe_mode.builder_missing"],
-  );
-  assert.deepEqual(
-    [present.fields[0].disabled, present.fields[0].description],
-    [undefined, "$dms_assistant.settings.safe_mode.description"],
-  );
-  assert.deepEqual(untranslated(missing), []);
-});
-
-void test("groups the settings in the AI and Builder sections, every setting kept", () => {
+void test("groups the settings in the AI and Builder sections, none of the guard rails among them", () => {
   assert.deepEqual(
     SETTINGS_SECTIONS.map((section) => [
       section.id,
       section.fields.map((field) => field.id),
     ]),
     [
-      [
-        "ai",
-        [
-          "provider",
-          "claudeModel",
-          "thinking",
-          "defaultModeClaude",
-          "defaultModeCodex",
-          "unanswered",
-          "allowLocalSkills",
-        ],
-      ],
-      ["builder", ["safeMode", "alwaysAsk", "checkpointRetentionDays"]],
+      ["ai", ["provider", "claudeModel", "thinking", "unanswered"]],
+      ["builder", ["checkpointRetentionDays"]],
     ],
   );
   assert.deepEqual(
     SETTINGS_SECTIONS.flatMap((section) => section.fields).flatMap((field) =>
       "fields" in field ? field.fields.map((nested) => nested.id) : [],
     ),
-    [
-      "requestTimeoutMinutes",
-      "notifyRequests",
-      "alwaysAskDeletions",
-      "alwaysAskDependencies",
-      "alwaysAskBlockRemoval",
-    ],
-  );
-});
-
-const OptionValuesSchema = z.array(z.string());
-
-void test("offers Auto review as a default on Claude Code only, and no mode that approves for the person", () => {
-  assert.deepEqual(
-    SETTINGS_SECTIONS.flatMap((section) => section.fields)
-      .filter((field) => field.id.startsWith("defaultMode"))
-      .map((field) =>
-        OptionValuesSchema.parse(
-          field.type.options.items.map((item) => String(item.value)),
-        ),
-      ),
-    [
-      ["normal", "auto", "acceptEdits", "plan"],
-      ["normal", "acceptEdits", "plan"],
-    ],
+    ["requestTimeoutMinutes", "notifyRequests"],
   );
 });
 

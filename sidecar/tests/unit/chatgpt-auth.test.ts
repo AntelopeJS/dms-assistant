@@ -262,6 +262,28 @@ function registerRejectedSignInCases(): void {
     });
   });
 
+  it("answers a callback without the state of a pending attempt as expired, keeping that attempt open", async () => {
+    const { state } = await startFromSettings();
+    const calls = stubFetch(() => tokenAnswer("never"));
+    const expired = {
+      status: 400,
+      title: "This sign-in link has expired",
+    };
+    expect(
+      await finishLogin(
+        new URLSearchParams({ state: `${state}-forged`, code: "c" }),
+      ),
+    ).toMatchObject(expired);
+    expect(await finishLogin(new URLSearchParams({ code: "c" }))).toMatchObject(
+      expired,
+    );
+    expect(calls).toEqual([]);
+    const cancelled = await finishLogin(
+      new URLSearchParams({ state, error: "access_denied" }),
+    );
+    expect(cancelled.title).toBe("Sign-in cancelled");
+  });
+
   it("refuses a pasted address that is not the return address, keeping the attempt open", async () => {
     const { state } = await startFromSettings();
     const calls = stubFetch(() => tokenAnswer("never"));

@@ -2,16 +2,14 @@ import type {
   HookCallback,
   SyncHookJSONOutput,
 } from "@anthropic-ai/claude-agent-sdk";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { z } from "zod";
 import {
   globReachesSecretFile,
   reachesSecretFile,
   SECRET_FILE_SEARCH_EXCLUSIONS,
 } from "../../agent/project-secrets.js";
+import { asTheCliReadsIt } from "../../agent/read-access.js";
 import { PRE_TOOL_USE_HOOK_EVENT } from "../../constants/claude.js";
-import { PLATFORM_WINDOWS } from "../../constants/native-binary.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import {
   SEARCH_TOOL_GLOB_KEYS,
@@ -48,26 +46,6 @@ const toolCallSchema = z.object({
 });
 
 type ToolCall = z.infer<typeof toolCallSchema>;
-
-const HOME_PREFIX = "~/";
-
-const MSYS_DRIVE_PATH = /^\/([a-z])\//i;
-
-function withWindowsDrive(path: string): string {
-  if (process.platform !== PLATFORM_WINDOWS) return path;
-  const drive = MSYS_DRIVE_PATH.exec(path)?.[1];
-  return drive === undefined
-    ? path
-    : `${drive.toUpperCase()}:${path.slice(2).replaceAll("/", "\\")}`;
-}
-
-function asTheCliReadsIt(path: string): string {
-  const trimmed = path.trim();
-  if (trimmed === "~") return homedir();
-  return trimmed.startsWith(HOME_PREFIX)
-    ? join(homedir(), trimmed.slice(HOME_PREFIX.length))
-    : withWindowsDrive(trimmed);
-}
 
 async function pathReachesSecret({
   cwd,

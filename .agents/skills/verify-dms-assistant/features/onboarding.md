@@ -1,6 +1,7 @@
 ---
 covers:
   - src/routes/onboarding.ts
+  - src/routes/owner-ui.ts
   - sidecar/src/server/onboarding.ts
   - sidecar/src/providers/login.ts
   - frontend-vue/app/onboarding/**
@@ -10,10 +11,12 @@ docs:
 
 # Onboarding
 
-The first-run popup connects an AI and picks a starting point. Its routes tell where each login stands, take a pasted Claude token and record the provider. Driven here: those routes, offline. The popup itself, the live token check and the ChatGPT consent are under the skill's Not driven list. The database path's routes belong to `verify-dms-builder`.
+The first-run popup connects an AI and picks a starting point. Its routes tell where each login stands, take a pasted Claude token and record the provider. Driven here: those routes, offline, and the popup's connect step on a development dashboard, under `ajs project dev` with and without `-w`. The popup's AI steps, the live token check and the ChatGPT consent are under the skill's Not driven list. The database path's routes belong to `verify-dms-builder`.
 
 ## Sub-features
 
+- `under-watch-the-connect-popup-follows-the-connection-across-a-reload-and-a-reopen-to-the-analysis` (`frontend: "dev"`, `backend: "watch"`, `last`): the owner opens the connect step (`?assistant=connect`), connects a MongoDB database of the run with a wrong password and sees the sign-in refused, connects the corrected URL, reloads the page and closes and opens the popup again while the schema is read, and the popup follows the connection to the analysis without the URL being typed again. Its checks after the restart are known failures today.
+- `without-watch-the-connect-popup-asks-for-a-restart-and-keeps-asking-after-a-reload-and-a-reopen` (`frontend: "dev"`, `backend: "dev"`, `last`): the same connection without `-w`: the popup says to restart the project instead of reading the schema, and says it again after a reload and after it is closed and opened again, without the URL.
 - `the-state-says-where-each-login-stands-and-offers-one-codex-sign-in`: the state names the provider and a boot id, says both logins are signed out, offers one ChatGPT sign-in address toward OpenAI that returns to the sidecar, answers the same address to every poll, and is never cached; a Claude credential in the environment reads as signed in from the environment, without the key in the answer.
 - `a-provider-choice-is-saved-and-an-unknown-one-is-refused`: choosing Codex is saved as the settings' coding agent whether or not Codex is signed in, choosing Claude Code goes back, and a provider that does not exist answers 400 and changes nothing.
 - `a-pasted-claude-token-is-checked-without-being-stored-or-echoed`: a missing token answers 400, a token not shaped like one answers `malformed` without a request to Anthropic, nothing is stored and no answer carries what was pasted.
@@ -32,3 +35,5 @@ dms-control journey "$RUN" onboarding
 
 - A run that inherits `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `CLAUDE_CODE_OAUTH_TOKEN` would read as signed in, so the journeys blank those variables with `withEnv` before they read a login.
 - The owner guard of these routes is part of the access feature's sweep.
+- The connect journeys seed their source database on the run's `mongod` with the `mongodb` driver, with a read-only user: the popup refuses a URL without one ("Needs a user."). They write the connection into the run's project, so they run `last`.
+- Under `-w`, the restart the written connection triggers never finishes today: the backend logs `Module 'dms-assistant' is still starting after 10 s`, starts no sidecar and stops answering. The watch journey lists the checks after the restart in `knownFailures`; `guard.mjs` records a step whose failing checks are all known instead of turning it into NOT VERIFIED.

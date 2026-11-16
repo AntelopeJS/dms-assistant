@@ -32,6 +32,7 @@ export const mcpJsonJourneys = [
     title: "a development start leaves the dms server in the project's .mcp.json and keeps every other server and key as written, a dms-assistant server included, writes nothing on the next start, and leaves a file that is not a JSON object of servers as it is",
     entryPoint: "<project>/.mcp.json, ajs project dev",
     backend: "dev",
+    last: true,
     async run(/** @type {Ctx} */ ctx) {
       const logged = (/** @type {RegExp} */ pattern) => until(() => pattern.test(backendLog(ctx)), { timeoutMs: 60_000, everyMs: 500 });
       await restartOn(ctx, `${JSON.stringify({ note: "kept", mcpServers: { "dms-assistant": DMS_ASSISTANT_SERVER, other: OTHER_SERVER } }, null, 2)}\n`);

@@ -31,7 +31,10 @@ export interface AssistantSession {
 	status: Readonly<Ref<SidecarStatus>>;
 	chat: ChatTransport;
 	panel: ChatPanelState;
-	/** Opens a page of the dashboard, as its own links do. */
+	/**
+	 * Opens a page of the dashboard once its site layout serves it, so a page the builder or the
+	 * agent just wrote opens without a 404; navigations share the agent's queue.
+	 */
 	navigate: (path: string) => void;
 	/** Opens the panel on that conversation. */
 	openConversation: (conversationId: string) => void;

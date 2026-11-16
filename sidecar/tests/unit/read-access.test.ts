@@ -58,6 +58,48 @@ describe("isAutoAllowedRead", () => {
     expect(isAutoAllowedRead("Grep", {}, ROOTS, CWD)).toBe(true);
   });
 
+  /** Fails on a check that places a search by copying the CLI's path parsing instead of allowing only what is provably inside: a `~` or padded path, any absolute, drive or `~` Glob pattern, a pattern with `..`, or a `.. ` segment the CLI trims back to the parent. */
+  it("auto-allows only a search it can place inside a root and leaves every other one to the person", () => {
+    const unplaced: [string, Record<string, string>][] = [
+      ["Grep", { pattern: "PRIVATE KEY", path: "~/.ssh" }],
+      ["Glob", { pattern: "*", path: "~" }],
+      ["Grep", { pattern: "x", path: " /home/user/.aws" }],
+      ["Grep", { pattern: "x", path: "/work/dms/app/.. /.." }],
+      ["Glob", { pattern: "*", path: "/work/dms/ ../x" }],
+      ["Glob", { pattern: "/home/user/.ssh/*" }],
+      ["Glob", { pattern: "/work/dms/app/**/*.vue" }],
+      ["Glob", { pattern: "/work/dms/x]/../../outside/*" }],
+      ["Glob", { pattern: "/work/dms" }],
+      ["Glob", { pattern: "/work/dms/.. /*" }],
+      ["Glob", { pattern: "/work/dms/.. /x.txt" }],
+      ["Glob", { pattern: "C:/**/*.pem" }],
+      ["Glob", { pattern: "C:\\*" }],
+      ["Glob", { pattern: "~/.ssh/*" }],
+      ["Glob", { pattern: "../outside/*" }],
+      ["Glob", { pattern: "src/../../*" }],
+      ["Glob", { pattern: ".. /*" }],
+    ];
+    for (const [tool, input] of unplaced) {
+      expect(
+        isAutoAllowedRead(tool, input, ROOTS, CWD),
+        JSON.stringify(input),
+      ).toBe(false);
+    }
+    const placed: [string, Record<string, string>][] = [
+      ["Glob", { pattern: "**/*.vue" }],
+      ["Glob", { pattern: "pages/[id]/*.vue", path: "src" }],
+      ["Glob", { pattern: "{a,b}/*.ts", path: "/work/dms/app" }],
+      ["Grep", { pattern: "x", path: " src " }],
+      ["Grep", { pattern: "x", path: "src/../lib" }],
+    ];
+    for (const [tool, input] of placed) {
+      expect(
+        isAutoAllowedRead(tool, input, ROOTS, CWD),
+        JSON.stringify(input),
+      ).toBe(true);
+    }
+  });
+
   it("never auto-allows mutating or non-read tools", () => {
     expect(
       isAutoAllowedRead(

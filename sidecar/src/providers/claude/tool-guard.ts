@@ -71,7 +71,8 @@ const POLICY_BY_REACH: Record<ToolReach, ReachPolicy> = {
     runsInSafeScope: always,
     isLeftToClassifier: isReadInsideRoots,
     isLeftToCli: always,
-    isLeftToPlan: always,
+    isLeftToPlan: (call, scope) =>
+      isReadInsideRoots(call, scope) || isPlanFile(call, scope),
   },
   editsFile: {
     runsInSafeScope: isPlanFile,
@@ -166,8 +167,9 @@ export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
  * the CLI runs in. Auto review's classifier, the Ask first and Accept edits
  * rules and Plan only's read-only commands approve calls without ever asking
  * `canUseTool`, so the PreToolUse hook hands these to it: every command, the
- * always-ask set outside plan, and any name the table does not classify, a
- * tool the CLI adds included.
+ * always-ask set outside plan, a read outside the read roots in auto and plan
+ * (whose classifier approves read-only calls), and any name the table does
+ * not classify, a tool the CLI adds included.
  */
 export function isHostDecided(
   call: GuardedCall,

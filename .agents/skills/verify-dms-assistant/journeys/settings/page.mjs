@@ -11,7 +11,7 @@ const CODEX_NTH = 1;
 export const pageJourneys = [
   {
     id: "the-page-saves-each-change-as-you-make-it",
-    title: "the Settings page saves a choice, a switch and a menu the moment you change them, each agent's default mode on its own, and a reload shows them kept",
+    title: "the Settings page saves a choice, a switch and a menu the moment you change them, each agent's default mode and every guard rail through the Guard rails card on its own, and a reload shows them kept",
     entryPoint: "/modules/ai/settings",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
@@ -82,8 +82,9 @@ export const pageJourneys = [
         tab.count({ role: "radio", name: "Full auto" }, 0),
         tab.count({ role: "radio", name: "Auto review" }, 1),
         tab.count({ role: "radio", name: "Ask first" }, 2),
-        pageHas(tab, "deletions are locked", /Deleting pages, tables, fields or queries · locked/),
-        tab.count({ role: "switch", name: "Deleting pages, tables, fields or queries" }, 0),
+        pageHas(tab, "deletions are locked", /Locked\. The chat asks for your approval on a card before each one runs\./),
+        tab.enabled({ role: "switch", name: "Deleting pages, tables, fields or queries" }, { disabled: true }),
+        selected(tab, { role: "switch", name: "Deleting pages, tables, fields or queries" }, true),
         selected(tab, { role: "radio", name: "Claude Code" }, true),
         selected(tab, { role: "radio", name: "Medium" }, true),
         selected(tab, { role: "radio", name: "Auto review" }, true),
@@ -126,7 +127,7 @@ export const pageJourneys = [
         same("Thinking", await radiosOf(1, ["Off", "Low", "Medium", "High"]), ["Off", "Low", "Medium", "High"]),
         same("the default mode on Claude Code", await radiosOf(2, ["Ask first", "Auto review", "Accept edits", "Plan only"]), ["Ask first", "Auto review", "Accept edits", "Plan only"]),
         same("the default mode on Codex, which has no Auto review", await radiosOf(3, ["Ask first", "Accept edits", "Plan only"]), ["Ask first", "Accept edits", "Plan only"]),
-        check("five switches: Safe mode and four more", (await tab.page.getByRole("switch").count()) === 5, await tab.page.getByRole("switch").count()),
+        check("six switches: the five of the Guard rails card and Notify me", (await tab.page.getByRole("switch").count()) === 6, await tab.page.getByRole("switch").count()),
       ]);
     },
   },
@@ -143,16 +144,18 @@ export const pageJourneys = [
       await ctx.verify("the page, top to bottom", [
         pageHas(tab, "the title and its subtitle", /Settings\s*Defaults for new conversations\. Changes save as you go/),
         pageHas(tab, "the banner", inOrder(["Saved instantly", "Run Codex on your ChatGPT plan", "Sign in with ChatGPT", "Paste the return address"])),
-        pageHas(tab, "the sections, AI then Builder then Usage", inOrder(["AI", "Builder", "Usage"])),
-        pageHas(tab, "the AI section", inOrder(["Coding agent", "Claude Code", "Codex", "Claude model", "Thinking", "Off", "Low", "Medium", "High", "Unanswered requests", "Deny after", "Notify me in the DMS", "Machine-local skills", "Use machine-local skills"])),
+        pageHas(tab, "the sections, AI then Builder then the Guard rails card then Usage", inOrder(["AI", "Builder", "Guard rails", "Usage"])),
+        pageHas(tab, "the AI section", inOrder(["Coding agent", "Claude Code", "Codex", "Claude model", "Thinking", "Off", "Low", "Medium", "High", "Unanswered requests", "Deny after", "Notify me in the DMS"])),
+        pageHas(tab, "the Guard rails card says what it holds", inOrder(["Guard rails", "What the agent may do without asking you."])),
         pageHas(tab, "the default mode on Claude Code", inOrder(["Default mode on Claude Code", "Ask first", "Auto review", "Accept edits", "Plan only", "Default mode on Codex"])),
-        pageHas(tab, "the default mode on Codex, then the unanswered requests", inOrder(["Default mode on Codex", "Ask first", "Accept edits", "Plan only", "Unanswered requests"])),
+        pageHas(tab, "the default mode on Codex, then Safe mode", inOrder(["Default mode on Codex", "Ask first", "Accept edits", "Plan only", "Safe mode"])),
         pageHas(tab, "Claude Code's mode hint", /What Claude Code may do without asking you first\. Auto review is the recommended default\./),
         pageHas(tab, "Codex's mode hint", /What Codex may do without asking you first\. Codex has no Auto review\./),
         pageHas(tab, "what Auto review does", /A safety check approves routine file edits and web access\./),
         pageHas(tab, "what Accept edits does with Codex", /With Codex, works as Ask first: asks before every file edit/),
         pageHas(tab, "Full auto is not offered", /Full auto/, false),
-        pageHas(tab, "the Builder section", inOrder(["Builder", "Applies in development only.", "Safe mode", "Only page and data edits through the DMS tools", "Always ask for", "Deleting pages, tables, fields or queries", "Adding or removing dependencies", "Removing or moving Builder blocks", "Undo history", "Keep 30 days"])),
+        pageHas(tab, "the Builder section", inOrder(["Builder", "Applies in development only.", "Undo history", "Keep 30 days"])),
+        pageHas(tab, "Safe mode, the asks and local skills, in the Guard rails card", inOrder(["Safe mode", "Only page and data edits through the DMS tools", "Always ask for", "Deleting pages, tables, fields or queries", "Adding or removing dependencies", "Removing or moving Builder blocks", "Machine-local skills"])),
         pageHas(tab, "the usage section", inOrder(["Usage", "Tokens · last 14 days", "Last 14 days", "Tokens", "Conversations"])),
         pageHas(tab, "the hints", /Applies to new turns\. Open chats lose the agent's memory; transcripts stay\./),
         pageHas(tab, "the thinking hint", /Applies from the next message/),

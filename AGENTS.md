@@ -12,6 +12,7 @@ An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant
 | `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
 | `frontend-vue/builder` | The client and types of the builder's `/api/builder/database` routes and the builder's message catalog, with its own vitest config. The builder has no editor UI: pages change through the AI and the mockup flow |
 | `playground`   | A DMS project that loads the module; its own lockfile, outside the pnpm workspace                       |
+| `e2e`          | The journeys of the `verify-dms-assistant` skill, their helpers and their playground, run as a Playwright suite by `pnpm e2e` through `@antelopejs/dms/e2e` |
 | `skills`       | The module's own agent skills, shipped through `antelopeJs.skills`. The chat loads the DMS workflow skills of `@antelopejs/agent-skills` before them |
 
 The root `package.json` is the published CommonJS package, so it has no `"type": "module"`. Node therefore warns that it reparses `oxlint.config.ts` as ESM; the warning is harmless.
@@ -32,11 +33,12 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
 - `pnpm test:installed`, which packs the module, installs the tarball as the AntelopeJS module cache does, starts the installed sidecar and checks that every package its built files import resolves. CI runs it in the `installed-module` job, which `ubuntu` needs, and the release runs it before it starts.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
+- The browser journeys: `pnpm e2e` prepares and starts a `dms-control` run, runs every journey of the verify skill on it and stops it; `--grep @smoke` narrows it to the smoke set. CI runs the smoke set in the `e2e` job on the full tier and every journey on the nightly tier, whose shards `e2e-report` merges into one report.
 - The full frontend-vue typecheck: `pnpm --dir frontend-vue verify-source` builds the DMS core layer with this one and runs vue-tsc. `checks` typechecks only the chat (`typecheck:chat`).
 
 ## CI
 
-Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix or `frontend-verify` fails, so keep both names.
+Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify`, `installed-module` or `e2e` fails, so keep both names.
 
 ## Releases
 

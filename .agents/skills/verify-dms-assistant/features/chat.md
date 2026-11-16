@@ -20,6 +20,7 @@ covers:
   - sidecar/src/server/chat-socket-registry.ts
   - sidecar/src/server/conversation-runs.ts
   - sidecar/src/server/host-command-router.ts
+  - sidecar/src/server/host-page.ts
   - sidecar/src/server/host-socket-registry.ts
   - sidecar/src/server/live-turns.ts
   - sidecar/src/server/navigation-completer.ts
@@ -50,11 +51,12 @@ docs:
 
 # Chat
 
-The chat panel, the agent loop, the tools, approvals, change-set cards, block previews and the command palette. All of it needs a development dashboard (`import.meta.env.DEV`) and a model; `dms-control` runs a production dashboard and no run holds credentials. The one thing driven is the documented absence: a production dashboard shows no assistant.
+The chat panel, the agent loop, the tools, approvals, change-set cards, block previews and the command palette. All of it needs a development dashboard (`import.meta.env.DEV`) and a model, and no run holds credentials. Two things are driven: the documented absence, a production dashboard shows no assistant, and the launcher's name on a development dashboard (`up --dev-frontend`).
 
 ## Sub-features
 
 - `a-production-dashboard-shows-no-assistant`: no launcher, no panel, no starters, no palette assistant on a production build.
+- `a-cold-development-load-names-the-launcher-in-english-and-in-french` (`frontend: "dev"`): on a cold load of the development dashboard the header launcher is named `Assistant (Ctrl+Shift+K)` without any interaction, in English and, once the owner chose Français, in another browser in French.
 
 ## How to get to it (user POV)
 
@@ -63,10 +65,12 @@ The chat panel, the agent loop, the tools, approvals, change-set cards, block pr
 ## Driving it with dms-control
 
 ```bash
-dms-control journey "$RUN" chat
+dms-control journey "$RUN" chat                 # on a run of up
+dms-control journey "$DEV_RUN" chat             # on a run of up --dev-frontend
 ```
 
 ## Gotchas
 
-- Issue draft `dms-control-dev-frontend`: `dms-control up` has no development-frontend mode, so the panel cannot be opened.
+- A development dashboard opens the onboarding popup on every page: the launcher journey ticks its "Don't show on startup" before any page script runs.
+- The launcher journey does not reproduce the race #62 fixed (the locale catalog arriving after the launcher registered): on this dashboard the catalog loads before the launcher registers, even when the browser holds it back.
 - Everything else in this feature is under the skill's Not driven list.

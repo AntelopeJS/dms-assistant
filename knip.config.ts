@@ -7,7 +7,8 @@ import { antelopeKnipConfig } from "@antelopejs/tooling-configs/knip";
  * dependencies are ignored here: knip assigns their imports to the sidecar
  * workspace, which is checked separately. Nested package dependencies are
  * checked from their own manifests, so `frontend-vue` and `sidecar` stay
- * separate workspaces with their own development manifests.
+ * separate workspaces with their own development manifests. The e2e kit loads
+ * the journeys modules by path, so they are entries.
  */
 export default {
   workspaces: {
@@ -18,6 +19,8 @@ export default {
         "@modelcontextprotocol/sdk",
         "zod",
       ],
+      entry: ["e2e/journeys/*.mjs"],
+      project: ["e2e/**/*.mjs"],
       ignore: ["frontend-vue/**", "sidecar/tests/**"],
     }),
   },

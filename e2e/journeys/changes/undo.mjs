@@ -6,6 +6,7 @@ import { seedSample, fileText, stateOf } from "./helpers.mjs";
 export const undoJourneys = [
   {
     id: "undo-and-redo-restore-the-files-and-record-who-did-it",
+    tag: "@smoke",
     title: "Undo change set opens a dialog titled Undo change set #3? that says how many files it restores; Undo puts the file back as it was before, the set reads Undone with the name of the person, Redo returns the file as the assistant left it, and the audit log and the Undone figure follow",
     entryPoint: "/modules/ai/changes, POST /ai/changes/:id/undo and /redo",
     async run(/** @type {Ctx} */ ctx) {

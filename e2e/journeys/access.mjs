@@ -1,5 +1,5 @@
 import { guarded } from "../guard.mjs";
-import { AI, ai, check, freshSidecar, member, parseJson, raw, recordRaw, same, sidecarLock, text } from "../ai.mjs";
+import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, member, parseJson, raw, recordRaw, same, sidecarLock, text } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
@@ -25,7 +25,7 @@ function call(ctx, method, path, who) {
     path: `${AI}${path}`,
     method,
     as: who,
-    headers: hasBody ? { "content-type": "application/json" } : {},
+    headers: hasBody ? { ...OWNER_UI_HEADERS, "content-type": "application/json" } : OWNER_UI_HEADERS,
     body: hasBody ? "{}" : undefined,
   });
 }
@@ -93,6 +93,7 @@ export const journeys = guarded([
   },
   {
     id: "the-dashboard-origin-forwards-ai-with-the-session",
+    tag: "@smoke",
     title: "the frontend server forwards /ai/** to the backend: the owner's session reaches the owner routes there, nobody gets 401, and health answers",
     entryPoint: "GET <dashboard>/ai/status, /ai/health, /ai/sidecar-info",
     async run(/** @type {Ctx} */ ctx) {

@@ -16,7 +16,7 @@ export default defineConfig({
       source: { type: "local", path: "." },
     },
     "dms-assistant": {
-      source: { type: "local", path: "../../../../" },
+      source: { type: "local", path: "../../" },
       config: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
     },
     dms: {

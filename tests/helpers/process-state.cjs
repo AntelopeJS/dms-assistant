@@ -47,4 +47,17 @@ function readPidFile(file) {
   }
 }
 
-module.exports = { isZombie, readLockFile, readPidFile };
+/**
+ * What the sidecars wrote to their shared log at `file`, or a note that there
+ * is none, for a failure message.
+ * @param {string} file
+ */
+function readSidecarLog(file) {
+  try {
+    return fs.readFileSync(file, "utf8");
+  } catch {
+    return "(no sidecar log)";
+  }
+}
+
+module.exports = { isZombie, readLockFile, readPidFile, readSidecarLog };

@@ -6,6 +6,7 @@ import {
   KeyValueList,
   Section,
 } from "@antelopejs/interface-dms/base";
+import { CustomComponent } from "@antelopejs/interface-dms/base/custom";
 import { FormPageLayout } from "@antelopejs/interface-dms/base/layouts";
 import { PageController, RegisterPage } from "@antelopejs/interface-dms/page";
 import { PAGE_IDS, PAGE_ORDER, PAGE_ROUTES } from "../../constants/pages";
@@ -30,7 +31,9 @@ const settingsForm = Form({
  * AI Settings, the module's landing page: what needs the owner (the assistant
  * offline with Restart, a failed turn, requests waiting), the ChatGPT account
  * Codex runs on, the AI and Builder defaults in one form saving each change on
- * its own to `/ai/settings`, then the tokens the conversations used.
+ * its own to `/ai/settings`, the guard rails in a card of the assistant's own
+ * (a form's save cannot send the header `/ai/settings` requires to change
+ * them), then the tokens the conversations used.
  */
 @RegisterPage()
 export class AISettingsPage extends PageController(
@@ -47,6 +50,10 @@ export class AISettingsPage extends PageController(
   );
 
   static settings = settingsForm;
+
+  static guardRails = CustomComponent("DmsAssistantGuardRails").meta(
+    blockMeta("settings.guard_rails", "i-ph-shield-check"),
+  );
 
   static usage = Section({
     title: blockText(USAGE_PATH, "title"),

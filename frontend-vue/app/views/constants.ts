@@ -6,6 +6,7 @@ export const AI_ROUTES = {
 	changes: "/ai/changes",
 	changeUndoConfirm: "/ai/changes/{{row.id}}/undo-confirm",
 	activity: "/ai/activity",
+	settings: "/ai/settings",
 } as const;
 
 export const AI_PAGES = {

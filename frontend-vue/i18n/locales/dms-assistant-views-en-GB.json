@@ -104,6 +104,11 @@
 				"collapse": "Collapse {path}",
 				"expand": "Expand {path}"
 			},
+			"guard_rails": {
+				"title": "Guard rails",
+				"description": "What the agent may do without asking you. Each change saves as you make it.",
+				"not_saved": "Not saved. The setting is unchanged."
+			},
 			"toast": {
 				"undone": "Undone · checkpoint #{number} restored",
 				"undone_description": "The page reloads with the files as they were. | {count} change sets were undone; the page reloads with the files as they were.",

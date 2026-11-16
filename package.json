@@ -25,6 +25,10 @@
   "files": [
     "dist",
     "frontend-vue",
+    "!frontend-vue/tests",
+    "!frontend-vue/builder/tests",
+    "!frontend-vue/vitest.config.ts",
+    "!frontend-vue/builder/vitest.config.ts",
     "skills",
     "sidecar/dist",
     "sidecar/package.json"

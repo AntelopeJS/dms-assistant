@@ -32,7 +32,7 @@ For `change-sets.json` through `createChangeSetStore`, then `add` and `flush`:
 
 ## The generators
 
-`sidecar/tests/formal/stored-state-load.test.ts` builds a valid conversation and a valid change set from the field lists of `stored-schemas.ts`, with optional fields and unknown extra keys. A malformed entry is a valid one with one required key removed or set to `null` or an object, a conversation whose message has a field set to `null`, or a value that is not an object at all. By construction none of those can pass the schema, and the check does not use the schema to decide which is which. The explicit example in `examples` is the shape of #200: a valid conversation next to one with no `messages`.
+`sidecar/tests/formal/stored-state-load.test.ts` builds a valid conversation and a valid change set from the field lists of `stored-schemas.ts`, with optional fields and unknown extra keys. A malformed entry is a valid one with one required key removed or set to `null` or an object, a conversation whose message has a field set to `null`, or a value that is not an object at all. Every generated value is read back from its JSON text before it goes into the file, because JSON has no `-0` and a file never holds one. By construction none of the malformed ones can pass the schema, and the check does not use the schema to decide which is which. The explicit example in `examples` is the shape of #200: a valid conversation next to one with no `messages`.
 
 ## Before the fix
 

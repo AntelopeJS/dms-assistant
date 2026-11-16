@@ -186,6 +186,11 @@ const malformedChangeSet = fc.oneof(
 );
 
 /** A file's entries: valid and malformed ones in any mix and order. */
+/** What a file holds of a generated value: JSON has no `-0`, so the value is read back from its text. */
+function asStored(value: JsonValue): JsonValue {
+  return JsonValueSchema.parse(JSON.parse(JSON.stringify(value)));
+}
+
 function mixed(
   valid: fc.Arbitrary<JsonValue>,
   malformed: fc.Arbitrary<JsonValue>,
@@ -194,8 +199,8 @@ function mixed(
   return fc
     .array(
       fc.oneof(
-        valid.map((value) => ({ isValid: true, value })),
-        malformed.map((value) => ({ isValid: false, value })),
+        valid.map((value) => ({ isValid: true, value: asStored(value) })),
+        malformed.map((value) => ({ isValid: false, value: asStored(value) })),
       ),
       { maxLength: 6 },
     )

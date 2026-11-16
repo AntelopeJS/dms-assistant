@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { connectJourneys } from "./onboarding/connect.mjs";
 import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, pick, raw, same, sidecarLock, statusIs, text, withEnv } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -86,4 +87,5 @@ export const journeys = guarded([
       });
     },
   },
+  ...connectJourneys,
 ]);

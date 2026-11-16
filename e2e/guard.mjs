@@ -70,12 +70,13 @@ async function signInHydrated(ctx, tab, account) {
 /**
  * Makes a check that fails because the environment went away NOT VERIFIED: before a step with a failing check is
  * recorded, the backend and the dashboard are probed, and when one is gone the journey ends with an error and no
- * failing check. Every journey declares `standby: false`: a standby backend loads the module and spawns its own sidecar
+ * failing check. A step whose failing checks are all in the journey's `knownFailures` is recorded as it is: the kit
+ * judges a known failure, even one that takes the environment down. Every journey declares `standby: false`: a standby backend loads the module and spawns its own sidecar
  * into the folder of the backend under test, overwriting `sidecar.lock`, so no standby boots while a journey runs.
  * Every journey runs a development backend (`ajs project dev`) unless it pins another `backend`: the module starts its
  * sidecar in development only, and `dms-control up` runs `ajs project start`.
  *
- * @template {{ run: (ctx: Ctx) => Promise<void>, backend?: "production" | "dev" | "watch" }} Journey
+ * @template {{ run: (ctx: Ctx) => Promise<void>, backend?: "production" | "dev" | "watch", knownFailures?: Readonly<Record<string, string>> }} Journey
  * @param {Journey[]} journeys The journeys of a feature
  * @returns {Journey[]} The same journeys with the guard installed
  */
@@ -85,6 +86,7 @@ export function guarded(journeys) {
     backend: journey.backend ?? "dev",
     standby: false,
     async run(/** @type {Ctx} */ ctx) {
+      const unknown = (/** @type {{ name: string, pass: boolean }[]} */ checks) => checks.filter((check) => !check.pass && !Object.hasOwn(journey.knownFailures ?? {}, check.name));
       const openTab = ctx.tab.bind(ctx);
       ctx.tab = async (account, label) => {
         const tab = await openTab(account, label);
@@ -93,7 +95,7 @@ export function guarded(journeys) {
       };
       const record = ctx.record.bind(ctx);
       ctx.record = (folder, checks, options) => {
-        const failing = checks.filter((check) => !check.pass);
+        const failing = unknown(checks);
         if (failing.length > 0 && (failing.some((check) => GONE.test(`${check.name} ${check.detail}`)) || !environmentUp(ctx))) {
           throw new Error(`NOT VERIFIED: the environment went away (${failing[0]?.detail.slice(0, 200)})`);
         }
@@ -102,7 +104,7 @@ export function guarded(journeys) {
       const verify = ctx.verify.bind(ctx);
       ctx.verify = async (label, checks, options) => {
         const results = await Promise.all(checks.map((check) => Promise.resolve(check)));
-        if (results.some((check) => !check.pass) && !environmentUp(ctx)) {
+        if (unknown(results).length > 0 && !environmentUp(ctx)) {
           throw new Error(`NOT VERIFIED: the environment went away before "${label}" could be judged`);
         }
         return verify(label, results, options);

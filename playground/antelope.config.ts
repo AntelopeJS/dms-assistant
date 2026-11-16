@@ -32,7 +32,11 @@ export default defineConfig({
       },
     },
     dms: {
-      source: { type: "local", path: "node_modules/@antelopejs/dms" },
+      source: {
+        type: "package",
+        package: "@antelopejs/dms",
+        version: ">=0.20.8 <0.21.0",
+      },
       config: {
         homepage: "/home",
         auth: {

@@ -58,6 +58,32 @@ describe("isAutoAllowedRead", () => {
     expect(isAutoAllowedRead("Grep", {}, ROOTS, CWD)).toBe(true);
   });
 
+  /** Fails on a check that resolves `~/…` or a padded path under the cwd, or ignores an absolute Glob pattern, while the CLI searches the home directory or the pattern's own directory. */
+  it("reads a path as the CLI does: `~` expanded, spaces trimmed, an absolute Glob pattern as its directory", () => {
+    const escapes: [string, Record<string, string>][] = [
+      ["Grep", { pattern: "PRIVATE KEY", path: "~/.ssh" }],
+      ["Glob", { pattern: "*", path: "~" }],
+      ["Grep", { pattern: "x", path: " /home/user/.aws" }],
+      ["Glob", { pattern: "/home/user/.ssh/*" }],
+      ["Glob", { pattern: "~/.ssh/*" }],
+      ["Glob", { pattern: "/work/dms/../../etc/*" }],
+    ];
+    for (const [tool, input] of escapes) {
+      expect(isAutoAllowedRead(tool, input, ROOTS, CWD)).toBe(false);
+    }
+    expect(
+      isAutoAllowedRead(
+        "Glob",
+        { pattern: "/work/dms/app/**/*.vue" },
+        ROOTS,
+        CWD,
+      ),
+    ).toBe(true);
+    expect(
+      isAutoAllowedRead("Grep", { pattern: "x", path: " src " }, ROOTS, CWD),
+    ).toBe(true);
+  });
+
   it("never auto-allows mutating or non-read tools", () => {
     expect(
       isAutoAllowedRead(

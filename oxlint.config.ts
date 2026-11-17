@@ -27,7 +27,6 @@ const CONNECTION_OPERATIONS = [
   "PreviewMapResources",
   "RemoveDatabaseConnection",
   "RepairDatabaseConnections",
-  "SampleDatabaseRows",
   "SetDatabaseConnectionUrl",
 ];
 

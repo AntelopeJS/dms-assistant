@@ -54,7 +54,7 @@ export const journeys = guarded([
         check("it is a 200", project.status === 200, project.status),
         check("modules holds the playground's modules by id", ["playground", "dms-assistant", "dms", "mongodb"].every((id) => modules.includes(id)), modules),
         check("every module is an id string", modules.every(isText), modules),
-        check("self is this module's id and one of the modules", text(project.body, "self") === "dms-assistant" && modules.includes("dms-assistant"), project.body),
+        check("self is the id of the module that answers, dms, and one of the modules", text(project.body, "self") === "dms" && modules.includes("dms"), project.body),
         check("ownDatabase is the project's interface-database provider", text(project.body, "ownDatabase") === "mongodb", project.body),
         check("databasePins holds a module and its provider each, a provider that is the own database", pins.length > 0 && pins.every((pin) => isText(pin.module) && modules.includes(pin.module) && pin.provider === "mongodb"), pins),
         check("dmsDatabase is absent, the project has no dms-database", !isRow(project.body) || !("dmsDatabase" in project.body), project.body),

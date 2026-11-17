@@ -2,6 +2,7 @@ import { defineConfig } from "@antelopejs/interface-core/config";
 
 const preferredApiPort = process.env.PORT ?? "5010";
 const dmsClientUrl = process.env.DMS_CLIENT_BASE_URL;
+const checkout = process.env.DMS_MODULE_ROOT;
 
 /**
  * The repository's playground with the ports, origins, secrets and mail
@@ -13,10 +14,10 @@ export default defineConfig({
   logging: { channelFilter: { "*": "info" } },
   modules: {
     app: {
-      source: { type: "local", path: "." },
+      source: { type: "local", path: checkout === undefined ? "." : `${checkout}/e2e/playground`, watchDir: ["src"] },
     },
     "dms-assistant": {
-      source: { type: "local", path: "../../" },
+      source: { type: "local", path: checkout ?? "../../", watchDir: ["src"] },
       config: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
     },
     dms: {

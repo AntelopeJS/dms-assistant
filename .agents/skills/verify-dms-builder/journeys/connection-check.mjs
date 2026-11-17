@@ -38,7 +38,7 @@ export const journeys = guarded([
   },
   {
     id: "the-check-validates-the-body-and-reaches-the-database-in-development",
-    title: "Under ajs project dev the check refuses nobody and a member who is not the owner, answers 400 for an engine or URL it does not accept without echoing the URL, reaches the run's MongoDB with read and write access, and reports an unreachable one with a reason that holds no password",
+    title: "Under ajs project dev the check refuses nobody and a member who is not the owner, answers 200 reachable false for an engine it does not connect, answers 400 for a URL it does not accept without echoing the URL, reaches the run's MongoDB with read and write access, and reports an unreachable one with a reason that holds no password",
     entryPoint: "POST /api/builder/database/connections/check",
     backend: "dev",
     async run(/** @type {Ctx} */ ctx) {
@@ -55,9 +55,7 @@ export const journeys = guarded([
       const scheme = await builder(ctx, "a URL of another engine", "POST", CHECK, { body: { engine: "mongodb", url: `postgres://root:${PASSWORD}@127.0.0.1/x` } });
       const missing = await builder(ctx, "no URL", "POST", CHECK, { body: { engine: "postgres" } });
       await ctx.verify("a body it does not accept", [
-        check("an unknown engine is 400 bad_request", engine.status === 400 && text(engine.body, "code") === "bad_request", engine),
-        check("the message names the engines it connects", ["postgres", "mongodb", "rethinkdb"].every((name) => text(engine.body, "message").includes(name)), engine.body),
-        check("the message names the field to fix", text(engine.body, "message").includes("engine"), engine.body),
+        check("an unknown engine is a 200 that is not reachable", engine.status === 200 && pick(engine.body, "reachable") === false, engine),
         check("a URL of another engine is 400 and names the url field", scheme.status === 400 && text(scheme.body, "message").includes("url"), scheme),
         check("a missing URL is 400", missing.status === 400 && text(missing.body, "code") === "bad_request", missing),
         check("no refusal repeats the password", [engine, scheme, missing].every((answer) => !JSON.stringify(answer.body).includes(PASSWORD)), [engine.body, scheme.body]),

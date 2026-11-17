@@ -10,8 +10,6 @@ const CONNECT = { role: "button", name: "Connect and analyse" };
 const STEP_HEADING = { role: "heading", name: "Connect your database" };
 const RESTART = /Restart the project to load the connection/;
 const CONNECT_MEMORY = "dms-assistant:onboarding-connect";
-const WATCH_RESTART_HANGS =
-  "the -w restart that the written connection triggers never finishes: the backend logs \"Module 'dms-assistant' is still starting after 10 s\", starts no sidecar and stops answering, so the reloaded page opens no popup and the analysis never comes";
 const READER = "reader";
 const PASSWORD = "reader-secret";
 
@@ -155,17 +153,6 @@ export const connectJourneys = [
     frontend: "dev",
     backend: "watch",
     last: true,
-    knownFailures: Object.fromEntries(
-      [
-        "after the reload: the popup is open on its connect step",
-        "after the reload: the URL is not asked again",
-        "after the reload: the schema check is running",
-        "opened again: the popup is open on its connect step",
-        "opened again: the URL is not asked again",
-        "opened again: the schema check is done",
-        'heading "/^Here’s what’s in/" is visible',
-      ].map((name) => [name, WATCH_RESTART_HANGS]),
-    ),
     async run(/** @type {Ctx} */ ctx) {
       const url = await seedSource(ctx, sourceName(ctx, "connect_watch"));
       const tab = await ctx.tab();
@@ -174,8 +161,8 @@ export const connectJourneys = [
       await tab.reload();
       await ctx.verify("a reload while the schema is read: the popup follows the connection", await followedWithoutTheUrl(tab, "after the reload", "running", 30_000));
       await closeAndReopen(tab);
-      await ctx.verify("closed and opened again: the popup still follows it", await followedWithoutTheUrl(tab, "opened again", "done", 120_000));
-      await ctx.verify("the analysis", [await tab.visible({ role: "heading", name: /^Here’s what’s in/ }, { timeoutMs: 30_000 })]);
+      await ctx.verify("closed and opened again: the popup still follows it", await followedWithoutTheUrl(tab, "opened again", "running", 30_000));
+      await ctx.verify("the analysis", [await tab.visible({ role: "heading", name: /^Here’s what’s in/ }, { timeoutMs: 120_000 })]);
     },
   },
   {

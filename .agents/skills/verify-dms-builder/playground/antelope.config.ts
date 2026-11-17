@@ -42,7 +42,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/dms",
-        version: ">=0.20.8 <0.21.0",
+        version: "0.20.9-next.974.gb6efd03",
       },
       config: {
         apiBaseUrl: "${@api.API_PUBLIC_BASE_URL}",

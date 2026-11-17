@@ -7,6 +7,20 @@ import * as z from "zod/mini";
  */
 export const MOCKUP_ASSISTANT_PROMPT_EVENT = "dms:assistant-prompt";
 
+/**
+ * The event the panel dispatches on `window` when a `build` or
+ * `resolve-comments` run of a mockup starts or ends. Its detail is a
+ * {@link MockupAssistantRun}.
+ */
+export const MOCKUP_ASSISTANT_RUN_EVENT = "dms:assistant-run";
+
+/**
+ * The event the mockup viewer dispatches on `window`, with no detail, to ask
+ * for the runs going on: the panel answers with a
+ * {@link MOCKUP_ASSISTANT_RUN_EVENT} of `running: true` for each.
+ */
+export const MOCKUP_ASSISTANT_RUN_QUERY_EVENT = "dms:assistant-run-query";
+
 const MAX_TEXT_LENGTH = 20_000;
 const MAX_NAME_LENGTH = 500;
 
@@ -74,6 +88,22 @@ export const MockupAssistantPromptSchema = z.union([
 	NewMockupPromptSchema,
 	BlockPromptSchema,
 ]);
+
+/** The prompts that start a run of the assistant on a mockup. */
+export const MockupRunSourceSchema = z.enum(["build", "resolve-comments"]);
+
+export type MockupRunSource = z.infer<typeof MockupRunSourceSchema>;
+
+/**
+ * The `detail` of {@link MOCKUP_ASSISTANT_RUN_EVENT}: the run of `source` on
+ * the mockup whose folder name is `mockup` is going on (`running`) or over,
+ * whether it finished, failed or was stopped.
+ */
+export interface MockupAssistantRun {
+	mockup: string;
+	source: MockupRunSource;
+	running: boolean;
+}
 
 export type MockupBlock = z.infer<typeof MockupBlockSchema>;
 export type MockupAssistantPrompt = z.infer<typeof MockupAssistantPromptSchema>;

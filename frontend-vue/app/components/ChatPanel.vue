@@ -63,6 +63,7 @@ onMounted(() => {
 				class="dms-assistant-panel-chat"
 				:transport="session.chat"
 				:intents="session.intents"
+				:runs="session.runs"
 				:page="session.currentPage.value"
 				:is-reviving="status === SIDECAR_STATUS_REVIVING"
 				:api="session.api"

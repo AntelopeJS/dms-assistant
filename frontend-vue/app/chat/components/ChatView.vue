@@ -8,6 +8,7 @@ import {
 	watch,
 } from "vue";
 import type { ChatTransport } from "../../runtime/chat-transport";
+import type { MockupRuns } from "../../runtime/mockup-runs";
 import type {
 	PanelIntent,
 	PanelIntents,
@@ -75,6 +76,8 @@ interface Props {
 	/** The chat's side of the tab's stream, which the dashboard owns. */
 	transport: ChatTransport;
 	intents: PanelIntents;
+	/** Where a build or a comment run is recorded once it is sent. */
+	runs: Pick<MockupRuns, "begin">;
 	page: CurrentPage | null;
 	/** The sidecar is coming back up: the transcript stays, under a banner. */
 	isReviving: boolean;
@@ -380,10 +383,15 @@ function startConversation(intent: StartConversationIntent): void {
 
 /** Sends a build or a comment run in a new conversation; its steps show in the chat like any turn's. */
 function sendMockupRequest(request: MockupRequest): void {
-	startConversation({
-		kind: "start",
-		prompt: mockupRequestMessage(request, t),
-		send: true,
+	newConversation();
+	const conversationId = activeId.value;
+	const message = mockupRequestMessage(request, t);
+	whenConnected(() => {
+		sendUserMessage(message);
+		props.runs.begin(
+			{ mockup: request.mockup, source: request.kind },
+			conversationId,
+		);
 	});
 }
 

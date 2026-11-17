@@ -14,10 +14,10 @@ export default defineConfig({
   logging: { channelFilter: { "*": "info" } },
   modules: {
     app: {
-      source: { type: "local", path: checkout === undefined ? "." : `${checkout}/e2e/playground` },
+      source: { type: "local", path: checkout === undefined ? "." : `${checkout}/e2e/playground`, watchDir: ["src"] },
     },
     "dms-assistant": {
-      source: { type: "local", path: checkout ?? "../../" },
+      source: { type: "local", path: checkout ?? "../../", watchDir: ["src"] },
       config: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
     },
     dms: {

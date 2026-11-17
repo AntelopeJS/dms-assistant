@@ -90,7 +90,7 @@
     "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
     "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
     "@antelopejs/interface-dms": ">=0.14.3 <0.15.0",
-    "@antelopejs/interface-dms-builder": ">=0.5.2 <0.6.0",
+    "@antelopejs/interface-dms-builder": "0.5.3-next.970.g324d668",
     "@anthropic-ai/claude-agent-sdk": "^0.3.316",
     "@anthropic-ai/claude-code": "^2.1.316",
     "@modelcontextprotocol/sdk": "1.29.0",

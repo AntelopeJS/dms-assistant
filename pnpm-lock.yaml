@@ -24,8 +24,8 @@ importers:
         specifier: '>=0.14.3 <0.15.0'
         version: 0.14.3(e499686372c24153c1ee7ec619bffb9a)
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.5.2 <0.6.0'
-        version: 0.5.2(@antelopejs/interface-core@0.5.1)
+        specifier: 0.5.3-next.970.g324d668
+        version: 0.5.3-next.970.g324d668(@antelopejs/interface-core@0.5.1)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.3.316
         version: 0.3.317(@anthropic-ai/sdk@0.93.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.29.0(zod@4.6.7))(zod@4.6.7)
@@ -186,6 +186,11 @@ packages:
 
   '@antelopejs/interface-dms-builder@0.5.2':
     resolution: {integrity: sha512-xtP5ZdkjTlvYxiRcLfDnHqtep9K369Nqgdf7ym0Yf8j93LF+XcRP35Z1Egs5abXrQ6F7zchey+1kOEIo2g8JNg==}
+    peerDependencies:
+      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
+
+  '@antelopejs/interface-dms-builder@0.5.3-next.970.g324d668':
+    resolution: {integrity: sha512-htlCei+VDy/ENbuDX1Ae5vLheDf3VPPKZNR8hBmeXfe5AG/W86eG0RRP2UQL5HPN0RE6w5JWAzqgfQEYyiFGJA==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
@@ -3816,6 +3821,10 @@ snapshots:
     optional: true
 
   '@antelopejs/interface-dms-builder@0.5.2(@antelopejs/interface-core@0.5.1)':
+    dependencies:
+      '@antelopejs/interface-core': 0.5.1
+
+  '@antelopejs/interface-dms-builder@0.5.3-next.970.g324d668(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 

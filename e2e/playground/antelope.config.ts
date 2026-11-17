@@ -2,6 +2,7 @@ import { defineConfig } from "@antelopejs/interface-core/config";
 
 const preferredApiPort = process.env.PORT ?? "5010";
 const dmsClientUrl = process.env.DMS_CLIENT_BASE_URL;
+const moduleRoot = process.env.DMS_MODULE_ROOT ?? "../../";
 
 /**
  * The repository's playground with the ports, origins, secrets and mail
@@ -16,7 +17,7 @@ export default defineConfig({
       source: { type: "local", path: "." },
     },
     "dms-assistant": {
-      source: { type: "local", path: "../../" },
+      source: { type: "local", path: moduleRoot },
       config: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
     },
     dms: {

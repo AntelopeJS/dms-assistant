@@ -48,4 +48,16 @@ export const MOCKUP_TOOL_NAMES = [
   "mockup_write_spec",
 ] as const;
 
+/**
+ * The mockup tools that write a version of the spec. The DMS folds the writes
+ * that share a `writeGroup` into one version.
+ */
+export const MOCKUP_WRITE_TOOL_NAMES = [
+  "mockup_patch_spec",
+  "mockup_write_spec",
+] as const satisfies readonly (typeof MOCKUP_TOOL_NAMES)[number][];
+
+/** The input field of those tools that names the reply a write belongs to. */
+export const MOCKUP_WRITE_GROUP_FIELD = "writeGroup";
+
 export const PAGE_VERIFY_TOOL_NAME = "page_verify";

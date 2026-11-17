@@ -4,6 +4,7 @@ import type {
   Options,
   PermissionMode,
 } from "@anthropic-ai/claude-agent-sdk";
+import type { ToolArgs } from "../../../src/agent/edit-targets.js";
 import { MOCK_TRACE_ENV_VAR } from "./constants.js";
 
 export type DecidingLayer =
@@ -17,6 +18,7 @@ export type DecidingLayer =
 interface TraceEntry {
   kind: string;
   name?: string;
+  input?: ToolArgs;
   model?: string;
   decidedBy?: DecidingLayer;
   isAllowed?: boolean;

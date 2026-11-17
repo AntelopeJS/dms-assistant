@@ -32,6 +32,8 @@ interface TurnOptions {
   policy?: Partial<PermissionPolicy>;
   answer?: PermissionDecisionValue;
   isHeldCall?: (call: ToolCallSubject) => boolean;
+  /** How many user messages the one session receives, each replaying the script. */
+  turns?: number;
 }
 
 interface Turn {
@@ -39,6 +41,8 @@ interface Turn {
   decisions: ToolDecision[];
   announced: string[];
   tools: TracedClaudeEntry[];
+  /** The input each tool ran with, after the hooks rewrote it. */
+  toolInputs: TracedClaudeEntry[];
   sessionMode: string | undefined;
 }
 
@@ -119,15 +123,17 @@ export function useClaudeTurnRunner(): TurnFixture {
         },
       },
     });
-    for await (const _event of runner.start("go", {
-      conversationId: CONVERSATION_ID,
-      hostProjectRoot: root,
-      getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
-      permissionBus: bus,
-      onToolDecision: (decision) => decisions.push(decision),
-      onToolAnnounced: (callId) => announced.push(callId),
-      isHeldCall: options.isHeldCall,
-    })) {
+    for (let turn = 0; turn < (options.turns ?? 1); turn += 1) {
+      for await (const _event of runner.start("go", {
+        conversationId: CONVERSATION_ID,
+        hostProjectRoot: root,
+        getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
+        permissionBus: bus,
+        onToolDecision: (decision) => decisions.push(decision),
+        onToolAnnounced: (callId) => announced.push(callId),
+        isHeldCall: options.isHeldCall,
+      })) {
+      }
     }
     const trace = readClaudeTrace(traceFile);
     return {
@@ -135,6 +141,7 @@ export function useClaudeTurnRunner(): TurnFixture {
       decisions,
       announced,
       tools: trace.filter((entry) => entry.kind === "tool"),
+      toolInputs: trace.filter((entry) => entry.kind === "toolInput"),
       sessionMode: trace.find((entry) => entry.kind === "session")
         ?.permissionMode,
     };

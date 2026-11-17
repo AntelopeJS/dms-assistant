@@ -46,16 +46,9 @@ import {
   SYSTEM_PROMPT_PRESET_TYPE,
   UNSERVED_CLI_TOOLS,
 } from "../../constants/claude.js";
-import {
-  DMS_MCP_HIDDEN_TOOL_NAMES,
-  DMS_MCP_SERVER_KEY,
-  DMS_MCP_TOOL_NAME_PREFIX,
-  MCP_SERVER_KEY,
-} from "../../constants/mcp.js";
 import { STATE_DIR_SEGMENTS } from "../../constants/paths.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
 import { readProjectInfo } from "../../host/project-info.js";
-import { dmsMcpLaunch } from "../../mcp/dms-server.js";
 import { JsonValueSchema } from "../../protocol/json.js";
 import type { AiMcpServer } from "../../mcp/types.js";
 import {
@@ -79,6 +72,12 @@ import { createInputQueue } from "./input-queue.js";
 import { createModelTrack } from "./model-fallback.js";
 import { resolveClaudeBinary } from "./resolve-binary.js";
 import { buildSafeModeHooks, type SdkHooks } from "./safe-mode.js";
+import {
+  createWriteGroups,
+  type WriteGroups,
+  withWriteGroup,
+} from "./write-group.js";
+import { buildMcpServersMap, HIDDEN_DMS_MCP_TOOLS } from "./mcp-servers.js";
 import { withSecretFileGuard } from "./secret-files.js";
 import {
   SDK_SEARCH_TOOL_RULES,
@@ -129,6 +128,7 @@ interface SkillLoadout {
 interface PromptOptionsInput {
   systemPrompt: string;
   hooks: SdkHooks;
+  writeGroups: WriteGroups;
   canUseTool: CanUseTool | undefined;
   mcpServer: AiMcpServer | undefined;
   settings: TurnSettings;
@@ -149,7 +149,7 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
     allowedTools: [...SDK_SEARCH_TOOL_RULES],
     includePartialMessages: SDK_INCLUDE_PARTIAL_MESSAGES,
     permissionMode: resolvePermissionMode(input.settings),
-    hooks: withSecretFileGuard(input.hooks),
+    hooks: withWriteGroup(withSecretFileGuard(input.hooks), input.writeGroups),
     ...resolveModelOptions(input.settings),
     abortController: input.abortController,
     env: buildClaudeEnv(process.env, input.hostProjectRoot),
@@ -159,24 +159,7 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
   return { ...base, pathToClaudeCodeExecutable: claudeBinary };
 }
 
-function buildMcpServersMap(
-  mcpServer: AiMcpServer | undefined,
-  hostProjectRoot: string,
-): PromptOptions["mcpServers"] {
-  const dms = {
-    type: "stdio" as const,
-    ...dmsMcpLaunch(hostProjectRoot),
-  } satisfies McpServerConfig;
-  if (mcpServer === undefined) return { [DMS_MCP_SERVER_KEY]: dms };
-  return { [DMS_MCP_SERVER_KEY]: dms, [MCP_SERVER_KEY]: mcpServer };
-}
-
-const DISALLOWED_TOOLS = [
-  ...DMS_MCP_HIDDEN_TOOL_NAMES.map(
-    (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
-  ),
-  ...UNSERVED_CLI_TOOLS,
-];
+const DISALLOWED_TOOLS = [...HIDDEN_DMS_MCP_TOOLS, ...UNSERVED_CLI_TOOLS];
 
 /**
  * Layers the optional permission callback, MCP server and skill loadout onto
@@ -361,6 +344,7 @@ interface ProviderConfig {
  * and the settings cell the safe-mode hook reads live.
  */
 interface ClaudeBackend extends StreamBackend {
+  writeGroups: WriteGroups;
   hostProjectRoot: string;
   conversationId: string;
 }
@@ -401,6 +385,7 @@ async function submitTurn(
   backend: ClaudeBackend,
   input: TurnInput,
 ): Promise<void> {
+  backend.writeGroups.begin();
   const content = await buildTurnContent(input.text, input.attachments, {
     hostProjectRoot: backend.hostProjectRoot,
     conversationId: backend.conversationId,
@@ -464,6 +449,7 @@ async function buildSessionOptions(
   config: ProviderConfig,
   ctx: ProviderSessionContext,
   live: LiveSettings,
+  writeGroups: WriteGroups,
   abortController: AbortController,
 ): Promise<PromptOptions> {
   const skillSources = resolveSkillSources(
@@ -484,6 +470,7 @@ async function buildSessionOptions(
       onToolDecision: ctx.onToolDecision,
       beforeMutation: ctx.beforeMutation,
     }),
+    writeGroups,
     canUseTool: resolveCanUseTool(ctx, readRoots, () => live.settings),
     mcpServer: ctx.mcpServer,
     settings: ctx.settings,
@@ -501,11 +488,19 @@ async function createProviderSession(
   const queue = createInputQueue();
   const abortController = new AbortController();
   const live: LiveSettings = { settings: ctx.settings };
-  const options = await buildSessionOptions(config, ctx, live, abortController);
+  const writeGroups = createWriteGroups();
+  const options = await buildSessionOptions(
+    config,
+    ctx,
+    live,
+    writeGroups,
+    abortController,
+  );
   const backend: ClaudeBackend = {
     output: sdk.query({ prompt: queue.stream, options }),
     queue,
     live,
+    writeGroups,
     hostProjectRoot: ctx.hostProjectRoot,
     conversationId: ctx.conversationId,
     lastTurn: null,

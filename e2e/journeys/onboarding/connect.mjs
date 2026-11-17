@@ -10,8 +10,6 @@ const CONNECT = { role: "button", name: "Connect and analyse" };
 const STEP_HEADING = { role: "heading", name: "Connect your database" };
 const RESTART = /Restart the project to load the connection/;
 const CONNECT_MEMORY = "dms-assistant:onboarding-connect";
-const RELOAD_DURING_RESTART =
-  "a page loaded while the -w restart runs gets the dashboard's 502 Server error page, which stays after the restarted project answers, so the reloaded page opens no popup";
 const READER = "reader";
 const PASSWORD = "reader-secret";
 
@@ -155,12 +153,6 @@ export const connectJourneys = [
     frontend: "dev",
     backend: "watch",
     last: true,
-    knownFailures: Object.fromEntries(
-      ["after the reload: the popup is open on its connect step", "after the reload: the URL is not asked again", "after the reload: the schema check is running"].map((name) => [
-        name,
-        RELOAD_DURING_RESTART,
-      ]),
-    ),
     async run(/** @type {Ctx} */ ctx) {
       const url = await seedSource(ctx, sourceName(ctx, "connect_watch"));
       const tab = await ctx.tab();

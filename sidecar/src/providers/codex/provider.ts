@@ -101,6 +101,7 @@ const tokenUsageUpdatedSchema = z.object({
   tokenUsage: z.object({
     last: z.object({
       inputTokens: z.number(),
+      cachedInputTokens: z.number().default(0),
       outputTokens: z.number(),
       totalTokens: z.number(),
     }),
@@ -321,6 +322,7 @@ function reportTokenUsage(
     inputTokens: last.inputTokens,
     outputTokens: last.outputTokens,
     totalTokens: last.totalTokens,
+    cacheReadTokens: last.cachedInputTokens,
   });
 }
 

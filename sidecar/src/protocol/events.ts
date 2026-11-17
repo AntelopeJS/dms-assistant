@@ -269,6 +269,7 @@ export const ConversationSnapshotEvent = z.object({
   changeSets: z.array(ChangeSetSummarySchema),
   mode: ConversationModeSchema,
   totalTokens: z.number(),
+  cacheReadTokens: z.number(),
   model: z.string().optional(),
 });
 
@@ -280,6 +281,7 @@ export const ConversationSummarySchema = z.object({
   messageCount: z.number(),
   provider: z.enum(PROVIDER_NAMES).optional(),
   totalTokens: z.number(),
+  cacheReadTokens: z.number(),
   filesChanged: z.number(),
   filesUndone: z.number(),
   isRunning: z.boolean(),
@@ -532,11 +534,15 @@ export const ChangeSetEvent = z.object({
   changeSet: ChangeSetSummarySchema,
 });
 
-/** After each turn: the running token total of the chat. */
+/**
+ * After each turn: the running token total of the chat, and the part of it
+ * read back from the prompt cache.
+ */
 export const UsageEvent = z.object({
   type: z.literal(EVENT_TYPES.USAGE),
   conversationId: z.string(),
   totalTokens: z.number(),
+  cacheReadTokens: z.number(),
   /** The model that answered last; absent until a reply names it. */
   model: z.string().optional(),
 });

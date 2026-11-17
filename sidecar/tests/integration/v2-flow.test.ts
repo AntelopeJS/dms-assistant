@@ -118,7 +118,8 @@ function registerChangeSetUndoCase(): void {
         scope: "vibe",
         state: "applied",
       });
-      await collector.next((e) => e.type === "usage");
+      const usage = await collector.next((e) => e.type === "usage");
+      expect(usage).toMatchObject({ totalTokens: 90, cacheReadTokens: 0 });
 
       const activity = await json(
         await callApi(harness.port, "/activity?category=changed"),

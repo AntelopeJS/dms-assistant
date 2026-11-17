@@ -101,6 +101,7 @@ const TOKEN_COUNTS = {
   inputTokens: z.number(),
   outputTokens: z.number(),
   totalTokens: z.number(),
+  cacheReadTokens: z.number().default(0),
 };
 
 /** A conversation as `state.json` holds it; keys it does not name are kept. */

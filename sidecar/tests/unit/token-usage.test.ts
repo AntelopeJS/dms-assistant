@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -68,7 +68,7 @@ const NON_RESULT_MESSAGE: SDKMessage = {
 };
 
 describe("token usage extraction", () => {
-  it("counts cached and cache-write input as input", () => {
+  it("counts cached and cache-write input as input, and keeps cache reads apart (fails when cache reads are lost or counted as new)", () => {
     const usage = extractTokenUsage(
       resultMessage({
         input_tokens: 100,
@@ -81,6 +81,7 @@ describe("token usage extraction", () => {
       inputTokens: 125,
       outputTokens: 30,
       totalTokens: 155,
+      cacheReadTokens: 20,
     });
   });
 
@@ -114,21 +115,59 @@ describe("conversation usage and provider", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("accumulates usage across turns", () => {
+  it("accumulates usage, cache reads included, across turns (fails when a turn's cache reads are dropped)", () => {
     store.addTokenUsage(CONVERSATION_ID, {
       inputTokens: 10,
       outputTokens: 2,
       totalTokens: 12,
+      cacheReadTokens: 4,
     });
     store.addTokenUsage(CONVERSATION_ID, {
       inputTokens: 5,
       outputTokens: 3,
       totalTokens: 8,
+      cacheReadTokens: 1,
     });
     expect(store.get(CONVERSATION_ID)?.tokenUsage).toEqual({
       inputTokens: 15,
       outputTokens: 5,
       totalTokens: 20,
+      cacheReadTokens: 5,
+    });
+    expect(store.list(null)[0]).toMatchObject({
+      totalTokens: 20,
+      cacheReadTokens: 5,
+    });
+  });
+
+  it("reads a conversation stored before cache reads were counted, with none (fails when the older conversation is set aside)", async () => {
+    await writeFile(
+      join(dir, STATE_FILE),
+      JSON.stringify({
+        conversations: {
+          [CONVERSATION_ID]: {
+            messages: [],
+            createdAtMs: 1,
+            updatedAtMs: 1,
+            tokenUsage: { inputTokens: 9, outputTokens: 1, totalTokens: 10 },
+            usageLog: [
+              {
+                inputTokens: 9,
+                outputTokens: 1,
+                totalTokens: 10,
+                timestampMs: 1,
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await store.loadFromDisk();
+    expect(store.get(CONVERSATION_ID)?.tokenUsage).toEqual({
+      inputTokens: 9,
+      outputTokens: 1,
+      totalTokens: 10,
+      cacheReadTokens: 0,
     });
   });
 

@@ -314,6 +314,7 @@
 				"hint_stop": "arrêter",
 				"hint_history": "historique",
 				"usage": "{count} jetons · cette conversation",
+				"usage_cached": "{count} jetons · {cached} lus depuis le cache · cette conversation",
 				"usage_new": "nouvelle conversation",
 				"usage_offline": "hors ligne",
 				"remove_block": "Retirer le bloc"

@@ -71,12 +71,19 @@ const ENTRY: ConversationEntry = {
     updatedAtMs: NOW,
     provider: "codex",
     usageLog: [
-      { timestampMs: NOW, inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+      {
+        timestampMs: NOW,
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+        cacheReadTokens: 0,
+      },
       {
         timestampMs: NOW - DAY_MS,
         inputTokens: 1,
         outputTokens: 1,
         totalTokens: 2,
+        cacheReadTokens: 0,
       },
     ],
     messages: [

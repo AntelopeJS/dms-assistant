@@ -314,6 +314,7 @@
 				"hint_stop": "stop",
 				"hint_history": "history",
 				"usage": "{count} tokens · this chat",
+				"usage_cached": "{count} tokens · {cached} read from cache · this chat",
 				"usage_new": "new chat",
 				"usage_offline": "offline",
 				"remove_block": "Remove the block"

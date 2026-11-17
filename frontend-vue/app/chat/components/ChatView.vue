@@ -216,14 +216,18 @@ const statusLabel = computed<string>(() =>
 const usageLabel = computed<string>(() => {
 	if (!isConnected.value)
 		return t("dms_assistant.panel.composer.usage_offline");
-	const tokens = conversation.totalTokens.value;
-	if (tokens === null || tokens === 0) {
+	const usage = conversation.usage.value;
+	if (usage === null || usage.newTokens + usage.cacheReadTokens === 0) {
 		return conversation.messages.value.length === 0
 			? t("dms_assistant.panel.composer.usage_new")
 			: "";
 	}
-	return t("dms_assistant.panel.composer.usage", {
-		count: formatTokens(tokens),
+	const count = formatTokens(usage.newTokens);
+	if (usage.cacheReadTokens === 0)
+		return t("dms_assistant.panel.composer.usage", { count });
+	return t("dms_assistant.panel.composer.usage_cached", {
+		count,
+		cached: formatTokens(usage.cacheReadTokens),
 	});
 });
 

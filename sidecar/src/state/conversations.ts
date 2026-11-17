@@ -8,6 +8,7 @@ import {
   type StoredConversationSummary,
   type StoredMessage,
   type StoredState,
+  sumTokenUsage,
   type TokenUsage,
 } from "./types.js";
 
@@ -210,14 +211,6 @@ function markModel(
   persistCache(state);
 }
 
-function sumUsage(current: TokenUsage, usage: TokenUsage): TokenUsage {
-  return {
-    inputTokens: current.inputTokens + usage.inputTokens,
-    outputTokens: current.outputTokens + usage.outputTokens,
-    totalTokens: current.totalTokens + usage.totalTokens,
-  };
-}
-
 function addTokenUsage(
   state: CacheState,
   conversationId: string,
@@ -225,7 +218,7 @@ function addTokenUsage(
 ): void {
   const conversation = ensureConversation(state, conversationId);
   if (conversation === null) return;
-  conversation.tokenUsage = sumUsage(
+  conversation.tokenUsage = sumTokenUsage(
     conversation.tokenUsage ?? EMPTY_TOKEN_USAGE,
     usage,
   );
@@ -317,6 +310,7 @@ function summarize(
     messageCount: conversation.messages.length,
     provider: conversation.provider,
     totalTokens: conversation.tokenUsage?.totalTokens ?? 0,
+    cacheReadTokens: conversation.tokenUsage?.cacheReadTokens ?? 0,
   };
 }
 

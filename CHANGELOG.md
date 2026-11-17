@@ -2,6 +2,39 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.8
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.7...v0.2.8)
+
+### 🩹 Fixes
+
+- **sidecar:** Give Claude sessions the Grep and Glob tools ([#79](https://github.com/AntelopeJS/dms-assistant/pull/79))
+- **onboarding:** Open a page just built once the site layout serves its route ([#89](https://github.com/AntelopeJS/dms-assistant/pull/89))
+- **settings:** Require the assistant UI's header to change a guard rail ([#84](https://github.com/AntelopeJS/dms-assistant/pull/84))
+- **sidecar:** Read MSYS drive paths as the CLI does in the secret-file guard ([#81](https://github.com/AntelopeJS/dms-assistant/pull/81))
+- **e2e:** Make the watch restart after an onboarding connection finish ([#100](https://github.com/AntelopeJS/dms-assistant/pull/100))
+- **build:** Run the playgrounds on the dms preview that the interface-dms-builder pin needs ([#101](https://github.com/AntelopeJS/dms-assistant/pull/101))
+- **e2e:** Run the dev-frontend journeys on the dms preview that settles the dashboard ([#103](https://github.com/AntelopeJS/dms-assistant/pull/103))
+- **deps:** Depend on the stable @antelopejs/dms, @antelopejs/interface-dms and @antelopejs/interface-dms-builder
+
+### 📦 Build
+
+- Accept the interface-dms-builder version without SampleDatabaseRows ([#99](https://github.com/AntelopeJS/dms-assistant/pull/99))
+
+### ✅ Tests
+
+- **e2e:** Run the verify skill's journeys as a Playwright suite in CI ([#90](https://github.com/AntelopeJS/dms-assistant/pull/90))
+- **builder:** Update the stale verify-dms-builder journeys ([#97](https://github.com/AntelopeJS/dms-assistant/pull/97))
+- **e2e:** Expect the reload during a watch restart to recover ([#102](https://github.com/AntelopeJS/dms-assistant/pull/102))
+
+### 🤖 CI
+
+- Pick the tier with the shared ci-tier action ([#98](https://github.com/AntelopeJS/dms-assistant/pull/98))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.2.7
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.6...v0.2.7)

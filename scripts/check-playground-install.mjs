@@ -83,7 +83,25 @@ const lockfileFailures = PLAYGROUNDS.map(lockfileFailure).filter(
   (failure) => failure !== null,
 );
 
-const failures = [...buildFailures, ...clientFailures, ...lockfileFailures];
+const configFailures = spawnSync(
+  "git",
+  ["ls-files", "--", "*antelope.config.ts"],
+  { cwd: root, encoding: "utf8" },
+)
+  .stdout.split("\n")
+  .filter((file) => file !== "")
+  .filter((file) => /-next\.\d/.test(readFileSync(join(root, file), "utf8")))
+  .map(
+    (file) =>
+      `${file}: a preview (-next.) version breaks \`ajs project build\`; use a stable range.`,
+  );
+
+const failures = [
+  ...buildFailures,
+  ...clientFailures,
+  ...configFailures,
+  ...lockfileFailures,
+];
 
 if (failures.length > 0) {
   process.stderr.write(`${failures.join("\n")}\n`);

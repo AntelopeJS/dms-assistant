@@ -44,10 +44,9 @@ import {
   SKILL_PLUGIN_WRAPPER_DIR,
   SYSTEM_PROMPT_PRESET_NAME,
   SYSTEM_PROMPT_PRESET_TYPE,
+  UNSERVED_CLI_TOOLS,
 } from "../../constants/claude.js";
 import {
-  ASK_USER_QUESTION_BUILTIN_TOOL_NAME,
-  ASK_USER_QUESTION_REDIRECT_MESSAGE,
   DMS_MCP_HIDDEN_TOOL_NAMES,
   DMS_MCP_SERVER_KEY,
   DMS_MCP_TOOL_NAME_PREFIX,
@@ -172,9 +171,12 @@ function buildMcpServersMap(
   return { [DMS_MCP_SERVER_KEY]: dms, [MCP_SERVER_KEY]: mcpServer };
 }
 
-const HIDDEN_DMS_MCP_TOOLS = DMS_MCP_HIDDEN_TOOL_NAMES.map(
-  (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
-);
+const DISALLOWED_TOOLS = [
+  ...DMS_MCP_HIDDEN_TOOL_NAMES.map(
+    (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
+  ),
+  ...UNSERVED_CLI_TOOLS,
+];
 
 /**
  * Layers the optional permission callback, MCP server and skill loadout onto
@@ -190,7 +192,7 @@ function buildPromptOptions(input: PromptOptionsInput): PromptOptions {
   const withMcp = {
     ...withTool,
     mcpServers: buildMcpServersMap(input.mcpServer, input.hostProjectRoot),
-    disallowedTools: HIDDEN_DMS_MCP_TOOLS,
+    disallowedTools: DISALLOWED_TOOLS,
   };
   if (input.skillLoadout === undefined) return withMcp;
   return {
@@ -272,13 +274,6 @@ export async function bridgeCanUseTool(
   return outcome.isAllowed ? buildAllowResult(input) : buildDenyResult(outcome);
 }
 
-function buildAskUserRedirectResult(): SdkPermissionDeny {
-  return {
-    behavior: SDK_PERMISSION_BEHAVIOR.DENY,
-    message: ASK_USER_QUESTION_REDIRECT_MESSAGE,
-  };
-}
-
 /** What the permission gate needs to answer one tool request. */
 interface CanUseToolDeps {
   bus: PermissionBus;
@@ -316,9 +311,6 @@ function asksPerson(
 function buildCanUseTool(deps: CanUseToolDeps): CanUseTool {
   const { ctx } = deps;
   return (toolName, input, options) => {
-    if (toolName === ASK_USER_QUESTION_BUILTIN_TOOL_NAME) {
-      return Promise.resolve(buildAskUserRedirectResult());
-    }
     const callId = options.toolUseID;
     if (isFirstPartyMcpTool(toolName) && !asksPerson(deps, toolName, input)) {
       ctx.onToolAnnounced?.(callId, toolName, input);

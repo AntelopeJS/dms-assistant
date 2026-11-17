@@ -377,18 +377,6 @@ function registerBuilderAndLedgerCases({ runTurn }: TurnFixture): void {
 
 function registerScopeCases({ runTurn, projectDir }: TurnFixture): void {
   it(
-    "sends the built-in question tool to canUseTool, never counting it as Auto review's",
-    async () => {
-      const turn = await runTurn([
-        { id: "question", name: "AskUserQuestion", input: { questions: [] } },
-      ]);
-      expect(turn.tools).toMatchObject([REFUSED_WHEN_ASKED]);
-      expect(turn.decisions).toEqual([]);
-    },
-    TEST_TIMEOUT_MS,
-  );
-
-  it(
     "asks before reading outside the project, and reads inside it unasked",
     async () => {
       const turn = await runTurn([

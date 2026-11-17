@@ -101,15 +101,6 @@ export const ASK_USER_RESULT_NO_ANSWER =
   "The user did not answer (the question timed out or was dismissed).";
 
 /**
- * The SDK's built-in AskUserQuestion tool cannot render in the chat, so
- * calls to it dead-end at the permission prompt. Redirect the agent to the
- * module's own ask_user MCP tool, which routes to the question bus the chat
- * does render.
- */
-export const ASK_USER_QUESTION_BUILTIN_TOOL_NAME = "AskUserQuestion";
-export const ASK_USER_QUESTION_REDIRECT_MESSAGE = `AskUserQuestion is not available here. Use the ${MCP_TOOL_NAME_PREFIX}${ASK_USER_TOOL_NAME} tool instead to ask the user multiple-choice questions.`;
-
-/**
  * The DMS MCP's tools that the chat serves itself, since only the chat's own
  * drive the user's tab and the chat. Hidden, so the agent sees one of each.
  */

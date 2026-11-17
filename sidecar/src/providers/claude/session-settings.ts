@@ -37,11 +37,18 @@ export const SECRET_FILE_READ_DENY_RULES: readonly string[] =
  * - its `hooks` frontmatter, and any settings or plugin hook, does not run;
  *   the sidecar's own hooks are SDK callbacks, which this does not reach;
  * - an `@` reference to a secret file is refused.
+ *
+ * Every request also leaves out what the chat does not use: the auto memory,
+ * whose directory lies outside the project and which Safe mode cannot write,
+ * and the git commit and pull request instructions with their status
+ * snapshot, since the chat keeps its own change sets.
  */
 export const SDK_SESSION_SETTINGS = {
   disableSkillShellExecution: true,
   disableAllHooks: true,
   permissions: { deny: [...SECRET_FILE_READ_DENY_RULES] },
+  autoMemoryEnabled: false,
+  includeGitInstructions: false,
 } satisfies Exclude<Options["settings"], string | undefined>;
 
 /**

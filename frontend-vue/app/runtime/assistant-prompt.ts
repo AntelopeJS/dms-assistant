@@ -14,6 +14,9 @@ const NameSchema = z
 	.string()
 	.check(z.minLength(1), z.maxLength(MAX_NAME_LENGTH));
 
+/** A mockup's display title, beside its folder name. dms 0.20.x sends none. */
+const TitleSchema = z.optional(z.string().check(z.maxLength(MAX_NAME_LENGTH)));
+
 /** The mockup block a prompt is about, in the spec's own terms. */
 export const MockupBlockSchema = z.object({
 	mockup: NameSchema,
@@ -32,22 +35,25 @@ const BlockPromptSchema = z.object({
 
 /**
  * "Build it": `prompt` is the name of the mockup to build, and no block is
- * sent. `target.pageRef` names an existing page to build into ("Edit as
- * mockup"), which the build updates instead of creating a page.
+ * sent. `title` is its display title. `target.pageRef` names an existing page
+ * to build into ("Edit as mockup"), which the build updates instead of
+ * creating a page.
  */
 const BuildPromptSchema = z.object({
 	prompt: NameSchema,
+	title: TitleSchema,
 	source: z.literal("build"),
 	target: z.optional(z.object({ pageRef: NameSchema })),
 });
 
 /**
  * "Resolve with AI": `prompt` is the name of the mockup whose open comments
- * the assistant applies and resolves. `page` limits the run to the comments of
- * one page of its spec.
+ * the assistant applies and resolves, `title` its display title. `page` limits
+ * the run to the comments of one page of its spec.
  */
 const ResolveCommentsPromptSchema = z.object({
 	prompt: NameSchema,
+	title: TitleSchema,
 	source: z.literal("resolve-comments"),
 	page: z.optional(NameSchema),
 });

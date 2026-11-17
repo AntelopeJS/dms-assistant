@@ -40,23 +40,26 @@ export interface MockupPromptIntent {
 }
 
 /**
- * Builds a mockup into real pages through a turn, followed in the build
- * dialog; into the existing page `pageRef` when given, rather than a new one.
+ * Builds the mockup named `mockup`, titled `title`, into real pages through a
+ * turn in a new conversation, sent without waiting for the user; into the
+ * existing page `pageRef` when given, rather than a new one.
  */
 export interface BuildMockupIntent {
 	kind: "build";
 	mockup: string;
+	title?: string;
 	pageRef?: string;
 }
 
 /**
- * Applies and resolves the open comments of a mockup through a turn in a new
- * conversation, sent without waiting for the user; those of the page `page`
- * only when given.
+ * Applies and resolves the open comments of the mockup named `mockup`, titled
+ * `title`, through a turn in a new conversation, sent without waiting for the
+ * user; those of the page `page` only when given.
  */
 export interface ResolveCommentsIntent {
 	kind: "resolve-comments";
 	mockup: string;
+	title?: string;
 	page?: string;
 }
 
@@ -102,6 +105,7 @@ export function intentOfPrompt(prompt: MockupAssistantPrompt): PanelIntent {
 			return {
 				kind: "build",
 				mockup: prompt.prompt,
+				...(prompt.title === undefined ? {} : { title: prompt.title }),
 				...(prompt.target === undefined
 					? {}
 					: { pageRef: prompt.target.pageRef }),
@@ -110,6 +114,7 @@ export function intentOfPrompt(prompt: MockupAssistantPrompt): PanelIntent {
 			return {
 				kind: "resolve-comments",
 				mockup: prompt.prompt,
+				...(prompt.title === undefined ? {} : { title: prompt.title }),
 				...(prompt.page === undefined ? {} : { page: prompt.page }),
 			};
 		case "new-mockup":

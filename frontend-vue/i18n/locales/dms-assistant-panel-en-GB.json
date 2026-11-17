@@ -392,24 +392,17 @@
 			"fold": {
 				"open": "Open the assistant"
 			},
+			"mockup_label": {
+				"name": "“{name}”",
+				"titled": "“{title}” ({name})"
+			},
 			"build": {
-				"message": "Build the mockup “{mockup}” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains.",
-				"title": "Building “{mockup}”",
-				"title_done": "Built “{mockup}”",
-				"description": "The assistant turns the mockup into real pages, then compares them with it.",
-				"steps": "Build steps",
-				"starting": "Starting the build…",
-				"background": "Run in background",
-				"close": "Close",
-				"open_pages": "Open the pages",
-				"title_failed": "“{mockup}” did not build",
-				"title_stopped": "Build of “{mockup}” stopped",
-				"message_into": "Build mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one.",
-				"failures": "Checks that did not pass"
+				"message": "Build the mockup {mockup} into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
+				"message_into": "Build the mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one. End your reply with a Markdown link to that page."
 			},
 			"resolve_comments": {
-				"message": "Use the dms-mockup skill to resolve the open comments of mockup “{mockup}”. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question.",
-				"message_page": "Use the dms-mockup skill to resolve the open comments of page {page} of mockup “{mockup}”, and only that page. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question."
+				"message": "Resolve the open comments of the mockup {mockup}. These steps are all it takes, no skill needed:\n1. List the open comments with mockup_annotations (status \"open\").\n2. Each comment carries its block's JSON pointer (path) and node: patch the spec with mockup_patch_spec from those, without reading spec.json. A comment with a page and no path is about that whole page.\n3. Resolve each comment you applied with mockup_resolve_annotation. Leave a comment open when you cannot apply it, and ask me your question.\n4. Reply briefly: what changed, and what is still open with its question.",
+				"message_page": "Resolve the open comments of page {page} of the mockup {mockup}, and only that page. These steps are all it takes, no skill needed:\n1. List the open comments of that page with mockup_annotations (status \"open\", page \"{page}\").\n2. Each comment carries its block's JSON pointer (path) and node: patch the spec with mockup_patch_spec from those, without reading spec.json. A comment with a page and no path is about that whole page.\n3. Resolve each comment you applied with mockup_resolve_annotation. Leave a comment open when you cannot apply it, and ask me your question.\n4. Reply briefly: what changed, and what is still open with its question."
 			}
 		},
 		"tools": {

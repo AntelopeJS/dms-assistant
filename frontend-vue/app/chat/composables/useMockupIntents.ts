@@ -1,45 +1,21 @@
-import { computed, nextTick, type Ref, ref, watch } from "vue";
+import { nextTick, type Ref, ref, watch } from "vue";
 import type { MockupBlock } from "../../runtime/assistant-prompt";
-import type {
-	BuildMockupIntent,
-	MockupPromptIntent,
-	ResolveCommentsIntent,
-} from "../../runtime/panel-intents";
-import type { ConversationMessage } from "../types/conversation";
-import {
-	type BuildTarget,
-	type BuildView,
-	buildView,
-} from "../utils/build-view";
+import type { MockupPromptIntent } from "../../runtime/panel-intents";
 
 export interface MockupIntentsDeps {
 	activeId: Readonly<Ref<string>>;
-	messages: Readonly<Ref<ConversationMessage[]>>;
 	isRunning: Readonly<Ref<boolean>>;
 	newConversation: () => void;
 	setDraft: (text: string) => void;
-	whenConnected: (run: () => void) => void;
-	/** Sends the message that asks the agent to build `target`. */
-	requestBuild: (target: BuildTarget) => void;
-	/** Sends the message that asks the agent to resolve the open comments of a mockup. */
-	requestResolve: (intent: ResolveCommentsIntent) => void;
-	navigate: (path: string) => void;
-}
-
-interface Building {
-	target: BuildTarget;
-	conversationId: string;
 }
 
 /**
- * What the mockup editor hands the chat: a prompt about one of its blocks,
- * put in the composer with the block as context, a mockup to build, followed
- * in the build dialog while its chat is the one on screen, or the comments of
- * a mockup to resolve, sent in a new chat.
+ * A prompt the mockup editor hands the chat about one of its blocks: put in
+ * the composer with the block as context, which goes with the next message
+ * sent in this conversation.
  */
 export function useMockupIntents(deps: MockupIntentsDeps) {
 	const focusBlock = ref<MockupBlock | null>(null);
-	const building = ref<Building | null>(null);
 
 	watch(
 		deps.activeId,
@@ -49,32 +25,10 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		{ flush: "sync" },
 	);
 
-	const build = computed<BuildView | null>(() => {
-		const current = building.value;
-		if (current === null || current.conversationId !== deps.activeId.value)
-			return null;
-		return buildView(current.target, deps.messages.value, deps.isRunning.value);
-	});
-
 	function takePrompt(intent: MockupPromptIntent): void {
 		if (deps.isRunning.value) deps.newConversation();
 		focusBlock.value = intent.block ?? null;
 		void nextTick(() => deps.setDraft(intent.prompt));
-	}
-
-	function startBuild(intent: BuildMockupIntent): void {
-		deps.newConversation();
-		const target: BuildTarget =
-			intent.pageRef === undefined
-				? { mockup: intent.mockup }
-				: { mockup: intent.mockup, pageRef: intent.pageRef };
-		building.value = { target, conversationId: deps.activeId.value };
-		deps.whenConnected(() => deps.requestBuild(target));
-	}
-
-	function startResolve(intent: ResolveCommentsIntent): void {
-		deps.newConversation();
-		deps.whenConnected(() => deps.requestResolve(intent));
 	}
 
 	/** The block of the message being sent, as its extra fields; the chip goes with it. */
@@ -84,19 +38,5 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		return block === null ? {} : { focusBlock: block };
 	}
 
-	return {
-		focusBlock,
-		build,
-		takePrompt,
-		startBuild,
-		startResolve,
-		takeFocusBlock,
-		closeBuild: (): void => {
-			building.value = null;
-		},
-		openBuiltPages: (path: string): void => {
-			building.value = null;
-			deps.navigate(path);
-		},
-	};
+	return { focusBlock, takePrompt, takeFocusBlock };
 }

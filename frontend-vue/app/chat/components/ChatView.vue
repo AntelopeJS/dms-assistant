@@ -49,13 +49,16 @@ import type { PendingAttachment } from "../utils/attachments";
 import { changingBlock } from "../utils/block-target";
 import { formatTokens } from "../utils/format";
 import { newUuid } from "../utils/ids";
+import {
+	type MockupRequest,
+	mockupRequestMessage,
+} from "../utils/mockup-requests";
 import { isRunStalled, runElapsedMs } from "../utils/run-status";
 import { describeStatus } from "../utils/status-label";
 import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
 import ApprovalDock from "./ApprovalDock.vue";
 import BlockOutline from "./BlockOutline.vue";
-import BuildDialog from "./BuildDialog.vue";
 import ChatEmpty from "./ChatEmpty.vue";
 import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
@@ -164,32 +167,9 @@ const isStalled = computed(
 const todos = computed(() => latestTodos(conversation.messages.value));
 const mockup = useMockupIntents({
 	activeId,
-	messages: conversation.messages,
 	isRunning,
 	newConversation,
 	setDraft,
-	whenConnected,
-	requestBuild: (target) =>
-		sendUserMessage(
-			target.pageRef === undefined
-				? t("dms_assistant.panel.build.message", { mockup: target.mockup })
-				: t("dms_assistant.panel.build.message_into", {
-						mockup: target.mockup,
-						page: target.pageRef,
-					}),
-		),
-	requestResolve: (intent) =>
-		sendUserMessage(
-			intent.page === undefined
-				? t("dms_assistant.panel.resolve_comments.message", {
-						mockup: intent.mockup,
-					})
-				: t("dms_assistant.panel.resolve_comments.message_page", {
-						mockup: intent.mockup,
-						page: intent.page,
-					}),
-		),
-	navigate,
 });
 const outlinedBlock = computed(() =>
 	changingBlock(
@@ -394,6 +374,15 @@ function startConversation(intent: StartConversationIntent): void {
 	else void nextTick(() => composerRef.value?.focus());
 }
 
+/** Sends a build or a comment run in a new conversation; its steps show in the chat like any turn's. */
+function sendMockupRequest(request: MockupRequest): void {
+	startConversation({
+		kind: "start",
+		prompt: mockupRequestMessage(request, t),
+		send: true,
+	});
+}
+
 const INTENT_HANDLERS: Record<
 	PanelIntent["kind"],
 	(intent: PanelIntent) => void
@@ -408,10 +397,10 @@ const INTENT_HANDLERS: Record<
 		if (intent.kind === "prompt") mockup.takePrompt(intent);
 	},
 	build: (intent) => {
-		if (intent.kind === "build") mockup.startBuild(intent);
+		if (intent.kind === "build") sendMockupRequest(intent);
 	},
 	"resolve-comments": (intent) => {
-		if (intent.kind === "resolve-comments") mockup.startResolve(intent);
+		if (intent.kind === "resolve-comments") sendMockupRequest(intent);
 	},
 	focus: () => void nextTick(() => composerRef.value?.focus()),
 	approvals: () => {
@@ -647,13 +636,6 @@ onBeforeUnmount(() => {
 		/>
 
 		<BlockOutline :path="outlinedBlock" />
-
-		<BuildDialog
-			v-if="mockup.build.value"
-			:view="mockup.build.value"
-			@background="mockup.closeBuild"
-			@open-pages="mockup.openBuiltPages"
-		/>
 	</main>
 </template>
 

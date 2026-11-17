@@ -9,7 +9,6 @@ import {
 import { intentOfPrompt } from "../app/runtime/panel-intents";
 import { STORAGE_CONVERSATION_ID_KEY } from "../app/chat/constants/conversation";
 import {
-	buttonWithText,
 	CONVERSATION_ID,
 	createHarness,
 	type Harness,
@@ -153,7 +152,7 @@ describe("building into an existing page", () => {
 		});
 	});
 
-	it("asks the agent to update that page rather than create one (fails when the request reads as a new build)", async () => {
+	it("asks the agent to update that page rather than create one, and to link it (fails when the request reads as a new build)", async () => {
 		const harness = createHarness();
 		await openPanel(harness);
 		harness.session.intents.push({
@@ -164,7 +163,7 @@ describe("building into an existing page", () => {
 		await flushPromises();
 		const [request] = sentOfType(harness, "user_message");
 		expect(request.content).toBe(
-			"Build mockup bikes into the existing page /shop/board with the dms-mockup-build skill. Update that page; do not create a new one.",
+			"Build the mockup “bikes” into the existing page /shop/board with the dms-mockup-build skill. Update that page; do not create a new one. End your reply with a Markdown link to that page.",
 		);
 	});
 });
@@ -222,14 +221,13 @@ function lastSentConversation(harness: Harness): string {
 }
 
 describe("building a mockup", () => {
-	it("starts the build in a new chat and follows it in the dialog until sent to the background (fails when the build is not sent or the dialog cannot be left)", async () => {
+	it("sends the build in a new chat and shows its steps in the chat, with no dialog (fails when a build dialog opens or the request is not sent)", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		harness.session.intents.push({ kind: "build", mockup: "bikes" });
 		await flushPromises();
 		const conversationId = lastSentConversation(harness);
 		expect(conversationId).not.toBe(CONVERSATION_ID);
-		expect(sentOfType(harness, "user_message")[0].content).toContain("“bikes”");
 		harness.hub.deliver({
 			conversationId,
 			type: "tool_call_start",
@@ -238,11 +236,19 @@ describe("building a mockup", () => {
 			args: { name: "rentals", displayName: "Rentals", category: "shop" },
 		});
 		await nextTick();
-		const dialog = panel.find(".u-modal");
-		expect(dialog.text()).toContain("Building “bikes”");
-		expect(dialog.findAll(".cb-build__step")).toHaveLength(1);
-		await buttonWithText(dialog, "Run in background").trigger("click");
 		expect(panel.find(".u-modal").exists()).toBe(false);
+		expect(panel.find(".chat-view-body .cb-tools").exists()).toBe(true);
+	});
+
+	it("asks the agent to end its reply with a link to each page it built (fails when the request drops the links)", async () => {
+		const harness = createHarness();
+		await openPanel(harness);
+		harness.session.intents.push({ kind: "build", mockup: "bikes" });
+		await flushPromises();
+		const [request] = sentOfType(harness, "user_message");
+		expect(request.content).toBe(
+			"Build the mockup “bikes” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
+		);
 	});
 });
 
@@ -284,14 +290,20 @@ describe("resolving the comments of a mockup", () => {
 		const [request] = sentOfType(harness, "user_message");
 		expect(request.conversationId).not.toBe(CONVERSATION_ID);
 		expect(request.content).toBe(
-			"Use the dms-mockup skill to resolve the open comments of mockup “bikes”. List them with mockup_annotations, apply each one to the spec with mockup_patch_spec, then resolve it with mockup_resolve_annotation. A comment is pinned to a block or to a whole page: treat a comment pinned to a page only as a comment on that whole page. Leave a comment open when you cannot apply it, and ask me your question. Finish by telling me what changed and what is still open, with its question.",
+			[
+				"Resolve the open comments of the mockup “bikes”. These steps are all it takes, no skill needed:",
+				'1. List the open comments with mockup_annotations (status "open").',
+				"2. Each comment carries its block's JSON pointer (path) and node: patch the spec with mockup_patch_spec from those, without reading spec.json. A comment with a page and no path is about that whole page.",
+				"3. Resolve each comment you applied with mockup_resolve_annotation. Leave a comment open when you cannot apply it, and ask me your question.",
+				"4. Reply briefly: what changed, and what is still open with its question.",
+			].join("\n"),
 		);
 		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
 			"",
 		);
 	});
 
-	it("limits the request to the page when one is given (fails when the page is dropped)", async () => {
+	it("limits the request, and the listing, to the page when one is given (fails when the page is dropped)", async () => {
 		const harness = createHarness();
 		await openPanel(harness);
 		harness.session.intents.push({
@@ -303,8 +315,48 @@ describe("resolving the comments of a mockup", () => {
 		const requests = sentOfType(harness, "user_message");
 		expect(requests).toHaveLength(1);
 		expect(requests[0].content).toContain(
-			"open comments of page home of mockup “bikes”, and only that page",
+			"open comments of page home of the mockup “bikes”, and only that page",
 		);
+		expect(requests[0].content).toContain(
+			'mockup_annotations (status "open", page "home")',
+		);
+	});
+
+	it("carries the mockup's title from a build or a resolve detail, and still takes one without (fails when the title is dropped or required)", () => {
+		const onPrompt = vi.fn();
+		const stop = installAssistantPromptListener(onPrompt);
+		const events = [
+			dispatch({
+				prompt: "shop-admin",
+				title: "Shop admin",
+				source: "build",
+			}),
+			dispatch({
+				prompt: "shop-admin",
+				title: "Shop admin",
+				source: "resolve-comments",
+				page: "home",
+			}),
+			dispatch({ prompt: "shop-admin", source: "resolve-comments" }),
+		];
+		stop();
+		expect(events.map((event) => event.defaultPrevented)).toEqual([
+			true,
+			true,
+			true,
+		]);
+		expect(
+			onPrompt.mock.calls.map(([prompt]) => intentOfPrompt(prompt)),
+		).toEqual([
+			{ kind: "build", mockup: "shop-admin", title: "Shop admin" },
+			{
+				kind: "resolve-comments",
+				mockup: "shop-admin",
+				title: "Shop admin",
+				page: "home",
+			},
+			{ kind: "resolve-comments", mockup: "shop-admin" },
+		]);
 	});
 
 	it("turns each source into its own intent, so only resolving and building send (fails when a source takes another one's intent)", () => {

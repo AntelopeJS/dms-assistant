@@ -257,7 +257,7 @@
 				},
 				"database": {
 					"title": "Connectez votre base de données",
-					"lede": "Nous ne lisons que le schéma et un petit échantillon tant que vous n’autorisez pas plus.",
+					"lede": "L’assistant voit votre schéma et des comptages, jamais les valeurs de vos lignes.",
 					"url": "URL de connexion",
 					"stored": "Enregistrée dans le .env de votre projet, jamais envoyée ailleurs.",
 					"connect": "Connecter et analyser",

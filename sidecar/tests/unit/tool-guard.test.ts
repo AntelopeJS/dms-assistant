@@ -358,9 +358,13 @@ describe("the PreToolUse guard in Safe scope", () => {
   const refused: Call[] = [
     ...COMMAND_RUNNERS,
     ...OUTSIDE_REACHERS,
-    ...UNKNOWN_TOOLS,
+    ...UNKNOWN_TOOLS.filter(
+      ({ name }) => !name.startsWith(DMS_MCP_TOOL_NAME_PREFIX),
+    ),
     call("Bash", { command: "ls" }),
     call("Write", { file_path: join(ROOT, "src", "a.ts"), content: "" }),
+    call("NotebookEdit", { notebook_path: join(ROOT, "a.ipynb") }),
+    call("Edit", { file_path: join(ROOT, "src", "a.ts") }),
   ];
 
   it.each<ChatMode>(["normal", "auto", "acceptEdits", "plan"])(
@@ -380,6 +384,15 @@ describe("the PreToolUse guard in Safe scope", () => {
     ].map((name) => call(`${DMS_MCP_TOOL_NAME_PREFIX}${name}`, {}));
     const decisions = await decideAll(calls, "normal", "safe");
     expect(decisions.filter(([, decision]) => decision === DENY)).toEqual([]);
+  });
+
+  it("leaves every DMS MCP tool, one the chat does not list included, to the DMS MCP, which a Safe chat starts with Safe access, and still asks the person about an unlisted one (fails a Safe hook that refuses a DMS tool the DMS serves, or one that runs an unlisted tool unasked)", async () => {
+    const calls = [
+      "drop_everything",
+      "builder_configure_project",
+      "builder_delete_resource",
+    ].map((name) => call(`${DMS_MCP_TOOL_NAME_PREFIX}${name}`, {}));
+    expect(await decideAll(calls, "normal", "safe")).toEqual(each(calls, ASK));
   });
 
   it("lets reads, web lookups, sub-agents, inert and first-party tools through", async () => {

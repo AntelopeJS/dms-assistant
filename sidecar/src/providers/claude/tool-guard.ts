@@ -6,7 +6,10 @@ import { isAlwaysAsk } from "../../agent/permission-preview.js";
 import { isAutoAllowedRead } from "../../agent/read-access.js";
 import { toolReachOf } from "../../agent/tool-kinds.js";
 import { effectiveGenerationMode } from "../../builder/capability.js";
-import { FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES } from "../../constants/mcp.js";
+import {
+  DMS_MCP_TOOL_NAME_PREFIX,
+  FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES,
+} from "../../constants/mcp.js";
 import type { ToolReach } from "../../constants/tool-kinds.js";
 import type { TurnSettings } from "../../state/settings-types.js";
 
@@ -151,12 +154,14 @@ export function isFirstPartyMcpTool(toolName: string): boolean {
 }
 
 /**
- * Whether Safe scope lets a call run: the module's own tools, and the built-in
- * tools whose reach it allows. Any other name is refused, a tool the CLI adds
- * included.
+ * Whether Safe scope lets a call run: the module's own tools, every tool of
+ * the DMS MCP, which a Safe chat starts with Safe access so the DMS itself
+ * refuses what Safe refuses, and the built-in tools whose reach it allows.
+ * Any other name is refused, a tool the CLI adds included.
  */
 export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
   if (isFirstPartyMcpTool(call.toolName)) return true;
+  if (call.toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX)) return true;
   const reach = toolReachOf(call.toolName);
   if (reach === undefined) return false;
   return POLICY_BY_REACH[reach].runsInSafeScope(call, scope);

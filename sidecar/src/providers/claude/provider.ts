@@ -44,7 +44,6 @@ import {
   SKILL_PLUGIN_WRAPPER_DIR,
   SYSTEM_PROMPT_PRESET_NAME,
   SYSTEM_PROMPT_PRESET_TYPE,
-  UNSERVED_CLI_TOOLS,
 } from "../../constants/claude.js";
 import { STATE_DIR_SEGMENTS } from "../../constants/paths.js";
 import { SDK_PERMISSION_BEHAVIOR } from "../../constants/permissions.js";
@@ -62,6 +61,12 @@ import type { TurnSettings } from "../../state/settings-types.js";
 import { buildTurnContent, type TurnContent } from "./attachments.js";
 import { isFirstPartyMcpTool } from "./tool-guard.js";
 import {
+  disallowedToolsFor,
+  hiddenToolsFor,
+  type SurfaceBackend,
+  syncToolSurface,
+} from "./tool-surface.js";
+import {
   buildClaudeEnv,
   type ClaudeEffort,
   type ClaudeProcessEnv,
@@ -77,17 +82,13 @@ import {
   type WriteGroups,
   withWriteGroup,
 } from "./write-group.js";
-import { buildMcpServersMap, HIDDEN_DMS_MCP_TOOLS } from "./mcp-servers.js";
+import { buildMcpServersMap } from "./mcp-servers.js";
 import { withSecretFileGuard } from "./secret-files.js";
 import {
   SDK_SEARCH_TOOL_RULES,
   SDK_SESSION_SETTINGS,
 } from "./session-settings.js";
-import {
-  type LiveSettings,
-  type StreamBackend,
-  toRunnerEvents,
-} from "./session-stream.js";
+import { type LiveSettings, toRunnerEvents } from "./session-stream.js";
 import { type LoadedSdk, loadSdk } from "./sdk-loader.js";
 
 interface PromptOptions {
@@ -109,6 +110,7 @@ interface PromptOptions {
   canUseTool?: CanUseTool;
   mcpServers?: Record<string, McpServerConfig>;
   disallowedTools?: string[];
+  resume?: string;
   plugins?: SdkPluginConfig[];
   skills?: string[];
   abortController: AbortController;
@@ -159,8 +161,6 @@ function buildBasePromptOptions(input: PromptOptionsInput): PromptOptions {
   return { ...base, pathToClaudeCodeExecutable: claudeBinary };
 }
 
-const DISALLOWED_TOOLS = [...HIDDEN_DMS_MCP_TOOLS, ...UNSERVED_CLI_TOOLS];
-
 /**
  * Layers the optional permission callback, MCP server and skill loadout onto
  * the base options. `settingSources` stays `[]` (isolation): skills load via
@@ -175,7 +175,7 @@ function buildPromptOptions(input: PromptOptionsInput): PromptOptions {
   const withMcp = {
     ...withTool,
     mcpServers: buildMcpServersMap(input.mcpServer, input.hostProjectRoot),
-    disallowedTools: DISALLOWED_TOOLS,
+    disallowedTools: disallowedToolsFor(input.settings),
   };
   if (input.skillLoadout === undefined) return withMcp;
   return {
@@ -343,7 +343,7 @@ interface ProviderConfig {
  * The Claude half of a session: the SDK stream, the prompt queue it consumes,
  * and the settings cell the safe-mode hook reads live.
  */
-interface ClaudeBackend extends StreamBackend {
+interface ClaudeBackend extends SurfaceBackend {
   writeGroups: WriteGroups;
   hostProjectRoot: string;
   conversationId: string;
@@ -385,6 +385,7 @@ async function submitTurn(
   backend: ClaudeBackend,
   input: TurnInput,
 ): Promise<void> {
+  syncToolSurface(backend);
   backend.writeGroups.begin();
   const content = await buildTurnContent(input.text, input.attachments, {
     hostProjectRoot: backend.hostProjectRoot,
@@ -504,7 +505,11 @@ async function createProviderSession(
     hostProjectRoot: ctx.hostProjectRoot,
     conversationId: ctx.conversationId,
     lastTurn: null,
+    sessionId: null,
     model: createModelTrack(),
+    sdk,
+    options,
+    hiddenTools: hiddenToolsFor(ctx.settings),
   };
   const state: SessionState = {
     session: createAgentSession({

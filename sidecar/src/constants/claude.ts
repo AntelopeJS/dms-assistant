@@ -53,6 +53,22 @@ export const UNSERVED_CLI_TOOLS: readonly string[] = [
   "ExitWorktree",
 ];
 
+/**
+ * Claude Code tools Safe mode never lets run: a command or a notebook edit is
+ * refused whatever it names, so the model is not shown them.
+ */
+export const SAFE_MODE_HIDDEN_CLI_TOOLS: readonly string[] = [
+  "Bash",
+  "NotebookEdit",
+];
+
+/**
+ * The file editing tools Safe mode refuses everywhere but the plan file, which
+ * Plan only writes. They stay in front of the model in Plan only, and are
+ * hidden in every other chat mode.
+ */
+export const SAFE_MODE_HIDDEN_EDIT_TOOLS: readonly string[] = ["Write", "Edit"];
+
 export const SYSTEM_PROMPT_PRESET_TYPE = "preset" as const;
 export const SYSTEM_PROMPT_PRESET_NAME = "claude_code" as const;
 export const SDK_SETTING_SOURCES_ISOLATED: SettingSource[] = [];

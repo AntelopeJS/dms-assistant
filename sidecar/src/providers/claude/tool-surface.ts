@@ -8,7 +8,9 @@ import {
 import type { TurnSettings } from "../../state/settings-types.js";
 import { resolvePermissionMode, resolveModelOptions } from "./config.js";
 import { createInputQueue } from "./input-queue.js";
-import { HIDDEN_DMS_MCP_TOOLS } from "./mcp-servers.js";
+import { DMS_MCP_SERVER_KEY } from "../../constants/mcp.js";
+import { type DmsMcpAccess, dmsMcpAccessFor } from "../../mcp/dms-server.js";
+import { dmsMcpServer, HIDDEN_DMS_MCP_TOOLS } from "./mcp-servers.js";
 import type { LoadedSdk } from "./sdk-loader.js";
 import type { StreamBackend } from "./session-stream.js";
 
@@ -34,35 +36,54 @@ export function disallowedToolsFor(settings: TurnSettings): string[] {
   ];
 }
 
-function isSameToolSurface(
-  left: readonly string[],
-  right: readonly string[],
-): boolean {
+/**
+ * What a query fixes when it starts and a flip of the settings can change:
+ * the built-in tools it hides, and the access its DMS MCP server runs with.
+ */
+export interface ToolSurface {
+  hiddenTools: readonly string[];
+  dmsAccess: DmsMcpAccess;
+}
+
+/** The surface a query in these settings starts with. */
+export function toolSurfaceFor(settings: TurnSettings): ToolSurface {
+  return {
+    hiddenTools: hiddenToolsFor(settings),
+    dmsAccess: dmsMcpAccessFor(settings),
+  };
+}
+
+function isSameToolSurface(left: ToolSurface, right: ToolSurface): boolean {
   return (
-    left.length === right.length && left.every((name) => right.includes(name))
+    left.dmsAccess === right.dmsAccess &&
+    left.hiddenTools.length === right.hiddenTools.length &&
+    left.hiddenTools.every((name) => right.hiddenTools.includes(name))
   );
 }
 
-/** The backend of a session whose query a change of the hidden tools starts again. */
+/** The backend of a session whose query a change of its tool surface starts again. */
 export interface SurfaceBackend extends StreamBackend {
   sdk: LoadedSdk;
   /** The options the running query started with, the base of a rebuilt one. */
   options: Options;
-  /** The built-in tools the running query hides, which a flip of the settings can change. */
-  hiddenTools: readonly string[];
+  /** The surface the running query started with, which a flip of the settings can change. */
+  surface: ToolSurface;
+  /** Where the DMS MCP launcher of a rebuilt query is found. */
+  hostProjectRoot: string;
 }
 
 /**
- * Starts the query again with the tools the live settings hide, when they are
- * not the ones the running query hides: the CLI fixes its tool list when it
- * starts, so a flip of Safe mode or Plan only that changes it takes effect on
- * the turn that follows, on a query that resumes the same conversation. Called
- * between turns, so nothing in flight is lost.
+ * Starts the query again with the surface the live settings give, when it is
+ * not the one the running query started with: the CLI fixes its tool list and
+ * its MCP servers when it starts, so a flip of Safe mode or Plan only takes
+ * effect on the turn that follows, on a query that resumes the same
+ * conversation, with the DMS MCP restarted at the new access. Called between
+ * turns, so nothing in flight is lost.
  */
 export function syncToolSurface(backend: SurfaceBackend): void {
   const settings = backend.live.settings;
-  const hiddenTools = hiddenToolsFor(settings);
-  if (isSameToolSurface(hiddenTools, backend.hiddenTools)) return;
+  const surface = toolSurfaceFor(settings);
+  if (isSameToolSurface(surface, backend.surface)) return;
   const previous = backend.queue;
   const queue = createInputQueue();
   const base = {
@@ -70,13 +91,20 @@ export function syncToolSurface(backend: SurfaceBackend): void {
     ...resolveModelOptions(settings),
     permissionMode: resolvePermissionMode(settings),
     disallowedTools: disallowedToolsFor(settings),
+    mcpServers: {
+      ...backend.options.mcpServers,
+      [DMS_MCP_SERVER_KEY]: dmsMcpServer(
+        backend.hostProjectRoot,
+        surface.dmsAccess,
+      ),
+    },
   };
   const options =
     backend.sessionId === null ? base : { ...base, resume: backend.sessionId };
   backend.output = backend.sdk.query({ prompt: queue.stream, options });
   backend.queue = queue;
   backend.options = options;
-  backend.hiddenTools = hiddenTools;
+  backend.surface = surface;
   previous.close();
   if (backend.model.refused !== null) {
     void backend.output.setModel(undefined).catch(() => undefined);

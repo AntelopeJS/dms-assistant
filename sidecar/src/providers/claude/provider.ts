@@ -62,10 +62,11 @@ import { buildTurnContent, type TurnContent } from "./attachments.js";
 import { isFirstPartyMcpTool } from "./tool-guard.js";
 import {
   disallowedToolsFor,
-  hiddenToolsFor,
   type SurfaceBackend,
   syncToolSurface,
+  toolSurfaceFor,
 } from "./tool-surface.js";
+import { dmsMcpAccessFor } from "../../mcp/dms-server.js";
 import {
   buildClaudeEnv,
   type ClaudeEffort,
@@ -174,7 +175,11 @@ function buildPromptOptions(input: PromptOptionsInput): PromptOptions {
       : { ...base, canUseTool: input.canUseTool };
   const withMcp = {
     ...withTool,
-    mcpServers: buildMcpServersMap(input.mcpServer, input.hostProjectRoot),
+    mcpServers: buildMcpServersMap(
+      input.mcpServer,
+      input.hostProjectRoot,
+      dmsMcpAccessFor(input.settings),
+    ),
     disallowedTools: disallowedToolsFor(input.settings),
   };
   if (input.skillLoadout === undefined) return withMcp;
@@ -509,7 +514,7 @@ async function createProviderSession(
     model: createModelTrack(),
     sdk,
     options,
-    hiddenTools: hiddenToolsFor(ctx.settings),
+    surface: toolSurfaceFor(ctx.settings),
   };
   const state: SessionState = {
     session: createAgentSession({

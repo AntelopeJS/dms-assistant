@@ -95,6 +95,7 @@ describe.skipIf(process.platform === "win32")(
         mcpToken: "0123456789abcdef",
         hostProjectRoot: dir,
         moduleRoots: [],
+        dmsAccess: "full",
         accessTokenUrl: "http://127.0.0.1:1/codex/access-token",
         handlers: {
           onNotification: () => {},

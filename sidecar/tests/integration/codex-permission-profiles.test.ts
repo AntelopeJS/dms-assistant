@@ -58,6 +58,7 @@ describe.skipIf(installation === undefined)(
           mcpToken: "0123456789abcdef",
           hostProjectRoot: project,
           moduleRoots: [moduleRoot],
+          dmsAccess: "full",
           accessTokenUrl: "http://127.0.0.1:1/codex/access-token",
           handlers: {
             onNotification: () => {},

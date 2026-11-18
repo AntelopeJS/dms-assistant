@@ -54,6 +54,8 @@ export const DMS_MCP_COMMAND = "node";
  * DMS writes `source: "chat"` on a mockup spec the session writes.
  */
 export const DMS_MCP_CLIENT_ARG = "--client=chat";
+/** The launcher argument, before `safe` or `full`, that names the access the chat gives the DMS MCP. */
+export const DMS_MCP_ACCESS_FLAG = "--access=";
 export const DMS_MCP_LAUNCHER_PATH = [
   "node_modules",
   ".cache",

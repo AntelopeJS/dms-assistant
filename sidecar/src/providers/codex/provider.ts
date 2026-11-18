@@ -16,11 +16,13 @@ import {
   CODEX_CLIENT_NAME,
   CODEX_CLIENT_TITLE,
   CODEX_CLIENT_VERSION,
+  CODEX_CONFIG_BATCH_WRITE_METHOD,
   CODEX_HANDSHAKE_TIMEOUT_MS,
   CODEX_INITIALIZE_METHOD,
   CODEX_INITIALIZED_METHOD,
   CODEX_LOG_PREFIX,
   CODEX_MAX_LIVE_SESSIONS,
+  CODEX_MCP_SERVER_RELOAD_METHOD,
   CODEX_MISSING_CLI_MESSAGE,
   CODEX_SKILLS_CONFIG_WRITE_METHOD,
   CODEX_SKILLS_EXTRA_ROOTS_METHOD,
@@ -40,6 +42,7 @@ import {
   CHATGPT_NOT_SIGNED_IN_MESSAGE,
 } from "../../constants/chatgpt.js";
 import { MCP_TOOL_NAME_PREFIX } from "../../constants/mcp.js";
+import { type DmsMcpAccess, dmsMcpAccessFor } from "../../mcp/dms-server.js";
 import type { McpHttpRegistry } from "../../mcp/http-binding.js";
 import type { AiMcpServerDeps } from "../../mcp/types.js";
 import { resolveSkillSources } from "../../skills/resolve-sources.js";
@@ -55,6 +58,7 @@ import type {
 import {
   buildDenialReminder,
   buildDeveloperInstructions,
+  buildDmsAccessEdit,
   buildTurnOverrides,
   isSafeMode,
 } from "./config.js";
@@ -115,6 +119,8 @@ interface CodexBackend {
   live: LiveSettings;
   conversationId: string;
   hostProjectRoot: string;
+  /** The access the app-server's DMS MCP runs with now. */
+  dmsAccess: DmsMcpAccess;
   isSafeModeSkillIndexed: boolean;
   denials: () => number;
   resumeApprovals: () => void;
@@ -242,6 +248,29 @@ function assertSafeModeSkillAvailable(backend: CodexBackend): void {
 }
 
 /**
+ * Restarts the DMS MCP with the access the live settings give, when it runs
+ * with another: the server is declared in the app-server's `config.toml`, so
+ * the new arguments are written there and the thread's MCP servers reloaded,
+ * which keeps the thread. A failure leaves the recorded access as it was and
+ * fails the turn, so no turn runs on the wrong access.
+ */
+async function syncDmsAccess(backend: CodexBackend): Promise<void> {
+  const access = dmsMcpAccessFor(backend.live.settings);
+  if (access === backend.dmsAccess) return;
+  await backend.process.client.request(
+    CODEX_CONFIG_BATCH_WRITE_METHOD,
+    buildDmsAccessEdit(backend.hostProjectRoot, access),
+    HANDSHAKE,
+  );
+  await backend.process.client.request(
+    CODEX_MCP_SERVER_RELOAD_METHOD,
+    null,
+    HANDSHAKE,
+  );
+  backend.dmsAccess = access;
+}
+
+/**
  * Sends one turn. Approvals are resumed first: an interrupted turn left the
  * approval handler refusing everything, and a new turn is a new mandate.
  */
@@ -250,6 +279,7 @@ async function submitTurn(
   input: TurnInput,
 ): Promise<void> {
   assertSafeModeSkillAvailable(backend);
+  await syncDmsAccess(backend);
   backend.resumeApprovals();
   const overrides = buildTurnOverrides(backend.live.settings);
   const payload = await buildCodexTurnInput(
@@ -404,6 +434,7 @@ async function openCodexProcess(
       mcpToken,
       hostProjectRoot: ctx.hostProjectRoot,
       moduleRoots: options.moduleRoots ?? [],
+      dmsAccess: dmsMcpAccessFor(ctx.settings),
       accessTokenUrl: new URL(
         CHATGPT_ACCESS_TOKEN_PATH,
         options.getMcpUrl(),
@@ -471,6 +502,7 @@ async function createProviderSession(
     live: { settings: ctx.settings },
     conversationId: ctx.conversationId,
     hostProjectRoot: ctx.hostProjectRoot,
+    dmsAccess: dmsMcpAccessFor(ctx.settings),
     isSafeModeSkillIndexed,
     denials: () => permissions.consecutiveDenials(),
     resumeApprovals: () => permissions.resume(),

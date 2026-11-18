@@ -109,6 +109,7 @@ describe("the options a Claude session starts with", () => {
               "mcp-bridge.cjs",
             ),
             "--client=chat",
+            "--access=full",
           ],
         },
         "dms-assistant": { type: "sdk" },

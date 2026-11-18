@@ -36,6 +36,7 @@
 			"assistant": "Assistant",
 			"new_conversation": "New conversation",
 			"copy_answer": "Copy answer",
+			"copy_code": "Copy code",
 			"activity": {
 				"thinking": "Thinking",
 				"responding": "Writing the answer",

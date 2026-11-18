@@ -64,8 +64,13 @@ onBeforeUnmount(cancelStreamed);
 			:key="index"
 			class="chat-markdown-block"
 			:fragment="block"
+			copyable
 		/>
-		<MarkdownBlock class="chat-markdown-block" :fragment="open" />
+		<MarkdownBlock
+			class="chat-markdown-block"
+			:fragment="open"
+			:copyable="isStreaming !== true"
+		/>
 	</div>
 </template>
 
@@ -147,6 +152,7 @@ onBeforeUnmount(cancelStreamed);
 }
 
 .chat-markdown :deep(pre) {
+	position: relative;
 	margin: 0 0 8px;
 	padding: 10px 12px;
 	overflow-x: auto;
@@ -159,6 +165,23 @@ onBeforeUnmount(cancelStreamed);
 	background: none;
 	border: 0;
 	padding: 0;
+}
+
+.chat-markdown :deep(.chat-markdown-copy) {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	padding: 2px 8px;
+	font-size: 0.85em;
+	color: var(--ui-text-muted);
+	background: var(--ui-bg);
+	border: 1px solid var(--ui-border);
+	border-radius: var(--ai-radius-sm);
+	cursor: pointer;
+}
+
+.chat-markdown :deep(.chat-markdown-copy:hover) {
+	color: var(--ui-text-highlighted);
 }
 
 .chat-markdown :deep(blockquote) {

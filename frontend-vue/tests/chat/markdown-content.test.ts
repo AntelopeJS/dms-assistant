@@ -83,4 +83,72 @@ describe("MarkdownContent", () => {
 		await wrapper.setProps({ isStreaming: false });
 		expectBlocks(wrapper, [LINK + list("two") + RAW_HTML_AS_TEXT]);
 	});
+
+	describe("code block copy button", () => {
+		const CODE = "const answer = 42;\n";
+		const TWO_BLOCKS = "```ts\n" + CODE + "```\n\n```\nsecond\n```\n";
+		const COPY_LABEL = "dms_assistant.panel.copy_code";
+		const COPIED_LABEL = "✓ dms_assistant.common.copied";
+		const COPIED_FOR_MS = 1_600;
+
+		const writeText = vi.fn(async (_text: string) => undefined);
+
+		beforeEach(() => {
+			writeText.mockReset();
+			writeText.mockResolvedValue(undefined);
+			Object.defineProperty(navigator, "clipboard", {
+				value: { writeText },
+				configurable: true,
+			});
+		});
+
+		function buttons(wrapper: VueWrapper): HTMLButtonElement[] {
+			const root: Element = wrapper.element;
+			return [...root.querySelectorAll<HTMLButtonElement>("pre > button")];
+		}
+
+		it("gives each finished code block a named button that copies only its code", async () => {
+			const wrapper = mount(MarkdownContent, {
+				props: { content: TWO_BLOCKS },
+			});
+			const [first, second] = buttons(wrapper);
+			expect(buttons(wrapper)).toHaveLength(2);
+			expect(first?.getAttribute("aria-label")).toBe(COPY_LABEL);
+
+			first?.click();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(writeText).toHaveBeenCalledExactlyOnceWith(CODE);
+			expect(first?.textContent).toBe(COPIED_LABEL);
+			expect(second?.textContent).toBe(COPY_LABEL);
+
+			await vi.advanceTimersByTimeAsync(COPIED_FOR_MS);
+			expect(first?.textContent).toBe(COPY_LABEL);
+		});
+
+		it("keeps the button unchanged when the clipboard write fails", async () => {
+			writeText.mockRejectedValue(new Error("denied"));
+			const wrapper = mount(MarkdownContent, {
+				props: { content: TWO_BLOCKS },
+			});
+			const [first] = buttons(wrapper);
+			first?.click();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(first?.textContent).toBe(COPY_LABEL);
+		});
+
+		it("adds no button to a code block that is still streaming", async () => {
+			const wrapper = mount(MarkdownContent, {
+				props: { content: "```ts\nconst answer", isStreaming: true },
+			});
+			await nextFrame();
+			expect(wrapper.element.querySelector("pre")).not.toBeNull();
+			expect(buttons(wrapper)).toHaveLength(0);
+
+			await wrapper.setProps({
+				content: "```ts\nconst answer = 42;\n```\n",
+				isStreaming: false,
+			});
+			expect(buttons(wrapper)).toHaveLength(1);
+		});
+	});
 });

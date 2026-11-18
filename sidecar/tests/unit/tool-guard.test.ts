@@ -6,6 +6,7 @@ import type { ToolArgs } from "../../src/agent/edit-targets.js";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
 import { DMS_MCP_TOOL_NAME_PREFIX } from "../../src/constants/mcp.js";
 import { buildSafeModeHooks } from "../../src/providers/claude/safe-mode.js";
+import { isFirstPartyMcpTool } from "../../src/providers/claude/tool-guard.js";
 import type {
   AppSettings,
   ChatMode,
@@ -51,7 +52,6 @@ const UNKNOWN_TOOLS: Call[] = [
   call("ToolTheCliAddsNext", { command: INSTALL }),
   call("mcp__acme__Frobnicate", { target: "home" }),
   call("mcp__other__builder_delete_page", { target: "home" }),
-  call(`${DMS_MCP_TOOL_NAME_PREFIX}drop_everything`, { target: "home" }),
 ];
 
 const INSTALL_HOOK_FILES: Call[] = [
@@ -351,6 +351,26 @@ describe("the PreToolUse guard in Plan only", () => {
   });
 });
 
+describe("the MCP tools the chat runs without a permission prompt", () => {
+  it.each([
+    "mcp__dms__drop_everything",
+    "mcp__dms__mockup_from_app",
+    "mcp__dms__builder_configure_column_groups",
+    "mcp__dms-assistant__get_current_page",
+  ])("runs %s unasked", (toolName) => {
+    expect(isFirstPartyMcpTool(toolName)).toBe(true);
+  });
+
+  it.each([
+    "mcp__other__builder_delete_page",
+    "mcp__acme__Frobnicate",
+    "mcp__dms-assistant__drop_everything",
+    "Bash",
+  ])("still leaves %s to the person", (toolName) => {
+    expect(isFirstPartyMcpTool(toolName)).toBe(false);
+  });
+});
+
 describe("the PreToolUse guard in Safe scope", () => {
   beforeEach(() => setBuilderAvailable(true));
   afterEach(() => setBuilderAvailable(false));
@@ -386,13 +406,14 @@ describe("the PreToolUse guard in Safe scope", () => {
     expect(decisions.filter(([, decision]) => decision === DENY)).toEqual([]);
   });
 
-  it("leaves every DMS MCP tool, one the chat does not list included, to the DMS MCP, which a Safe chat starts with Safe access, and still asks the person about an unlisted one (fails a Safe hook that refuses a DMS tool the DMS serves, or one that runs an unlisted tool unasked)", async () => {
+  it("leaves every DMS MCP tool, one the chat does not list included, to the DMS MCP, which a Safe chat starts with Safe access (fails a Safe hook that refuses a DMS tool the DMS serves)", async () => {
     const calls = [
       "drop_everything",
       "builder_configure_project",
       "builder_delete_resource",
     ].map((name) => call(`${DMS_MCP_TOOL_NAME_PREFIX}${name}`, {}));
-    expect(await decideAll(calls, "normal", "safe")).toEqual(each(calls, ASK));
+    const decisions = await decideAll(calls, "normal", "safe");
+    expect(decisions.filter(([, decision]) => decision === DENY)).toEqual([]);
   });
 
   it("lets reads, web lookups, sub-agents, inert and first-party tools through", async () => {

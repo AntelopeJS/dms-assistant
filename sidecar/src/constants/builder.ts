@@ -37,6 +37,8 @@ export const BUILDER_TOOL_NAMES = [
   "builder_get_theme",
   "builder_set_theme",
   "builder_create_theme_layer",
+  "builder_configure_column_groups",
+  "builder_set_connection_access",
 ] as const;
 
 /** The mockup tools of the DMS MCP server. */

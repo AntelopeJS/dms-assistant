@@ -6,10 +6,7 @@ import { isAlwaysAsk } from "../../agent/permission-preview.js";
 import { isAutoAllowedRead } from "../../agent/read-access.js";
 import { toolReachOf } from "../../agent/tool-kinds.js";
 import { effectiveGenerationMode } from "../../builder/capability.js";
-import {
-  DMS_MCP_TOOL_NAME_PREFIX,
-  FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES,
-} from "../../constants/mcp.js";
+import { isAutoAllowedMcpTool } from "../../constants/mcp.js";
 import type { ToolReach } from "../../constants/tool-kinds.js";
 import type { TurnSettings } from "../../state/settings-types.js";
 
@@ -148,9 +145,9 @@ function cliSettlesIn(permissionMode: string | undefined): CliSettles {
   return column === undefined ? STRICTEST_COLUMN : column;
 }
 
-/** The module's own MCP tools, auto-allowed by `canUseTool` without a prompt. */
+/** The module's own MCP tools and every DMS MCP tool, auto-allowed by `canUseTool` without a prompt. */
 export function isFirstPartyMcpTool(toolName: string): boolean {
-  return FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES.has(toolName);
+  return isAutoAllowedMcpTool(toolName);
 }
 
 /**
@@ -161,7 +158,6 @@ export function isFirstPartyMcpTool(toolName: string): boolean {
  */
 export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
   if (isFirstPartyMcpTool(call.toolName)) return true;
-  if (call.toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX)) return true;
   const reach = toolReachOf(call.toolName);
   if (reach === undefined) return false;
   return POLICY_BY_REACH[reach].runsInSafeScope(call, scope);

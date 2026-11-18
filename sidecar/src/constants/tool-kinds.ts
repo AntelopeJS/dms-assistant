@@ -184,6 +184,8 @@ const BUILDER_TOOL_KINDS = {
   builder_get_theme: "read",
   builder_set_theme: "change",
   builder_create_theme_layer: "change",
+  builder_configure_column_groups: "change",
+  builder_set_connection_access: "change",
   mockup_annotations: "read",
   mockup_apply_to_page: "change",
   mockup_from_page: "change",

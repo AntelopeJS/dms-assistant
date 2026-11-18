@@ -1,6 +1,7 @@
 import type { PermissionKind, ToolSource } from "../constants/audit.js";
 import {
   DMS_MCP_TOOL_NAME_PREFIX,
+  isDmsMcpTool,
   MCP_TOOL_NAME_PREFIX,
 } from "../constants/mcp.js";
 import {
@@ -50,13 +51,36 @@ function isIn(names: readonly string[]): (toolName: string) => boolean {
 export const isEditTool = isIn(EDIT_TOOL_NAMES);
 export const isBashTool = isIn(BASH_TOOL_NAMES);
 export const isWebTool = isIn(WEB_TOOL_NAMES);
-const isBuilderTool = isIn([
+const isListedBuilderTool = isIn([
   ...BUILDER_READ_TOOL_NAMES,
   ...BUILDER_MUTATING_TOOL_NAMES,
 ]);
+const isListedMutatingBuilderTool = isIn(BUILDER_MUTATING_TOOL_NAMES);
+
+const LISTED_DMS_TOOL_NAMES: readonly string[] = [
+  ...BUILDER_READ_TOOL_NAMES,
+  ...BUILDER_MUTATING_TOOL_NAMES,
+  ...PROJECT_READ_TOOL_NAMES,
+  ...ASSISTANT_TOOL_NAMES,
+];
+
+/**
+ * A DMS MCP tool the lists do not name, a tool the DMS added since. The chat
+ * cannot tell what it does, so it counts as a change of the project.
+ */
+function isUnlistedDmsTool(toolName: string): boolean {
+  return (
+    isDmsMcpTool(toolName) &&
+    !LISTED_DMS_TOOL_NAMES.includes(bareToolName(toolName))
+  );
+}
+
+const isBuilderTool = (toolName: string): boolean =>
+  isListedBuilderTool(toolName) || isUnlistedDmsTool(toolName);
 const isDestructiveBuilderTool = isIn(BUILDER_DESTRUCTIVE_TOOL_NAMES);
 export const isBlockRemovalTool = isIn(BUILDER_BLOCK_REMOVAL_TOOL_NAMES);
-export const isMutatingBuilderTool = isIn(BUILDER_MUTATING_TOOL_NAMES);
+export const isMutatingBuilderTool = (toolName: string): boolean =>
+  isListedMutatingBuilderTool(toolName) || isUnlistedDmsTool(toolName);
 
 /**
  * Whether an auto-allowed MCP call still asks the person: a block removal

@@ -1,16 +1,8 @@
-import { DATABASE_TOOL_NAMES } from "./database.js";
-import {
-  BUILDER_TOOL_NAMES,
-  MOCKUP_TOOL_NAMES,
-  PAGE_VERIFY_TOOL_NAME,
-} from "./builder.js";
-import { QUERY_LOGS_TOOL_NAME } from "./logs.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
 import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
 import { REQUEST_TIMEOUT_MINUTES } from "../state/settings-types.js";
 import { QUESTION_TIMEOUT_MS } from "./questions.js";
 import { MS_PER_MINUTE } from "./settings.js";
-import { TYPECHECK_TOOL_NAME } from "./typecheck.js";
 
 export const MCP_SERVER_NAME = "dms-assistant-mcp";
 export const MCP_SERVER_VERSION = "0.0.1";
@@ -119,28 +111,30 @@ const CHAT_TOOL_NAMES: readonly string[] = [
   PREVIEW_BLOCKS_TOOL_NAME,
 ];
 
-const DMS_MCP_AUTO_ALLOW_TOOL_NAMES: readonly string[] = [
-  ...BUILDER_TOOL_NAMES,
-  ...DATABASE_TOOL_NAMES,
-  TYPECHECK_TOOL_NAME,
-  QUERY_LOGS_TOOL_NAME,
-  LIST_PAGES_TOOL_NAME,
-  ...MOCKUP_TOOL_NAMES,
-  PAGE_VERIFY_TOOL_NAME,
-];
+/**
+ * The chat's own MCP tools, by the fully qualified name the agent sees, which
+ * run without a permission prompt.
+ */
+export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set(
+  CHAT_TOOL_NAMES.map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
+);
 
 /**
- * Explicit allowlist of the MCP tools the chat runs without a permission
- * prompt, by the fully qualified name the agent sees. The DMS MCP itself holds
- * its risky calls for a repeated confirmation. A tool outside this set, a new
- * one included, still asks.
+ * Whether a tool belongs to the DMS MCP, by its fully qualified name. Every
+ * such tool runs without a permission prompt, in Safe and Code alike: a Safe
+ * chat starts the DMS MCP with Safe access, so the DMS itself refuses what
+ * Safe refuses, and it holds its own risky calls for a repeated confirmation.
  */
-export const FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES: ReadonlySet<string> = new Set([
-  ...CHAT_TOOL_NAMES.map((name) => `${MCP_TOOL_NAME_PREFIX}${name}`),
-  ...DMS_MCP_AUTO_ALLOW_TOOL_NAMES.map(
-    (name) => `${DMS_MCP_TOOL_NAME_PREFIX}${name}`,
-  ),
-]);
+export function isDmsMcpTool(toolName: string): boolean {
+  return toolName.startsWith(DMS_MCP_TOOL_NAME_PREFIX);
+}
+
+/** Whether the chat runs an MCP tool without a permission prompt: its own tools and every DMS MCP tool. */
+export function isAutoAllowedMcpTool(toolName: string): boolean {
+  return (
+    FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES.has(toolName) || isDmsMcpTool(toolName)
+  );
+}
 
 export const MCP_HTTP_PATH = "/mcp";
 /**

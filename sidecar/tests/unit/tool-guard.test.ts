@@ -372,6 +372,16 @@ describe("the PreToolUse guard in Safe scope", () => {
     },
   );
 
+  it("lets the dms mockup and database tools added since through: reading a spec, applying it to a page, reading the project's databases (fails when Safe mode blocks mockup_read_spec)", async () => {
+    const calls = [
+      "mockup_read_spec",
+      "mockup_apply_to_page",
+      "database_project",
+    ].map((name) => call(`${DMS_MCP_TOOL_NAME_PREFIX}${name}`, {}));
+    const decisions = await decideAll(calls, "normal", "safe");
+    expect(decisions.filter(([, decision]) => decision === DENY)).toEqual([]);
+  });
+
   it("lets reads, web lookups, sub-agents, inert and first-party tools through", async () => {
     const decisions = await decideAll(SAFE_SCOPE_CALLS, "normal", "safe");
     expect(decisions.filter(([, decision]) => decision === DENY)).toEqual([]);

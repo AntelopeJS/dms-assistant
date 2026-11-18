@@ -42,8 +42,10 @@ export const BUILDER_TOOL_NAMES = [
 /** The mockup tools of the DMS MCP server. */
 export const MOCKUP_TOOL_NAMES = [
   "mockup_annotations",
+  "mockup_apply_to_page",
   "mockup_from_page",
   "mockup_patch_spec",
+  "mockup_read_spec",
   "mockup_resolve_annotation",
   "mockup_write_spec",
 ] as const;

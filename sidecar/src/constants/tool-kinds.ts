@@ -185,8 +185,10 @@ const BUILDER_TOOL_KINDS = {
   builder_set_theme: "change",
   builder_create_theme_layer: "change",
   mockup_annotations: "read",
+  mockup_apply_to_page: "change",
   mockup_from_page: "change",
   mockup_patch_spec: "change",
+  mockup_read_spec: "read",
   mockup_resolve_annotation: "change",
   mockup_write_spec: "change",
 } as const satisfies Record<

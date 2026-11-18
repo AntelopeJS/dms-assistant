@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
 import { ACTIVITY_KINDS } from "../constants/run-status";
 import { MESSAGE_ROLES } from "../constants/conversation";
 import type {
+	AssistantMessage,
 	ConversationMessage,
 	BlockPreviewMessage,
 	ErrorMessage,
@@ -65,6 +66,10 @@ const emit = defineEmits<Emits>();
 const { t, locale } = useChatI18n();
 
 const MS_PER_DAY = 86_400_000;
+const COPY_FEEDBACK_MS = 1_600;
+const copiedMessageId = ref<string | null>(null);
+let copyRequest = 0;
+let copiedTimer: ReturnType<typeof setTimeout> | null = null;
 
 const items = computed<RenderItem[]>(() => buildRenderItems(props.messages));
 
@@ -146,13 +151,34 @@ function canRetry(error: ErrorMessage): boolean {
 	return !props.isRunning && error.id === lastErrorId.value;
 }
 
-async function copyAnswer(content: string): Promise<void> {
+function copyAnswerLabel(messageId: string): string {
+	return t(
+		copiedMessageId.value === messageId
+			? "dms_assistant.common.copied"
+			: "dms_assistant.panel.copy_answer",
+	);
+}
+
+async function copyAnswer(message: AssistantMessage): Promise<void> {
+	const request = ++copyRequest;
 	try {
-		await navigator.clipboard.writeText(content);
+		await navigator.clipboard.writeText(message.content);
 	} catch {
 		return;
 	}
+	if (request !== copyRequest) return;
+	copiedMessageId.value = message.id;
+	if (copiedTimer !== null) clearTimeout(copiedTimer);
+	copiedTimer = setTimeout(() => {
+		copiedMessageId.value = null;
+		copiedTimer = null;
+	}, COPY_FEEDBACK_MS);
 }
+
+onBeforeUnmount(() => {
+	copyRequest++;
+	if (copiedTimer !== null) clearTimeout(copiedTimer);
+});
 </script>
 
 <template>
@@ -246,11 +272,18 @@ async function copyAnswer(content: string): Promise<void> {
 						size="xs"
 						color="neutral"
 						variant="ghost"
-						square
-						icon="i-ph-copy"
-						:aria-label="t('dms_assistant.panel.copy_answer')"
-						:title="t('dms_assistant.panel.copy_answer')"
-						@click="copyAnswer(item.message.content)"
+						:square="copiedMessageId !== item.message.id"
+						:icon="
+							copiedMessageId === item.message.id ? 'i-ph-check' : 'i-ph-copy'
+						"
+						:label="
+							copiedMessageId === item.message.id
+								? copyAnswerLabel(item.message.id)
+								: undefined
+						"
+						:aria-label="copyAnswerLabel(item.message.id)"
+						:title="copyAnswerLabel(item.message.id)"
+						@click="copyAnswer(item.message)"
 					/>
 					<span class="cb-ai__meta">
 						{{ formatTimeOfDay(item.message.timestampMs, locale) }}

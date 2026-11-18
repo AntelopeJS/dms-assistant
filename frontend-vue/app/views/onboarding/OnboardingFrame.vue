@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { useOnboarding } from "../../onboarding/runtime";
 
-/** One view of the onboarding popup: its heading, its content, then its footer under a rule. */
+/**
+ * One view of the onboarding popup: its heading, its content, then its footer under a rule. The
+ * content scrolls inside the popup's height and the footer stays in view under it.
+ */
 defineProps<{ title?: string; lede?: string }>();
 
 const onboarding = useOnboarding();
 </script>
 
 <template>
-	<div class="flex min-h-[19.5rem] flex-col px-6 pb-6">
+	<div
+		class="flex min-h-0 flex-[1_1_19.5rem] flex-col overflow-y-auto px-6 pb-6"
+		data-onboarding-body
+	>
 		<slot name="lead" />
 		<h2
 			v-if="title || $slots.title"
@@ -33,7 +39,7 @@ const onboarding = useOnboarding();
 	</div>
 	<div
 		v-if="$slots.footer"
-		class="min-h-15 border-default flex flex-wrap items-center gap-2 border-t px-5 py-3"
+		class="min-h-15 border-default flex shrink-0 flex-wrap items-center gap-2 border-t px-5 py-3"
 	>
 		<slot name="footer" />
 	</div>

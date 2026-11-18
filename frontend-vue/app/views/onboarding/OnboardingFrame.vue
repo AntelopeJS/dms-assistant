@@ -12,7 +12,7 @@ const onboarding = useOnboarding();
 
 <template>
 	<div
-		class="flex min-h-0 flex-[1_1_19.5rem] flex-col overflow-y-auto px-6 pb-6"
+		class="flex min-h-[min(19.5rem,calc(100dvh-12rem))] shrink flex-col overflow-y-auto px-6 pb-6"
 		data-onboarding-body
 	>
 		<slot name="lead" />

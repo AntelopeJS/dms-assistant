@@ -78,7 +78,7 @@ describe("the popup's frame", () => {
 		});
 		const body = wrapper.find("[data-onboarding-body]");
 		expect(body.classes()).toEqual(
-			expect.arrayContaining(["overflow-y-auto", "min-h-0"]),
+			expect.arrayContaining(["overflow-y-auto", "shrink"]),
 		);
 		expect(wrapper.find("button").element.parentElement?.classList).toContain(
 			"shrink-0",

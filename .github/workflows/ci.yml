@@ -33,8 +33,9 @@ jobs:
   # ci-node.yml exposes no outputs, so this takes the shared tier rule and
   # derives the jobs declared here from it: a draft and the next to main pull
   # request run none of them, and only the nightly adds the Windows legs. The
-  # browser journeys run their @smoke set on a pull request, and every
-  # journey in shards in the merge queue, on a manual run and nightly.
+  # browser journeys run their @smoke set on every pull request that runs
+  # tests, the fast tier's included, and every journey in shards in the merge
+  # queue, on a manual run and nightly.
   select:
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -102,7 +102,7 @@
     "@antelopejs/core": "~1.24.5",
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
-    "@antelopejs/tooling-configs": ">=0.8.4 <0.9.0",
+    "@antelopejs/tooling-configs": ">=0.8.9 <0.9.0",
     "@playwright/test": "~1.65.0",
     "@types/node": "^24.0.0",
     "@types/ws": "^8.5.12",

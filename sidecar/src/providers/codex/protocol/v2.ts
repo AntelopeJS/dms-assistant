@@ -44,20 +44,6 @@ export type CommandExecutionSource = "agent" | "userShell" | "unifiedExecStartup
 
 export type CommandExecutionStatus = "inProgress" | "completed" | "failed" | "declined";
 
-export type ConfigBatchWriteParams = { edits: Array<ConfigEdit>,
-/**
- * Path to the config file to write; defaults to the user's `config.toml` when omitted.
- */
-filePath?: string | null, expectedVersion?: string | null,
-/**
- * When true, hot-reload updated runtime settings into loaded threads after writing.
- * Session-static model, reasoning-effort, Plan-mode reasoning-effort, and service-tier
- * defaults are not reloaded. The deprecated personality setting is also not reloaded.
- */
-reloadUserConfig?: boolean, };
-
-export type ConfigEdit = { keyPath: string, value: JsonValue, mergeStrategy: MergeStrategy, };
-
 export type DynamicToolCallOutputContentItem = { "type": "inputText", text: string, } | { "type": "inputImage", imageUrl: string, } | { "type": "inputAudio", audioUrl: string, };
 
 export type DynamicToolCallStatus = "inProgress" | "completed" | "failed";
@@ -86,8 +72,6 @@ export type McpToolCallStatus = "inProgress" | "completed" | "failed";
 export type MemoryCitation = { entries: Array<MemoryCitationEntry>, threadIds: Array<string>, };
 
 export type MemoryCitationEntry = { path: string, lineStart: number, lineEnd: number, note: string, };
-
-export type MergeStrategy = "replace" | "upsert";
 
 export type MisalignmentErrorDetails = {
 /**

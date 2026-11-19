@@ -37,7 +37,6 @@ const GENERATION_CODEX_HOME = path.join(SIDECAR_ROOT, ".codex-home-generate");
  */
 const PROTOCOL_ROOTS = [
   "v2/AskForApproval",
-  "v2/ConfigBatchWriteParams",
   "v2/SkillMetadata",
   "v2/SkillScope",
   "v2/SkillsConfigWriteParams",

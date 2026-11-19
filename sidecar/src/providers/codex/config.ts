@@ -183,11 +183,23 @@ export function buildConfigToml(input: CodexConfigInput): string {
   ].join("\n");
 }
 
+/**
+ * The `config/batchWrite` params of Codex's app-server, as far as the sidecar
+ * sends them: edits that replace one key of `config.toml`.
+ */
+export type ConfigBatchWriteParams = {
+  edits: Array<{
+    keyPath: string;
+    mergeStrategy: "replace" | "upsert";
+    value: string[];
+  }>;
+};
+
 /** The `config/batchWrite` params that give the DMS MCP of `config.toml` another access. */
 export function buildDmsAccessEdit(
   hostProjectRoot: string,
   access: DmsMcpAccess,
-): v2.ConfigBatchWriteParams {
+): ConfigBatchWriteParams {
   return {
     edits: [
       {

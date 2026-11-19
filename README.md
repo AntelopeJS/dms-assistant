@@ -78,7 +78,7 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 | Package                             | Supported                  | Tested with                |
 | ----------------------------------- | -------------------------- | -------------------------- |
 | `@antelopejs/agent-skills`          | `>=0.8.2 <0.9.0`           | `0.8.2`                    |
-| `@antelopejs/dms`                   | `0.21.4-next.939.g641c7fa` | `0.21.4-next.939.g641c7fa` |
+| `@antelopejs/dms`                   | `0.21.4-next.947.g7afce75` | `0.21.4-next.947.g7afce75` |
 | `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`           | `0.3.3`                    |
 | `@antelopejs/interface-core`        | `>=0.5.1 <0.6.0`           | `0.5.1`                    |
 | `@antelopejs/interface-dms`         | `>=0.14.6 <0.15.0`         | `0.14.6`                   |

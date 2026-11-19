@@ -51,6 +51,7 @@ export default defineConfig({
     "frontend-vue/**",
     "sidecar/src/providers/codex/protocol/**",
     "e2e/playground/**",
+    "e2e/builder/playground/**",
   ],
   options: {
     typeAware: true,

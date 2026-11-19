@@ -7,6 +7,7 @@ import { builder, check, pick, text } from "../builder.mjs";
 export const journeys = guarded([
   {
     id: "smoke",
+    tag: "@smoke",
     title: "an owner lists the catalog connections and reads the project's modules through /api/builder/database, and an anonymous request is refused",
     entryPoint: "GET /api/builder/database/connections, GET /api/builder/database/project",
     async run(/** @type {Ctx} */ ctx) {

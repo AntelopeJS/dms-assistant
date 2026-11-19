@@ -2,24 +2,11 @@
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "../../..",
-    "allowJs": true,
-    "checkJs": false,
-    "maxNodeModuleJsDepth": 5,
-    "types": ["node"],
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "typeRoots": ["../../../node_modules/@types"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
-    "composite": false,
     "noEmit": true,
-    "incremental": false,
-    "experimentalDecorators": true,
-    "paths": {
-      "@antelopejs/interface-dms/*": ["../../../node_modules/@antelopejs/interface-dms/dist/*"],
-      "*": ["../../../node_modules/*"]
-    }
+    "incremental": false
   },
-  "include": ["**/*.mjs", "**/*.ts"],
-  "exclude": ["node_modules", "playground/node_modules", "playground/dist"]
+  "include": ["./verify.config.ts"]
 }

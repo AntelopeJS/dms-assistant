@@ -92,6 +92,29 @@ export const journeys = guarded([
     },
   },
   {
+    id: "under-ajs-project-dev-the-routes-follow-the-development-flag",
+    title: "Under ajs project dev the routes answer with builder.api.enabled left unset, and answer the router's 404 with it false",
+    entryPoint: "GET /api/builder/database/connections, GET /api/builder/database/project under ajs project dev",
+    backend: "dev",
+    async run(/** @type {Ctx} */ ctx) {
+      await withConfig(ctx, { VERIFY_BUILDER_API: "follow-dev" }, async () => {
+        const connections = await builder(ctx, "connections with api.enabled unset", "GET", "/database/connections");
+        const project = await builder(ctx, "project with api.enabled unset", "GET", "/database/project");
+        await ctx.verify("api.enabled unset under ajs project dev", [
+          check("/database/connections answers 200", connections.status === 200, connections.status),
+          check("/database/project answers 200", project.status === 200, project.status),
+        ]);
+      });
+      await withConfig(ctx, { VERIFY_BUILDER_API: "off" }, async () => {
+        const connections = await ctx.api("connections with api.enabled false", { method: "GET", path: `${BUILDER}/database/connections` });
+        await ctx.verify("api.enabled false under ajs project dev", [
+          check("/database/connections answers 404", connections.status === 404, connections.status),
+          check("the 404 is the router's, not a route's refusal", text(connections.body, "code") === "", connections.body),
+        ]);
+      });
+    },
+  },
+  {
     id: "project-root-decides-where-the-connect-flow-writes",
     title: "builder.projectRoot names the source root: a dry run of ConfigureProject names the configuration file under it, a relative root resolves against the process working directory, and the default is the playground",
     entryPoint: "POST /api/builder/database/project with builder.projectRoot set",

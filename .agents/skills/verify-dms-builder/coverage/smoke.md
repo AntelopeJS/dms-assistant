@@ -1,6 +1,6 @@
 # Coverage: smoke
 
-Docs: `docs/8.database-connection.md`. Journeys: `journeys/smoke.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `e2e/builder/journeys/smoke.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |

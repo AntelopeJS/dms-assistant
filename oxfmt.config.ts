@@ -13,5 +13,8 @@ export default antelopeFmtPreset({
     "e2e/journeys/**",
     "e2e/*.mjs",
     "e2e/playground/**",
+    "e2e/builder/journeys/**",
+    "e2e/builder/*.mjs",
+    "e2e/builder/playground/**",
   ],
 });

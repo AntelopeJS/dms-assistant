@@ -1,10 +1,37 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { builder, check, isRow, isText, items, list, pick, projectPath, readProject, text } from "../builder.mjs";
+import { builder, check, isRow, isText, items, list, pick, projectPath, readProject, text, withConfig } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
 const CONFIG_FILE = "antelope.config.ts";
+
+/** A value no other journey writes, so its presence in `.env` is a change the running project did not load. */
+const PROBE = "VERIFY_RELOAD_PROBE=changed";
+
+/** A configuration whose database module is keyed by a computed name, which `@antelopejs/dms` cannot write again. */
+const COMPUTED_NAME_CONFIG = `import { defineConfig } from "@antelopejs/interface-core/config";
+
+const DATABASE = "mongodb";
+
+export default defineConfig({
+  name: "verify-computed-name",
+  modules: { [DATABASE]: { source: { type: "package", package: "@antelopejs/mongodb", version: "~1.8.11" } } },
+});
+`;
+
+/**
+ * Writes the project's `.env`, or removes it when `text` is null.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {string | null} text The file's text
+ * @returns {void}
+ */
+function writeEnv(ctx, text) {
+  if (text === null) rmSync(projectPath(ctx, ".env"), { force: true });
+  else writeFileSync(projectPath(ctx, ".env"), text);
+}
 
 /**
  * The project's `.env`, which holds secrets, so it stays out of the evidence.
@@ -113,6 +140,59 @@ export const journeys = guarded([
         check(".env is the same, or still absent, and holds no dry-run variable", envAfter === envBefore && !(envAfter ?? "").includes("VERIFY_EXTRA_URL"), envAfter === null ? "absent" : envAfter.length),
         check("the project's module list does not hold the dry-run module", !JSON.stringify(pick(modules.body, "modules")).includes("verify-extra"), modules.body),
       ]);
+    },
+  },
+  {
+    id: "the-reload-route-says-when-env-changed-since-the-project-loaded-it",
+    title: "GET /database/reload answers due false while .env holds the values the running project loaded, true once a value changes, false again once the value is back, and false after a restart that loaded the change",
+    entryPoint: "GET /api/builder/database/reload",
+    async run(/** @type {Ctx} */ ctx) {
+      const envBefore = envFile(ctx);
+      const changedEnv = `${envBefore ?? ""}\n${PROBE}\n`;
+      try {
+        const loaded = await builder(ctx, "reload with .env as loaded", "GET", "/database/reload");
+        writeEnv(ctx, changedEnv);
+        const changed = await builder(ctx, "reload after a value changed", "GET", "/database/reload");
+        writeEnv(ctx, envBefore);
+        const back = await builder(ctx, "reload after the value is back", "GET", "/database/reload");
+        await ctx.verify("due follows the file", [
+          check("an unchanged .env is not due", loaded.status === 200 && pick(loaded.body, "due") === false, loaded),
+          check("a changed value is due", changed.status === 200 && pick(changed.body, "due") === true, changed),
+          check("the loaded value back is not due", back.status === 200 && pick(back.body, "due") === false, back),
+        ]);
+
+        writeEnv(ctx, changedEnv);
+        await ctx.restartBackend();
+        const restarted = await builder(ctx, "reload after a restart loaded the change", "GET", "/database/reload");
+        writeEnv(ctx, envBefore);
+        const reverted = await builder(ctx, "reload once the change is reverted", "GET", "/database/reload");
+        await ctx.verify("a restart loads the file again", [
+          check("the restarted project loaded the change, so it is not due", restarted.status === 200 && pick(restarted.body, "due") === false, restarted),
+          check("reverting what it loaded is due", reverted.status === 200 && pick(reverted.body, "due") === true, reverted),
+        ]);
+      } finally {
+        writeEnv(ctx, envBefore);
+        await ctx.restartBackend();
+      }
+      await ctx.verify("the project is as it was", [check(".env is the same, or still absent", envFile(ctx) === envBefore, envBefore === null ? "absent" : envBefore.length)]);
+    },
+  },
+  {
+    id: "a-configuration-it-cannot-rewrite-is-refused-with-422",
+    title: "With builder.projectRoot on an antelope.config.ts that keys a module by a computed name, GET /database/project answers 422 refused with a message, and the file is not written",
+    entryPoint: "GET /api/builder/database/project with builder.projectRoot set",
+    async run(/** @type {Ctx} */ ctx) {
+      const root = join(ctx.state.dir, "computed-name-root");
+      mkdirSync(root, { recursive: true });
+      writeFileSync(join(root, CONFIG_FILE), COMPUTED_NAME_CONFIG);
+      await withConfig(ctx, { VERIFY_BUILDER_PROJECT_ROOT: root }, async () => {
+        const project = await builder(ctx, "the project of a configuration with a computed module name", "GET", "/database/project");
+        await ctx.verify("the refusals", [
+          check("project answers 422 with the refused code", project.status === 422 && text(project.body, "code") === "refused", project),
+          check("its message names the computed name", text(project.body, "message").includes("computed name"), project.body),
+        ]);
+      });
+      await ctx.verify("nothing was written", [check("the configuration is byte for byte the same", readFileSync(join(root, CONFIG_FILE), "utf8") === COMPUTED_NAME_CONFIG, root)]);
     },
   },
 ]);

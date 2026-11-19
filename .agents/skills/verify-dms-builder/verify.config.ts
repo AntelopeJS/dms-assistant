@@ -16,24 +16,27 @@ export interface VerifyConfig {
   notUserFacing: string[];
   smoke: string;
   smokeJourney: string;
+  /** The folder of the journeys modules, relative to the repository root. */
+  journeys: string;
   doors: Record<DoorKind, DoorRule | null>;
   formal: never[];
 }
 
-const SKILL = ".agents/skills/verify-dms-builder";
+const PLAYGROUND = "e2e/builder/playground";
 
 const config: VerifyConfig = {
-  playground: `${SKILL}/playground`,
+  playground: PLAYGROUND,
   prepare: [
     ["pnpm", "install", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts"],
     ["pnpm", "run", "build"],
-    ["pnpm", "--dir", `${SKILL}/playground`, "install", "--ignore-workspace", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts"],
-    [`${SKILL}/playground/node_modules/.bin/tsc`, "-p", `${SKILL}/playground/tsconfig.build.json`],
+    ["pnpm", "--dir", PLAYGROUND, "install", "--ignore-workspace", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts"],
+    [`${PLAYGROUND}/node_modules/.bin/tsc`, "-p", `${PLAYGROUND}/tsconfig.build.json`],
   ],
   userFacing: ["src/builder/**", "frontend-vue/builder/**", "frontend-vue/i18n/locales/builder-*.json"],
   notUserFacing: ["src/builder/test/**", "frontend-vue/builder/tests/**", "frontend-vue/builder/vitest.config.ts"],
   smoke: "smoke",
   smokeJourney: "onboard, list the catalog connections and read the project's modules through /api/builder/database as the owner, and see an anonymous request refused",
+  journeys: "e2e/builder/journeys",
   doors: {
     data: null,
     format: null,

@@ -4,6 +4,7 @@ covers:
   - src/builder/constants/routes.ts
   - src/builder/dms-answer.ts
   - src/builder/refusal.ts
+  - src/builder/reload.ts
   - frontend-vue/builder/app/runtime/**
 docs:
   - docs/8.database-connection.md
@@ -17,6 +18,8 @@ The `/api/builder/database` routes behind the onboarding's "Start from an existi
 
 - `a-project-without-an-external-database-answers-the-documented-empties-and-404s`: the connection list is empty, an unknown connection, analysis or mapping answers 404 or a not_found refusal, and `POST /database/sample` answers the API server's 404.
 - `the-project-answer-carries-the-fields-the-connect-form-reads`: `GET /database/project` answers the modules, this module's id, the own database and the pins that the client's `ProjectModules` type reads.
+- `the-reload-route-says-when-env-changed-since-the-project-loaded-it`: `GET /database/reload` answers `due` once a value of `.env` differs from what the running project loaded, and not after a restart that loaded it.
+- `a-configuration-it-cannot-rewrite-is-refused-with-422`: with `builder.projectRoot` on a configuration that keys a module by a computed name, `GET /database/project` answers 422 `refused` and writes nothing.
 - `writes-that-are-refused-or-dry-run-leave-the-project-untouched`: refused writes, a dry run with and without `variables` and a repair with nothing to repair answer as documented and leave `antelope.config.ts` and `.env` as they were.
 
 ## How to get to it (user POV)

@@ -2,7 +2,7 @@ import { antelopeFmtPreset } from "@antelopejs/tooling-configs/oxc/fmt";
 
 /**
  * The Vue layer keeps Prettier; the Codex protocol types are generated; the
- * journeys, their helpers and the e2e playground keep the verify skill's style.
+ * journeys, their helpers and the e2e playground keep their one-line journey style.
  */
 export default antelopeFmtPreset({
   ignorePatterns: [

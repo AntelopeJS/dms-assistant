@@ -74,7 +74,7 @@ async function signInHydrated(ctx, tab, account) {
  * judges a known failure, even one that takes the environment down. Every journey declares `standby: false`: a standby backend loads the module and spawns its own sidecar
  * into the folder of the backend under test, overwriting `sidecar.lock`, so no standby boots while a journey runs.
  * Every journey runs a development backend (`ajs project dev`) unless it pins another `backend`: the module starts its
- * sidecar in development only, and `dms-control up` runs `ajs project start`.
+ * sidecar in development only, and the run's base backend runs `ajs project start`.
  *
  * @template {{ run: (ctx: Ctx) => Promise<void>, backend?: "production" | "dev" | "watch", knownFailures?: Readonly<Record<string, string>> }} Journey
  * @param {Journey[]} journeys The journeys of a feature

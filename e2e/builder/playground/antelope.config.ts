@@ -24,12 +24,12 @@ function projectRoot(): string {
 
 /**
  * The repository's playground with the ports, origins, secrets and mail
- * `dms-control` sets for a run, the module under verification built from the
+ * the e2e kit sets for a run, the module under verification built from the
  * checkout, and a fixture module (`playground`) that forwards trusted calls to
  * the builder's interface.
  */
 export default defineConfig({
-  name: "verify-dms-builder",
+  name: "dms-assistant-builder-e2e",
   modules: {
     playground: {
       source: { type: "local", path: "." },

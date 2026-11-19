@@ -5,7 +5,7 @@ import { integrationJourneys as smoke } from "../../e2e/builder/journeys/smoke.m
 import { journeySuite } from "./journeys.mjs";
 
 journeySuite(
-  { skill: ".agents/skills/verify-dms-builder" },
+  { config: "e2e/builder/journeys.config.ts" },
   {
     smoke,
     "connection-check": connectionCheck,

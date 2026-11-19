@@ -148,7 +148,7 @@ async function approvedNoteTurn(ctx, file, after) {
 export const journeys = guarded([
   {
     id: "a-production-dashboard-shows-no-assistant",
-    title: "the production dashboard `dms-control` runs shows no Assistant launcher, no side panel and no palette assistant, whatever the shortcut, while the backend's sidecar runs and the pages work",
+    title: "the production dashboard of the run shows no Assistant launcher, no side panel and no palette assistant, whatever the shortcut, while the backend's sidecar runs and the pages work",
     entryPoint: "the dashboard header, Ctrl+Shift+K, Ctrl+K, /ai/sidecar-info",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);

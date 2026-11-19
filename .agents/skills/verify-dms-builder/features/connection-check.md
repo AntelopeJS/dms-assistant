@@ -3,6 +3,7 @@ covers:
   - src/builder/routes/database.ts
   - src/builder/refusal.ts
   - src/builder/dms-answer.ts
+  - src/builder/driver-install.ts
 docs:
   - docs/8.database-connection.md
 ---

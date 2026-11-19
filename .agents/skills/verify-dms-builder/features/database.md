@@ -4,6 +4,7 @@ covers:
   - src/builder/constants/routes.ts
   - src/builder/dms-answer.ts
   - src/builder/refusal.ts
+  - src/builder/reload.ts
   - frontend-vue/builder/app/runtime/**
 docs:
   - docs/8.database-connection.md

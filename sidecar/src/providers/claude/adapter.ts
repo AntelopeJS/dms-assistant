@@ -79,22 +79,25 @@ function* yieldStreamEvents(message: SDKMessage): Generator<RunnerEvent, void> {
 
 /**
  * Tokens the turn cost, read off the SDK's terminal `result` message. Cached
- * and cache-write input both count: they are billed input, and Codex reports
- * them inside its own input figure too.
+ * and cache-write input both count as input, as Codex reports them inside its
+ * own input figure too; cache reads are also kept apart, since every request
+ * of a turn reads the whole context back from the cache.
  */
 export function extractTokenUsage(message: SDKMessage): TokenUsage | null {
   if (message.type !== "result") return null;
   const { usage } = message;
   if (!usage) return null;
+  const cacheReadTokens = usage.cache_read_input_tokens ?? 0;
   const inputTokens =
     (usage.input_tokens ?? 0) +
     (usage.cache_creation_input_tokens ?? 0) +
-    (usage.cache_read_input_tokens ?? 0);
+    cacheReadTokens;
   const outputTokens = usage.output_tokens ?? 0;
   return {
     inputTokens,
     outputTokens,
     totalTokens: inputTokens + outputTokens,
+    cacheReadTokens,
   };
 }
 

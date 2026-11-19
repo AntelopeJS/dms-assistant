@@ -21,4 +21,15 @@ describe("system prompt", () => {
     expect(prompt.split(BEST_PRACTICES_SKILL)).toHaveLength(2);
     expect(prompt.split(CODE_MODE_SKILL)).toHaveLength(2);
   });
+
+  it("stays within 5,000 characters, the cost every request of every turn pays (fails when instructions the skills already carry come back)", () => {
+    expect(prompt.length).toBeLessThanOrEqual(5_000);
+  });
+
+  it("sends the agent to list_pages for a page's route before it navigates, and to refresh it for a new page (fails when a trim drops the route rule)", () => {
+    const loopStep = prompt.split("\n").find((line) => line.startsWith("2. "));
+    expect(loopStep).toContain("mcp__dms__list_pages");
+    expect(loopStep).toContain("refresh:true");
+    expect(loopStep).toMatch(/never derive, guess or construct a URL/);
+  });
 });

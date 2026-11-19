@@ -40,6 +40,7 @@ describe("MCP tool timeout", () => {
       mcpUrl: "http://127.0.0.1:4321/mcp",
       hostProjectRoot: "/srv/app",
       moduleRoots: [],
+      dmsAccess: "full",
       nodePath: process.execPath,
     });
     const server = toml.split("[projects.")[0] ?? "";

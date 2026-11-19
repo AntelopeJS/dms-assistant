@@ -38,8 +38,11 @@ export function installNavigationCompleteEmitter(
 	let settling = new AbortController();
 	let stopped = false;
 	const stopNavigation = router.on("navigate", (event) => {
-		const path = new URL(event.detail.page.url, window.location.origin)
-			.pathname;
+		const { pathname, search } = new URL(
+			event.detail.page.url,
+			window.location.origin,
+		);
+		const path = `${pathname}${search}`;
 		settling.abort();
 		settling = new AbortController();
 		options.send({

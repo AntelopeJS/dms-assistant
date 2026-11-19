@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { PLATFORM_WINDOWS } from "../constants/native-binary.js";
 import { READ_ONLY_TOOL_PATH_KEYS } from "../constants/read-access.js";
 import { readStringArg, type ToolArgs } from "./edit-targets.js";
@@ -50,6 +50,26 @@ const GLOB_PATTERN_KEY = "pattern";
 const SEGMENT_SEPARATOR = /[\\/]/;
 const ROOTED_PATTERN = /^(?:[\\/~]|[A-Za-z]:)/;
 const PARENT_SEGMENT = "..";
+
+const TRANSCRIPT_EXTENSION = ".jsonl";
+const TOOL_RESULTS_DIRECTORY = "tool-results";
+
+/**
+ * The folder Claude Code saves this session's oversized tool results in, beside
+ * its transcript (`<project>/<session>.jsonl` holds `<project>/<session>/`).
+ * Undefined unless `transcriptPath` is the transcript of `sessionId` itself,
+ * which a subagent's transcript is not.
+ */
+export function sessionToolResultsRoot(
+  sessionId: string,
+  transcriptPath: string,
+): string | undefined {
+  if (sessionId.length === 0 || !isAbsolute(transcriptPath)) return undefined;
+  if (basename(transcriptPath) !== `${sessionId}${TRANSCRIPT_EXTENSION}`) {
+    return undefined;
+  }
+  return join(dirname(transcriptPath), sessionId, TOOL_RESULTS_DIRECTORY);
+}
 
 function isWithin(root: string, target: string): boolean {
   return target === root || target.startsWith(`${root}${sep}`);

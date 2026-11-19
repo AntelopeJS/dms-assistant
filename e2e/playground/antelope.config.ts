@@ -43,7 +43,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/mongodb",
-        version: ">=1.8.4 <1.9.0",
+        version: ">=1.8.11 <1.9.0",
       },
       config: {
         url: process.env.MONGO_URL ?? "mongodb://localhost:27017",
@@ -56,7 +56,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/auth-jwt",
-        version: "^1.0.3",
+        version: "^1.1.3",
       },
       config: { secret: process.env.AUTH_JWT_SECRET ?? "dev" },
     },
@@ -64,7 +64,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/file-storage-local",
-        version: ">=0.1.13 <1.0.0",
+        version: ">=0.2.2 <1.0.0",
       },
       config: {
         storagePath: ".antelope/file-storage",
@@ -76,7 +76,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/nodemailer",
-        version: ">=0.0.6 <1.0.0",
+        version: ">=0.0.13 <1.0.0",
       },
       config: {
         host: "127.0.0.1",
@@ -87,7 +87,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/api",
-        version: "~1.7.5",
+        version: "~1.7.8",
       },
       config: {
         servers: [{ protocol: "http", port: preferredApiPort }],

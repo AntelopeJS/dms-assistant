@@ -204,7 +204,10 @@ function setDraft(text: string): void {
 	draft.value = text;
 	void nextTick(() => {
 		autoGrow();
-		textareaRef.value?.focus();
+		const el = textareaRef.value;
+		if (el === null) return;
+		el.focus();
+		el.setSelectionRange(text.length, text.length);
 	});
 }
 

@@ -22,7 +22,7 @@ import {
   DMS_MCP_SERVER_KEY,
   MCP_TOOL_TIMEOUT_SEC,
 } from "../../constants/mcp.js";
-import { dmsMcpLaunch } from "../../mcp/dms-server.js";
+import { type DmsMcpAccess, dmsMcpLaunch } from "../../mcp/dms-server.js";
 import { SAFE_MODE_DENIED_MESSAGE } from "../../constants/settings.js";
 import type {
   AppSettings,
@@ -91,6 +91,8 @@ function tomlString(value: string): string {
 
 export interface CodexConfigInput extends CodexPermissionInput {
   mcpUrl: string;
+  /** The access the DMS MCP starts with, the chat's when the app-server starts. */
+  dmsAccess: DmsMcpAccess;
   /** The Node binary the auth command runs on: the sidecar's own. */
   nodePath: string;
 }
@@ -114,8 +116,11 @@ function tomlArray(values: readonly string[]): string {
   return `[${values.map(tomlString).join(", ")}]`;
 }
 
-function buildDmsMcpServerToml(hostProjectRoot: string): string[] {
-  const launch = dmsMcpLaunch(hostProjectRoot);
+function buildDmsMcpServerToml(
+  hostProjectRoot: string,
+  access: DmsMcpAccess,
+): string[] {
+  const launch = dmsMcpLaunch(hostProjectRoot, access);
   return [
     `[mcp_servers.${DMS_MCP_SERVER_KEY}]`,
     `command = ${tomlString(launch.command)}`,
@@ -169,13 +174,41 @@ export function buildConfigToml(input: CodexConfigInput): string {
     `bearer_token_env_var = ${tomlString(CODEX_MCP_TOKEN_ENV_VAR)}`,
     `tool_timeout_sec = ${MCP_TOOL_TIMEOUT_SEC}`,
     "",
-    ...buildDmsMcpServerToml(input.hostProjectRoot),
+    ...buildDmsMcpServerToml(input.hostProjectRoot, input.dmsAccess),
     "",
     `[projects.${tomlString(path.resolve(input.hostProjectRoot))}]`,
     'trust_level = "untrusted"',
     "",
     ...buildPermissionProfileToml(input),
   ].join("\n");
+}
+
+/**
+ * The `config/batchWrite` params of Codex's app-server, as far as the sidecar
+ * sends them: edits that replace one key of `config.toml`.
+ */
+export type ConfigBatchWriteParams = {
+  edits: Array<{
+    keyPath: string;
+    mergeStrategy: "replace" | "upsert";
+    value: string[];
+  }>;
+};
+
+/** The `config/batchWrite` params that give the DMS MCP of `config.toml` another access. */
+export function buildDmsAccessEdit(
+  hostProjectRoot: string,
+  access: DmsMcpAccess,
+): ConfigBatchWriteParams {
+  return {
+    edits: [
+      {
+        keyPath: `mcp_servers.${DMS_MCP_SERVER_KEY}.args`,
+        mergeStrategy: "replace",
+        value: dmsMcpLaunch(hostProjectRoot, access).args,
+      },
+    ],
+  };
 }
 
 /**

@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import type { ToolDecision } from "../../agent/provider.js";
 import { isMutatingBuilderTool } from "../../agent/tool-kinds.js";
-import { FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES } from "../../constants/mcp.js";
+import { isAutoAllowedMcpTool } from "../../constants/mcp.js";
 import { JsonValueSchema } from "../../protocol/json.js";
 import { type CodexMcpCall, mcpToolName } from "./adapter.js";
 
@@ -83,7 +83,7 @@ export function decideElicitation(
     };
   }
   const toolName = mcpToolName(call.server, call.tool);
-  if (!FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES.has(toolName)) {
+  if (!isAutoAllowedMcpTool(toolName)) {
     return {
       action: "decline",
       reason: `declined ${toolName}: not a tool the chat auto-allows`,

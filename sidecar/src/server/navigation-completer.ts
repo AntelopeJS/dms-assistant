@@ -78,22 +78,40 @@ function createRendezvous<T>(): Rendezvous<T> {
   };
 }
 
+const NORMALIZE_BASE = "http://navigation.invalid";
+
+/**
+ * The form a navigation target and a landed page are compared in: the pathname
+ * without a trailing slash, then the query string. The hash is dropped because
+ * the host never reports it.
+ */
+export function normalizeNavigationPath(path: string): string {
+  const url = new URL(path, NORMALIZE_BASE);
+  const pathname =
+    url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+  return `${pathname === "" ? "/" : pathname}${url.search}`;
+}
+
 export function createNavigationCompleter(): NavigationCompleter {
   const landings = createRendezvous<NavigationLanding>();
   const reports = createRendezvous<PageBlocksReport>();
   return {
-    waitFor: landings.wait,
-    complete: (path, { blocksWithinMs } = {}) =>
-      landings.deliver(path, () =>
+    waitFor: (path, timeoutMs) =>
+      landings.wait(normalizeNavigationPath(path), timeoutMs),
+    complete: (path, { blocksWithinMs } = {}) => {
+      const key = normalizeNavigationPath(path);
+      landings.deliver(key, () =>
         blocksWithinMs === undefined
           ? {}
           : {
               blocks: reports.wait(
-                path,
+                key,
                 blocksWithinMs + BLOCKS_REPORT_GRACE_MS,
               ),
             },
-      ),
-    completeBlocks: (path, report) => reports.deliver(path, () => report),
+      );
+    },
+    completeBlocks: (path, report) =>
+      reports.deliver(normalizeNavigationPath(path), () => report),
   };
 }

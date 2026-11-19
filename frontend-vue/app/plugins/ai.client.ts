@@ -87,6 +87,13 @@ import {
 } from "../runtime/launcher-state";
 import { installNavigationCompleteEmitter } from "../runtime/navigation-complete";
 import { createMockupFold } from "../runtime/mockup-fold";
+import {
+	createMockupRuns,
+	dispatchMockupRun,
+	installMockupRunAnswers,
+	type MockupRuns,
+	routePrompt,
+} from "../runtime/mockup-runs";
 import { createPanelIntents } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
 import { OWNER_UI_HEADERS } from "../../builder/app/runtime/owner-ui";
@@ -275,6 +282,7 @@ interface SessionParts {
 	launcher: LauncherStateHandle;
 	currentPage: Ref<CurrentPage | null>;
 	navigate: Navigator;
+	runs: MockupRuns;
 }
 
 function createSession(parts: SessionParts): AssistantSession {
@@ -297,6 +305,7 @@ function createSession(parts: SessionParts): AssistantSession {
 		pendingApprovals: activity.pendingApprovals,
 		launcherState: parts.launcher.state,
 		intents,
+		runs: parts.runs,
 		currentPage: readonly(parts.currentPage),
 		api: createApi(deps.$authFetch),
 		lastError: activity.lastError,
@@ -319,17 +328,7 @@ function installFold(app: App, session: AssistantSession): () => void {
 	});
 	const unmountBar = mountFoldBar(app, fold, session.launcherState);
 	const stopPrompts = installAssistantPromptListener((prompt) => {
-		session.intents.push(
-			prompt.source === "build"
-				? {
-						kind: "build",
-						mockup: prompt.prompt,
-						...(prompt.target === undefined
-							? {}
-							: { pageRef: prompt.target.pageRef }),
-					}
-				: { kind: "prompt", prompt: prompt.prompt, block: prompt.block },
-		);
+		session.intents.push(routePrompt(prompt, session.runs));
 		fold.unfold();
 	});
 	return () => {
@@ -489,6 +488,11 @@ function createRuntime(
 		isPanelOpen: panel.isOpen,
 	});
 	const currentPage = ref<CurrentPage | null>(null);
+	const runs = createMockupRuns({
+		chat: chat.transport,
+		storage: () => window.sessionStorage,
+		emit: dispatchMockupRun,
+	});
 	const session = createSession({
 		deps,
 		controller,
@@ -500,8 +504,10 @@ function createRuntime(
 		launcher,
 		currentPage,
 		navigate,
+		runs,
 	});
 	const stops = [
+		runs.stop,
 		installToggleShortcut({ onToggle: panel.toggle }),
 		followPanel({ panel, activity, holds }, client),
 		installHostState(client, currentPage),
@@ -532,6 +538,7 @@ function wireAssistant(
 	const { user } = useDmsUserSession<{ _id: string }>();
 	provided.session.value = session;
 	const stops = [
+		installMockupRunAnswers(session.runs),
 		registerOnceMounted(context, appMounted, session, provided.i18n),
 		installToasts(session, provided.i18n, options.toaster),
 		startOnboarding({

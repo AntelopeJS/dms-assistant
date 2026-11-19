@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from "vue";
 import { useBuilderApi } from "../../../builder/app/runtime/api";
 import {
 	type ConnectionAccess,
@@ -217,8 +217,14 @@ onMounted(async () => {
 	project.value = await api.projectModules().catch(() => null);
 });
 
-watch(database.phase, (phase) => {
-	if (phase.kind === "choosing") access.value = "read";
+const accessChoice = useTemplateRef<HTMLFieldSetElement>("accessChoice");
+
+watch(database.phase, async (phase) => {
+	if (phase.kind === "choosing") {
+		access.value = "read";
+		await nextTick();
+		accessChoice.value?.scrollIntoView({ block: "nearest" });
+	}
 	if (phase.kind !== "analysed") return;
 	onboarding.send({
 		type: "analysed",
@@ -325,7 +331,12 @@ watch(database.phase, (phase) => {
 				</span>
 			</li>
 		</ul>
-		<fieldset v-if="choosing" class="mt-4" data-access-choice>
+		<fieldset
+			v-if="choosing"
+			ref="accessChoice"
+			class="mt-4"
+			data-access-choice
+		>
 			<legend class="text-highlighted mb-2 text-[13px] font-semibold">
 				{{ t("dms_assistant.views.onboarding.database.access_title") }}
 			</legend>

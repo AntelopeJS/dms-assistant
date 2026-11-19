@@ -13,7 +13,11 @@ import {
   CLOSED_CONVERSATION_MESSAGES,
   truncateTitle,
 } from "../state/conversations.js";
-import type { ChangeSetRecord, TokenUsage } from "../state/types.js";
+import {
+  type ChangeSetRecord,
+  sumTokenUsage,
+  type TokenUsage,
+} from "../state/types.js";
 import { broadcastConversationList, emitNotice } from "./chat-events.js";
 import { cancelCallRequests, cancelTurnRequests } from "./permission-events.js";
 import { inspectBuild } from "./safety-net.js";
@@ -183,14 +187,6 @@ export function handleTurnEvent(
   dispatch(services, conversationId, wireEvent, isTerminal);
 }
 
-function sumUsage(a: TokenUsage, b: TokenUsage): TokenUsage {
-  return {
-    inputTokens: a.inputTokens + b.inputTokens,
-    outputTokens: a.outputTokens + b.outputTokens,
-    totalTokens: a.totalTokens + b.totalTokens,
-  };
-}
-
 function addTurnUsage(
   services: SidecarServices,
   conversationId: string,
@@ -198,7 +194,7 @@ function addTurnUsage(
 ): void {
   const turn = services.turns.get(conversationId);
   if (turn !== undefined) {
-    turn.usage = sumUsage(turn.usage, usage);
+    turn.usage = sumTokenUsage(turn.usage, usage);
     return;
   }
   services.conversationStore.recordTurnUsage(conversationId, usage, Date.now());
@@ -368,14 +364,13 @@ function recordUsage(services: SidecarServices, conversationId: string): void {
       Date.now(),
     );
   }
-  const total =
-    services.conversationStore.get(conversationId)?.tokenUsage?.totalTokens ??
-    0;
+  const conversation = services.conversationStore.get(conversationId);
   services.chatSocketRegistry.send(conversationId, {
     type: EVENT_TYPES.USAGE,
     conversationId,
-    totalTokens: total,
-    model: services.conversationStore.get(conversationId)?.model,
+    totalTokens: conversation?.tokenUsage?.totalTokens ?? 0,
+    cacheReadTokens: conversation?.tokenUsage?.cacheReadTokens ?? 0,
+    model: conversation?.model,
   });
 }
 

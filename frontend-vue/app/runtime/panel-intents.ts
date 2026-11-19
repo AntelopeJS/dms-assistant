@@ -1,5 +1,5 @@
 import { type Ref, ref } from "vue";
-import type { MockupBlock } from "./assistant-prompt";
+import type { MockupAssistantPrompt, MockupBlock } from "./assistant-prompt";
 import type { ConversationStartMode } from "./assistant-session";
 
 /** Opens the panel on a stored conversation. */
@@ -40,13 +40,27 @@ export interface MockupPromptIntent {
 }
 
 /**
- * Builds a mockup into real pages through a turn, followed in the build
- * dialog; into the existing page `pageRef` when given, rather than a new one.
+ * Builds the mockup named `mockup`, titled `title`, into real pages through a
+ * turn in a new conversation, sent without waiting for the user; into the
+ * existing page `pageRef` when given, rather than a new one.
  */
 export interface BuildMockupIntent {
 	kind: "build";
 	mockup: string;
+	title?: string;
 	pageRef?: string;
+}
+
+/**
+ * Applies and resolves the open comments of the mockup named `mockup`, titled
+ * `title`, through a turn in a new conversation, sent without waiting for the
+ * user; those of the page `page` only when given.
+ */
+export interface ResolveCommentsIntent {
+	kind: "resolve-comments";
+	mockup: string;
+	title?: string;
+	page?: string;
 }
 
 export type PanelIntent =
@@ -55,7 +69,8 @@ export type PanelIntent =
 	| FocusComposerIntent
 	| ReviewApprovalsIntent
 	| MockupPromptIntent
-	| BuildMockupIntent;
+	| BuildMockupIntent
+	| ResolveCommentsIntent;
 
 /**
  * What the dashboard asked the panel to do: open a chat, start one, focus the
@@ -81,4 +96,30 @@ export function createPanelIntents(): PanelIntents {
 			return intent;
 		},
 	};
+}
+
+/** What the panel does for a prompt the mockup editor handed over. */
+export function intentOfPrompt(prompt: MockupAssistantPrompt): PanelIntent {
+	switch (prompt.source) {
+		case "build":
+			return {
+				kind: "build",
+				mockup: prompt.prompt,
+				...(prompt.title === undefined ? {} : { title: prompt.title }),
+				...(prompt.target === undefined
+					? {}
+					: { pageRef: prompt.target.pageRef }),
+			};
+		case "resolve-comments":
+			return {
+				kind: "resolve-comments",
+				mockup: prompt.prompt,
+				...(prompt.title === undefined ? {} : { title: prompt.title }),
+				...(prompt.page === undefined ? {} : { page: prompt.page }),
+			};
+		case "new-mockup":
+			return { kind: "start", prompt: prompt.prompt };
+		default:
+			return { kind: "prompt", prompt: prompt.prompt, block: prompt.block };
+	}
 }

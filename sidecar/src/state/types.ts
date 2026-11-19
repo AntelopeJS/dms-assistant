@@ -159,18 +159,33 @@ export const DEFAULT_PROVIDER_NAME: ProviderName = PROVIDER_NAMES[0];
 /**
  * Tokens a conversation has cost so far, summed over its turns. Codex reports
  * them per model call; the Claude SDK reports them on the turn result.
+ * `inputTokens` counts every input token, cache reads and cache writes
+ * included; `cacheReadTokens` is the part of it read back from the prompt
+ * cache, so `totalTokens - cacheReadTokens` is what the turns added anew.
  */
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cacheReadTokens: number;
 }
 
 export const EMPTY_TOKEN_USAGE: TokenUsage = {
   inputTokens: 0,
   outputTokens: 0,
   totalTokens: 0,
+  cacheReadTokens: 0,
 };
+
+/** The usage of two runs together. */
+export function sumTokenUsage(a: TokenUsage, b: TokenUsage): TokenUsage {
+  return {
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    totalTokens: a.totalTokens + b.totalTokens,
+    cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
+  };
+}
 
 /** One turn's token cost, with its time, so per-day totals are exact. */
 interface UsageEntry extends TokenUsage {
@@ -222,6 +237,7 @@ export interface StoredConversationSummary {
   messageCount: number;
   provider?: ProviderName;
   totalTokens: number;
+  cacheReadTokens: number;
 }
 
 /** A conversation as the history drawer lists it: stored plus live state. */

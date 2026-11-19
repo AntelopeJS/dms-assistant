@@ -13,8 +13,10 @@ import {
 import {
   buildConfigToml,
   buildDenialReminder,
+  buildDmsAccessEdit,
   buildDeveloperInstructions,
   buildTurnOverrides,
+  type CodexConfigInput,
   declinesEscalations,
 } from "../../src/providers/codex/config.js";
 import {
@@ -35,8 +37,9 @@ function settings(overrides: Partial<TurnSettings>): TurnSettings {
   return { ...TURN_SETTINGS, generationMode: "vibe", ...overrides };
 }
 
-const CONFIG_INPUT = {
+const CONFIG_INPUT: CodexConfigInput = {
   ...WORKSPACE,
+  dmsAccess: "full",
   mcpUrl: "http://127.0.0.1:4321/mcp",
   nodePath: process.execPath,
 };
@@ -138,10 +141,39 @@ describe("config.toml", () => {
     const chat = tableLines(toml, "[mcp_servers.dms-assistant]");
     expect(tableLines(toml, "[mcp_servers.dms]")).toEqual([
       'command = "node"',
-      `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}, "--client=chat"]`,
+      `args = [${JSON.stringify(path.join(HOST_ROOT, "node_modules", ".cache", "dms", "mcp-bridge.cjs"))}, "--client=chat", "--access=full"]`,
       chat.find((line) => line.startsWith("tool_timeout_sec = ")),
       'disabled_tools = ["navigate_to_page", "preview_blocks"]',
     ]);
+  });
+
+  it("starts the DMS MCP with Safe access for a Safe chat (fails a Safe chat whose DMS MCP serves the tools that change the project)", () => {
+    const safe = buildConfigToml({ ...CONFIG_INPUT, dmsAccess: "safe" });
+    expect(tableLines(safe, "[mcp_servers.dms]")[1]).toMatch(
+      /"--client=chat", "--access=safe"\]$/,
+    );
+  });
+
+  it("rewrites only the DMS MCP's arguments to change its access (fails an edit that loses the launcher or the client)", () => {
+    expect(buildDmsAccessEdit(HOST_ROOT, "safe")).toEqual({
+      edits: [
+        {
+          keyPath: "mcp_servers.dms.args",
+          mergeStrategy: "replace",
+          value: [
+            path.join(
+              HOST_ROOT,
+              "node_modules",
+              ".cache",
+              "dms",
+              "mcp-bridge.cjs",
+            ),
+            "--client=chat",
+            "--access=safe",
+          ],
+        },
+      ],
+    });
   });
 
   it("passes the bearer through an env var, never the file", () => {

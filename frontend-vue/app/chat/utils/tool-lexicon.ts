@@ -322,6 +322,18 @@ const ASSISTANT_TOOLS: Record<string, ToolLexiconEntry> = {
 		target: countOf("relations"),
 		isReadOnly: true,
 	},
+	database_project: {
+		verb: "read_database_setup",
+		icon: ICONS.DATA,
+		target: firstOf("connection", "engine"),
+		isReadOnly: true,
+	},
+	mockup_read_spec: {
+		verb: "read_mockup",
+		icon: ICONS.PAGE,
+		target: firstOf("mockup"),
+		isReadOnly: true,
+	},
 	database_profile: {
 		verb: "profile_relation",
 		icon: ICONS.TABLE,
@@ -468,6 +480,16 @@ const BUILDER_TOOLS: Record<string, ToolLexiconEntry> = {
 		verb: "configure_field",
 		icon: ICONS.FIELD,
 		target: firstOf("path"),
+	},
+	builder_configure_column_groups: {
+		verb: "configure_column_groups",
+		icon: ICONS.FIELD,
+		target: firstOf("resource"),
+	},
+	mockup_apply_to_page: {
+		verb: "apply_mockup",
+		icon: ICONS.PAGE,
+		target: firstOf("mockup", "page"),
 	},
 	builder_remove_field: {
 		verb: "remove_field",

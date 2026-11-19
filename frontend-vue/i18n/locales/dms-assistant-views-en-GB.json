@@ -257,7 +257,7 @@
 				},
 				"database": {
 					"title": "Connect your database",
-					"lede": "We only read the schema and a small sample until you allow more.",
+					"lede": "The assistant sees your schema and counts, never the values in your rows.",
 					"url": "Connection URL",
 					"stored": "Saved in your project’s .env, never sent anywhere else.",
 					"connect": "Connect and analyse",

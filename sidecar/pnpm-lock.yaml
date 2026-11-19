@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@antelopejs/dms':
-        specifier: 0.20.9-next.974.gb6efd03
-        version: 0.20.9-next.974.gb6efd03(bare-buffer@3.7.2)(typescript@5.9.3)
+        specifier: '>=0.21.3 <0.22.0'
+        version: 0.21.3(bare-buffer@3.7.2)(typescript@5.9.3)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.3.316
         version: 0.3.316(@anthropic-ai/sdk@0.93.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.29.0(zod@4.6.7))(zod@4.6.7)
@@ -28,11 +28,11 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: 0.5.3-next.973.gcfa363a
-        version: 0.5.3-next.973.gcfa363a(@antelopejs/interface-core@0.5.1)
+        specifier: '>=0.6.1 <0.7.0'
+        version: 0.6.1(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
-        specifier: '>=0.8.0 <0.9.0'
-        version: 0.8.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
+        specifier: '>=0.8.4 <0.9.0'
+        version: 0.8.4(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
       '@openai/codex':
         specifier: 0.166.0
         version: 0.166.0
@@ -63,12 +63,12 @@ packages:
   2fa@0.1.2:
     resolution: {integrity: sha512-PbQttc6USc2TmZwOPE/zlNWTJTySLt50rWhUbZgPkZ5LAOLpgShT3yclbxwHPfHGUXEjfLrTo3Lunyx8onGnXw==}
 
-  '@antelopejs/dms@0.20.9-next.974.gb6efd03':
-    resolution: {integrity: sha512-D47xUynL3T2cIXB7BDno9QEgzZBY/ygZB7KofJhw69gzB4mUh7gtKDAs5OqsuU1S+0Cr16XzLOh8ufb36VuNFA==}
+  '@antelopejs/dms@0.21.3':
+    resolution: {integrity: sha512-eTC/cE1/vK/MeS3xOf+oDFAzwfkYjaBtgmUBE63YYJWkXOueh1GDW3tJ9DrNeEsNkNt13jcmEmjcgfpcxbiSoQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      '@antelopejs/core': ~1.24.0
+      '@antelopejs/core': ~1.24.5
       '@playwright/test': ^1.65.0
       typescript: '>=5.8.0 <7.0.0'
     peerDependenciesMeta:
@@ -124,13 +124,13 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
-  '@antelopejs/interface-dms-builder@0.5.3-next.973.gcfa363a':
-    resolution: {integrity: sha512-XeyvDiLi3Mvm8mJW6TwcOSkJXCAfSyImvZywpGZAOeMT44O6JwIvRo1dfo/1lzw8TuABKOvkjBq3W1xbHOQTDQ==}
+  '@antelopejs/interface-dms-builder@0.6.1':
+    resolution: {integrity: sha512-Cmda7iyKfRI6yo0zS7Kje29gCnISRF6TpXhUQhAcxyVd1zT5q9+rzT7I9O3umy/RKLjalDYjJ8hhIg8EmB5yXw==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
-  '@antelopejs/interface-dms@0.14.4-next.972.gd1c5e0d':
-    resolution: {integrity: sha512-xnlbwL9pjOIYFK817UGbBKToy1ulesupRYFTHiAaVnlaajg3IY7Tj4EWCf03fwEooskBlCdXlt6NQ9ZvSwn0cQ==}
+  '@antelopejs/interface-dms@0.14.6':
+    resolution: {integrity: sha512-OcGF1q+fZD54z00MVGLnIvcD1ee8jyC0KmDk6f9a7m2cugQVcgDXKKAQ547dwaT7OIqMLVNkRiNi5N43AF0Ojw==}
     peerDependencies:
       '@antelopejs/interface-api': '>=0.3.0 <0.4.0'
       '@antelopejs/interface-api-util': '>=0.3.0 <0.4.0'
@@ -155,8 +155,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.2.4 <1.0.0'
 
-  '@antelopejs/tooling-configs@0.8.0':
-    resolution: {integrity: sha512-o2sec/CFUH//QtXUjGpbeFp0D/QI0H5+59nDoihgz4biEE2D5Z+o1r69yY9c7cRyOY1nnFxiHluuhKoylasc1g==}
+  '@antelopejs/tooling-configs@0.8.4':
+    resolution: {integrity: sha512-jlxLUEYxa1EguRwF9FrTLo6vMXVkfptyQr8oe+cgej2OVCwCWmb9yF/Ky3w1lXBiOO0fqTNac7poAasJr8Jnyw==}
     engines: {node: '>=22.18.0'}
     hasBin: true
     peerDependencies:
@@ -2716,7 +2716,7 @@ snapshots:
       qr-image: 3.2.0
       thirty-two: 0.0.2
 
-  '@antelopejs/dms@0.20.9-next.974.gb6efd03(bare-buffer@3.7.2)(typescript@5.9.3)':
+  '@antelopejs/dms@0.21.3(bare-buffer@3.7.2)(typescript@5.9.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)
@@ -2725,8 +2725,8 @@ snapshots:
       '@antelopejs/interface-data-api': 0.8.0(@antelopejs/interface-api-util@0.3.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)(@antelopejs/interface-database-decorators@0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.1)))(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.1))
       '@antelopejs/interface-database': 0.4.0(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-database-decorators': 0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.1))
-      '@antelopejs/interface-dms': 0.14.4-next.972.gd1c5e0d(edce4304e69e22dcba6f62cb5feace92)
-      '@antelopejs/interface-dms-builder': 0.5.3-next.973.gcfa363a(@antelopejs/interface-core@0.5.1)
+      '@antelopejs/interface-dms': 0.14.6(edce4304e69e22dcba6f62cb5feace92)
+      '@antelopejs/interface-dms-builder': 0.6.1(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-email': 0.2.1(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-file-storage': 0.1.8(@antelopejs/interface-core@0.5.1)
       '@csstools/css-tokenizer': 4.0.0
@@ -2806,11 +2806,11 @@ snapshots:
       '@antelopejs/interface-core': 0.5.1
     optional: true
 
-  '@antelopejs/interface-dms-builder@0.5.3-next.973.gcfa363a(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-builder@0.6.1(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 
-  '@antelopejs/interface-dms@0.14.4-next.972.gd1c5e0d(edce4304e69e22dcba6f62cb5feace92)':
+  '@antelopejs/interface-dms@0.14.6(edce4304e69e22dcba6f62cb5feace92)':
     dependencies:
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-api-util': 0.3.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)
@@ -2839,7 +2839,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@antelopejs/tooling-configs@0.8.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
+  '@antelopejs/tooling-configs@0.8.4(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
     dependencies:
       '@oxlint/plugins': 1.81.0
       dts-bundle-generator: 9.5.1

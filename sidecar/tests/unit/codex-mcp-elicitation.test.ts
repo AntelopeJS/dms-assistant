@@ -241,41 +241,43 @@ describe("a DMS MCP call the chat holds", () => {
     );
   });
 
-  it("accepts builder_add_block on the DMS MCP and declines a name it does not list (fails an allowlist that trusts every mcp__dms__ tool)", async () => {
-    const addBlock = {
-      id: "call_add",
-      server: DMS_SERVER,
-      tool: "builder_add_block",
-      arguments: { pageRef: "/about" },
-    };
-    const unlisted = {
-      id: "call_unlisted",
-      server: DMS_SERVER,
-      tool: "drop_everything",
-      arguments: {},
-    };
-    const { handler, decisions } = setup(TURN_SETTINGS, [addBlock, unlisted]);
-    expect(
-      await handler.handle(
-        toolConsent(DMS_SERVER, "builder_add_block", addBlock.arguments),
-      ),
-    ).toEqual(ACCEPTED);
-    expect(
-      await handler.handle(toolConsent(DMS_SERVER, "drop_everything", {})),
-    ).toEqual(DECLINED);
-    expect(decisions).toEqual([
-      {
-        callId: "call_add",
-        toolName: "mcp__dms__builder_add_block",
-        allowedBy: "builder_auto",
-      },
-      {
-        callId: "call_unlisted",
-        toolName: "mcp__dms__drop_everything",
-        allowedBy: "blocked",
-      },
-    ]);
-  });
+  it.each(CELLS)(
+    "accepts a DMS MCP tool the chat does not list in $mode, $generationMode, and declines another server's tool of the same name (fails an allowlist that names the DMS tools)",
+    async (cell) => {
+      const settings = { ...TURN_SETTINGS, ...cell };
+      const unlisted = {
+        id: "call_unlisted",
+        server: DMS_SERVER,
+        tool: "drop_everything",
+        arguments: {},
+      };
+      const foreign = {
+        id: "call_foreign",
+        server: OTHER_SERVER,
+        tool: "drop_everything",
+        arguments: {},
+      };
+      const { handler, decisions } = setup(settings, [unlisted, foreign]);
+      expect(
+        await handler.handle(toolConsent(DMS_SERVER, "drop_everything", {})),
+      ).toEqual(ACCEPTED);
+      expect(
+        await handler.handle(toolConsent(OTHER_SERVER, "drop_everything", {})),
+      ).toEqual(DECLINED);
+      expect(decisions).toEqual([
+        {
+          callId: "call_unlisted",
+          toolName: "mcp__dms__drop_everything",
+          allowedBy: "builder_auto",
+        },
+        {
+          callId: "call_foreign",
+          toolName: "mcp__other__drop_everything",
+          allowedBy: "blocked",
+        },
+      ]);
+    },
+  );
 
   it("runs a block removal unasked once the setting is off", async () => {
     const settings = { ...TURN_SETTINGS, alwaysAskBlockRemoval: false };

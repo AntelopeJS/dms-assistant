@@ -20,6 +20,37 @@ describe("createNavigationCompleter", () => {
     await expect(promise).resolves.toEqual({});
   });
 
+  it("matches a target with a query string against the landed page's pathname and query", async () => {
+    const completer = createNavigationCompleter();
+    const promise = completer.waitFor("/mockup?name=shop", TIMEOUT_MS);
+    completer.complete("/mockup?name=shop");
+    await expect(promise).resolves.toEqual({});
+  });
+
+  it("does not match a landed page whose query differs from the target", async () => {
+    const completer = createNavigationCompleter();
+    const promise = completer.waitFor("/mockup?name=shop", TIMEOUT_MS);
+    completer.complete("/mockup");
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS + 1);
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it("ignores the hash and a trailing slash when matching", async () => {
+    const completer = createNavigationCompleter();
+    const promise = completer.waitFor("/mockup/?name=shop#top", TIMEOUT_MS);
+    completer.complete("/mockup?name=shop");
+    await expect(promise).resolves.toEqual({});
+  });
+
+  it("routes the block report by the same normalized path", async () => {
+    const completer = createNavigationCompleter();
+    const landing = completer.waitFor("/mockup/?name=shop", TIMEOUT_MS);
+    completer.complete("/mockup?name=shop", { blocksWithinMs: 1000 });
+    const report = { status: "settled" as const, checked: 0, blocks: [] };
+    completer.completeBlocks("/mockup?name=shop", report);
+    await expect((await landing)?.blocks).resolves.toEqual(report);
+  });
+
   it("resolves null when the timeout elapses with no completion", async () => {
     const completer = createNavigationCompleter();
     const promise = completer.waitFor("/foo", TIMEOUT_MS);

@@ -226,3 +226,19 @@ export const { journeys, integrationJourneys } = byRunner(
   ...heldJourneys,
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/activity.ts",
+  "src/routes/activity-csv.ts",
+  "src/routes/list-query.ts",
+  "src/pages/activity/**",
+  "src/types/activity.ts",
+  "sidecar/src/audit/**",
+  "sidecar/src/constants/audit.ts",
+  "sidecar/src/state/store.ts",
+  "sidecar/src/state/stored-schemas.ts",
+  "sidecar/src/state/conversations.ts",
+  "sidecar/src/agent/tool-kinds.ts",
+  "sidecar/src/constants/tool-kinds.ts",
+];

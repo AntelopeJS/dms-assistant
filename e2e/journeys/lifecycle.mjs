@@ -289,3 +289,27 @@ export const { journeys, integrationJourneys } = byRunner(
 );
 
 export { parseJson };
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/lifecycle/**",
+  "src/constants/project-mcp.ts",
+  "src/routes/health.ts",
+  "src/routes/sidecar-info.ts",
+  "src/routes/status.ts",
+  "src/routes/status-shapes.ts",
+  "src/routes/banner.ts",
+  "src/routes/content-json.ts",
+  "src/routes/sidecar-results.ts",
+  "src/types/status.ts",
+  "sidecar/src/index.ts",
+  "sidecar/src/server/idle-shutdown.ts",
+  "sidecar/src/server/routing.ts",
+  "sidecar/src/server/services.ts",
+  "sidecar/src/state/sidecar-version.ts",
+  "sidecar/src/server/http.ts",
+  "sidecar/src/server/http-io.ts",
+  "sidecar/src/server/http-params.ts",
+  "sidecar/src/server/http-routes.ts",
+  "sidecar/src/state/lock.ts",
+];

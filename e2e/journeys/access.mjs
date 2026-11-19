@@ -119,3 +119,30 @@ export const { journeys, integrationJourneys } = byRunner(
   },
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/actor.ts",
+  "src/routes/index.ts",
+  "src/routes/sidecar-auth.ts",
+  "sidecar/src/server/http.ts",
+  "src/index.ts",
+  "sidecar/src/constants/mcp.ts",
+  "sidecar/src/constants/preview.ts",
+  "sidecar/src/constants/logs.ts",
+  "sidecar/src/constants/database.ts",
+  "sidecar/src/mcp/tool-definitions.ts",
+  "sidecar/src/server/http-io.ts",
+  "sidecar/src/constants/http.ts",
+  "sidecar/src/state/lock.ts",
+  "sidecar/src/state/private-file.ts",
+  "sidecar/src/mcp/http-binding.ts",
+  "src/routes/sidecar-answers.ts",
+  "src/routes/logs.ts",
+  "src/routes/query-text.ts",
+  "src/routes/pages-registry.ts",
+  "src/pages-registry.ts",
+  "src/logging/**",
+  "src/sidecar/**",
+  "sidecar/src/server/client-auth.ts",
+];

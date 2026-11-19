@@ -31,3 +31,17 @@ export const journeys = guarded([
     },
   },
 ]);
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/index.ts",
+  "src/config.ts",
+  "src/frontend-module.ts",
+  "src/constants/**",
+  "src/types/**",
+  "src/vocabulary/**",
+  "src/pages/all.ts",
+  "src/pages/index.ts",
+  "src/pages/meta.ts",
+  "src/pages/module.ts",
+];

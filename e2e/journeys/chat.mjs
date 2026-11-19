@@ -1,12 +1,26 @@
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { ai, check, freshSidecar, pageHas, pause, same, statusIs, text } from "../ai.mjs";
+import { ai, check, freshSidecar, pageHas, pause, same, statusIs, text, until } from "../ai.mjs";
+import { projectRoot, writeProjectFile } from "../seed.mjs";
+import { scriptedTurn, withMockClaude } from "./chat/mock-claude.mjs";
+import { putSettings } from "./settings/helpers.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 /** @typedef {import("../ai.mjs").Tab} Tab */
 
 const LAUNCHER = "Assistant (Ctrl+Shift+K)";
+const COMPOSER = { role: "textbox", name: "Message the assistant", exact: true };
 const POPUP_PREFERENCES = "dms-assistant:onboarding";
 const WARM_UP_ATTEMPTS = 5;
+const TURN_TIMEOUT_MS = 60_000;
+const QUESTION = "How is the home page organised?";
+const REPLY = ["The home page shows ", "the welcome block ", "above the latest projects."];
+const ASK_NOTE = "Add a welcome note";
+const NOTE_FOLDER = "notes";
+const NOTE = `${NOTE_FOLDER}/welcome.md`;
+const NOTE_TEXT = "Welcome to the project.\n";
+const ALLOW_EDIT = { role: "button", name: "Allow edit" };
 /**
  * Ticks the onboarding popup's "Don't show on startup" before any page script of the tab runs, so the popup a
  * development dashboard opens on every page leaves the header to the journey.
@@ -36,6 +50,84 @@ async function warmUp(ctx, tab, path) {
     if (loaded) return;
     await pause(2000);
   }
+}
+
+/**
+ * Signs the owner in on the development dashboard's home page and opens the chat panel from the header launcher.
+ *
+ * @param {Ctx} ctx The journey
+ * @returns {Promise<Tab>} The tab, with the panel open
+ */
+async function openChat(ctx) {
+  const tab = await ctx.tab();
+  await withoutPopup(tab);
+  await tab.signIn("admin");
+  await warmUp(ctx, tab, "/home");
+  await tab.goto("/home");
+  await tab.click({ role: "button", name: LAUNCHER, exact: true });
+  await ctx.verify("the launcher opens the chat panel", [tab.visible(COMPOSER, { timeoutMs: 30_000 })], { critical: true });
+  return tab;
+}
+
+/**
+ * Sends a message from the panel's composer.
+ *
+ * @param {Tab} tab The tab, with the panel open
+ * @param {string} message What the owner asks
+ * @returns {Promise<void>}
+ */
+async function send(tab, message) {
+  await tab.fill(COMPOSER, message);
+  await tab.press("Enter", COMPOSER);
+}
+
+/**
+ * The text of the panel's message bubbles of one side of the conversation, in order.
+ *
+ * @param {Tab} tab The tab, with the panel open
+ * @param {"user" | "assistant"} role Whose messages
+ * @returns {Promise<string[]>} Their text, whitespace collapsed
+ */
+async function bubbles(tab, role) {
+  const texts = await tab.page.locator(`[data-role="${role}"] .message-bubble`).allInnerTexts();
+  return texts.map((entry) => entry.replace(/\s+/g, " ").trim());
+}
+
+/**
+ * Drives a turn in which Claude creates the welcome note once the owner allows it, from the chat panel of a new
+ * chat in Code mode with Ask first, then hands the tab to `after` with the turn's change-set card shown. The fake
+ * provider replays the Write call without running it, so the journey writes the file while the call waits for the
+ * owner: between the snapshots the turn takes when it starts and when it ends, as the real tool would.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {(tab: Tab, file: string) => Promise<void>} after What the owner does next, given the note's absolute path
+ * @returns {Promise<void>}
+ */
+async function approvedNote(ctx, after) {
+  const folder = join(projectRoot(ctx), NOTE_FOLDER);
+  const file = join(projectRoot(ctx), NOTE);
+  rmSync(folder, { recursive: true, force: true });
+  const write = { id: "toolu_e2e_write_1", name: "Write", input: { file_path: file, content: NOTE_TEXT }, result: `File created successfully at: ${file}` };
+  await withMockClaude(ctx, scriptedTurn({ calls: [write], reply: ["I added ", "the welcome note."], usage: { input: 200, output: 40 } }), async () => {
+    await putSettings(ctx, "new chats run in Code mode and ask first", { generationMode: "vibe", defaultModeClaude: "normal" });
+    const tab = await openChat(ctx);
+    await send(tab, ASK_NOTE);
+    await ctx.verify(
+      "Claude asks to create the note",
+      [tab.visible(ALLOW_EDIT, { timeoutMs: TURN_TIMEOUT_MS }), pageHas(tab, "the request names the new file and its path in the project", /Create welcome\.md\s*notes\/welcome\.md/)],
+      { critical: true },
+    );
+    writeProjectFile(ctx, NOTE, NOTE_TEXT);
+    await tab.click(ALLOW_EDIT);
+    await ctx.verify("the turn's change set in the chat", [
+      tab.shows(/Change applied · #1/i, { timeoutMs: TURN_TIMEOUT_MS }),
+      pageHas(tab, "the card counts the file the turn changed", /1 file changed/),
+      pageHas(tab, "the card lists the new file", /notes\/welcome\.md\s*new \+1/i),
+      pageHas(tab, "the reply follows the approved call", /I added the welcome note\./),
+    ]);
+    await after(tab, file);
+  });
+  rmSync(folder, { recursive: true, force: true });
 }
 
 export const journeys = guarded([
@@ -94,6 +186,66 @@ export const journeys = guarded([
         french.visible({ role: "heading", name: "Paramètres", exact: true }, { timeoutMs: 60_000 }),
         french.visible({ role: "button", name: LAUNCHER, exact: true }, { timeoutMs: 30_000 }),
       ]);
+    },
+  },
+  {
+    id: "a-message-sent-from-the-panel-gets-the-reply-claude-streams-and-its-token-count",
+    title: "on the development dashboard the owner opens the chat panel from the header launcher and sends a message; the panel shows the message, then the reply Claude (the fake provider) streams for the turn, once and whole, and the tokens the turn reported",
+    entryPoint: "the header launcher of `ajs dms dev`, the chat panel's composer",
+    frontend: "dev",
+    async run(/** @type {Ctx} */ ctx) {
+      await withMockClaude(ctx, scriptedTurn({ reply: REPLY, usage: { input: 120, output: 34 } }), async () => {
+        const tab = await openChat(ctx);
+        await send(tab, QUESTION);
+        const counted = await tab.shows(/154 tokens · this chat/, { timeoutMs: TURN_TIMEOUT_MS });
+        await ctx.verify("the turn in the panel", [
+          counted,
+          same("the owner's message", await bubbles(tab, "user"), [QUESTION]),
+          same("the reply Claude streamed, once and whole", await bubbles(tab, "assistant"), [REPLY.join("")]),
+        ]);
+      });
+    },
+  },
+  {
+    id: "an-approved-edit-shows-its-change-set-card-and-the-set-on-the-changes-page",
+    title: "in Code mode with Ask first, Claude (the fake provider) asks to create a file; the panel shows the request with the file's path, the owner allows it, and the chat shows the change-set card of the turn, which Modules › Assistant › Changes then lists with who asked, the approval and the file's diff",
+    entryPoint: "the chat panel's approval dock and change-set card, /modules/ai/changes",
+    frontend: "dev",
+    async run(/** @type {Ctx} */ ctx) {
+      await approvedNote(ctx, async (tab) => {
+        await warmUp(ctx, tab, "/modules/ai/changes");
+        await tab.goto("/modules/ai/changes");
+        await ctx.verify("Modules › Assistant › Changes", [
+          pageHas(tab, "one set", /Change sets · 1/i),
+          pageHas(tab, "the set, titled with the owner's message, in Code mode", /Add a welcome note #1 · [^\n]*· \+1 −0 · Code mode/),
+          pageHas(tab, "who asked, the agent and the approval", /Asked by\s*Verify Admin\s*Agent · scope\s*Claude Code · Code mode\s*Approvals\s*1 needed/),
+          pageHas(tab, "the file's diff", /notes\/welcome\.md new \+1\s*@@ -0,0 \+1,1 @@\s*1 \+ Welcome to the project\./),
+        ]);
+      });
+    },
+  },
+  {
+    id: "the-change-set-card-undoes-the-turn-and-redoes-it-on-disk",
+    title: "after an approved edit, the owner undoes the turn from its change-set card in the chat: the file Claude (the fake provider) created leaves the project and the card reads Undone with a Redo button; Redo puts the file back and the card reads Change applied again",
+    entryPoint: "the Undo and Redo buttons of the chat panel's change-set card",
+    frontend: "dev",
+    async run(/** @type {Ctx} */ ctx) {
+      await approvedNote(ctx, async (tab, file) => {
+        await tab.click({ role: "button", name: "Undo", exact: true });
+        const removed = await until(() => !existsSync(file), { timeoutMs: 30_000 });
+        await ctx.verify("undone from the card", [
+          check("the note left the project", removed, existsSync(file) ? readFileSync(file, "utf8") : "absent"),
+          tab.shows(/Undone · checkpoint 1 restored/i, { timeoutMs: 30_000 }),
+          tab.visible({ role: "button", name: "Redo", exact: true }),
+        ]);
+        await tab.click({ role: "button", name: "Redo", exact: true });
+        const restored = await until(() => existsSync(file), { timeoutMs: 30_000 });
+        await ctx.verify("redone from the card", [
+          same("the note is back with the text Claude wrote", restored ? readFileSync(file, "utf8") : "absent", NOTE_TEXT),
+          tab.shows(/Change applied · #1/i, { timeoutMs: 30_000 }),
+          tab.visible({ role: "button", name: "Undo", exact: true }),
+        ]);
+      });
     },
   },
 ]);

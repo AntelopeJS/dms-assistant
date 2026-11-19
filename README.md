@@ -6,19 +6,38 @@
 
 <a href="https://www.npmjs.com/package/@antelopejs/dms-assistant"><img alt="npm" src="https://img.shields.io/npm/v/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="./LICENSE"><img alt="License" src="https://img.shields.io/npm/l/@antelopejs/dms-assistant?style=for-the-badge&labelColor=000000&color=000000" data-illustration></a> <a href="https://discord.gg/g4pFt6eXqu"><img alt="Discord" src="https://img.shields.io/badge/Discord-18181B?logo=discord&style=for-the-badge&color=000000" data-illustration></a> <a href="https://dms.antelopejs.com/docs/modules/assistant"><img alt="Documentation" src="https://img.shields.io/badge/Docs-18181B?style=for-the-badge&color=000000" data-illustration></a> <a href="https://github.com/AntelopeJS/dms"><img data-illustration alt="Star AntelopeJS DMS" src="https://img.shields.io/github/stars/AntelopeJS/dms?label=Star%20AntelopeJS%20DMS&style=for-the-badge&labelColor=000000&color=000000&logo=github"></a>
 
-**A development assistant inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard, with an onboarding that starts a project from scratch or from a database you already run.**
+**A development assistant inside the [AntelopeJS DMS](https://github.com/AntelopeJS/dms) dashboard. Start from scratch or from a database you already run, iterate on a live mockup, then build the real pages.**
 
 [Documentation](https://dms.antelopejs.com/docs/modules/assistant) · [All modules](https://github.com/AntelopeJS/dms#modules)
 
 </div>
 
-<img data-illustration alt="Screen recording from the AntelopeJS DMS film. The assistant panel opens next to a dashboard with Claude Code as the coding agent, and the request Add a card with the sites that stopped reporting is typed under the caption Or describe it. The assistant then reports Added the card Delayed sites with Typecheck passed, the changed files dashboard/page.ts and dashboard/stats.ts, and the buttons Review diff and Undo, under the caption A change set. Review it. Undo it." src="./docs/images/assistant.gif">
+<img data-illustration alt="The mockup fills up while the AI writes it. A comment is pinned on the New customers card: Add a Repeat customers KPI next to this one. Resolve with AI adds the Repeat customers card, and the change set reads 2 files changed, Typecheck, Undo." src="./docs/images/mockup.gif">
 
 ## What it does
 
-The module has two parts, both for development.
+The module is for development. With `NODE_ENV=production`, the backend starts no sidecar and the dashboard shows no assistant.
 
-**The assistant.**
+### Onboarding
+
+The first time an owner opens the dashboard, the assistant's window opens on its own. It finds a Claude or Codex login on the machine, or signs you in, then asks where you start from:
+
+- **Start from scratch**: describe the product in a few sentences, and the assistant drafts a mockup.
+- **Start from an existing database**: paste a Postgres, MySQL/MariaDB or MongoDB connection string and press **Connect and analyse**. The assistant lists the tables and the screens it proposes, then you **Build directly** or **Generate a first mockup**. It sees your schema and counts, never the values in your rows.
+
+<img data-illustration alt="The assistant finds the Claude login on the machine. Start from an existing database is chosen, a PostgreSQL connection string is typed, and Connect and analyse lists 12 tables and the screens it proposes, with Build directly and Generate a first mockup." src="./docs/images/onboarding.gif">
+
+### Mockups
+
+A mockup is `mockups/<name>/spec.json` in your repo, drawn by the real DMS renderer on the `/mockup` page. You settle the dashboard there before any page is built:
+
+- The mockup fills up while the AI writes it, page by page.
+- A change is a save of the file, and the page redraws at once, with no typecheck and no reload. Blocks read sample data, so no table or query is wired yet.
+- Pin a comment on any block, or on the page, and press **Resolve with AI**. The assistant applies the open comments and resolves them.
+- Every change is a version you can preview or restore, and the **Mockups** page lists your mockups with how much of each is built.
+- **Build it** writes the real pages as TypeScript, binds them to your data and checks each one against the mockup.
+
+### Chat
 
 - Docks a chat panel next to any page, with the page as context. `Ctrl` `Shift` `K` opens it.
 - Runs a coding agent in a local sidecar. The agent is Claude Code by default, or OpenAI's Codex, and it reads the project, its loaded modules and their skills.
@@ -26,14 +45,30 @@ The module has two parts, both for development.
 - Saves every turn that touches the project as a change set you can review, undo and redo.
 - Adds an **Assistant** module for owners, with the **Settings**, **Changes** and **Activity** pages.
 
-With `NODE_ENV=production`, the backend starts no sidecar and the dashboard shows no assistant. The sidecar exits if you start it yourself in production.
+### From your own Claude Code or Codex
 
-**The database connect flow.**
+The mockup and the build are skills, so they also work from your terminal, without opening the dashboard. Install the `antelopejs` plugin from [AntelopeJS/agent-skills](https://github.com/AntelopeJS/agent-skills):
 
-- Connects a database you already run, analyses its tables and maps them into pages, from **Start from an existing database** in the assistant's onboarding popup.
-- Serves the routes of that flow under `/api/builder/database`. By default they run only in development (`ajs project dev`), and every route requires a tenant owner.
+```bash
+# Claude Code
+claude plugin marketplace add AntelopeJS/agent-skills
+claude plugin install antelopejs@antelopejs
+
+# Codex
+codex plugin marketplace add AntelopeJS/agent-skills
+codex plugin add antelopejs@antelopejs
+```
+
+`ajs project dev` adds a `dms` server to the project's `.mcp.json` and `.codex/config.toml`, so your session gets the same builder, database and mockup tools as the dashboard's chat. Ask it to mock up an app, comment on the mockup at `/mockup?name=<name>`, then ask it to build it.
+
+<img data-illustration alt="Claude Code in a terminal mocks up a support desk, and the mockup opens in the AntelopeJS DMS dashboard." src="./docs/images/harness.gif">
+
+### Database connect flow
+
+- Serves the routes behind **Start from an existing database** under `/api/builder/database`. By default they run only in development (`ajs project dev`), and every route requires a tenant owner.
 
 The builder itself, its interface [`@antelopejs/interface-dms-builder`](https://www.npmjs.com/package/@antelopejs/interface-dms-builder) and its MCP server ship in `@antelopejs/dms`.
+
 
 ## Install
 

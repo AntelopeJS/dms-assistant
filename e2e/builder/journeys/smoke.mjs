@@ -1,13 +1,15 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../../runner.mjs";
 import { builder, check, pick, text } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
 
 /** The first call of the onboarding's "Start from an existing database" path: what the project has, and who may ask. */
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "smoke",
-    tag: "@smoke",
+    integration: true,
     title: "an owner lists the catalog connections and reads the project's modules through /api/builder/database, and an anonymous request is refused",
     entryPoint: "GET /api/builder/database/connections, GET /api/builder/database/project",
     async run(/** @type {Ctx} */ ctx) {
@@ -22,4 +24,5 @@ export const journeys = guarded([
       await ctx.verify("an anonymous request is refused", [check("401 for nobody", anon.status === 401, anon.status)]);
     },
   },
-]);
+  ]),
+);

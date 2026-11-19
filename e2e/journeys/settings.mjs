@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { writeFileSync } from "node:fs";
 import { ai, check, freshSidecar, pick, same, sidecarPath, statusIs, stopBackend, text, until } from "../ai.mjs";
 import { DEFAULTS, putSettings, settings, picked } from "./settings/helpers.mjs";
@@ -6,9 +7,11 @@ import { pageJourneys } from "./settings/page.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "the-defaults-are-the-documented-ones",
+    integration: true,
     title: "a new install answers the documented defaults, and says what this install can do",
     entryPoint: "GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -25,6 +28,7 @@ export const journeys = guarded([
   },
   {
     id: "every-setting-saves-alone-and-survives-a-restart",
+    integration: true,
     title: "each field saves on its own, the form's fields without the assistant UI's header and each guard rail with it, the others stay, and all of them survive a sidecar restart and a backend restart",
     entryPoint: "PUT /ai/settings, POST /ai/sidecar/restart",
     async run(/** @type {Ctx} */ ctx) {
@@ -49,6 +53,7 @@ export const journeys = guarded([
   },
   {
     id: "the-safe-mode-switch-saves-the-stored-scope",
+    integration: true,
     title: "the Safe mode switch of the form is the stored scope: on reads safe, off reads vibe, each save writes the scope and not the switch, and a value that is not a boolean is refused",
     entryPoint: "GET /ai/settings, PUT /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -70,6 +75,7 @@ export const journeys = guarded([
   },
   {
     id: "a-stored-settings-file-is-read-back-by-the-next-start",
+    integration: true,
     title: "a settings file left by an earlier run is read when the assistant starts: each field it holds is used, a value or a key the file should not hold is ignored while the default stays, and the retired single mode is ignored so a file that holds only it starts both agents on their defaults",
     entryPoint: "<project>/node_modules/.cache/dms-assistant/settings.json, GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -106,6 +112,7 @@ export const journeys = guarded([
   },
   {
     id: "a-value-outside-the-options-is-refused-and-changes-nothing",
+    integration: true,
     title: "a value outside the options answers 400 with its reason, nothing changes, an unknown field (the retired single mode included) is ignored and the deletions switch cannot be turned off",
     entryPoint: "PUT /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -145,6 +152,7 @@ export const journeys = guarded([
   },
   {
     id: "a-guard-rail-needs-the-assistant-uis-header",
+    integration: true,
     title: "the owner's PUT of a guard rail (a default mode, Safe mode, an ask, local skills, or a key the module does not name as free) without the assistant UI's header answers 403 and changes nothing, a free key mixed with one is refused whole, a free key saves without the header, and the same guard rail with the header saves",
     entryPoint: "PUT /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -169,4 +177,5 @@ export const journeys = guarded([
     },
   },
   ...pageJourneys,
-]);
+  ]),
+);

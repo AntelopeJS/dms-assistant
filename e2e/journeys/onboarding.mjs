@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { connectJourneys } from "./onboarding/connect.mjs";
 import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, pick, raw, same, sidecarLock, statusIs, text, withEnv } from "../ai.mjs";
 
@@ -12,9 +13,11 @@ function state(ctx, label) {
   return raw(ctx, label, { path: `${AI}/onboarding`, as: "admin" });
 }
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "the-state-says-where-each-login-stands-and-offers-one-codex-sign-in",
+    integration: true,
     title: "the first-run popup's state names the provider, says Claude Code and Codex are signed out and offers one ChatGPT sign-in address for the sidecar, the same for every poll, and a Claude credential in the environment reads as signed in from the environment without the key in the answer",
     entryPoint: "GET /ai/onboarding",
     async run(/** @type {Ctx} */ ctx) {
@@ -45,6 +48,7 @@ export const journeys = guarded([
   },
   {
     id: "a-provider-choice-is-saved-and-an-unknown-one-is-refused",
+    integration: true,
     title: "choosing Codex in the popup is saved as the settings' coding agent whether or not it is signed in, choosing Claude Code goes back, and a provider that does not exist answers 400 and changes nothing",
     entryPoint: "POST /ai/onboarding/provider, GET /ai/settings",
     async run(/** @type {Ctx} */ ctx) {
@@ -65,6 +69,7 @@ export const journeys = guarded([
   },
   {
     id: "a-pasted-claude-token-is-checked-without-being-stored-or-echoed",
+    integration: true,
     title: "a pasted Claude token that is missing answers 400, one that is not shaped like a token answers malformed without a request to Anthropic, neither is stored, and no answer carries what was pasted",
     entryPoint: "POST /ai/onboarding/claude-token, GET /ai/onboarding",
     async run(/** @type {Ctx} */ ctx) {
@@ -87,4 +92,5 @@ export const journeys = guarded([
     },
   },
   ...connectJourneys,
-]);
+  ]),
+);

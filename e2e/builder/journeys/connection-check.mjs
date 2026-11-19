@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../../runner.mjs";
 import { BUILDER, builder, check, fromOwnerUi, isText, member, pick, text } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
@@ -20,9 +21,11 @@ function runMongoUrl(ctx) {
   return `${text(run, "mongoUrl")}/verify_connection_check`;
 }
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "the-check-refuses-the-owner-outside-development",
+    integration: true,
     title: "Under ajs project start POST /database/connections/check answers the owner 403 forbidden, for a good body and a bad one alike, and never repeats the URL",
     entryPoint: "POST /api/builder/database/connections/check",
     async run(/** @type {Ctx} */ ctx) {
@@ -38,6 +41,7 @@ export const journeys = guarded([
   },
   {
     id: "the-check-validates-the-body-and-reaches-the-database-in-development",
+    integration: true,
     title: "Under ajs project dev the check refuses nobody and a member who is not the owner, answers 200 reachable false for an engine it does not connect, answers 400 for a URL it does not accept without echoing the URL, reaches the run's MongoDB with read and write access, and reports an unreachable one with a reason that holds no password",
     entryPoint: "POST /api/builder/database/connections/check",
     backend: "dev",
@@ -85,4 +89,5 @@ export const journeys = guarded([
       ]);
     },
   },
-]);
+  ]),
+);

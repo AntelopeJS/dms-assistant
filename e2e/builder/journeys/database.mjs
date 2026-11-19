@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../../runner.mjs";
 import { builder, check, isRow, isText, items, list, pick, projectPath, readProject, text, withConfig } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
@@ -47,9 +48,11 @@ function envFile(ctx) {
   }
 }
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "a-project-without-an-external-database-answers-the-documented-empties-and-404s",
+    integration: true,
     title: "On a project with no catalog connection the Database routes list no connection and answer 404 or a not_found refusal for an unknown connection, analysis or mapping, and no route samples rows",
     entryPoint: "GET /api/builder/database/*, POST /api/builder/database/sample",
     async run(/** @type {Ctx} */ ctx) {
@@ -71,6 +74,7 @@ export const journeys = guarded([
   },
   {
     id: "the-project-answer-carries-the-fields-the-connect-form-reads",
+    integration: true,
     title: "GET /database/project lists the configured modules and answers this module's id, the project's own database and the pins to it, and leaves dms-database out when the project has none",
     entryPoint: "GET /api/builder/database/project",
     async run(/** @type {Ctx} */ ctx) {
@@ -90,6 +94,7 @@ export const journeys = guarded([
   },
   {
     id: "writes-that-are-refused-or-dry-run-leave-the-project-untouched",
+    integration: true,
     title: "A refused connection write, a dry run and a repair with nothing to repair answer as documented and leave antelope.config.ts and .env as they were",
     entryPoint: "POST /api/builder/database/connection/remove|connection/url|analyse|map|project|connections/repair",
     async run(/** @type {Ctx} */ ctx) {
@@ -195,4 +200,5 @@ export const journeys = guarded([
       await ctx.verify("nothing was written", [check("the configuration is byte for byte the same", readFileSync(join(root, CONFIG_FILE), "utf8") === COMPUTED_NAME_CONFIG, root)]);
     },
   },
-]);
+  ]),
+);

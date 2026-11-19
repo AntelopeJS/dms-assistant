@@ -2,6 +2,7 @@ import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { networkInterfaces } from "node:os";
 import { connect } from "node:net";
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, stopBackend, text, until, withEnv } from "../ai.mjs";
 import { mcpJsonJourneys } from "./lifecycle/mcp-json.mjs";
 import { settingsWithoutSidecar } from "./lifecycle/settings-page.mjs";
@@ -15,10 +16,11 @@ const IDLE_MARGIN_MS = 5000;
 const IDLE_EARLY_MS = 2000;
 const PRODUCTION_SETTLE_MS = 5000;
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "the-status-reads-ready-and-names-the-sidecar",
-    tag: "@smoke",
+    integration: true,
     title: "the status and its banner describe a ready assistant, the probe says the sidecar runs, and the health route answers without a session",
     entryPoint: "GET /ai/status, /ai/status/banner, /ai/sidecar-info, /ai/health",
     async run(/** @type {Ctx} */ ctx) {
@@ -44,6 +46,7 @@ export const journeys = guarded([
   },
   {
     id: "a-restart-gives-a-new-sidecar-and-keeps-what-you-set",
+    integration: true,
     title: "Restart assistant stops the sidecar and starts another on a new port, and the settings and the transcripts stay",
     entryPoint: "POST /ai/sidecar/restart, the Settings banner button",
     async run(/** @type {Ctx} */ ctx) {
@@ -113,6 +116,7 @@ export const journeys = guarded([
   },
   {
     id: "the-sidecar-listens-on-loopback-only",
+    integration: true,
     title: "the sidecar's listening socket is bound to 127.0.0.1, and a connection to the same port on the machine's own network address is refused",
     entryPoint: "the sidecar's port, /proc/net/tcp",
     async run(/** @type {Ctx} */ ctx) {
@@ -138,6 +142,7 @@ export const journeys = guarded([
   },
   {
     id: "an-openai-api-key-is-ignored-with-one-warning-per-start",
+    integration: true,
     title: "with OPENAI_API_KEY set the sidecar logs the documented warning once for the start, and without it no warning",
     entryPoint: "OPENAI_API_KEY, the sidecar log",
     async run(/** @type {Ctx} */ ctx) {
@@ -161,6 +166,7 @@ export const journeys = guarded([
   },
   {
     id: "an-idle-sidecar-exits-after-its-idle-timeout-and-the-next-probe-starts-it",
+    integration: true,
     title: "with DMS_ASSISTANT_IDLE_SHUTDOWN_MS set, a sidecar that only the backend talks to exits one timeout after it started; the next sidecar probe starts another, and a health check made part-way through its timeout postpones its exit by a whole timeout",
     entryPoint: "DMS_ASSISTANT_IDLE_SHUTDOWN_MS, the sidecar's idle timer, GET /ai/sidecar-info, the sidecar's GET /health",
     async run(/** @type {Ctx} */ ctx) {
@@ -228,6 +234,7 @@ export const journeys = guarded([
   },
   {
     id: "a-backend-that-crashed-leaves-no-sidecar-for-long",
+    integration: true,
     title: "stopping the project stops the sidecar, and a sidecar left behind by a killed backend is stopped by the next start",
     entryPoint: "SIGTERM and SIGKILL of the backend, the next project start",
     async run(/** @type {Ctx} */ ctx) {
@@ -257,6 +264,7 @@ export const journeys = guarded([
   },
   {
     id: "a-production-start-runs-no-sidecar",
+    tag: "@smoke",
     title: "a production start (ajs project start, NODE_ENV unset) reports the sidecar disabled and not running, writes no sidecar.lock, and the Settings page shows the offline banner with no failed load and no error toast",
     entryPoint: "ajs project start, GET /ai/sidecar-info, /ai/status, the Settings page",
     backend: "production",
@@ -277,6 +285,7 @@ export const journeys = guarded([
     },
   },
   ...mcpJsonJourneys,
-]);
+  ]),
+);
 
 export { parseJson };

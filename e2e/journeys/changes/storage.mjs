@@ -33,6 +33,7 @@ export const storageJourneys = [
   },
   {
     id: "change-sets-older-than-the-retention-are-dropped-when-the-assistant-starts",
+    integration: true,
     title: "the assistant keeps a change set within the checkpoint retention and drops an older one at its start: 7 days with sets 6 and 7.5 days old, then the default 30 days with sets 29 and 30.5 days old, then 90 days with sets 89 and 90.5 days old",
     entryPoint: "settings.json checkpointRetentionDays, GET /ai/changes",
     async run(/** @type {Ctx} */ ctx) {

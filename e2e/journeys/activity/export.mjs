@@ -7,6 +7,7 @@ import { seedMany, CSV_HEADER, log, seedSample } from "./helpers.mjs";
 export const exportJourneys = [
   {
     id: "the-export-holds-every-row-whatever-the-tab-and-the-period",
+    integration: true,
     title: "the CSV export writes one line per record in the documented columns, quoting commas and quotes and guarding a formula, whatever the page shows",
     entryPoint: "GET /ai/activity/export.csv",
     async run(/** @type {Ctx} */ ctx) {
@@ -31,6 +32,7 @@ export const exportJourneys = [
   },
   {
     id: "the-export-stops-at-10000-rows",
+    integration: true,
     title: "an audit log of 10,005 records exports 10,000 data lines, as the docs say",
     entryPoint: "GET /ai/activity/export.csv",
     async run(/** @type {Ctx} */ ctx) {

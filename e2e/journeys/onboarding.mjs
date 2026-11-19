@@ -4,7 +4,7 @@ import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, pick, raw, same, sidecar
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
-const NO_CREDENTIAL = { ANTHROPIC_API_KEY: "", ANTHROPIC_AUTH_TOKEN: "", CLAUDE_CODE_OAUTH_TOKEN: "" };
+const NO_CREDENTIAL = { ANTHROPIC_API_KEY: "", ANTHROPIC_AUTH_TOKEN: "", CLAUDE_CODE_OAUTH_TOKEN: "", XDG_CONFIG_HOME: "" };
 const ENV_KEY = "sk-ant-verify-not-a-key";
 
 /** @param {Ctx} ctx @param {string} label */

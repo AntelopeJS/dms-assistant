@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [next]
+  merge_group:
+    types: [checks_requested]
   schedule:
     - cron: "17 2 * * *"
   workflow_dispatch:
@@ -30,7 +32,9 @@ jobs:
 
   # ci-node.yml exposes no outputs, so this takes the shared tier rule and
   # derives the jobs declared here from it: a draft and the next to main pull
-  # request run none of them, and only the nightly adds the Windows legs.
+  # request run none of them, and only the nightly adds the Windows legs. The
+  # browser journeys run their @smoke set on a pull request, and every
+  # journey in shards in the merge queue, on a manual run and nightly.
   select:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -38,6 +42,8 @@ jobs:
       tier: ${{ steps.tier.outputs.tier }}
       tests: ${{ steps.tier.outputs.tests }}
       os: ${{ steps.tier.outputs.os }}
+      e2e: ${{ steps.tier.outputs.e2e }}
+      shards: ${{ steps.tier.outputs.shards }}
     steps:
       - name: Pick the tier with the shared rule
         id: pick
@@ -47,6 +53,7 @@ jobs:
         id: tier
         env:
           TIER: ${{ steps.pick.outputs.tier }}
+          EVENT: ${{ github.event_name }}
         run: |
           tier="$TIER"
 
@@ -60,12 +67,23 @@ jobs:
             os='["ubuntu-latest","windows-latest"]'
           fi
 
+          e2e=smoke
+          shards='[1]'
+          if [[ "$tests" == false ]]; then
+            e2e=none
+          elif [[ "$tier" == queue || "$tier" == nightly || "$EVENT" == merge_group || "$EVENT" == workflow_dispatch ]]; then
+            e2e=all
+            shards='[1,2]'
+          fi
+
           {
             echo "tier=${tier}"
             echo "tests=${tests}"
             echo "os=${os}"
+            echo "e2e=${e2e}"
+            echo "shards=${shards}"
           } >> "$GITHUB_OUTPUT"
-          echo "Tier \`${tier}\`: tests ${tests} on ${os}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tier \`${tier}\`: tests ${tests} on ${os}, browser journeys ${e2e}" >> "$GITHUB_STEP_SUMMARY"
 
   vitest:
     needs: select
@@ -147,20 +165,23 @@ jobs:
       - run: pnpm install --filter "{.}" --filter "./sidecar" --frozen-lockfile
       - run: pnpm run test:installed
 
-  # The verify skill's journeys as a Playwright suite: the @smoke set on the
-  # full tier, every journey on the nightly tier. Raise the shard count when
-  # one shard passes about 30 minutes.
+  # The journeys of both verify skills as Playwright suites: e2e/ for the
+  # assistant, e2e/builder/ for the builder, and the assistant's
+  # development-dashboard journeys after them. Each suite's global setup
+  # prepares and starts its own dms-control run. Raise the shard count in
+  # `select` when one shard passes about 30 minutes.
   e2e:
     needs: select
-    if: needs.select.outputs.tier == 'full' || needs.select.outputs.tier == 'nightly'
+    if: needs.select.outputs.e2e != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: [1]
+        shard: ${{ fromJSON(needs.select.outputs.shards) }}
     env:
-      TIER: ${{ needs.select.outputs.tier }}
+      E2E: ${{ needs.select.outputs.e2e }}
+      SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -174,6 +195,7 @@ jobs:
           cache-dependency-path: |
             pnpm-lock.yaml
             e2e/playground/pnpm-lock.yaml
+            e2e/builder/playground/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -181,7 +203,8 @@ jobs:
             ~/.cache/mongodb-binaries
             ~/.cache/ms-playwright
             e2e/playground/.antelope/cache
-          key: e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'e2e/playground/pnpm-lock.yaml', 'e2e/playground/antelope.config.ts') }}
+            e2e/builder/playground/.antelope/cache
+          key: e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'e2e/playground/pnpm-lock.yaml', 'e2e/playground/antelope.config.ts', 'e2e/builder/playground/pnpm-lock.yaml', 'e2e/builder/playground/antelope.config.ts') }}
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/dms-control/frontend
@@ -194,24 +217,36 @@ jobs:
           fi
           echo "::warning::Chromium's system packages did not install: installing the browser alone"
           pnpm exec playwright install --only-shell chromium
-      - if: env.TIER == 'full'
+      - if: env.E2E == 'smoke'
         run: pnpm e2e --grep @smoke
-      - if: env.TIER == 'nightly'
-        run: pnpm e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=blob
+      - if: (success() || failure()) && env.E2E == 'smoke'
+        run: pnpm e2e:builder --grep @smoke
+      - if: env.E2E == 'all'
+        run: pnpm e2e --shard="$SHARD" --reporter=blob
         env:
           PLAYWRIGHT_BLOB_OUTPUT_DIR: e2e/blob-report
+      - if: (success() || failure()) && env.E2E == 'all'
+        run: pnpm e2e:builder --shard="$SHARD" --reporter=blob
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: e2e/blob-report-builder
       # The journeys that only the development dashboard serves.
-      - if: (success() || failure()) && env.TIER == 'nightly'
-        run: pnpm e2e:dev --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=blob
+      - if: (success() || failure()) && env.E2E == 'all'
+        run: pnpm e2e:dev --shard="$SHARD" --reporter=blob
         env:
           PLAYWRIGHT_BLOB_OUTPUT_DIR: e2e/blob-report-dev
-      - if: always() && env.TIER == 'nightly'
+      - if: always() && env.E2E == 'all'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: blob-report-${{ matrix.shard }}
           path: e2e/blob-report
           retention-days: 3
-      - if: always() && env.TIER == 'nightly'
+      - if: always() && env.E2E == 'all'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: blob-report-builder-${{ matrix.shard }}
+          path: e2e/blob-report-builder
+          retention-days: 3
+      - if: always() && env.E2E == 'all'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: blob-report-dev-${{ matrix.shard }}
@@ -222,16 +257,16 @@ jobs:
         with:
           name: e2e-evidence-${{ matrix.shard }}
           path: |
-            e2e/playwright-report*
-            e2e/test-results*
+            e2e/**/playwright-report*
+            e2e/**/test-results*
             ${{ runner.temp }}/dms-runs/*/evidence
             ${{ runner.temp }}/dms-runs/*/logs
           retention-days: 7
 
-  # One HTML and JSON report of the nightly shards.
+  # One HTML and JSON report of the shards of every suite.
   e2e-report:
     needs: [select, e2e]
-    if: always() && needs.select.outputs.tier == 'nightly'
+    if: always() && needs.select.outputs.e2e == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -248,7 +283,7 @@ jobs:
         with:
           pattern: blob-report-*
           path: e2e/blob-artifacts
-      # Each artifact keeps its folder, so the blobs of the two configs never share a name.
+      # Each artifact keeps its folder, so the blobs of the suites never share a name.
       - run: |
           mkdir -p e2e/blob-reports
           for blob in e2e/blob-artifacts/*/*.zip; do
@@ -274,7 +309,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - if: >-
-          needs.select.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || needs.ci.result == 'skipped' || (needs.select.outputs.tests == 'true' && (needs.vitest.result == 'skipped' || needs.frontend-verify.result == 'skipped' || needs.installed-module.result == 'skipped')) || ((needs.select.outputs.tier == 'full' || needs.select.outputs.tier == 'nightly') && needs.e2e.result == 'skipped')
+          needs.select.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || needs.ci.result == 'skipped' || (needs.select.outputs.tests == 'true' && (needs.vitest.result == 'skipped' || needs.frontend-verify.result == 'skipped' || needs.installed-module.result == 'skipped')) || (needs.select.outputs.e2e != 'none' && needs.e2e.result == 'skipped')
         run: exit 1
       - if: needs.select.outputs.tier == 'draft'
         run: |

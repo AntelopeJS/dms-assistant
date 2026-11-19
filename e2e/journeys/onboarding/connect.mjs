@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { check, parseJson, text } from "../../ai.mjs";
+import { check, parseJson, text, withEnv } from "../../ai.mjs";
 
 /** @typedef {import("../../ai.mjs").Ctx} Ctx */
 /** @typedef {import("../../ai.mjs").Tab} Tab */
@@ -12,6 +12,20 @@ const RESTART = /Restart the project to load the connection/;
 const CONNECT_MEMORY = "dms-assistant:onboarding-connect";
 const READER = "reader";
 const PASSWORD = "reader-secret";
+const CLAUDE_FROM_THE_ENVIRONMENT = { ANTHROPIC_API_KEY: "sk-ant-verify-not-a-key", ANTHROPIC_AUTH_TOKEN: "", CLAUDE_CODE_OAUTH_TOKEN: "" };
+
+/**
+ * Runs a journey with Claude Code signed in from the environment and no other credential, whatever the host holds: a
+ * link to the connect step opens on the sign-in of the AI step until a login works, so the host's own credentials
+ * would otherwise decide whether the popup opens on its connect step.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {() => Promise<void>} body What to do under that configuration
+ * @returns {Promise<void>}
+ */
+function signedInToClaude(ctx, body) {
+  return withEnv(ctx, CLAUDE_FROM_THE_ENVIRONMENT, body);
+}
 
 /**
  * A database of the run's mongod with two collections, a few documents and a user who may read them, for the popup to
@@ -153,7 +167,7 @@ export const connectJourneys = [
     frontend: "dev",
     backend: "watch",
     last: true,
-    async run(/** @type {Ctx} */ ctx) {
+    run: (/** @type {Ctx} */ ctx) => signedInToClaude(ctx, async () => {
       const url = await seedSource(ctx, sourceName(ctx, "connect_watch"));
       const tab = await ctx.tab();
       await tab.signIn("admin");
@@ -163,7 +177,7 @@ export const connectJourneys = [
       await closeAndReopen(tab);
       await ctx.verify("closed and opened again: the popup still follows it", await followedWithoutTheUrl(tab, "opened again", "running", 30_000));
       await ctx.verify("the analysis", [await tab.visible({ role: "heading", name: /^Here’s what’s in/ }, { timeoutMs: 120_000 })]);
-    },
+    }),
   },
   {
     id: "without-watch-the-connect-popup-asks-for-a-restart-and-keeps-asking-after-a-reload-and-a-reopen",
@@ -172,7 +186,7 @@ export const connectJourneys = [
     frontend: "dev",
     backend: "dev",
     last: true,
-    async run(/** @type {Ctx} */ ctx) {
+    run: (/** @type {Ctx} */ ctx) => signedInToClaude(ctx, async () => {
       const url = await seedSource(ctx, sourceName(ctx, "connect_dev"));
       const tab = await ctx.tab();
       await tab.signIn("admin");
@@ -182,6 +196,6 @@ export const connectJourneys = [
       await ctx.verify("after a reload it still asks, without the URL", [...(await followedWithoutTheUrl(tab, "after the reload", "running", 30_000)), await tab.shows(RESTART, { timeoutMs: 60_000 })]);
       await closeAndReopen(tab);
       await ctx.verify("closed and opened again it still asks", [...(await followedWithoutTheUrl(tab, "opened again", "running", 30_000)), await tab.shows(RESTART, { timeoutMs: 60_000 })]);
-    },
+    }),
   },
 ];

@@ -31,4 +31,5 @@ dms-control journey "$RUN" codex
 
 ## Gotchas
 
+- The sidecar stores its sign-in in `$XDG_CONFIG_HOME/dms-assistant` when that variable is set, and a run replaces only `HOME`: a GitHub runner sets `XDG_CONFIG_HOME`, so the journeys run under `withEnv` with it blank and find `chatgpt-auth.json` under the run's `HOME`.
 - Not driven, NOT VERIFIED: consent at OpenAI, the token exchange and refresh, `chatgpt-auth.json` with mode 0600, a Codex turn, the pinned CLI version gate.

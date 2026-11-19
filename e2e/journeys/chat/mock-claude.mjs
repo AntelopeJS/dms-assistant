@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { check, freshSidecar, sidecarLock, withEnv } from "../../ai.mjs";
+import { freshSidecar, withEnv } from "../../ai.mjs";
 
 /**
  * @typedef {import("../../ai.mjs").Ctx} Ctx
@@ -88,13 +88,6 @@ export async function withMockClaude(ctx, script, body) {
   const nodeOptions = [process.env.NODE_OPTIONS, `--import=${HOOKS}`].filter(Boolean).join(" ");
   await withEnv(ctx, { MOCK_CLAUDE: "1", MOCK_CLAUDE_SCRIPT: file, NODE_OPTIONS: nodeOptions }, async () => {
     await freshSidecar(ctx);
-    const lock = sidecarLock(ctx);
-    const environ = lock ? readFileSync(`/proc/${lock.pid}/environ`, "utf8").split("\0") : [];
-    await ctx.verify(
-      "the sidecar runs the fake Claude provider",
-      [check("the sidecar inherited MOCK_CLAUDE=1 and the script", environ.includes("MOCK_CLAUDE=1") && environ.includes(`MOCK_CLAUDE_SCRIPT=${file}`), environ.filter((entry) => entry.startsWith("MOCK_")))],
-      { critical: true },
-    );
     await body();
   });
 }

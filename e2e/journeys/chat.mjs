@@ -107,6 +107,22 @@ async function approvedNote(ctx, after) {
   const folder = join(projectRoot(ctx), NOTE_FOLDER);
   const file = join(projectRoot(ctx), NOTE);
   rmSync(folder, { recursive: true, force: true });
+  try {
+    await approvedNoteTurn(ctx, file, after);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The turn of `approvedNote`, on the note at `file`.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {string} file The note's absolute path
+ * @param {(tab: Tab, file: string) => Promise<void>} after What the owner does next
+ * @returns {Promise<void>}
+ */
+async function approvedNoteTurn(ctx, file, after) {
   const write = { id: "toolu_e2e_write_1", name: "Write", input: { file_path: file, content: NOTE_TEXT }, result: `File created successfully at: ${file}` };
   await withMockClaude(ctx, scriptedTurn({ calls: [write], reply: ["I added ", "the welcome note."], usage: { input: 200, output: 40 } }), async () => {
     await putSettings(ctx, "new chats run in Code mode and ask first", { generationMode: "vibe", defaultModeClaude: "normal" });
@@ -127,7 +143,6 @@ async function approvedNote(ctx, after) {
     ]);
     await after(tab, file);
   });
-  rmSync(folder, { recursive: true, force: true });
 }
 
 export const journeys = guarded([

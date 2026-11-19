@@ -61,7 +61,7 @@ codex plugin add antelopejs@antelopejs
 
 `ajs project dev` adds a `dms` server to the project's `.mcp.json` and `.codex/config.toml`, so your session gets the same builder, database and mockup tools as the dashboard's chat. Ask it to mock up an app, comment on the mockup at `/mockup?name=<name>`, then ask it to build it.
 
-<img data-illustration alt="Claude Code runs in a terminal with the antelopejs plugin. The prompt Mock up a support desk for our tickets is typed, the skill antelopejs:dms-mockup loads, and Claude Code reports a mockup with a ticket board, a customers list and a page per customer. The mockup then shows in the AntelopeJS DMS dashboard." src="./docs/images/harness.gif">
+<img data-illustration alt="Claude Code in a terminal mocks up a support desk, and the mockup opens in the AntelopeJS DMS dashboard." src="./docs/images/harness.gif">
 
 ### Database connect flow
 

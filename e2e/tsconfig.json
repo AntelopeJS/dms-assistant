@@ -14,11 +14,12 @@
     "sourceMap": false,
     "noEmit": true
   },
-  "include": ["*.ts", "**/*.mjs"],
+  "include": ["*.ts", "builder/*.ts", "**/*.mjs"],
   "exclude": [
     "playground",
-    "playwright-report*",
-    "test-results*",
-    "blob-report*"
+    "builder/playground",
+    "**/playwright-report*",
+    "**/test-results*",
+    "**/blob-report*"
   ]
 }

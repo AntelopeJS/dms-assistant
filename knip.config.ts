@@ -19,7 +19,7 @@ export default {
         "@modelcontextprotocol/sdk",
         "zod",
       ],
-      entry: ["e2e/journeys/*.mjs"],
+      entry: ["e2e/journeys/*.mjs", "e2e/builder/journeys/*.mjs"],
       project: ["e2e/**/*.mjs"],
       ignore: ["frontend-vue/**", "sidecar/tests/**"],
     }),

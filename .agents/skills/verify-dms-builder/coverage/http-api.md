@@ -1,6 +1,6 @@
 # Coverage: http-api
 
-Docs: `docs/8.database-connection.md`. Journeys: `journeys/http-api.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `e2e/builder/journeys/http-api.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |

@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @typedef {import("./control.d.ts").Ctx} Ctx
- * @typedef {import("./control.d.ts").Tab} Tab
+ * @typedef {import("@antelopejs/dms/e2e").Ctx} Ctx
+ * @typedef {import("@antelopejs/dms/e2e").Tab} Tab
  * @typedef {{ status: number | null, body: unknown, error: string | null, folder?: string }} Answer
  * @typedef {Record<string, unknown>} Row
  * @typedef {{ name: string, pass: boolean, detail: string }} Check

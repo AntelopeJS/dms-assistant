@@ -1,6 +1,6 @@
 # Feature map
 
-One file per feature. `covers:` lists the source globs it owns, `docs:` the pages a verdict judges, `journeys/<feature>.mjs` its journeys, and `coverage/<feature>.md` the documented behaviours and the check that pins each. `dms-control map` checks that every user-facing file is covered and that every feature has its journeys and existing docs pages.
+One file per feature. `covers:` lists the source globs it owns, `docs:` the pages a verdict judges, `e2e/builder/journeys/<feature>.mjs` its journeys, and `coverage/<feature>.md` the documented behaviours and the check that pins each. `dms-control map` checks that every user-facing file is covered and that every feature has its journeys and existing docs pages.
 
 The skill covers what this repository ships of the builder: the external database connect routes in `src/builder`, and the client, types and message catalog in `frontend-vue/builder`. The page, block, table and data source operations belong to `@antelopejs/dms`, whose own verification skill drives them (see [SKILL.md](../SKILL.md)).
 

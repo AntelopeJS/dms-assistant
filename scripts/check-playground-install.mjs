@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SIDECAR_BUILD = "pnpm build:sidecar";
-const PLAYGROUNDS = ["playground", "e2e/playground"];
+const PLAYGROUNDS = ["playground", "e2e/playground", "e2e/builder/playground"];
 
 const requirements = [
   {

@@ -1,6 +1,6 @@
 # Coverage: connection-check
 
-Docs: `docs/8.database-connection.md`. Journeys: `journeys/connection-check.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `e2e/builder/journeys/connection-check.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |

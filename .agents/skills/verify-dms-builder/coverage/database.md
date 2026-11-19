@@ -1,6 +1,6 @@
 # Coverage: database
 
-Docs: `docs/8.database-connection.md`. Journeys: `journeys/database.mjs`.
+Docs: `docs/8.database-connection.md`. Journeys: `e2e/builder/journeys/database.mjs`.
 
 | Source | Documented behaviour | Journey | Check / Not driven |
 | --- | --- | --- | --- |

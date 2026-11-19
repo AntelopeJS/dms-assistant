@@ -72,6 +72,7 @@
     "test:e2e": "cd sidecar && pnpm test:e2e",
     "e2e": "playwright test -c e2e",
     "e2e:dev": "playwright test -c e2e/playwright.dev.config.ts",
+    "e2e:builder": "playwright test -c e2e/builder",
     "format": "oxfmt . && pnpm --dir frontend-vue format",
     "knip": "knip --dependencies && pnpm --dir sidecar knip",
     "knip:all": "knip",

@@ -35,7 +35,7 @@ export default defineConfig({
       source: { type: "local", path: "." },
     },
     "dms-assistant": {
-      source: { type: "local", path: "../../../.." },
+      source: { type: "local", path: "../../.." },
       config: { builder: { api: builderApi() } },
     },
     dms: {

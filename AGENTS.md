@@ -12,7 +12,7 @@ An AntelopeJS DMS development assistant, published as `@antelopejs/dms-assistant
 | `frontend-vue` | The dashboard layer, one frontend registration. ESLint and Prettier own it, not oxlint and oxfmt; Prettier skips `frontend-vue/builder` |
 | `frontend-vue/builder` | The client and types of the builder's `/api/builder/database` routes and the builder's message catalog, with its own vitest config. The builder has no editor UI: pages change through the AI and the mockup flow |
 | `playground`   | A DMS project that loads the module; its own lockfile, outside the pnpm workspace                       |
-| `e2e`          | The journeys of the `verify-dms-assistant` skill, their helpers and their playground, run as a Playwright suite by `pnpm e2e` through `@antelopejs/dms/e2e`; `e2e/builder` holds those of `verify-dms-builder`, run by `pnpm e2e:builder` |
+| `e2e`          | The assistant's journeys suite: `e2e/journeys.config.ts` (its playground, prepare commands and smoke feature), the journeys, their helpers and their playground, run as a Playwright suite by `pnpm e2e` through `@antelopejs/dms/e2e`; `e2e/builder` holds the builder's suite, run by `pnpm e2e:builder` |
 | `skills`       | The module's own agent skills, shipped through `antelopeJs.skills`. The chat loads the DMS workflow skills of `@antelopejs/agent-skills` before them |
 
 The root `package.json` is the published CommonJS package, so it has no `"type": "module"`. Node therefore warns that it reparses `oxlint.config.ts` as ESM; the warning is harmless.
@@ -33,8 +33,8 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
 - `pnpm test:installed`, which packs the module, installs the tarball as the AntelopeJS module cache does, starts the installed sidecar and checks that every package its built files import resolves. CI runs it in the `installed-module` job, which `ubuntu` needs, and the release runs it before it starts.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
-- The journeys that open no tab: `pnpm test:integration` runs `tests/integration/*.journeys.test.mjs`, the journeys a feature marks `integration: true`, on one run per verify skill through `@antelopejs/dms/e2e/run`. CI runs it in the `integration` job in the merge queue, on a manual run and nightly. `pnpm e2e:build` builds what every run needs (the module, the sidecar and both playgrounds); with `DMS_E2E_PREBUILT=1` a run skips that build.
-- The browser journeys: `pnpm e2e` (and `pnpm e2e:builder`, `pnpm e2e:dev`) prepares and starts a `dms-control` run, runs every journey of its verify skill on it and stops it; `--grep @smoke` narrows it to the smoke set. CI runs the smoke set in the `e2e` job on a pull request, and every journey in shards in the merge queue, on a manual run and nightly, whose shards `e2e-report` merges into one report. `tests/verify-map.test.cjs` checks that both feature maps cover every user-facing file.
+- The journeys that open no tab: `pnpm test:integration` runs `tests/integration/*.journeys.test.mjs`, the journeys a feature marks `integration: true`, on one run per journeys suite through `@antelopejs/dms/e2e/run`. CI runs it in the `integration` job in the merge queue, on a manual run and nightly. `pnpm e2e:build` builds what every run needs (the module, the sidecar and both playgrounds); with `DMS_E2E_PREBUILT=1` a run skips that build.
+- The browser journeys: `pnpm e2e` (and `pnpm e2e:builder`, `pnpm e2e:dev`) prepares and starts a run of its suite's playground, runs every journey of the suite on it and stops it; `--grep @smoke` narrows it to the smoke set. CI runs the smoke set in the `e2e` job on a pull request, and every journey in shards in the merge queue, on a manual run and nightly, whose shards `e2e-report` merges into one report. `tests/journey-coverage.test.cjs` checks that the `covers` globs the journeys modules of both suites export cover every user-facing file.
 - The full frontend-vue typecheck: `pnpm --dir frontend-vue verify-source` builds the DMS core layer with this one and runs vue-tsc. `checks` typechecks only the chat (`typecheck:chat`).
 
 ## CI
@@ -55,8 +55,6 @@ CI runs `pnpm run checks` in full on every pull request and reports what failed.
 - `pnpm run typecheck` after you change types or signatures.
 - `pnpm exec oxlint <files>` and `pnpm exec oxfmt <files>` on the files you changed.
 - One test file, not the suite. In a module that tests with `ajs module test`: `pnpm run build`, then `pnpm exec ajs module test . -f dist/<path>.test.js`.
-
-Prove a change works with the verification skill in [`.agents/skills/verify-dms-assistant/SKILL.md`](.agents/skills/verify-dms-assistant/SKILL.md) before you call it done.
 
 ### Comments
 

@@ -145,3 +145,14 @@ export const { journeys, integrationJourneys } = byRunner(
   },
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/builder/index.ts",
+  "src/builder/config.ts",
+  "src/builder/frontend-module.ts",
+  "src/builder/routes/index.ts",
+  "frontend-vue/builder/app/runtime/api.ts",
+  "frontend-vue/builder/app/runtime/constants.ts",
+  "frontend-vue/builder/app/runtime/enabled.ts",
+];

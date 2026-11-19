@@ -16,8 +16,8 @@ importers:
         specifier: '>=0.8.2 <0.9.0'
         version: 0.8.2
       '@antelopejs/dms':
-        specifier: 0.21.4-next.939.g641c7fa
-        version: 0.21.4-next.939.g641c7fa(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)
+        specifier: 0.21.4-next.947.g7afce75
+        version: 0.21.4-next.947.g7afce75(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)
       '@antelopejs/interface-api':
         specifier: '>=0.3.3 <0.4.0'
         version: 0.3.3(@antelopejs/interface-core@0.5.1)
@@ -127,8 +127,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms@0.21.4-next.939.g641c7fa':
-    resolution: {integrity: sha512-wAF+SPGjEl4X8JM23HFXBLtTRjBQqx5OoWg3Cxm2Pm260UDdeLukgbZw0dw5ifNZoMv7wjV/uyTiqZ+WSeK7Rw==}
+  '@antelopejs/dms@0.21.4-next.947.g7afce75':
+    resolution: {integrity: sha512-ObNpa5LMqpnclQyTyLvmBm8B9La/kY+sMEJFrFuZwVooLQZujJuHiX3KKVYvWLfKrcy9K/D2ABMpwhXAKs6emw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -3727,7 +3727,7 @@ snapshots:
       semver: 7.8.5
       typescript: 5.9.3
 
-  '@antelopejs/dms@0.21.4-next.939.g641c7fa(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)':
+  '@antelopejs/dms@0.21.4-next.947.g7afce75(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.1)

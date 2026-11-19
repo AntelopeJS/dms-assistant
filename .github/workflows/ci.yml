@@ -169,7 +169,7 @@ jobs:
       - run: pnpm install --filter "{.}" --filter "./sidecar" --frozen-lockfile
       - run: pnpm run test:installed
 
-  # The journeys of both verify skills as Playwright suites: e2e/ for the
+  # Both journeys suites as Playwright suites: e2e/ for the
   # assistant, e2e/builder/ for the builder, and the assistant's
   # development-dashboard journeys after them. `pnpm e2e:build` builds the
   # module and both playgrounds once, then each suite's global setup starts
@@ -270,8 +270,8 @@ jobs:
             ${{ runner.temp }}/dms-runs/*/logs
           retention-days: 7
 
-  # The journeys that open no tab, as node:test files on one run per verify
-  # skill: in the merge queue, on a manual run and nightly.
+  # The journeys that open no tab, as node:test files on one run per journeys
+  # suite: in the merge queue, on a manual run and nightly.
   integration:
     needs: select
     if: needs.select.outputs.e2e == 'all'

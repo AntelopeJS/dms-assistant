@@ -179,3 +179,25 @@ export const { journeys, integrationJourneys } = byRunner(
   ...pageJourneys,
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/settings.ts",
+  "src/routes/owner-ui.ts",
+  "frontend-vue/app/components/GuardRails.vue",
+  "frontend-vue/app/views/guard-rails.ts",
+  "frontend-vue/app/views/composables/useGuardRails.ts",
+  "src/routes/metrics.ts",
+  "src/routes/metric-shapes.ts",
+  "src/types/metrics.ts",
+  "sidecar/src/metrics/**",
+  "sidecar/src/skills/**",
+  "sidecar/src/constants/skills.ts",
+  "src/sidecar/settings-values.ts",
+  "src/pages/settings/**",
+  "sidecar/src/state/settings-store.ts",
+  "sidecar/src/state/settings-types.ts",
+  "sidecar/src/constants/settings.ts",
+  "sidecar/src/state/store.ts",
+  "sidecar/src/state/conversations.ts",
+];

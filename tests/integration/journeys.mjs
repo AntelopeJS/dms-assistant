@@ -7,6 +7,7 @@ import { startRun } from "@antelopejs/dms/e2e/run";
 
 /** @typedef {import("@antelopejs/dms/e2e").Journey} Journey */
 /** @typedef {import("@antelopejs/dms/e2e/run").StartedRun} StartedRun */
+/** @typedef {import("@antelopejs/dms/e2e/run").RunOptions} RunOptions */
 /** @typedef {{ name: string, detail: string, verdict: "pass" | "fail" | "known" | "fixed", finding?: string }} JudgedCheck */
 /** @typedef {{ error: string | null, steps: { name: string, checks: JudgedCheck[] }[] }} JourneyResult */
 
@@ -50,19 +51,19 @@ const NO_BROWSER = {
 };
 
 /**
- * Starts one run of a verify skill's playground, then runs each feature's journeys as tests, each on a fresh database
+ * Starts one run of a journeys suite's playground, then runs each feature's journeys as tests, each on a fresh database
  * of that run as the Playwright suite runs it. A test fails on a failed check, on a check of the journey's
  * `knownFailures` that passes, and on an error; a known failure shows as a diagnostic.
  *
- * @param {string} skill The verify skill folder, relative to the repository root
+ * @param {RunOptions} options How `startRun` starts the suite's run
  * @param {Record<string, Journey[]>} features The journeys of each feature
  */
-export function journeySuite(skill, features) {
+export function journeySuite(options, features) {
   /** @type {StartedRun | undefined} */
   let started;
   before(
     async () => {
-      started = await startRun({ skill });
+      started = await startRun(options);
     },
     { timeout: RUN_TIMEOUT_MS },
   );

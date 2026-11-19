@@ -25,7 +25,7 @@ It needs Node 24 and Java 11 or later from `$JAVA`, else `java` on PATH, else th
 
 ## When to run it
 
-Run it when a change touches any file in the coverage record below. `verify-dms-assistant` runs it through `dms-control formal` (its verdict rule 5): a changed rule (exit 1) fails the verdict, and the recorded findings fail it only when the diff changes what the covered code does.
+Run it when a change touches any file in the coverage record below. A changed rule (exit 1) fails the change, and the recorded findings fail it only when the diff changes what the covered code does.
 
 ## The configs
 
@@ -70,7 +70,7 @@ Read each TLC result with the pstack `/statechart` skill. Work on a copy of `Cha
 
 ## Real bug or modeling error
 
-Replay the counterexample against the code, one action per step, with the coverage record below. `RequestUndo` and `RequestRedo` are a click on Undo or Redo (`POST /ai/changes/:id/undo` and `/redo`); `BeginTurn` and `Finish` are a chat turn's start and end; `RunLock` is the next task on the lock. A step order is a modeling error when the code cannot produce it, most likely because two model steps are one synchronous run in the code. Then fix the model, keep the rule, and say why. Otherwise reproduce it with `createCheckpoints` over a scratch project, or through the Changes page with `verify-dms-assistant`, and assert only what the owner sees: the file's text and the set's state.
+Replay the counterexample against the code, one action per step, with the coverage record below. `RequestUndo` and `RequestRedo` are a click on Undo or Redo (`POST /ai/changes/:id/undo` and `/redo`); `BeginTurn` and `Finish` are a chat turn's start and end; `RunLock` is the next task on the lock. A step order is a modeling error when the code cannot produce it, most likely because two model steps are one synchronous run in the code. Then fix the model, keep the rule, and say why. Otherwise reproduce it with `createCheckpoints` over a scratch project, or through the Changes page with a journey of `e2e/journeys/changes.mjs`, and assert only what the owner sees: the file's text and the set's state.
 
 ## Changing the model
 

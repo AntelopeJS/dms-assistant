@@ -4,9 +4,12 @@ import { integrationJourneys as httpApi } from "../../e2e/builder/journeys/http-
 import { integrationJourneys as smoke } from "../../e2e/builder/journeys/smoke.mjs";
 import { journeySuite } from "./journeys.mjs";
 
-journeySuite(".agents/skills/verify-dms-builder", {
-  smoke,
-  "connection-check": connectionCheck,
-  database,
-  "http-api": httpApi,
-});
+journeySuite(
+  { config: "e2e/builder/journeys.config.ts" },
+  {
+    smoke,
+    "connection-check": connectionCheck,
+    database,
+    "http-api": httpApi,
+  },
+);

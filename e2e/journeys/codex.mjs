@@ -101,3 +101,12 @@ export const { journeys, integrationJourneys } = byRunner(
   },
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/codex-account.ts",
+  "sidecar/src/providers/codex/**",
+  "sidecar/src/constants/chatgpt.ts",
+  "sidecar/src/constants/codex.ts",
+  "sidecar/src/constants/native-binary.ts",
+];

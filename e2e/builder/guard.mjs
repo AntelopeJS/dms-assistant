@@ -87,7 +87,7 @@ async function signInHydrated(ctx, tab, account) {
 }
 
 /** The browser keys of the onboarding popup: its preferences, and the marker that the harness seeded them once. */
-const ONBOARDING = { preferences: "dms-assistant:onboarding", seeded: "verify-dms-builder:onboarding-seeded" };
+const ONBOARDING = { preferences: "dms-assistant:onboarding", seeded: "dms-assistant-builder-e2e:onboarding-seeded" };
 
 /**
  * Ticks "Don't show on startup" for the onboarding popup once per browser, before any page script runs: in a

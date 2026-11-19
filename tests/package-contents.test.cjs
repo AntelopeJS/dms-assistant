@@ -22,21 +22,29 @@ const TEST_ONLY_FILE =
  *
  * @returns {string[]}
  */
-function packedPaths() {
+function pack() {
   const result = spawnSync(
     "npm",
     ["pack", "--dry-run", "--json", "--ignore-scripts"],
     {
       cwd: ROOT,
       encoding: "utf8",
+      shell: process.platform === "win32",
     },
   );
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 0, result.error?.message ?? result.stderr);
   const [pack] = PackSchema.parse(JSON.parse(result.stdout));
   return pack.files.map((file) => file.path);
 }
 
-void test("the published package carries no test file", () => {
+const PACKED = pack();
+
+/** @returns {string[]} */
+function packedPaths() {
+  return PACKED;
+}
+
+void test("the published package carries no test file (fails a files list that packs tests/ or a spec)", () => {
   const packed = packedPaths();
   assert.ok(packed.includes("frontend-vue/dms.frontend.ts"));
   assert.deepEqual(
@@ -77,14 +85,14 @@ void test("the package ships the chat's two skills and nothing else under skills
   );
 });
 
-void test("the package leaves out the tests, docs sources, playgrounds and agent folders", () => {
+void test("the package leaves out the tests, docs sources, playgrounds and agent folders (fails a files list that names one of them)", () => {
   assert.deepEqual(
     packedPaths().filter((file) => UNSHIPPED_FOLDER.test(file)),
     [],
   );
 });
 
-void test("the manifest declares the dashboard layer, the skills, an exact Codex pin and only the root export", () => {
+void test("the manifest declares the dashboard layer, the skills, an exact Codex pin and only the root export (fails a range on the Codex peer or a new subpath export)", () => {
   const declared = readManifest();
   assert.equal(declared.dmsFrontend, "dist/frontend-module.js");
   assert.deepEqual(declared.antelopeJs.skills, ["./skills"]);
@@ -92,7 +100,7 @@ void test("the manifest declares the dashboard layer, the skills, an exact Codex
   assert.deepEqual(Object.keys(declared.exports), [".", "./package.json"]);
 });
 
-void test("the README and the extending guide name every skill folder the package ships", () => {
+void test("the README and the extending guide name every skill folder the package ships (fails a new skill folder neither document names)", () => {
   const folders = skillFolders();
   for (const doc of ["README.md", "docs/5.extending.md"]) {
     const text = readDoc(doc);

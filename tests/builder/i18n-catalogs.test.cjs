@@ -38,7 +38,7 @@ function messages(value, prefix = "") {
 const en = readLocale("builder-en-GB.json");
 const fr = readLocale("builder-fr-FR.json");
 
-void test("both builder catalogs hold only the dms_builder namespace", () => {
+void test("both builder catalogs hold only the dms_builder namespace (fails a message added outside it)", () => {
   assert.deepEqual(Object.keys(en), ["dms_builder"]);
   assert.deepEqual(Object.keys(fr), ["dms_builder"]);
 });

@@ -11,7 +11,7 @@ const DMS_CONTROL = path.join(
 const SKILLS = ["verify-dms-assistant", "verify-dms-builder"];
 
 for (const skill of SKILLS) {
-  void test(`dms-control map finds every user-facing file and journey of ${skill}`, () => {
+  void test(`dms-control map finds every user-facing file and journey of ${skill} (fails a source file no feature covers)`, () => {
     const result = spawnSync(
       process.execPath,
       [DMS_CONTROL, "map", "--skill", path.join(ROOT, ".agents/skills", skill)],

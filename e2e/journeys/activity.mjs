@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { AI, ai, check, clickUntil, freshSidecar, list, pageHas, pick, raw, recordRaw, same, selected, text, withEnv } from "../ai.mjs";
 import { MS_DAY } from "../seed.mjs";
 import { windowStart } from "../windows.mjs";
@@ -8,7 +9,8 @@ import { heldJourneys } from "./activity/held.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "an-empty-log-says-so-and-exports-its-header",
     title: "with no tool call yet the Activity page says No activity yet, shows its tabs, periods and filters, and the CSV export holds only its header",
@@ -65,6 +67,7 @@ export const journeys = guarded([
   },
   {
     id: "the-log-lists-every-call-with-its-tabs-filters-and-pages",
+    integration: true,
     title: "seeded calls fill the log newest first, 25 rows a page; each tab, the tool, agent and read-only filters, the search over tool, target and conversation, and the periods give exactly their rows",
     entryPoint: "GET /ai/activity, /modules/ai/activity",
     async run(/** @type {Ctx} */ ctx) {
@@ -221,4 +224,5 @@ export const journeys = guarded([
   },
   ...exportJourneys,
   ...heldJourneys,
-]);
+  ]),
+);

@@ -29,6 +29,7 @@ async function restartOn(ctx, body) {
 export const mcpJsonJourneys = [
   {
     id: "a-development-start-adds-the-dms-server-to-mcp-json-and-keeps-the-rest",
+    integration: true,
     title: "a development start leaves the dms server in the project's .mcp.json and keeps every other server and key as written, a dms-assistant server included, writes nothing on the next start, and leaves a file that is not a JSON object of servers as it is",
     entryPoint: "<project>/.mcp.json, ajs project dev",
     backend: "dev",

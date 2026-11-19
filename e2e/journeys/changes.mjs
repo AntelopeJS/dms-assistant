@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { ai, list, pageHas, pick, same, text, withEnv } from "../ai.mjs";
 import { seedStore } from "../seed.mjs";
 import { seedSample } from "./changes/helpers.mjs";
@@ -7,7 +8,8 @@ import { storageJourneys } from "./changes/storage.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "no-change-set-yet-says-so",
     title: "before any turn changed a file the Changes page says No changes yet, the routes answer empty lists, and a set that does not exist answers 404 on every route",
@@ -122,4 +124,5 @@ export const journeys = guarded([
   },
   ...undoJourneys,
   ...storageJourneys,
-]);
+  ]),
+);

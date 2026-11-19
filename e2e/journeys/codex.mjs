@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { ai, check, freshSidecar, list, pageHas, parseJson, pick, same, sidecarLock, statusIs, text, withEnv } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -23,7 +24,8 @@ function underRunHome(ctx, body) {
   return withEnv(ctx, { XDG_CONFIG_HOME: "" }, body);
 }
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "signed-out-the-banner-offers-the-sign-in-and-the-paste",
     title: "signed out, the Settings banner offers Sign in with ChatGPT toward OpenAI with this sidecar as the return address, and Paste the return address; a new sidecar makes a new attempt",
@@ -61,6 +63,7 @@ export const journeys = guarded([
   },
   {
     id: "a-pasted-address-is-checked-before-anything-is-stored",
+    integration: true,
     title: "a pasted return address that is not the sidecar's callback, has no code, or carries a state the sidecar did not issue is refused with the reason, and the account stays signed out",
     entryPoint: "POST /ai/codex/callback, POST /ai/codex/logout",
     run: (/** @type {Ctx} */ ctx) => underRunHome(ctx, async () => {
@@ -96,4 +99,5 @@ export const journeys = guarded([
       ]);
     }),
   },
-]);
+  ]),
+);

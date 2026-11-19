@@ -1,4 +1,5 @@
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../runner.mjs";
 import { AI, OWNER_UI_HEADERS, ai, check, freshSidecar, member, parseJson, raw, recordRaw, same, sidecarLock, text } from "../ai.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -30,9 +31,11 @@ function call(ctx, method, path, who) {
   });
 }
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "every-owner-route-refuses-nobody-and-a-member",
+    integration: true,
     title: "each owner route answers 401 without a session and 403 to a member whose role holds no permission, and the refused calls change nothing",
     entryPoint: "every owner route of /ai as nobody and as a member",
     async run(/** @type {Ctx} */ ctx) {
@@ -61,6 +64,7 @@ export const journeys = guarded([
   },
   {
     id: "the-sidecar-routes-answer-only-the-sidecar",
+    integration: true,
     title: "logs and the pages registry refuse a signed-in owner and nobody with 403, and answer a caller that holds the sidecar's token; health needs no sign-in",
     entryPoint: "/ai/logs, /ai/pages-registry with and without x-dms-assistant-token",
     async run(/** @type {Ctx} */ ctx) {
@@ -113,4 +117,5 @@ export const journeys = guarded([
       await ctx.verify("the owner's session through the dashboard", [same("status", [owner.status, text(ownerBody, "status")], [200, "ready"]), same("settings", [settings.status, text(settingsBody, "provider")], [200, "claude"])]);
     },
   },
-]);
+  ]),
+);

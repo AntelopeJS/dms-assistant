@@ -1,6 +1,7 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
+import { byRunner } from "../../runner.mjs";
 import { BOARD, BUILDER, builder, check, fromOwnerUi, list, member, projectPath, readProject, text, withConfig } from "../builder.mjs";
 
 /** @typedef {import("../builder.mjs").Ctx} Ctx */
@@ -35,9 +36,11 @@ const ROUTES = [
   { method: "GET", path: "/database/reload", ownerAnswered: true },
 ];
 
-export const journeys = guarded([
+export const { journeys, integrationJourneys } = byRunner(
+  guarded([
   {
     id: "every-route-needs-a-tenant-owner",
+    integration: true,
     title: "Every /api/builder/database route refuses an anonymous request and a member who is not the owner, and the owner reaches it",
     entryPoint: "GET|POST /api/builder/database/*",
     async run(/** @type {Ctx} */ ctx) {
@@ -66,6 +69,7 @@ export const journeys = guarded([
   },
   {
     id: "the-routes-follow-api-enabled-and-the-start-mode",
+    tag: "@smoke",
     title: "Under ajs project start the routes are off unless builder.api.enabled is true: with it forced on they answer, left unset or forced off they answer 404 and the dashboard still serves the page",
     entryPoint: "GET /api/builder/database/connections, GET /api/builder/database/project",
     async run(/** @type {Ctx} */ ctx) {
@@ -116,6 +120,7 @@ export const journeys = guarded([
   },
   {
     id: "project-root-decides-where-the-connect-flow-writes",
+    integration: true,
     title: "builder.projectRoot names the source root: a dry run of ConfigureProject names the configuration file under it, a relative root resolves against the process working directory, and the default is the playground",
     entryPoint: "POST /api/builder/database/project with builder.projectRoot set",
     async run(/** @type {Ctx} */ ctx) {
@@ -138,4 +143,5 @@ export const journeys = guarded([
       });
     },
   },
-]);
+  ]),
+);

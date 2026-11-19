@@ -2,6 +2,25 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.2.9
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.8...v0.2.9)
+
+### 🚀 Enhancements
+
+- **assistant:** Mockup assistant, Safe-mode tool surface and onboarding database access ([#112](https://github.com/AntelopeJS/dms-assistant/pull/112))
+
+### 🩹 Fixes
+
+- **deps:** Move the playgrounds and the sidecar to the stable @antelopejs/dms releases ([#105](https://github.com/AntelopeJS/dms-assistant/pull/105))
+- **playground:** Pin the stable @antelopejs/dms range in both playgrounds ([#106](https://github.com/AntelopeJS/dms-assistant/pull/106))
+- **onboarding:** Say the assistant reads counts, never row values ([#107](https://github.com/AntelopeJS/dms-assistant/pull/107))
+- **deps:** Require @antelopejs/dms 0.21.3 and @antelopejs/agent-skills 0.8.2 ([#113](https://github.com/AntelopeJS/dms-assistant/pull/113))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.2.8
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.7...v0.2.8)

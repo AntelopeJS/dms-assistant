@@ -146,7 +146,9 @@ onMounted(load);
 					<UIcon name="i-ph-table" class="size-3.5" />
 					{{ t("dms_assistant.views.onboarding.analysis.tables") }}
 				</h3>
-				<ul class="flex max-h-56 flex-col gap-2.5 overflow-y-auto">
+				<ul
+					class="flex max-h-56 flex-col gap-2.5 overflow-y-auto pe-4 [scrollbar-gutter:stable]"
+				>
 					<li
 						v-for="table in tables"
 						:key="table.relation"
@@ -167,7 +169,9 @@ onMounted(load);
 					<UIcon name="i-ph-layout" class="size-3.5" />
 					{{ t("dms_assistant.views.onboarding.analysis.screens") }}
 				</h3>
-				<ul class="flex max-h-56 flex-col gap-2 overflow-y-auto">
+				<ul
+					class="flex max-h-56 flex-col gap-2 overflow-y-auto pe-4 [scrollbar-gutter:stable]"
+				>
 					<li
 						v-for="screen in screens"
 						:key="screen.relation"

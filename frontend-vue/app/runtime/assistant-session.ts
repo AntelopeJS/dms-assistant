@@ -3,6 +3,7 @@ import type { ChatApi } from "../chat/composables/useChangeSetActions";
 import type { CurrentPage } from "../chat/types/conversation";
 import type { ChatTransport } from "./chat-transport";
 import type { LauncherState } from "./launcher-state";
+import type { MockupRuns } from "./mockup-runs";
 import type { PanelIntents } from "./panel-intents";
 import type { SidecarStatus } from "./sidecar-status";
 
@@ -58,6 +59,8 @@ export interface AssistantSession {
 	launcherState: Readonly<Ref<LauncherState>>;
 	/** What the panel was asked to do and has not done yet. */
 	intents: PanelIntents;
+	/** The runs of the assistant on mockups that go on in this tab. */
+	runs: MockupRuns;
 	/** The page the dashboard shows. */
 	currentPage: Readonly<Ref<CurrentPage | null>>;
 	/** The dashboard's authenticated requests, for the panel's own HTTP calls. */

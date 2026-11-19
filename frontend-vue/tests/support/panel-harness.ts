@@ -21,6 +21,10 @@ import {
 	createChatTransport,
 } from "../../app/runtime/chat-transport";
 import type { LauncherState } from "../../app/runtime/launcher-state";
+import {
+	createMockupRuns,
+	dispatchMockupRun,
+} from "../../app/runtime/mockup-runs";
 import { createPanelIntents } from "../../app/runtime/panel-intents";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import { createTestI18n } from "./i18n";
@@ -119,6 +123,11 @@ export function createHarness(): Harness {
 		pendingApprovals: ref(0),
 		launcherState: readonly(harness.launcherState),
 		intents,
+		runs: createMockupRuns({
+			chat: harness.hub.transport,
+			storage: () => window.sessionStorage,
+			emit: dispatchMockupRun,
+		}),
 		currentPage: ref({
 			path: "/sales/overview",
 			title: "Sales overview · DMS",

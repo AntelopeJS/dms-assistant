@@ -7,6 +7,7 @@ import {
 	groupConversations,
 } from "../utils/conversation-groups";
 import { formatTokens } from "../utils/format";
+import { tokenTally } from "../utils/token-tally";
 
 interface Props {
 	open: boolean;
@@ -78,10 +79,11 @@ function meta(item: ConversationSummary): string[] {
 	parts.push(changesLabel(item.filesChanged ?? 0, item.filesUndone ?? 0));
 	if (item.provider === "codex")
 		parts.push(t("dms_assistant.common.agent.codex"));
-	if ((item.totalTokens ?? 0) > 0)
+	const { newTokens } = tokenTally(item.totalTokens ?? 0, item.cacheReadTokens);
+	if (newTokens > 0)
 		parts.push(
 			t("dms_assistant.panel.drawer.tokens", {
-				count: formatTokens(item.totalTokens ?? 0),
+				count: formatTokens(newTokens),
 			}),
 		);
 	return parts;

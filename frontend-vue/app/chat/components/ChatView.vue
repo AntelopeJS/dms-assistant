@@ -8,6 +8,7 @@ import {
 	watch,
 } from "vue";
 import type { ChatTransport } from "../../runtime/chat-transport";
+import type { MockupRuns } from "../../runtime/mockup-runs";
 import type {
 	PanelIntent,
 	PanelIntents,
@@ -49,13 +50,16 @@ import type { PendingAttachment } from "../utils/attachments";
 import { changingBlock } from "../utils/block-target";
 import { formatTokens } from "../utils/format";
 import { newUuid } from "../utils/ids";
+import {
+	type MockupRequest,
+	mockupRequestMessage,
+} from "../utils/mockup-requests";
 import { isRunStalled, runElapsedMs } from "../utils/run-status";
 import { describeStatus } from "../utils/status-label";
 import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
 import ApprovalDock from "./ApprovalDock.vue";
 import BlockOutline from "./BlockOutline.vue";
-import BuildDialog from "./BuildDialog.vue";
 import ChatEmpty from "./ChatEmpty.vue";
 import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
@@ -72,6 +76,8 @@ interface Props {
 	/** The chat's side of the tab's stream, which the dashboard owns. */
 	transport: ChatTransport;
 	intents: PanelIntents;
+	/** Where a build or a comment run is recorded once it is sent. */
+	runs: Pick<MockupRuns, "begin">;
 	page: CurrentPage | null;
 	/** The sidecar is coming back up: the transcript stays, under a banner. */
 	isReviving: boolean;
@@ -164,21 +170,9 @@ const isStalled = computed(
 const todos = computed(() => latestTodos(conversation.messages.value));
 const mockup = useMockupIntents({
 	activeId,
-	messages: conversation.messages,
 	isRunning,
 	newConversation,
 	setDraft,
-	whenConnected,
-	requestBuild: (target) =>
-		sendUserMessage(
-			target.pageRef === undefined
-				? t("dms_assistant.panel.build.message", { mockup: target.mockup })
-				: t("dms_assistant.panel.build.message_into", {
-						mockup: target.mockup,
-						page: target.pageRef,
-					}),
-		),
-	navigate,
 });
 const outlinedBlock = computed(() =>
 	changingBlock(
@@ -225,14 +219,18 @@ const statusLabel = computed<string>(() =>
 const usageLabel = computed<string>(() => {
 	if (!isConnected.value)
 		return t("dms_assistant.panel.composer.usage_offline");
-	const tokens = conversation.totalTokens.value;
-	if (tokens === null || tokens === 0) {
+	const usage = conversation.usage.value;
+	if (usage === null || usage.newTokens + usage.cacheReadTokens === 0) {
 		return conversation.messages.value.length === 0
 			? t("dms_assistant.panel.composer.usage_new")
 			: "";
 	}
-	return t("dms_assistant.panel.composer.usage", {
-		count: formatTokens(tokens),
+	const count = formatTokens(usage.newTokens);
+	if (usage.cacheReadTokens === 0)
+		return t("dms_assistant.panel.composer.usage", { count });
+	return t("dms_assistant.panel.composer.usage_cached", {
+		count,
+		cached: formatTokens(usage.cacheReadTokens),
 	});
 });
 
@@ -383,6 +381,20 @@ function startConversation(intent: StartConversationIntent): void {
 	else void nextTick(() => composerRef.value?.focus());
 }
 
+/** Sends a build or a comment run in a new conversation; its steps show in the chat like any turn's. */
+function sendMockupRequest(request: MockupRequest): void {
+	newConversation();
+	const conversationId = activeId.value;
+	const message = mockupRequestMessage(request, t);
+	whenConnected(() => {
+		sendUserMessage(message);
+		props.runs.begin(
+			{ mockup: request.mockup, source: request.kind },
+			conversationId,
+		);
+	});
+}
+
 const INTENT_HANDLERS: Record<
 	PanelIntent["kind"],
 	(intent: PanelIntent) => void
@@ -397,7 +409,10 @@ const INTENT_HANDLERS: Record<
 		if (intent.kind === "prompt") mockup.takePrompt(intent);
 	},
 	build: (intent) => {
-		if (intent.kind === "build") mockup.startBuild(intent);
+		if (intent.kind === "build") sendMockupRequest(intent);
+	},
+	"resolve-comments": (intent) => {
+		if (intent.kind === "resolve-comments") sendMockupRequest(intent);
 	},
 	focus: () => void nextTick(() => composerRef.value?.focus()),
 	approvals: () => {
@@ -633,13 +648,6 @@ onBeforeUnmount(() => {
 		/>
 
 		<BlockOutline :path="outlinedBlock" />
-
-		<BuildDialog
-			v-if="mockup.build.value"
-			:view="mockup.build.value"
-			@background="mockup.closeBuild"
-			@open-pages="mockup.openBuiltPages"
-		/>
 	</main>
 </template>
 

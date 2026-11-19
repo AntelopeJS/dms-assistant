@@ -7,12 +7,29 @@ import * as z from "zod/mini";
  */
 export const MOCKUP_ASSISTANT_PROMPT_EVENT = "dms:assistant-prompt";
 
+/**
+ * The event the panel dispatches on `window` when a `build` or
+ * `resolve-comments` run of a mockup starts or ends. Its detail is a
+ * {@link MockupAssistantRun}.
+ */
+export const MOCKUP_ASSISTANT_RUN_EVENT = "dms:assistant-run";
+
+/**
+ * The event the mockup viewer dispatches on `window`, with no detail, to ask
+ * for the runs going on: the panel answers with a
+ * {@link MOCKUP_ASSISTANT_RUN_EVENT} of `running: true` for each.
+ */
+export const MOCKUP_ASSISTANT_RUN_QUERY_EVENT = "dms:assistant-run-query";
+
 const MAX_TEXT_LENGTH = 20_000;
 const MAX_NAME_LENGTH = 500;
 
 const NameSchema = z
 	.string()
 	.check(z.minLength(1), z.maxLength(MAX_NAME_LENGTH));
+
+/** A mockup's display title, beside its folder name. dms 0.20.x sends none. */
+const TitleSchema = z.optional(z.string().check(z.maxLength(MAX_NAME_LENGTH)));
 
 /** The mockup block a prompt is about, in the spec's own terms. */
 export const MockupBlockSchema = z.object({
@@ -32,20 +49,61 @@ const BlockPromptSchema = z.object({
 
 /**
  * "Build it": `prompt` is the name of the mockup to build, and no block is
- * sent. `target.pageRef` names an existing page to build into ("Edit as
- * mockup"), which the build updates instead of creating a page.
+ * sent. `title` is its display title. `target.pageRef` names an existing page
+ * to build into ("Edit as mockup"), which the build updates instead of
+ * creating a page.
  */
 const BuildPromptSchema = z.object({
 	prompt: NameSchema,
+	title: TitleSchema,
 	source: z.literal("build"),
 	target: z.optional(z.object({ pageRef: NameSchema })),
+});
+
+/**
+ * "Resolve with AI": `prompt` is the name of the mockup whose open comments
+ * the assistant applies and resolves, `title` its display title. `page` limits
+ * the run to the comments of one page of its spec.
+ */
+const ResolveCommentsPromptSchema = z.object({
+	prompt: NameSchema,
+	title: TitleSchema,
+	source: z.literal("resolve-comments"),
+	page: z.optional(NameSchema),
+});
+
+/**
+ * "+ New mockup": `prompt` is the start of a sentence the user finishes, such
+ * as "Draft a mockup of ". It opens a new conversation and is never sent.
+ */
+const NewMockupPromptSchema = z.object({
+	prompt: z.string().check(z.minLength(1), z.maxLength(MAX_TEXT_LENGTH)),
+	source: z.literal("new-mockup"),
 });
 
 /** The `detail` of {@link MOCKUP_ASSISTANT_PROMPT_EVENT}. Mirrors `MockupAssistantPrompt` of dms. */
 export const MockupAssistantPromptSchema = z.union([
 	BuildPromptSchema,
+	ResolveCommentsPromptSchema,
+	NewMockupPromptSchema,
 	BlockPromptSchema,
 ]);
+
+/** The prompts that start a run of the assistant on a mockup. */
+export const MockupRunSourceSchema = z.enum(["build", "resolve-comments"]);
+
+export type MockupRunSource = z.infer<typeof MockupRunSourceSchema>;
+
+/**
+ * The `detail` of {@link MOCKUP_ASSISTANT_RUN_EVENT}: the run of `source` on
+ * the mockup whose folder name is `mockup` is going on (`running`) or over,
+ * whether it finished, failed or was stopped.
+ */
+export interface MockupAssistantRun {
+	mockup: string;
+	source: MockupRunSource;
+	running: boolean;
+}
 
 export type MockupBlock = z.infer<typeof MockupBlockSchema>;
 export type MockupAssistantPrompt = z.infer<typeof MockupAssistantPromptSchema>;

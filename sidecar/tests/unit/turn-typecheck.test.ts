@@ -18,7 +18,12 @@ function turn(overrides: Partial<ActiveTurn>): ActiveTurn {
     checkpoint: { ready: async () => {}, finish: async () => null },
     openCalls: new Map(),
     approvalsNeeded: 0,
-    usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      cacheReadTokens: 0,
+    },
     builderOps: 0,
     mutatingCallIds: [],
     ...overrides,

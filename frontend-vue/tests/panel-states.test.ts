@@ -250,3 +250,58 @@ describe("the dashboard can open the panel on a chat", () => {
 		});
 	});
 });
+
+describe("the token figure", () => {
+	it("shows the tokens the chat added, with cache reads apart and labelled (fails when cache reads swell the main figure)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		await sendMessage(panel, "Resolve the comments");
+		deliver(harness, {
+			type: "usage",
+			totalTokens: 303_153,
+			cacheReadTokens: 261_841,
+		});
+		await nextTick();
+		expect(panel.find(".cb-composer__usage").text()).toBe(
+			"41.3k tokens · 261.8k read from cache · this chat",
+		);
+	});
+
+	it("shows the whole total when the sidecar reports no cache reads (fails when an older sidecar's figure disappears)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		await sendMessage(panel, "Hi");
+		deliver(harness, { type: "usage", totalTokens: 1_300 });
+		await nextTick();
+		expect(panel.find(".cb-composer__usage").text()).toBe(
+			"1.3k tokens · this chat",
+		);
+	});
+
+	it("lists each chat in the history with the tokens it added (fails when the drawer counts cache reads)", async () => {
+		const harness = createHarness();
+		const panel = await openPanel(harness);
+		document.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "j", metaKey: true }),
+		);
+		deliver(harness, {
+			type: "conversation_list",
+			conversations: [
+				{
+					id: "c-resolve",
+					title: "Resolve the comments",
+					createdAtMs: 1,
+					updatedAtMs: 2,
+					messageCount: 2,
+					filesChanged: 0,
+					totalTokens: 303_153,
+					cacheReadTokens: 261_841,
+				},
+			],
+		});
+		await nextTick();
+		const drawer = panel.find(".cb-drawer");
+		expect(drawer.text()).toContain("41.3k tok");
+		expect(drawer.text()).not.toContain("303.2k");
+	});
+});

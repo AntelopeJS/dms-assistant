@@ -22,6 +22,7 @@ import {
 	settleOpenTools,
 } from "../utils/conversation-messages";
 import { newUuid } from "../utils/ids";
+import type { TokenTally } from "../utils/token-tally";
 import { dispatchConversationEvent } from "./conversation-events";
 
 export interface UseConversationOptions {
@@ -48,7 +49,7 @@ export interface UseConversationResult {
 	/** The chat's own approval mode and scope; null until the sidecar says. */
 	mode: Ref<ConversationModeState | null>;
 	/** Tokens this chat has used so far; null until the sidecar says. */
-	totalTokens: Ref<number | null>;
+	usage: Ref<TokenTally | null>;
 	/** The model that answered last; null until a reply names it. */
 	model: Ref<string | null>;
 	sendUserMessage: (
@@ -77,7 +78,7 @@ export interface ConversationState {
 	lastEventAtMs: Ref<number>;
 	changeSets: Ref<Record<string, ChangeSetSummary>>;
 	mode: Ref<ConversationModeState | null>;
-	totalTokens: Ref<number | null>;
+	usage: Ref<TokenTally | null>;
 	model: Ref<string | null>;
 	/**
 	 * When the calls of the stored transcript started and ended. A re-attach
@@ -288,7 +289,7 @@ function reset(state: ConversationState): void {
 	state.isTurnInFlight.value = false;
 	state.changeSets.value = {};
 	state.mode.value = null;
-	state.totalTokens.value = null;
+	state.usage.value = null;
 	state.model.value = null;
 	state.callTimes.clear();
 }
@@ -306,7 +307,7 @@ function createConversationState(
 		lastEventAtMs: ref(Date.now()),
 		changeSets: ref<Record<string, ChangeSetSummary>>({}),
 		mode: ref<ConversationModeState | null>(null),
-		totalTokens: ref<number | null>(null),
+		usage: ref<TokenTally | null>(null),
 		model: ref<string | null>(null),
 		callTimes: new Map(),
 	};
@@ -331,7 +332,7 @@ export function useConversation(
 		lastEventAtMs: state.lastEventAtMs,
 		changeSets: state.changeSets,
 		mode: state.mode,
-		totalTokens: state.totalTokens,
+		usage: state.usage,
 		model: state.model,
 		sendUserMessage: (content, attachments = [], extra = {}) =>
 			sendUserMessage(state, content, attachments, extra),

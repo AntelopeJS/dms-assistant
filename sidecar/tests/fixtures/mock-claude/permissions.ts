@@ -8,6 +8,7 @@ import type {
   SDKMessage,
 } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
+import type { ToolArgs } from "../../../src/agent/edit-targets.js";
 import {
   MOCK_ACCEPT_EDITS_COMMANDS,
   MOCK_ACCEPT_EDITS_MODE,
@@ -117,6 +118,15 @@ function verdictOf(output: HookJSONOutput): HookVerdict {
   return specific.permissionDecision === MOCK_HOOK_ASK ? "ask" : "none";
 }
 
+function updatedInputOf(output: HookJSONOutput): ToolArgs | undefined {
+  if (!("hookSpecificOutput" in output)) return undefined;
+  const specific = output.hookSpecificOutput;
+  if (specific === undefined || !("updatedInput" in specific)) {
+    return undefined;
+  }
+  return specific.updatedInput;
+}
+
 async function hookVerdict(
   block: ToolUseBlock,
   ctx: PermissionContext,
@@ -133,9 +143,11 @@ async function hookVerdict(
   } as const;
   let verdict: HookVerdict = "none";
   for (const hook of ctx.preToolUseHooks) {
-    const found = verdictOf(
-      await hook(input, block.id, { signal: ctx.signal }),
-    );
+    const output = await hook({ ...input, tool_input: block.input }, block.id, {
+      signal: ctx.signal,
+    });
+    block.input = updatedInputOf(output) ?? block.input;
+    const found = verdictOf(output);
     if (found === "deny") return found;
     if (found === "ask") verdict = found;
   }
@@ -223,6 +235,7 @@ async function evaluateBlock(
 ): Promise<boolean> {
   const decision = await decide(block, ctx);
   appendTrace({ kind: "tool", name: block.name, ...decision });
+  appendTrace({ kind: "toolInput", name: block.name, input: block.input });
   if (decision.isAllowed) return true;
   if (decision.decidedBy === "classifier" || decision.decidedBy === "mode") {
     ctx.refusedUnprompted.add(block.id);

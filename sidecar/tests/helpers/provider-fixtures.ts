@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
+import { ToolArgsSchema } from "../../src/agent/edit-targets.js";
 import type { ProviderName } from "../../src/state/types.js";
 
 const CLAUDE_SCRIPTS = "../fixtures/mock-claude/scripts";
@@ -230,6 +231,7 @@ const TRACED_CLAUDE_ENTRY = z.object({
     )
     .optional(),
   disallowedTools: z.array(z.string()).optional(),
+  resume: z.string().optional(),
   allowedTools: z.array(z.string()).optional(),
   settings: z
     .looseObject({
@@ -242,6 +244,7 @@ const TRACED_CLAUDE_ENTRY = z.object({
     .optional(),
   permissionMode: z.string().optional(),
   name: z.string().optional(),
+  input: ToolArgsSchema.optional(),
   decidedBy: z.string().optional(),
   isAllowed: z.boolean().optional(),
 });

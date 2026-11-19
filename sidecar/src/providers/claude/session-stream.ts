@@ -34,6 +34,8 @@ export interface StreamBackend {
   live: LiveSettings;
   /** The turn in flight, kept to send it again on the default model. */
   lastTurn: SDKUserMessage | null;
+  /** The CLI's id for the conversation, once it has said it: what a rebuilt query resumes. */
+  sessionId: string | null;
   model: ModelTrack;
 }
 
@@ -120,6 +122,9 @@ export async function* toRunnerEvents(
     const result = await backend.output.next();
     if (result.done) return;
     const message = result.value;
+    if (message.session_id !== undefined && message.session_id !== "") {
+      backend.sessionId = message.session_id;
+    }
     const usage = extractTokenUsage(message);
     if (usage !== null) hooks.onTokenUsage?.(usage);
     observePermissions(backend.live, message, hooks);

@@ -23,6 +23,25 @@ const CONVERSATION = "conv-session-options";
 const WAIT_TIMEOUT_MS = 20_000;
 const TEST_TIMEOUT_MS = 40_000;
 const SHARED_SKILL = "dms-pages";
+const UNSERVED_CLI_TOOLS = [
+  "Workflow",
+  "ScheduleWakeup",
+  "ReportFindings",
+  "ListAgents",
+  "SendMessage",
+  "Artifact",
+  "AskUserQuestion",
+  "CronCreate",
+  "CronDelete",
+  "CronList",
+  "RemoteTrigger",
+  "PushNotification",
+  "SendToProject",
+  "SendToProjectContext",
+  "DesignSync",
+  "EnterWorktree",
+  "ExitWorktree",
+];
 
 function isTerminal(msg: WireMessage): boolean {
   return msg.type === "run_done" || msg.type === "run_error";
@@ -90,14 +109,39 @@ describe("the options a Claude session starts with", () => {
               "mcp-bridge.cjs",
             ),
             "--client=chat",
+            "--access=full",
           ],
         },
         "dms-assistant": { type: "sdk" },
       });
-      expect(session?.disallowedTools).toEqual([
-        "mcp__dms__navigate_to_page",
-        "mcp__dms__preview_blocks",
-      ]);
+      expect(session?.disallowedTools).toEqual(
+        expect.arrayContaining([
+          "mcp__dms__navigate_to_page",
+          "mcp__dms__preview_blocks",
+        ]),
+      );
+      expect(
+        session?.disallowedTools?.filter((name) => name.startsWith("mcp__")),
+      ).toHaveLength(2);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "keeps out of every session the CLI tools the chat cannot serve, the auto memory and the git instructions (fails when their definitions reach the model on each request; the CLI dropping them is measured on the real CLI, not here)",
+    async () => {
+      const session = await startedSession([]);
+
+      expect(session?.disallowedTools).toEqual(
+        expect.arrayContaining(UNSERVED_CLI_TOOLS),
+      );
+      expect(session?.disallowedTools).not.toEqual(
+        expect.arrayContaining(["Agent"]),
+      );
+      expect(session?.settings).toMatchObject({
+        autoMemoryEnabled: false,
+        includeGitInstructions: false,
+      });
     },
     TEST_TIMEOUT_MS,
   );

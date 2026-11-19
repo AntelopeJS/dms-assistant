@@ -28,6 +28,7 @@ import {
 } from "../utils/conversation-messages";
 import { newUuid } from "../utils/ids";
 import { toActivityKind } from "../utils/run-status";
+import { tokenTally } from "../utils/token-tally";
 import type { ConversationState } from "./useConversation";
 
 interface ChunkEvent {
@@ -71,6 +72,7 @@ interface SnapshotEvent {
 	changeSets?: ChangeSetSummary[];
 	mode?: SnapshotModeWire;
 	totalTokens?: number;
+	cacheReadTokens?: number;
 	model?: string;
 }
 
@@ -98,6 +100,7 @@ interface BlockPreviewEvent {
 
 interface UsageEvent {
 	totalTokens?: number;
+	cacheReadTokens?: number;
 	model?: string;
 }
 
@@ -288,7 +291,8 @@ function applySnapshot(state: ConversationState, event: SnapshotEvent): void {
 	setMessages(state, messages);
 	state.changeSets.value = byId(event.changeSets ?? []);
 	state.mode.value = toModeState(event.mode) ?? state.mode.value;
-	state.totalTokens.value = event.totalTokens ?? state.totalTokens.value;
+	if (typeof event.totalTokens === "number")
+		state.usage.value = tokenTally(event.totalTokens, event.cacheReadTokens);
 	state.model.value = event.model ?? null;
 	state.isRunning.value = false;
 	state.progress.value = null;
@@ -381,7 +385,7 @@ function appendBlockPreview(
 function applyUsage(state: ConversationState, event: UsageEvent): void {
 	if (event.model !== undefined) state.model.value = event.model;
 	if (typeof event.totalTokens !== "number") return;
-	state.totalTokens.value = event.totalTokens;
+	state.usage.value = tokenTally(event.totalTokens, event.cacheReadTokens);
 }
 
 const EVENT_HANDLERS: Record<string, EventHandler> = {

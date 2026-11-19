@@ -139,7 +139,10 @@ describe("the conversation folds the redesign's events", () => {
 			role: "notice",
 			notice: { kind: "autofix", attempt: 1 },
 		});
-		expect(conversation.totalTokens.value).toBe(9_600);
+		expect(conversation.usage.value).toEqual({
+			newTokens: 9_600,
+			cacheReadTokens: 0,
+		});
 		expect(conversation.mode.value).toEqual({
 			mode: "plan",
 			generationMode: "vibe",
@@ -200,6 +203,7 @@ describe("the conversation folds the redesign's events", () => {
 			changeSets: [changeSet()],
 			mode: { mode: "acceptEdits", generationMode: "safe" },
 			totalTokens: 1_200,
+			cacheReadTokens: 1_000,
 		});
 		expect(conversation.messages.value.map((m) => m.role)).toEqual([
 			"user",
@@ -215,7 +219,10 @@ describe("the conversation folds the redesign's events", () => {
 		});
 		expect(conversation.changeSets.value["cs-14"]?.number).toBe(14);
 		expect(conversation.mode.value?.mode).toBe("acceptEdits");
-		expect(conversation.totalTokens.value).toBe(1_200);
+		expect(conversation.usage.value).toEqual({
+			newTokens: 200,
+			cacheReadTokens: 1_000,
+		});
 	});
 
 	it("shows the model that answered, from a usage event or a snapshot", () => {
@@ -256,7 +263,7 @@ describe("the conversation folds the redesign's events", () => {
 		const b = bus();
 		const conversation = useConversation(b.options as never);
 		b.receive({ type: "usage", totalTokens: 5, conversationId: "other" });
-		expect(conversation.totalTokens.value).toBeNull();
+		expect(conversation.usage.value).toBeNull();
 	});
 });
 

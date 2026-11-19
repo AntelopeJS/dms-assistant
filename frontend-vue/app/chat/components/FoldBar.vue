@@ -26,6 +26,7 @@ const label = computed(
 		<aside
 			v-if="props.isFolded.value"
 			class="dms-assistant-chat-tokens dms-assistant-fold"
+			data-dms-side-rail
 			:data-state="props.state.value"
 		>
 			<button

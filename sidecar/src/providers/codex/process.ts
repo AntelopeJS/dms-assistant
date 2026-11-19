@@ -37,6 +37,7 @@ import {
 } from "../../constants/chatgpt.js";
 import { ACCESS_TOKEN_SECRET } from "./chatgpt/http.js";
 import { buildConfigToml } from "./config.js";
+import type { DmsMcpAccess } from "../../mcp/dms-server.js";
 import type { CodexInstallation } from "./resolve-binary.js";
 import {
   isWindowsHost,
@@ -54,6 +55,8 @@ export interface CodexProcessOptions {
   mcpToken: string;
   hostProjectRoot: string;
   moduleRoots: readonly string[];
+  /** The access the DMS MCP starts with. */
+  dmsAccess: DmsMcpAccess;
   /** The sidecar route the app-server's auth command reads its token from. */
   accessTokenUrl: string;
   handlers: CodexClientHandlers;
@@ -340,6 +343,7 @@ async function prepareCodexHome(options: CodexProcessOptions): Promise<string> {
       mcpUrl: options.mcpUrl,
       hostProjectRoot: options.hostProjectRoot,
       moduleRoots: options.moduleRoots,
+      dmsAccess: options.dmsAccess,
       nodePath: process.execPath,
     }),
   );

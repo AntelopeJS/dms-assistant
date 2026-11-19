@@ -37,15 +37,31 @@ export const BUILDER_TOOL_NAMES = [
   "builder_get_theme",
   "builder_set_theme",
   "builder_create_theme_layer",
+  "builder_configure_column_groups",
+  "builder_set_connection_access",
 ] as const;
 
 /** The mockup tools of the DMS MCP server. */
 export const MOCKUP_TOOL_NAMES = [
   "mockup_annotations",
+  "mockup_apply_to_page",
   "mockup_from_page",
   "mockup_patch_spec",
+  "mockup_read_spec",
   "mockup_resolve_annotation",
   "mockup_write_spec",
 ] as const;
+
+/**
+ * The mockup tools that write a version of the spec. The DMS folds the writes
+ * that share a `writeGroup` into one version.
+ */
+export const MOCKUP_WRITE_TOOL_NAMES = [
+  "mockup_patch_spec",
+  "mockup_write_spec",
+] as const satisfies readonly (typeof MOCKUP_TOOL_NAMES)[number][];
+
+/** The input field of those tools that names the reply a write belongs to. */
+export const MOCKUP_WRITE_GROUP_FIELD = "writeGroup";
 
 export const PAGE_VERIFY_TOOL_NAME = "page_verify";

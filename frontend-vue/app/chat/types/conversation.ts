@@ -153,6 +153,8 @@ export interface ConversationSummary {
 	messageCount: number;
 	provider?: ProviderName;
 	totalTokens?: number;
+	/** The part of `totalTokens` read back from the prompt cache. */
+	cacheReadTokens?: number;
 	filesChanged?: number;
 	filesUndone?: number;
 	isRunning?: boolean;

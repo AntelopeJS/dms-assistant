@@ -21,5 +21,5 @@ export function databaseMockupPrompt(
 	const list = screens
 		.map((screen) => `- ${screen.title} (${screen.relation})`)
 		.join("\n");
-	return `Use dms-external-database on connection ${connection}, module ${module}. The connection is live and analysed. Draft a first live mockup of these screens from its data, before building anything:\n${list}`;
+	return `Use the dms-mockup skill to draft a first live mockup of these screens from the data of connection ${connection}, module ${module}, before building anything. The connection is live and already analysed: do not call builder_analyse_database again. Read the columns and figures a screen needs with database_describe, database_relations and database_profile.\n${list}`;
 }

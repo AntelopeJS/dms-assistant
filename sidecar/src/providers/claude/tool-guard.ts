@@ -6,7 +6,7 @@ import { isAlwaysAsk } from "../../agent/permission-preview.js";
 import { isAutoAllowedRead } from "../../agent/read-access.js";
 import { toolReachOf } from "../../agent/tool-kinds.js";
 import { effectiveGenerationMode } from "../../builder/capability.js";
-import { FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES } from "../../constants/mcp.js";
+import { isAutoAllowedMcpTool } from "../../constants/mcp.js";
 import type { ToolReach } from "../../constants/tool-kinds.js";
 import type { TurnSettings } from "../../state/settings-types.js";
 
@@ -18,7 +18,7 @@ export interface GuardedCall {
 
 /** What the guard reads about the session the call runs in. */
 export interface GuardScope {
-  /** Where read-only file tools run unasked. */
+  /** Where read-only file tools run unasked. The safe-mode hook adds the session's `tool-results` folder. */
   readRoots: string[];
   hostProjectRoot: string;
   settings: TurnSettings;
@@ -145,15 +145,16 @@ function cliSettlesIn(permissionMode: string | undefined): CliSettles {
   return column === undefined ? STRICTEST_COLUMN : column;
 }
 
-/** The module's own MCP tools, auto-allowed by `canUseTool` without a prompt. */
+/** The module's own MCP tools and every DMS MCP tool, auto-allowed by `canUseTool` without a prompt. */
 export function isFirstPartyMcpTool(toolName: string): boolean {
-  return FIRST_PARTY_AUTO_ALLOW_TOOL_NAMES.has(toolName);
+  return isAutoAllowedMcpTool(toolName);
 }
 
 /**
- * Whether Safe scope lets a call run: the module's own tools, and the built-in
- * tools whose reach it allows. Any other name is refused, a tool the CLI adds
- * included.
+ * Whether Safe scope lets a call run: the module's own tools, every tool of
+ * the DMS MCP, which a Safe chat starts with Safe access so the DMS itself
+ * refuses what Safe refuses, and the built-in tools whose reach it allows.
+ * Any other name is refused, a tool the CLI adds included.
  */
 export function runsInSafeScope(call: GuardedCall, scope: GuardScope): boolean {
   if (isFirstPartyMcpTool(call.toolName)) return true;

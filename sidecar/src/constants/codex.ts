@@ -224,6 +224,9 @@ export const CODEX_TOKEN_USAGE_NOTIFICATION = "thread/tokenUsage/updated";
 export const CODEX_SKILLS_EXTRA_ROOTS_METHOD = "skills/extraRoots/set";
 export const CODEX_SKILLS_LIST_METHOD = "skills/list";
 export const CODEX_SKILLS_CONFIG_WRITE_METHOD = "skills/config/write";
+export const CODEX_CONFIG_BATCH_WRITE_METHOD = "config/batchWrite";
+/** Restarts the MCP servers of every loaded thread from the configuration as written, keeping the thread. */
+export const CODEX_MCP_SERVER_RELOAD_METHOD = "config/mcpServer/reload";
 export const CODEX_CLIENT_VERSION = "0.0.1";
 export const CODEX_CLIENT_TITLE = "dms-assistant";
 

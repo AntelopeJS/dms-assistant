@@ -76,6 +76,7 @@
     "e2e": "playwright test -c e2e",
     "e2e:dev": "playwright test -c e2e/playwright.dev.config.ts",
     "e2e:builder": "playwright test -c e2e/builder",
+    "docs:capture": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u ANTHROPIC_BASE_URL CLAUDE_CONFIG_DIR=\"$PWD/docs/capture-login\" XDG_CONFIG_HOME=\"$PWD/node_modules/.cache/docs-capture\" antelopejs-capture",
     "format": "oxfmt . && pnpm --dir frontend-vue format",
     "knip": "knip --dependencies && pnpm --dir sidecar knip",
     "knip:all": "knip",

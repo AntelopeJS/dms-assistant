@@ -171,8 +171,9 @@ jobs:
 
   # The journeys of both verify skills as Playwright suites: e2e/ for the
   # assistant, e2e/builder/ for the builder, and the assistant's
-  # development-dashboard journeys after them. Each suite's global setup
-  # prepares and starts its own dms-control run. Raise the shard count in
+  # development-dashboard journeys after them. `pnpm e2e:build` builds the
+  # module and both playgrounds once, then each suite's global setup starts
+  # its own run. Raise the shard count in
   # `select` when one shard passes about 30 minutes.
   e2e:
     needs: select
@@ -221,6 +222,8 @@ jobs:
           fi
           echo "::warning::Chromium's system packages did not install: installing the browser alone"
           pnpm exec playwright install --only-shell chromium
+      - run: pnpm e2e:build
+      - run: echo "DMS_E2E_PREBUILT=1" >> "$GITHUB_ENV"
       - if: env.E2E == 'smoke'
         run: pnpm e2e --grep @smoke
       - if: (success() || failure()) && env.E2E == 'smoke'
@@ -263,6 +266,53 @@ jobs:
           path: |
             e2e/**/playwright-report*
             e2e/**/test-results*
+            ${{ runner.temp }}/dms-runs/*/evidence
+            ${{ runner.temp }}/dms-runs/*/logs
+          retention-days: 7
+
+  # The journeys that open no tab, as node:test files on one run per verify
+  # skill: in the merge queue, on a manual run and nightly.
+  integration:
+    needs: select
+    if: needs.select.outputs.e2e == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: echo "DMS_CONTROL_RUNS=${RUNNER_TEMP}/dms-runs" >> "$GITHUB_ENV"
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            e2e/playground/pnpm-lock.yaml
+            e2e/builder/playground/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/mongodb-binaries
+            e2e/playground/.antelope/cache
+            e2e/builder/playground/.antelope/cache
+          key: integration-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'e2e/playground/pnpm-lock.yaml', 'e2e/playground/antelope.config.ts', 'e2e/builder/playground/pnpm-lock.yaml', 'e2e/builder/playground/antelope.config.ts') }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/dms-control/frontend
+          key: dms-control-frontend-${{ github.sha }}
+          restore-keys: dms-control-frontend-
+      - run: pnpm e2e:build
+      - run: pnpm test:integration
+        env:
+          DMS_E2E_PREBUILT: "1"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: integration-evidence
+          path: |
             ${{ runner.temp }}/dms-runs/*/evidence
             ${{ runner.temp }}/dms-runs/*/logs
           retention-days: 7
@@ -325,12 +375,13 @@ jobs:
   # merge-when-green cannot merge on the draft run.
   ubuntu:
     if: always()
-    needs: [select, ci, vitest, frontend-verify, installed-module, e2e]
+    needs:
+      [select, ci, vitest, frontend-verify, installed-module, e2e, integration]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - if: >-
-          needs.select.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || needs.ci.result == 'skipped' || (needs.select.outputs.tests == 'true' && (needs.vitest.result == 'skipped' || needs.frontend-verify.result == 'skipped' || needs.installed-module.result == 'skipped')) || (needs.select.outputs.e2e != 'none' && needs.e2e.result == 'skipped')
+          needs.select.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || needs.ci.result == 'skipped' || (needs.select.outputs.tests == 'true' && (needs.vitest.result == 'skipped' || needs.frontend-verify.result == 'skipped' || needs.installed-module.result == 'skipped')) || (needs.select.outputs.e2e != 'none' && needs.e2e.result == 'skipped') || (needs.select.outputs.e2e == 'all' && needs.integration.result == 'skipped')
         run: exit 1
       - if: needs.select.outputs.tier == 'draft'
         run: |

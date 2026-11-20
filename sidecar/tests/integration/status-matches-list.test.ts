@@ -47,6 +47,7 @@ const Status = z.object({
   workingConversations: z.number(),
   pendingApprovals: z.number(),
   pendingQuestions: z.number(),
+  lastError: z.string().optional(),
 });
 
 interface Client {
@@ -156,6 +157,26 @@ describe("the sidecar's status and its conversation lists", () => {
         status: "ready",
         ...anonymousList,
       });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "shows a failed turn only to the person whose conversation failed (fails a status that reports every person's last error)",
+    async () => {
+      CLAUDE_FIXTURE.use("failing");
+      harness = await startWsHarness({ provider: CLAUDE_FIXTURE.name });
+      const camille = await connect(CAMILLE);
+      sendHello(camille.socket, CAMILLE_CONVERSATION);
+      sendUserMessage(camille.socket, CAMILLE_CONVERSATION, "go");
+      await camille.frames.next((msg) => msg.type === "run_error");
+      await connect(DANA);
+
+      expect((await statusFor(CAMILLE.userId)).lastError).toEqual(
+        expect.any(String),
+      );
+      expect((await statusFor(DANA.userId)).lastError).toBeUndefined();
+      expect((await statusFor()).lastError).toBeUndefined();
     },
     TEST_TIMEOUT_MS,
   );

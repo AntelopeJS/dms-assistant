@@ -35,6 +35,7 @@ import type { SettingsStore } from "../state/settings-store.js";
 import { readSidecarVersion } from "../state/sidecar-version.js";
 import type { ChangeSetRecord } from "../state/types.js";
 import { handleChangeSetAction } from "./change-set-actions.js";
+import { type ViewerActivity, viewerActivity } from "./chat-events.js";
 import type { SettingsApplier } from "./http.js";
 import { readBody, sendJson } from "./http-io.js";
 import {
@@ -130,27 +131,43 @@ function metricSources(deps: ApiDeps): MetricSources {
   };
 }
 
-function statusOf(services: SidecarServices | undefined) {
-  const pendingApprovals = services?.permissionBus.countPending() ?? 0;
-  const pendingQuestions = services?.questionBus.countPending() ?? 0;
-  const working = services?.turns.runningCount() ?? 0;
-  if (pendingApprovals + pendingQuestions > 0) return "waiting";
-  return working > 0 ? "working" : "ready";
+const NO_ACTIVITY: ViewerActivity = {
+  workingConversations: 0,
+  pendingApprovals: 0,
+  pendingQuestions: 0,
+};
+
+function statusOf(activity: ViewerActivity) {
+  if (activity.pendingApprovals + activity.pendingQuestions > 0) {
+    return "waiting";
+  }
+  return activity.workingConversations > 0 ? "working" : "ready";
 }
 
-async function statusRoute(res: ServerResponse, deps: ApiDeps) {
+/**
+ * The assistant's status. Its counts and its `status` cover the conversations
+ * the `viewer` query parameter's person may see, as their conversation list
+ * does; a request naming nobody is read as a connection that named no actor.
+ */
+async function statusRoute(
+  res: ServerResponse,
+  deps: ApiDeps,
+  match: RouteMatch,
+) {
   const services = deps.services();
   const settings = deps.settingsStore.get();
+  const activity =
+    services === undefined
+      ? NO_ACTIVITY
+      : viewerActivity(services, optionalParam(match.query, "viewer") ?? null);
   sendJson(res, HTTP_STATUS.OK, {
-    status: statusOf(services),
+    status: statusOf(activity),
     provider: settings.provider,
     providers: getProviderAvailability(),
     builderAvailable: getBuilderAvailable(),
     mode: settings.defaultModes[settings.provider],
     generationMode: settings.generationMode,
-    workingConversations: services?.turns.runningCount() ?? 0,
-    pendingApprovals: services?.permissionBus.countPending() ?? 0,
-    pendingQuestions: services?.questionBus.countPending() ?? 0,
+    ...activity,
     port: deps.port,
     version: await readSidecarVersion(),
     lastError: services?.turns.lastError(),
@@ -351,7 +368,7 @@ export const API_ROUTES: readonly ApiRoute[] = [
   {
     method: "GET",
     pattern: /^\/status$/,
-    handle: (_q, res, deps) => statusRoute(res, deps),
+    handle: (_q, res, deps, m) => statusRoute(res, deps, m),
   },
   {
     method: "GET",

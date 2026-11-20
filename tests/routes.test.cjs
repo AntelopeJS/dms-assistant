@@ -401,7 +401,7 @@ void test("exports the audit log as CSV, cells escaped and formulas neutralized"
 void test("reports the assistant offline, with the process state, when it does not answer", async () => {
   reset();
   sidecar.isDown = true;
-  const result = await new harness.routes.AIStatusController().status();
+  const result = await new harness.routes.AIStatusController().status(OWNER);
   const body = bodyOf(StatusSchema, result);
   assert.equal(body.status, "offline");
   assert.equal(body.isRunning, false);

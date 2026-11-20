@@ -225,7 +225,9 @@ function buildRunnerContext(
       services.callLedger.announce(conversationId, callId, toolName, args),
     beforeMutation: async () => {
       await services.turns.get(conversationId)?.checkpoint.ready();
+      await services.reloadHold.hold(conversationId);
     },
+    beforeLiveRead: () => services.reloadHold.releaseAll(),
     isHeldCall: (call) => services.heldCalls.isHeld(conversationId, call),
     onTokenUsage: (usage) => addTurnUsage(services, conversationId, usage),
     onModelUsed: (model) =>
@@ -378,6 +380,7 @@ async function finishTurn(
   services: SidecarServices,
   conversationId: string,
 ): Promise<ChangeSetRecord | null> {
+  await services.reloadHold.release(conversationId);
   endTurnEvents(services, conversationId);
   services.liveTurns.end(conversationId);
   try {

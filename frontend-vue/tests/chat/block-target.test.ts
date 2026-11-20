@@ -123,7 +123,7 @@ describe("the outline on the page", () => {
 		expect(blockOutlineRect(document, "chart")).toBeNull();
 	});
 
-	it("ignores a copy of the block drawn in the chat's preview (fails when the preview is outlined)", () => {
+	it("ignores a copy of the block drawn in a mockup's block preview (fails when the preview is outlined)", () => {
 		const preview = document.createElement("div");
 		preview.setAttribute("data-dms-block-preview", "");
 		preview.append(block("chart", { top: 0, left: 0 }));

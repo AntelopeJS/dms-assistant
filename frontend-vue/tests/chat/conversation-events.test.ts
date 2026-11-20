@@ -225,6 +225,31 @@ describe("the conversation folds the redesign's events", () => {
 		});
 	});
 
+	it("draws a stored block preview of an earlier version as nothing (fails a transcript that keeps it or drops the messages around it)", () => {
+		const b = bus();
+		const conversation = useConversation(b.options as never);
+		const preview = {
+			id: "preview-1",
+			title: "Revenue KPI",
+			tree: { type: "KpiCard" },
+			timestampMs: 2,
+		};
+		b.receive({
+			type: "conversation_snapshot",
+			messages: [
+				{ role: "user", content: "Show me a KPI", timestampMs: 1 },
+				{ role: "block_preview", content: "", preview, timestampMs: 2 },
+				{ role: "assistant", content: "Here it is.", timestampMs: 3 },
+			],
+		});
+		b.receive({ type: "block_preview", preview });
+		expect(
+			conversation.messages.value.map((m) =>
+				m.role === "user" || m.role === "assistant" ? m.content : m.role,
+			),
+		).toEqual(["Show me a KPI", "Here it is."]);
+	});
+
 	it("shows the model that answered, from a usage event or a snapshot", () => {
 		const b = bus();
 		const conversation = useConversation(b.options as never);

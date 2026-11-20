@@ -52,8 +52,6 @@ export function buildInertMcpDeps(conversationId: string): AiMcpServerDeps {
     sendToHost: () => {},
     requestQuestion: () =>
       Promise.reject(new Error("no question is expected in this test")),
-    showPreview: () => {},
-    listAttachedImages: () => [],
   };
 }
 

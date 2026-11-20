@@ -2,7 +2,6 @@ import type { ConversationModes } from "../agent/conversation-modes.js";
 import type { PendingRequest } from "../agent/permission-bus.js";
 import type { PendingQuestion } from "../agent/question-bus.js";
 import { getBuilderAvailable } from "../builder/capability.js";
-import { PREVIEW_IMAGE_MIME_PREFIX } from "../constants/preview.js";
 import {
   type AskQuestionEventType,
   type ConversationListEventType,
@@ -12,7 +11,6 @@ import {
   type PermissionRequestEventType,
   type SettingsUpdateEventType,
 } from "../protocol/events.js";
-import type { BlockPreviewType } from "../protocol/preview.js";
 import type { Checkpoints } from "../checkpoints/checkpoints.js";
 import { getProviderAvailability } from "../providers/registry.js";
 import type { ConversationStore } from "../state/conversations.js";
@@ -21,7 +19,6 @@ import type {
   StoredConversationSummary,
   StoredMessage,
 } from "../state/types.js";
-import type { ChatSocketRegistry } from "./chat-socket-registry.js";
 import type { SocketSender } from "./host-socket-registry.js";
 import type { SidecarServices } from "./services.js";
 
@@ -30,12 +27,6 @@ export interface SnapshotServices {
   conversationStore: Pick<ConversationStore, "get">;
   checkpoints: Pick<Checkpoints, "forConversation">;
   conversationModes: Pick<ConversationModes, "describe">;
-}
-
-/** What showing a block preview writes to. */
-export interface BlockPreviewServices {
-  conversationStore: Pick<ConversationStore, "appendMessage">;
-  chatSocketRegistry: Pick<ChatSocketRegistry, "send">;
 }
 
 /** Audit-only records: they drive the activity log, not the visible transcript. */
@@ -218,40 +209,6 @@ export function emitNotice(
     conversationId,
     notice,
   });
-}
-
-/** Stores a block preview in the transcript and shows it live. */
-export function emitBlockPreview(
-  services: BlockPreviewServices,
-  conversationId: string,
-  preview: BlockPreviewType,
-): void {
-  services.conversationStore.appendMessage(conversationId, {
-    role: "block_preview",
-    content: "",
-    preview,
-    timestampMs: preview.timestampMs,
-  });
-  services.chatSocketRegistry.send(conversationId, {
-    type: EVENT_TYPES.BLOCK_PREVIEW,
-    conversationId,
-    preview,
-  });
-}
-
-/** Names of the images the user attached in the conversation, oldest first. */
-export function listAttachedImages(
-  services: Pick<SidecarServices, "conversationStore">,
-  conversationId: string,
-): string[] {
-  const messages =
-    services.conversationStore.get(conversationId)?.messages ?? [];
-  return messages
-    .flatMap((message) => message.attachments ?? [])
-    .filter((attachment) =>
-      attachment.mimeType.startsWith(PREVIEW_IMAGE_MIME_PREFIX),
-    )
-    .map((attachment) => attachment.name);
 }
 
 export function buildPermissionRequestEvent(

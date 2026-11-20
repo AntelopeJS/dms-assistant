@@ -7,7 +7,6 @@ import {
   TOOL_OUTCOMES,
   TYPECHECK_OUTCOMES,
 } from "../constants/audit.js";
-import { BlockPreviewSchema } from "../protocol/preview.js";
 import { CHAT_MODES, GENERATION_MODES } from "./settings-types.js";
 import {
   type ChangeSetRecord,
@@ -84,7 +83,6 @@ const StoredMessageSchema = z.looseObject({
       }),
     )
     .optional(),
-  preview: BlockPreviewSchema.optional(),
   isAutoFix: z.boolean().optional(),
   requestId: z.string().optional(),
   kind: z.enum(PERMISSION_KINDS).optional(),
@@ -97,6 +95,22 @@ const StoredMessageSchema = z.looseObject({
   decidedBy: z.string().optional(),
 });
 
+/** Roles of messages an earlier version stored and this one no longer shows. */
+const RETIRED_MESSAGE_ROLES = ["block_preview"] as const;
+
+const RetiredMessageSchema = z.looseObject({
+  role: z.enum(RETIRED_MESSAGE_ROLES),
+});
+
+const StoredMessagesSchema = z
+  .array(z.unknown())
+  .transform((messages) =>
+    messages.filter(
+      (message) => !RetiredMessageSchema.safeParse(message).success,
+    ),
+  )
+  .pipe(z.array(StoredMessageSchema));
+
 const TOKEN_COUNTS = {
   inputTokens: z.number(),
   outputTokens: z.number(),
@@ -107,7 +121,7 @@ const TOKEN_COUNTS = {
 /** A conversation as `state.json` holds it; keys it does not name are kept. */
 export const StoredConversationSchema: z.ZodType<StoredConversation> =
   z.looseObject({
-    messages: z.array(StoredMessageSchema),
+    messages: StoredMessagesSchema,
     createdAtMs: z.number(),
     updatedAtMs: z.number(),
     provider: z.enum(PROVIDER_NAMES).optional(),

@@ -7,7 +7,6 @@ import type { MCP_SERVER_TYPE_SDK } from "../constants/mcp.js";
 import type { ImportsScanner } from "../pages/imports-scanner.js";
 import type { RegistryClient } from "../pages/registry-client.js";
 import type { AnyServerEventType } from "../protocol/events.js";
-import type { BlockPreviewType } from "../protocol/preview.js";
 import type { NavigationCompleter } from "../server/navigation-completer.js";
 import type { CurrentPage } from "../state/host-state.js";
 
@@ -30,8 +29,6 @@ export interface AiMcpServerDeps extends AiMcpServerStaticDeps {
   getCurrentPage: () => CurrentPage;
   sendToHost: (event: AnyServerEventType) => void;
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
-  showPreview: (preview: BlockPreviewType) => void;
-  listAttachedImages: () => string[];
 }
 
 /**

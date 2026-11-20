@@ -59,8 +59,6 @@ function buildDeps(
       asked.push({ conversationId: req.conversationId });
       return { answers: [ANSWER], skipped: [] };
     },
-    showPreview: () => {},
-    listAttachedImages: () => [],
   };
 }
 

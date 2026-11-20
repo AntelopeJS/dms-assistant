@@ -23,6 +23,8 @@ export interface ActiveTurn {
   approvalsNeeded: number;
   builderOps: number;
   usage: TokenUsage;
+  /** The turn is finishing: a hook that settles from now on takes no reload hold. */
+  isEnding: boolean;
 }
 
 interface BeginTurnOptions {
@@ -63,6 +65,7 @@ export function createTurnRegistry(): TurnRegistry {
         approvalsNeeded: 0,
         builderOps: 0,
         usage: EMPTY_TOKEN_USAGE,
+        isEnding: false,
       };
       turns.set(options.conversationId, turn);
       return turn;

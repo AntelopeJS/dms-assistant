@@ -180,7 +180,7 @@ async function close(state: HostState): Promise<void> {
   const { socket } = state;
   state.socket = null;
   socket?.close();
-  await enqueue(state, () => dropHold(state));
+  void dropHold(state);
 }
 
 /**

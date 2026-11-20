@@ -223,10 +223,27 @@ void test("releases its hold and closes the socket on close (fails a destroy tha
   const [server] = sidecar.sockets;
   sendHold(server, true, 1);
   await waitFor(() => sidecar.received.includes(applied(1)), "the hold answer");
-  const closing = host.close();
-  await waitFor(() => core.finishRelease.length === 1, "the core release");
-  core.finishRelease[0]();
-  await closing;
+  await host.close();
   assert.deepEqual(core.calls, ["hold", "release:hold-1"]);
   await waitFor(() => sidecar.closed === 1, "the socket closing");
 });
+
+void test(
+  "closes at once while the release it is applying waits on the reloads that destroy it (fails a destroy that waits on its own release)",
+  { timeout: 2_000 },
+  async () => {
+    const core = fakeCore({ manualRelease: true });
+    const sidecar = await startSidecar();
+    const host = await startHost(core, sidecar);
+    const [server] = sidecar.sockets;
+    sendHold(server, true, 1);
+    await waitFor(
+      () => sidecar.received.includes(applied(1)),
+      "the hold answer",
+    );
+    sendHold(server, false, 2);
+    await waitFor(() => core.finishRelease.length === 1, "the core release");
+    await host.close();
+    assert.deepEqual(core.calls, ["hold", "release:hold-1"]);
+  },
+);

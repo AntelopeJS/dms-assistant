@@ -167,6 +167,29 @@ describe("module reloads during a Build it turn", () => {
   );
 
   it(
+    "takes no hold for a write whose hook settles after the turn ended (fails a hold that outlives its turn)",
+    async () => {
+      const running = await start();
+      const snapshot = defer();
+      vi.spyOn(running.services.checkpoints, "beginTurn").mockReturnValue({
+        ready: () => snapshot.promise,
+        finish: () => Promise.resolve(null),
+      });
+      let lateHook: Promise<void> = Promise.resolve();
+      await runScript(running, async function* (ctx) {
+        yield* [];
+        lateHook = ctx.beforeMutation?.() ?? Promise.resolve();
+        yield { type: "done" };
+      });
+      snapshot.resolve();
+      await lateHook;
+      await settled(running.host.socket);
+      expect(running.watcher.held).toBe(false);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "reloads once when the turn fails after its writes (fails a hold that only a finished turn releases)",
     async () => {
       const running = await start();

@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@antelopejs/dms>@antelopejs/interface-dms': '>=0.14.6 <0.15.0'
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.1 <0.7.0'
+  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.975.g07fb6f8
 
 importers:
 
@@ -32,8 +32,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.6.1 <0.7.0'
-        version: 0.6.1(@antelopejs/interface-core@0.5.1)
+        specifier: 0.6.2-next.975.g07fb6f8
+        version: 0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
         specifier: '>=0.8.9 <0.9.0'
         version: 0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
@@ -128,8 +128,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
-  '@antelopejs/interface-dms-builder@0.6.1':
-    resolution: {integrity: sha512-Cmda7iyKfRI6yo0zS7Kje29gCnISRF6TpXhUQhAcxyVd1zT5q9+rzT7I9O3umy/RKLjalDYjJ8hhIg8EmB5yXw==}
+  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8':
+    resolution: {integrity: sha512-FfaxjZ0DF6YYVWbuMopDBJDMAz1JT+8kHv/VQGmHNhkpeKMlfD6n86ClPYRI+Qk6dPyBSXEGIuUS6ZvYcBQkyg==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
@@ -2730,7 +2730,7 @@ snapshots:
       '@antelopejs/interface-database': 0.4.0(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-database-decorators': 0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.1))(@antelopejs/interface-core@0.5.1)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.1))
       '@antelopejs/interface-dms': 0.14.6(edce4304e69e22dcba6f62cb5feace92)
-      '@antelopejs/interface-dms-builder': 0.6.1(@antelopejs/interface-core@0.5.1)
+      '@antelopejs/interface-dms-builder': 0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-email': 0.2.1(@antelopejs/interface-core@0.5.1)
       '@antelopejs/interface-file-storage': 0.1.8(@antelopejs/interface-core@0.5.1)
       '@csstools/css-tokenizer': 4.0.0
@@ -2810,7 +2810,7 @@ snapshots:
       '@antelopejs/interface-core': 0.5.1
     optional: true
 
-  '@antelopejs/interface-dms-builder@0.6.1(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 

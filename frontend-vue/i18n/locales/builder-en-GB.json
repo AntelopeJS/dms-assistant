@@ -26,6 +26,7 @@
 					"failed": "The analysis failed: {error}",
 					"no_proposal": "no proposal",
 					"none": "No tables user {role} can read.",
+					"mapped": "Every table is mapped already ({tables}). Open the existing pages or start a new mockup.",
 					"done": "Read {tables}."
 				}
 			},

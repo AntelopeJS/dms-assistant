@@ -118,6 +118,8 @@ export interface ViewerActivity {
   workingConversations: number;
   pendingApprovals: number;
   pendingQuestions: number;
+  /** The newest failure of those conversations. */
+  lastError?: string;
 }
 
 /**
@@ -136,6 +138,7 @@ export function viewerActivity(
     workingConversations: total((c) => (c.isRunning ? 1 : 0)),
     pendingApprovals: total((c) => c.pendingApprovals),
     pendingQuestions: total((c) => c.pendingQuestions),
+    lastError: services.turns.lastError(conversations.map((c) => c.id)),
   };
 }
 

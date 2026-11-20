@@ -170,7 +170,6 @@ async function statusRoute(
     ...activity,
     port: deps.port,
     version: await readSidecarVersion(),
-    lastError: services?.turns.lastError(),
     checkpointsAvailable: services?.checkpoints.isAvailable() ?? false,
   });
 }

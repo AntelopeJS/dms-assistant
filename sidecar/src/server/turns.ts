@@ -152,7 +152,7 @@ const TURN_EVENT_HANDLERS: TurnEventHandlers = {
   },
   error: (services, conversationId, ev) => {
     endTurnEvents(services, conversationId);
-    services.turns.recordError(ev.message);
+    services.turns.recordError(conversationId, ev.message);
     services.conversationStore.appendMessage(conversationId, {
       role: "error",
       content: ev.message,

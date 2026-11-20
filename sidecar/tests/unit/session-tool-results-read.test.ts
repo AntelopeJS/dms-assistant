@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import type { PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk";
 import { describe, expect, it } from "vitest";
 import {
@@ -8,8 +8,8 @@ import {
 import { buildSafeModeHooks } from "../../src/providers/claude/safe-mode.js";
 import { TURN_SETTINGS } from "../helpers/turn-settings.js";
 
-const PROJECT = "/work/app";
-const PROJECT_FOLDER = "/home/me/.claude/projects/-work-app";
+const PROJECT = resolve("/work/app");
+const PROJECT_FOLDER = resolve("/home/me/.claude/projects/-work-app");
 const SESSION = "11111111-1111-4111-8111-111111111111";
 const OTHER_SESSION = "22222222-2222-4222-8222-222222222222";
 const TRANSCRIPT = join(PROJECT_FOLDER, `${SESSION}.jsonl`);

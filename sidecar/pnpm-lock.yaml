@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@antelopejs/interface-core': 0.5.2-next.117.gae930be
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.980.gd957ab9
+  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.985.g3110f87
   '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.980.gd957ab9
 
 importers:

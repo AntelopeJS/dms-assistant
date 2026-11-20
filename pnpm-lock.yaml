@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@antelopejs/interface-core': 0.5.2-next.117.gae930be
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.980.gd957ab9
+  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.985.g3110f87
   '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.980.gd957ab9
 
 importers:
@@ -26,8 +26,8 @@ importers:
         specifier: 0.5.2-next.117.gae930be
         version: 0.5.2-next.117.gae930be
       '@antelopejs/interface-dms':
-        specifier: 0.14.7-next.980.gd957ab9
-        version: 0.14.7-next.980.gd957ab9(4e084f8556357a6d854e1f2dcdc957db)
+        specifier: 0.14.7-next.985.g3110f87
+        version: 0.14.7-next.985.g3110f87
       '@antelopejs/interface-dms-builder':
         specifier: 0.6.2-next.980.gd957ab9
         version: 0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -193,8 +193,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
-  '@antelopejs/interface-dms@0.14.7-next.980.gd957ab9':
-    resolution: {integrity: sha512-aC9m93OyxsakDrYr12Ogm2W25g8okf5xTcmVMf3w+b+3Oa9jOsrQh5yr8yvIVMjBhaxh7nso6iEX8htnEnNNLQ==}
+  '@antelopejs/interface-dms@0.14.7-next.985.g3110f87':
+    resolution: {integrity: sha512-K67KyRcvVrEUb8yikQvqglAnuAzcbwIlGYehXTewW0GeWW/7Wu9cVE2z2HzUXJntHp8PbGY6id88fx7zf6GkOQ==}
     peerDependencies:
       '@antelopejs/interface-api': '>=0.3.0 <0.4.0'
       '@antelopejs/interface-api-util': '>=0.3.0 <0.4.0'
@@ -3736,7 +3736,7 @@ snapshots:
       '@antelopejs/interface-data-api': 0.8.0(@antelopejs/interface-api-util@0.3.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database-decorators@0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)))(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be))
       '@antelopejs/interface-database': 0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-database-decorators': 0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be))
-      '@antelopejs/interface-dms': 0.14.7-next.980.gd957ab9(4e084f8556357a6d854e1f2dcdc957db)
+      '@antelopejs/interface-dms': 0.14.7-next.985.g3110f87
       '@antelopejs/interface-dms-builder': 0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-email': 0.2.1(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-file-storage': 0.1.4(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -3823,7 +3823,7 @@ snapshots:
     dependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
-  '@antelopejs/interface-dms@0.14.7-next.980.gd957ab9(4e084f8556357a6d854e1f2dcdc957db)':
+  '@antelopejs/interface-dms@0.14.7-next.985.g3110f87':
     dependencies:
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-api-util': 0.3.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)

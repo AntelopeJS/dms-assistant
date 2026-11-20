@@ -4,10 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.14.6 <0.15.0'
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.975.g07fb6f8
-
 importers:
 
   .:
@@ -29,8 +25,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: 0.6.2-next.975.g07fb6f8
-        version: 0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.1)
+        specifier: 0.6.2-next.980.gd957ab9
+        version: 0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
         specifier: '>=0.8.9 <0.9.0'
         version: 0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
@@ -64,8 +60,8 @@ packages:
   '@antelopejs/interface-core@0.5.1':
     resolution: {integrity: sha512-ON/7TYA1yyT8UznzKi6vnwyjRU3byNE0OcFXBmf8dE/dqp8hKjeWHVyA2EUPOngmEimCLw4idZqOS5DJqMJx3g==}
 
-  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8':
-    resolution: {integrity: sha512-FfaxjZ0DF6YYVWbuMopDBJDMAz1JT+8kHv/VQGmHNhkpeKMlfD6n86ClPYRI+Qk6dPyBSXEGIuUS6ZvYcBQkyg==}
+  '@antelopejs/interface-dms-builder@0.6.2-next.980.gd957ab9':
+    resolution: {integrity: sha512-bXMhNWJKXayF8ZZO4V1bSX/Ww6MVNXfiKPOtob3HiYahwp6r3hjFCM/lUgLI9OsesDKGgU0sKCNG2bfjUbBH6g==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
 
@@ -2232,7 +2228,7 @@ snapshots:
     dependencies:
       reflect-metadata: 0.2.2
 
-  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-builder@0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 
@@ -2518,7 +2514,7 @@ snapshots:
     dependencies:
       '@hono/node-server': 1.19.17(hono@4.13.13)
       ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-formats: 3.0.1
       content-type: 1.0.5
       cors: 2.8.6
       cross-spawn: 7.0.6
@@ -3031,8 +3027,8 @@ snapshots:
       mime-types: 3.0.2
       negotiator: 1.1.0
 
-  ajv-formats@3.0.1(ajv@8.20.0):
-    optionalDependencies:
+  ajv-formats@3.0.1:
+    dependencies:
       ajv: 8.20.0
 
   ajv@8.20.0:

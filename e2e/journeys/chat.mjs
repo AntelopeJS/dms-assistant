@@ -1,7 +1,7 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { guarded } from "../guard.mjs";
-import { ai, check, freshSidecar, pageHas, pause, same, statusIs, text, until } from "../ai.mjs";
+import { ai, check, fixture, freshSidecar, pageHas, pause, pick, same, statusIs, text, until } from "../ai.mjs";
 import { projectRoot, writeProjectFile } from "../seed.mjs";
 import { scriptedTurn, withMockClaude } from "./chat/mock-claude.mjs";
 import { putSettings } from "./settings/helpers.mjs";
@@ -21,6 +21,13 @@ const NOTE_FOLDER = "notes";
 const NOTE = `${NOTE_FOLDER}/welcome.md`;
 const NOTE_TEXT = "Welcome to the project.\n";
 const ALLOW_EDIT = { role: "button", name: "Allow edit" };
+/** Where a watch backend loads the fixture module `app` from: the checkout's playground, not the run's copy. */
+const WATCHED_APP_SOURCES = "e2e/playground/src";
+const RELOAD_PROBES = "reload-probes";
+const PROBE_SOURCE = "export {};\n";
+const PROBE_WRITES = 5;
+const PROBE_SPACING_MS = 1500;
+const RELOAD_SETTLE_MS = 5000;
 /**
  * Ticks the onboarding popup's "Don't show on startup" before any page script of the tab runs, so the popup a
  * development dashboard opens on every page leaves the header to the journey.
@@ -263,7 +270,79 @@ export const journeys = guarded([
       });
     },
   },
+  {
+    id: "under-watch-a-turn-that-writes-the-module-many-times-reloads-it-once-when-it-ends",
+    title: "under ajs project dev -w, while a turn of Claude (the fake provider) waits for the owner to allow its edit, five files change in a watched module's sources and the module does not reload; once the owner allows the edit and the turn ends, the module reloads once",
+    entryPoint: "the chat panel's approval dock of `ajs dms dev`, `ajs project dev -w`, HoldReloads/ReleaseReloads",
+    frontend: "dev",
+    backend: "watch",
+    last: true,
+    async run(/** @type {Ctx} */ ctx) {
+      const probes = join(ctx.state.moduleRoot, WATCHED_APP_SOURCES, RELOAD_PROBES);
+      rmSync(probes, { recursive: true, force: true });
+      try {
+        await reloadedOnceAfterTheTurn(ctx, probes);
+      } finally {
+        rmSync(probes, { recursive: true, force: true });
+      }
+    },
+  },
 ]);
+
+/**
+ * How many times the backend has constructed the watched fixture module `app`: its first load and each reload since.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {string} label What the reading is for
+ * @returns {Promise<number>} The count
+ */
+async function appConstructs(ctx, label) {
+  const answer = await fixture(ctx, label, "GET", "/app-constructs");
+  return Number(pick(answer.body, "constructs"));
+}
+
+/**
+ * The turn of the reload journey: Claude asks to write a file under `probes`, and while the owner has not answered,
+ * the journey writes one file after another there, each after the watcher's debounce, as builder operations do.
+ *
+ * @param {Ctx} ctx The journey
+ * @param {string} probes The folder under the `app` module's watched sources the turn writes
+ * @returns {Promise<void>}
+ */
+async function reloadedOnceAfterTheTurn(ctx, probes) {
+  const file = join(probes, "turn.ts");
+  const write = { id: "toolu_e2e_reload_write", name: "Write", input: { file_path: file, content: PROBE_SOURCE }, result: `File created successfully at: ${file}` };
+  await withMockClaude(ctx, scriptedTurn({ calls: [write], reply: ["I wrote ", "the module."], usage: { input: 200, output: 40 } }), async () => {
+    await putSettings(ctx, "new chats run in Code mode and ask first", { generationMode: "vibe", defaultModeClaude: "normal" });
+    const tab = await openChat(ctx);
+    const loaded = await appConstructs(ctx, "constructions once the dashboard is open");
+    mkdirSync(probes, { recursive: true });
+    writeFileSync(join(probes, "outside-a-turn.ts"), PROBE_SOURCE);
+    const watched = await until(async () => ((await appConstructs(ctx, "constructions after a write outside a turn")) > loaded ? true : null), { timeoutMs: TURN_TIMEOUT_MS, everyMs: 1000 });
+    await pause(RELOAD_SETTLE_MS);
+    const before = await appConstructs(ctx, "constructions before the turn");
+    await ctx.verify("outside a turn a write reloads the module", [check("the watcher reloaded it", watched === true, `${loaded} -> ${before}`)], { critical: true });
+    await send(tab, "Write the module");
+    await ctx.verify("Claude asks to write the file", [tab.visible(ALLOW_EDIT, { timeoutMs: TURN_TIMEOUT_MS })], { critical: true });
+    for (let index = 1; index <= PROBE_WRITES; index += 1) {
+      writeFileSync(join(probes, `write-${index}.ts`), PROBE_SOURCE);
+      await pause(PROBE_SPACING_MS);
+    }
+    await pause(RELOAD_SETTLE_MS);
+    const during = await appConstructs(ctx, "constructions while the turn waits");
+    writeFileSync(file, PROBE_SOURCE);
+    await tab.click(ALLOW_EDIT);
+    await ctx.verify("the turn ends", [tab.shows(/I wrote the module\./, { timeoutMs: TURN_TIMEOUT_MS })]);
+    const reloaded = await until(async () => ((await appConstructs(ctx, "constructions after the turn")) > before ? true : null), { timeoutMs: TURN_TIMEOUT_MS, everyMs: 1000 });
+    await pause(RELOAD_SETTLE_MS);
+    const after = await appConstructs(ctx, "constructions once the reloads settled");
+    await ctx.verify("the module's reloads", [
+      same(`no reload while the turn waits, after ${PROBE_WRITES} writes`, during - before, 0),
+      check("the module reloaded once the turn ended", reloaded === true, `${before} -> ${after}`),
+      same("one reload in all", after - before, 1),
+    ]);
+  });
+}
 
 /** The user-facing files these journeys cover, as globs relative to the repository root. */
 export const covers = [

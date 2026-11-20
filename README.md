@@ -117,7 +117,7 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 | `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`           | `0.3.3`                    |
 | `@antelopejs/interface-core`        | `>=0.5.1 <0.6.0`           | `0.5.1`                    |
 | `@antelopejs/interface-dms`         | `>=0.14.6 <0.15.0`         | `0.14.6`                   |
-| `@antelopejs/interface-dms-builder` | `>=0.6.1 <0.7.0`           | `0.6.1`                    |
+| `@antelopejs/interface-dms-builder` | `0.6.2-next.975.g07fb6f8`  | `0.6.2-next.975.g07fb6f8`  |
 
 <!-- antelopejs-docs-compat:end -->
 

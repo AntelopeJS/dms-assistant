@@ -189,6 +189,22 @@ void test("still answers when the core never takes the hold, and gives a late ho
   assert.deepEqual(core.calls, ["hold", "release:late-1"]);
 });
 
+void test("asks a core that never took a hold no more, so later turns do not wait for it (fails a host that waits the hold timeout on every turn)", async () => {
+  const core = fakeCore();
+  core.hold = () => {
+    core.calls.push("hold");
+    return new Promise(() => undefined);
+  };
+  const sidecar = await startSidecar();
+  await startHost(core, sidecar, { holdTimeoutMs: SHORT_TIMEOUT_MS });
+  sendHold(sidecar.sockets[0], true, 1);
+  await waitFor(() => sidecar.received.includes(applied(1)), "the answer");
+  sendHold(sidecar.sockets[0], false, 2);
+  sendHold(sidecar.sockets[0], true, 3);
+  await waitFor(() => sidecar.received.includes(applied(3)), "the answer");
+  assert.deepEqual(core.calls, ["hold"]);
+});
+
 void test("still answers when the core never finishes the release (fails a host that waits on the core forever)", async () => {
   const core = fakeCore({ manualRelease: true });
   const sidecar = await startSidecar();

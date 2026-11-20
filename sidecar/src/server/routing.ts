@@ -509,8 +509,8 @@ const handleSetSettings = on(MESSAGE_TYPES.SET_SETTINGS, (_s, msg, ctx) => {
 
 const handleReloadHoldApplied = on(
   MESSAGE_TYPES.RELOAD_HOLD_APPLIED,
-  (_socket, msg, ctx) => {
-    ctx.reloadHold.applied(msg.seq);
+  (socket, msg, ctx) => {
+    if (ctx.reloadHold.isHost(socket)) ctx.reloadHold.applied(msg.seq);
   },
 );
 

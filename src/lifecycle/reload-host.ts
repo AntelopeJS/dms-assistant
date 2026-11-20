@@ -1,4 +1,8 @@
 import { Logging } from "@antelopejs/interface-core/logging";
+import {
+  HoldReloads,
+  ReleaseReloads,
+} from "@antelopejs/interface-core/modules";
 import type WebSocket from "ws";
 import type { RawData } from "ws";
 import { z } from "zod";
@@ -74,11 +78,14 @@ interface HostState {
   socket: WebSocket | null;
   opening: Promise<void> | null;
   holdId: string | null;
+  /** The last hold went unanswered: later ones are not asked until a late answer comes. */
+  isCoreSilent: boolean;
   /** Every apply and release runs after the one before it. */
   queue: Promise<void>;
 }
 
 async function takeHold(state: HostState): Promise<void> {
+  if (state.isCoreSilent) return;
   const { core, holdTimeoutMs } = state.options;
   const pending = core.hold();
   const id = await bounded(pending, holdTimeoutMs, "reload hold");
@@ -86,7 +93,13 @@ async function takeHold(state: HostState): Promise<void> {
     state.holdId = id;
     return;
   }
-  void pending.then((lateId) => core.release(lateId)).catch(() => undefined);
+  state.isCoreSilent = true;
+  void pending
+    .then((lateId) => {
+      state.isCoreSilent = false;
+      return core.release(lateId);
+    })
+    .catch(() => undefined);
 }
 
 async function dropHold(state: HostState): Promise<void> {
@@ -189,16 +202,19 @@ export function createReloadHost(options: ReloadHostOptions): ReloadHost {
     socket: null,
     opening: null,
     holdId: null,
+    isCoreSilent: false,
     queue: Promise.resolve(),
   };
   return { ensure: () => ensure(state), close: () => close(state) };
 }
 
+const CORE: ReloadCore = { hold: HoldReloads, release: ReleaseReloads };
+
 let current: ReloadHost | null = null;
 
-/** Opens the module's reload host on the first call; later calls reuse it. */
-export function ensureReloadHost(core: ReloadCore): Promise<void> {
-  current ??= createReloadHost({ core });
+/** Opens the module's reload host on the core's watcher on the first call; later calls reuse it. */
+export function ensureReloadHost(): Promise<void> {
+  current ??= createReloadHost({ core: CORE });
   return current.ensure();
 }
 

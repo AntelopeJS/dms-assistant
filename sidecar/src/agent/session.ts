@@ -38,10 +38,23 @@ export interface AgentSession {
   dispose: (reason?: RunnerError) => Promise<void>;
 }
 
+/** What a backend gives back while no turn runs, and when. */
+export interface IdleRelease {
+  /** How long after a turn ends, with none begun since, the backend is released. */
+  afterMs: number;
+  /**
+   * Releases the backend's process. The session stays: `submitTurn` takes the
+   * backend back at the next turn, so the conversation goes on. Never throws.
+   */
+  release: () => void;
+}
+
 export interface SessionDeps {
   events: AsyncIterator<RunnerEvent, void>;
   controls: SessionControls;
   abortController: AbortController;
+  /** Absent: the backend keeps everything until the session is disposed. */
+  idleRelease?: IdleRelease;
   /**
    * Handed the teardown as well, so whoever drops the session can still wait
    * for it.
@@ -54,6 +67,7 @@ interface SessionState extends SessionDeps {
   tail: Promise<void>;
   activeTurns: number;
   interruptTimer: ReturnType<typeof setTimeout> | null;
+  idleTimer: ReturnType<typeof setTimeout> | null;
   abortOutcome: RunnerEvent | null;
   aborted: Promise<never>;
   turnsSettledWaiters: Array<() => void>;
@@ -107,6 +121,7 @@ function disposeSession(
 ): Promise<void> {
   if (state.disposal !== null) return state.disposal;
   clearInterruptFallback(state);
+  clearIdleRelease(state);
   const released = state.controls.close();
   const disposal = Promise.all([released, whenTurnsSettled(state)]).then(
     () => undefined,
@@ -126,6 +141,27 @@ function clearInterruptFallback(state: SessionState): void {
   if (state.interruptTimer === null) return;
   clearTimeout(state.interruptTimer);
   state.interruptTimer = null;
+}
+
+function clearIdleRelease(state: SessionState): void {
+  if (state.idleTimer === null) return;
+  clearTimeout(state.idleTimer);
+  state.idleTimer = null;
+}
+
+/**
+ * Counts the idle window from now. The timer never keeps the process alive: a
+ * released backend is housekeeping, not work.
+ */
+function armIdleRelease(state: SessionState): void {
+  clearIdleRelease(state);
+  if (state.idleRelease === undefined || isDisposed(state)) return;
+  const { afterMs, release } = state.idleRelease;
+  state.idleTimer = setTimeout(() => {
+    state.idleTimer = null;
+    release();
+  }, afterMs);
+  state.idleTimer.unref();
 }
 
 /**
@@ -262,12 +298,16 @@ async function* runTurn(
   timeoutMs: number,
 ): AsyncIterable<RunnerEvent> {
   state.activeTurns += 1;
+  clearIdleRelease(state);
   try {
     await state.controls.submitTurn(input);
     yield* readArmedTurn(state, timeoutMs);
   } finally {
     state.activeTurns -= 1;
-    if (state.activeTurns === 0) settleTurns(state);
+    if (state.activeTurns === 0) {
+      settleTurns(state);
+      armIdleRelease(state);
+    }
   }
 }
 
@@ -306,6 +346,7 @@ export function createAgentSession(deps: SessionDeps): AgentSession {
     tail: Promise.resolve(),
     activeTurns: 0,
     interruptTimer: null,
+    idleTimer: null,
     abortOutcome: null,
     aborted: rejectOnAbort(deps.abortController.signal),
     turnsSettledWaiters: [],

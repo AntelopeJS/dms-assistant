@@ -12,7 +12,6 @@ import {
   NAVIGATE_TOOL_NAME,
 } from "../../src/constants/mcp.js";
 import { FIND_PAGES_TOOL_NAME } from "../../src/constants/pages.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "../../src/constants/preview.js";
 import { createAiMcpServer } from "../../src/mcp/sdk-binding.js";
 import type { ImportsScanner } from "../../src/pages/imports-scanner.js";
 import type { RegistryClient } from "../../src/pages/registry-client.js";
@@ -43,8 +42,6 @@ function buildDeps() {
     navigationCompleter: createNavigationCompleter(),
     conversationId: "conv-test",
     requestQuestion: async () => null,
-    showPreview: () => {},
-    listAttachedImages: () => [],
   };
 }
 
@@ -80,12 +77,6 @@ describe("createAiMcpServer", () => {
     expect(listed).toContain(ASK_USER_TOOL_NAME);
   });
 
-  it("registers the preview_blocks tool", async () => {
-    const server = createAiMcpServer(buildDeps());
-    const listed = await listRegisteredTools(server);
-    expect(listed).toContain(PREVIEW_BLOCKS_TOOL_NAME);
-  });
-
   it("serves only the chat's own tools (fails a server that still lists a tool the DMS MCP serves)", async () => {
     const listed = await listRegisteredTools(createAiMcpServer(buildDeps()));
     expect([...listed].sort()).toEqual([
@@ -93,7 +84,6 @@ describe("createAiMcpServer", () => {
       "find_pages_using",
       "get_current_page",
       "navigate_to_page",
-      "preview_blocks",
     ]);
   });
 

@@ -27,8 +27,6 @@ export function buildDeps(): AiMcpServerDeps {
     navigationCompleter: createNavigationCompleter(),
     conversationId: "conv-tools",
     requestQuestion: async () => null,
-    showPreview: () => {},
-    listAttachedImages: () => [],
   };
 }
 

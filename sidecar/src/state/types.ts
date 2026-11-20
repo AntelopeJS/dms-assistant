@@ -6,7 +6,6 @@ import type {
   ToolOutcome,
   TypecheckOutcome,
 } from "../constants/audit.js";
-import type { BlockPreviewType } from "../protocol/preview.js";
 import type { ChatMode, GenerationMode } from "./settings-types.js";
 
 /**
@@ -23,8 +22,6 @@ import type { ChatMode, GenerationMode } from "./settings-types.js";
  *   separately.
  * - `question_answer` holds the answers given to an ask_user question, kept for
  *   the transcript.
- * - `block_preview` is a block preview the agent shared with preview_blocks,
- *   drawn as an attachment.
  */
 export const STORED_MESSAGE_ROLES = [
   "user",
@@ -36,7 +33,6 @@ export const STORED_MESSAGE_ROLES = [
   "notice",
   "change_set",
   "question_answer",
-  "block_preview",
 ] as const;
 
 type StoredMessageRole = (typeof STORED_MESSAGE_ROLES)[number];
@@ -129,7 +125,6 @@ export interface StoredMessage {
   changeSetId?: string;
   notice?: Notice;
   answers?: QuestionAnswerRecord[];
-  preview?: BlockPreviewType;
   /** Set on calls made during an auto-fix turn. */
   isAutoFix?: boolean;
   /**

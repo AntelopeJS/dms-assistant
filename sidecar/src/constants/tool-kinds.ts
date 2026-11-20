@@ -12,7 +12,6 @@ import {
   NAVIGATE_TOOL_NAME,
 } from "./mcp.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
 import { TYPECHECK_TOOL_NAME } from "./typecheck.js";
 
 /**
@@ -233,7 +232,6 @@ export const PROJECT_READ_TOOL_NAMES: readonly string[] = [
 
 export const ASSISTANT_TOOL_NAMES: readonly string[] = [
   ASK_USER_TOOL_NAME,
-  PREVIEW_BLOCKS_TOOL_NAME,
   "TodoWrite",
   "Skill",
   "Task",

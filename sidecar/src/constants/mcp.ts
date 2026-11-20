@@ -1,5 +1,4 @@
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
 import { REQUEST_TIMEOUT_MINUTES } from "../state/settings-types.js";
 import { QUESTION_TIMEOUT_MS } from "./questions.js";
 import { MS_PER_MINUTE } from "./settings.js";
@@ -100,7 +99,6 @@ export const ASK_USER_RESULT_NO_ANSWER =
  */
 export const DMS_MCP_HIDDEN_TOOL_NAMES: readonly string[] = [
   NAVIGATE_TOOL_NAME,
-  PREVIEW_BLOCKS_TOOL_NAME,
 ];
 
 const CHAT_TOOL_NAMES: readonly string[] = [
@@ -108,7 +106,6 @@ const CHAT_TOOL_NAMES: readonly string[] = [
   GET_CURRENT_PAGE_TOOL_NAME,
   FIND_PAGES_TOOL_NAME,
   NAVIGATE_TOOL_NAME,
-  PREVIEW_BLOCKS_TOOL_NAME,
 ];
 
 /**

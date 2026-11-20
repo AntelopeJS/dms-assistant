@@ -2,7 +2,6 @@ import type { ACTIVITY_KINDS } from "../constants/run-status";
 import type { PendingAttachment } from "../utils/attachments";
 import type {
 	AllowedBy,
-	BlockPreview,
 	Notice,
 	ProviderName,
 	QuestionAnswerRecord,
@@ -93,14 +92,6 @@ export interface QuestionAnswerMessage {
 	timestampMs: number;
 }
 
-/** A block preview the agent shared, drawn as an attachment card. */
-export interface BlockPreviewMessage {
-	id: string;
-	role: "block_preview";
-	preview: BlockPreview;
-	timestampMs: number;
-}
-
 /**
  * What the running turn is doing, as last reported by the sidecar.
  * `receivedAtMs` is the local time of that report, from which the elapsed and
@@ -136,8 +127,7 @@ export type ConversationMessage =
 	| ErrorMessage
 	| NoticeMessage
 	| ChangeSetMessage
-	| QuestionAnswerMessage
-	| BlockPreviewMessage;
+	| QuestionAnswerMessage;
 
 export interface QueuedMessage {
 	id: string;

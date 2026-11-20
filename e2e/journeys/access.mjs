@@ -128,7 +128,6 @@ export const covers = [
   "sidecar/src/server/http.ts",
   "src/index.ts",
   "sidecar/src/constants/mcp.ts",
-  "sidecar/src/constants/preview.ts",
   "sidecar/src/constants/logs.ts",
   "sidecar/src/constants/database.ts",
   "sidecar/src/mcp/tool-definitions.ts",

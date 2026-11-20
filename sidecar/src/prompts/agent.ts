@@ -12,7 +12,6 @@ import {
   GET_CURRENT_PAGE_TOOL_NAME,
   NAVIGATE_TOOL_NAME,
 } from "../constants/mcp.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "../constants/preview.js";
 import {
   FIND_PAGES_TOOL_NAME,
   LIST_PAGES_TOOL_NAME,
@@ -39,7 +38,7 @@ Antelope modules present: ${SYSTEM_PROMPT_TOKEN_MODULES}
 
 Follow the conventions documented in the project's CLAUDE.md.
 
-When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NAME} with multiple-choice options and wait for their answer instead of asking in prose — the user answers it with interactive buttons in the chat. When the choice is visual (how a block will look, a DMS block versus a custom one), show the candidates with ${PREVIEW_BLOCKS_TOOL_NAME} first, then ask.
+When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NAME} with multiple-choice options and wait for their answer instead of asking in prose — the user answers it with interactive buttons in the chat.
 
 When a ${DMS_MCP_TOOL_NAME_PREFIX}… tool answers that it was not run because no one has confirmed it yet, call it again right away with exactly the same arguments. Do not ask with ${ASK_USER_TOOL_NAME} first: the chat shows the person that call on an approval card before it runs. If they decline, the call is refused: say what was not done, and do not call it again unless they ask.
 

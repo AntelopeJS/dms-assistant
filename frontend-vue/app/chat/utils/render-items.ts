@@ -4,7 +4,6 @@ import {
 } from "../constants/conversation";
 import type {
 	AssistantMessage,
-	BlockPreviewMessage,
 	ChangeSetMessage,
 	ConversationMessage,
 	ErrorMessage,
@@ -24,14 +23,7 @@ interface SeparatorItem {
 }
 
 interface MessageItem {
-	kind:
-		| "user"
-		| "assistant"
-		| "error"
-		| "notice"
-		| "change"
-		| "answers"
-		| "preview";
+	kind: "user" | "assistant" | "error" | "notice" | "change" | "answers";
 	key: string;
 	message:
 		| UserMessage
@@ -39,8 +31,7 @@ interface MessageItem {
 		| ErrorMessage
 		| NoticeMessage
 		| ChangeSetMessage
-		| QuestionAnswerMessage
-		| BlockPreviewMessage;
+		| QuestionAnswerMessage;
 }
 
 interface ToolsItem {
@@ -64,7 +55,6 @@ const KIND_BY_ROLE: Record<string, MessageItem["kind"]> = {
 	[MESSAGE_ROLES.NOTICE]: "notice",
 	[MESSAGE_ROLES.CHANGE_SET]: "change",
 	[MESSAGE_ROLES.QUESTION_ANSWER]: "answers",
-	[MESSAGE_ROLES.BLOCK_PREVIEW]: "preview",
 };
 
 function startOfDay(ms: number): number {

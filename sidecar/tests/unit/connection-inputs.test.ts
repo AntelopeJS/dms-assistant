@@ -41,21 +41,6 @@ const ADDRESS_FORMATS: ReadonlySet<string> = new Set([
   "uri-template",
 ]);
 
-/**
- * The address-shaped inputs that name no connection, each with why, by the
- * tool and the field's path.
- */
-const NOT_CONNECTIONS: ReadonlyMap<string, string> = new Map([
-  [
-    "preview_blocks: reference.url",
-    "the same-origin path of an image the preview shows; an external URL only shows as a link",
-  ],
-  [
-    "preview_blocks: options.*",
-    "a block's options, drawn in the preview frame whose CSP blocks network loads; a URL option must be a same-origin path",
-  ],
-]);
-
 /** A field the schema names, a string format it sets, or a record whose keys the model names. */
 type SchemaInput =
   | { kind: "field"; path: string; name: string }
@@ -121,12 +106,11 @@ function isAddress(input: SchemaInput): boolean {
   }
 }
 
-/** The address-shaped inputs of `schema` outside `NOT_CONNECTIONS`, as `<subject>: <path>`. */
+/** The address-shaped inputs of `schema`, as `<subject>: <path>`. */
 function addressInputs(subject: string, schema: JsonValue): string[] {
   return inputsOf(schema, "")
     .filter(isAddress)
-    .map((input) => `${subject}: ${input.path}`)
-    .filter((input) => !NOT_CONNECTIONS.has(input));
+    .map((input) => `${subject}: ${input.path}`);
 }
 
 /** The commands the agent sends to the owner's dashboard. */

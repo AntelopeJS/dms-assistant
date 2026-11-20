@@ -1,7 +1,7 @@
 /** The attribute a page draws on a block's root element: its layout path. */
 const BLOCK_PATH_ATTRIBUTE = "data-dms-block";
 const LAYOUT_SEPARATOR = ".";
-/** Blocks drawn inside these are copies (a preview in the chat), not the page's. */
+/** Blocks drawn inside these are copies (a mockup's block preview, the chat), not the page's. */
 const OUTSIDE_PAGE_SELECTOR = "[data-dms-block-preview], .chat-view";
 /** An open dialog covers the page, so its outline would draw over the dialog. */
 const MODAL_SELECTOR = '[role="dialog"][data-state="open"]';

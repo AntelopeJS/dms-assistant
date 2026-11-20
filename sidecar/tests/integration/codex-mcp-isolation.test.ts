@@ -42,8 +42,6 @@ function buildDeps(conversationId: string): AiMcpServerDeps {
     navigationCompleter: createNavigationCompleter(),
     conversationId,
     requestQuestion: async () => null,
-    showPreview: () => {},
-    listAttachedImages: () => [],
   };
 }
 

@@ -62,8 +62,6 @@ import type { AppSettings } from "../state/settings-types.js";
 import type { ProviderName } from "../state/types.js";
 import {
   broadcastConversationList,
-  emitBlockPreview,
-  listAttachedImages,
   sendConversationMode,
 } from "./chat-events.js";
 import { isClientAuthorized } from "./client-auth.js";
@@ -241,10 +239,6 @@ function buildMcpDepsFactory(
     getCurrentPage: () => pageOf(services(holder), conversationId),
     sendToHost: hostCommandsOf(conversationId),
     requestQuestion: (req) => askUser(services(holder), req),
-    showPreview: (preview) =>
-      emitBlockPreview(services(holder), conversationId, preview),
-    listAttachedImages: () =>
-      listAttachedImages(services(holder), conversationId),
   });
 }
 

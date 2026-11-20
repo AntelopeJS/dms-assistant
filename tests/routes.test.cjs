@@ -407,3 +407,25 @@ void test("reports the assistant offline, with the process state, when it does n
   assert.equal(body.isRunning, false);
   assert.equal(body.hasGivenUp, false);
 });
+
+void test("asks the sidecar for the status of the signed-in owner on every route that reads it, so the panel's counts match the owner's own conversation list", async () => {
+  reset();
+  answer("GET", "/status", 200, {
+    status: "ready",
+    workingConversations: 0,
+    pendingApprovals: 0,
+    pendingQuestions: 0,
+  });
+  const controller = new harness.routes.AIStatusController();
+  await controller.status(OWNER);
+  await controller.banner(OWNER);
+  await controller.restart(OWNER);
+  assert.deepEqual(
+    sidecar.requests.map(({ method, path, query }) => [method, path, query]),
+    [
+      ["GET", "/status", { viewer: OWNER._id }],
+      ["GET", "/status", { viewer: OWNER._id }],
+      ["GET", "/status", { viewer: OWNER._id }],
+    ],
+  );
+});

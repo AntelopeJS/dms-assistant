@@ -26,9 +26,12 @@ function declaredBytes(request: IncomingMessage): number {
 
 /**
  * Counts a posted message against the shared budget until its response is
- * over, or refuses it with 429 before a byte of its body is read.
+ * over, or refuses it with 429 before a byte of its body is read. A response
+ * already closed, its client gone before this ran, never emits `close` again,
+ * so it holds nothing.
  */
 export function reserveMessageBytes(context: RequestContext): void {
+  if (context.rawResponse.closed) return;
   const bytes = declaredBytes(context.rawRequest);
   if (pendingBytes + bytes > CHANNEL_PENDING_MESSAGES_MAX_BYTES) {
     throw new HTTPResult(CHANNEL_STATUS.TOO_MANY_REQUESTS, TOO_MANY_MESSAGES);

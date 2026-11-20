@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import { hiddenToolsFor } from "../../src/providers/claude/tool-surface.js";
+import type { Options } from "@anthropic-ai/claude-agent-sdk";
+import { resolveModelOptions } from "../../src/providers/claude/config.js";
+import {
+  hiddenToolsFor,
+  syncToolSurface,
+  toolSurfaceFor,
+  type SurfaceBackend,
+} from "../../src/providers/claude/tool-surface.js";
 import type { TurnSettings } from "../../src/state/settings-types.js";
 import { TURN_SETTINGS } from "../helpers/turn-settings.js";
 
@@ -39,5 +46,58 @@ describe("Safe mode without the Builder", () => {
     setBuilderAvailable(false);
 
     expect(hiddenToolsFor(settingsOf({ generationMode: "safe" }))).toEqual([]);
+  });
+});
+
+describe("the query a Claude session starts again", () => {
+  function backendWith(settings: TurnSettings, options: Options) {
+    const started: Options[] = [];
+    const sdk = {
+      query: ({ options: given }: { options: Options }) => {
+        started.push(given);
+        return { close: () => undefined };
+      },
+    };
+    const backend = {
+      sdk,
+      options,
+      surface: toolSurfaceFor(settings),
+      isReleased: true,
+      hostProjectRoot: "/project",
+      sessionId: "session-1",
+      live: { settings },
+      queue: { close: () => undefined },
+      output: { close: () => undefined },
+      model: { refused: null, announceFrom: null, active: null },
+      lastTurn: null,
+    };
+    // SAFETY: the fake carries only the members syncToolSurface reads.
+    return { backend: backend as SurfaceBackend, started };
+  }
+
+  it("carries no effort once thinking is off (fails a restart that keeps the effort of the previous thinking level)", () => {
+    const { backend, started } = backendWith(settingsOf({ thinking: "off" }), {
+      effort: "high",
+      thinking: { type: "adaptive" },
+    });
+
+    syncToolSurface(backend);
+
+    expect(started[0]?.thinking).toEqual({ type: "disabled" });
+    expect(started[0]).not.toHaveProperty("effort");
+  });
+
+  it("carries the current effort while thinking is on (fails a restart that keeps the previous effort)", () => {
+    const { backend, started } = backendWith(settingsOf({ thinking: "high" }), {
+      effort: "low",
+      thinking: { type: "adaptive" },
+    });
+
+    syncToolSurface(backend);
+
+    expect(started[0]?.effort).toBe(
+      resolveModelOptions(backend.live.settings).effort,
+    );
+    expect(started[0]?.effort).not.toBe("low");
   });
 });

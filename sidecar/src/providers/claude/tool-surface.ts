@@ -102,8 +102,10 @@ export function syncToolSurface(backend: SurfaceBackend): void {
     return;
   const previous = backend.queue;
   const queue = createInputQueue();
+  const carried: Options = { ...backend.options };
+  delete carried.effort;
   const base = {
-    ...backend.options,
+    ...carried,
     ...resolveModelOptions(settings),
     permissionMode: resolvePermissionMode(settings),
     disallowedTools: disallowedToolsFor(settings),

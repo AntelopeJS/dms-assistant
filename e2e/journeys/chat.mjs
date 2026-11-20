@@ -294,6 +294,7 @@ export const covers = [
   "sidecar/src/server/pending-queue.ts",
   "sidecar/src/server/permission-events.ts",
   "sidecar/src/server/raw-data.ts",
+  "sidecar/src/server/reload-hold.ts",
   "sidecar/src/server/safety-net.ts",
   "sidecar/src/server/tool-calls.ts",
   "sidecar/src/server/turn-progress.ts",

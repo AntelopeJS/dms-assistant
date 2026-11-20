@@ -16,7 +16,7 @@
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database": ">=0.4.0 <0.5.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
-    "@antelopejs/interface-dms": "0.14.7-next.980.gd957ab9",
+    "@antelopejs/interface-dms": "0.14.7-next.985.g3110f87",
     "@antelopejs/mongodb": "~1.8.11",
     "@antelopejs/mysql": ">=0.2.7 <0.3.0",
     "@antelopejs/postgres": ">=0.4.3 <0.5.0",

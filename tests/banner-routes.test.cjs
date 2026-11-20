@@ -6,6 +6,7 @@ const {
   readLocale,
 } = require("./helpers/page-locales.cjs");
 const {
+  OWNER,
   answer,
   bodyOf,
   reset,
@@ -94,7 +95,7 @@ void test("raises the most pressing status banner: offline with Restart, a faile
   reset();
   const status = new harness.routes.AIStatusController();
   sidecar.isDown = true;
-  const offline = bodyOf(ActionBannerSchema, await status.banner());
+  const offline = bodyOf(ActionBannerSchema, await status.banner(OWNER));
   assert.equal(offline.tone, "error");
   assert.deepEqual(offline.actions[0].target, {
     type: "api",
@@ -108,11 +109,11 @@ void test("raises the most pressing status banner: offline with Restart, a faile
     pendingQuestions: 1,
     lastError: "Agent exited",
   });
-  const failed = bodyOf(ErrorBannerSchema, await status.banner());
+  const failed = bodyOf(ErrorBannerSchema, await status.banner(OWNER));
   assert.deepEqual(failed.description.params, { error: "Agent exited" });
   assert.equal(failed.actions[0].to, "/modules/ai/activity");
   answer("GET", "/status", 200, { ...ONLINE_STATUS, pendingQuestions: 1 });
-  const waiting = bodyOf(BannerBodySchema, await status.banner());
+  const waiting = bodyOf(BannerBodySchema, await status.banner(OWNER));
   assert.equal(waiting.tone, "warning");
   assert.deepEqual(untranslated([offline, failed, waiting]), []);
 });
@@ -120,7 +121,7 @@ void test("raises the most pressing status banner: offline with Restart, a faile
 void test("draws no status banner while all is well", async () => {
   reset();
   answer("GET", "/status", 200, ONLINE_STATUS);
-  const result = await new harness.routes.AIStatusController().banner();
+  const result = await new harness.routes.AIStatusController().banner(OWNER);
   assert.equal(result.getStatus(), 204);
 });
 

@@ -1,6 +1,7 @@
 import { Controller, Get, HTTPResult, Post } from "@antelopejs/interface-api";
 import { z } from "zod";
-import { AuthOwnerOnly } from "@antelopejs/interface-dms/auth";
+import { AuthOwnerOnly, AuthRawUser } from "@antelopejs/interface-dms/auth";
+import type { User } from "@antelopejs/interface-dms/auth/db";
 import { ROUTE_PREFIX } from "../constants/module";
 import {
   hasSidecarGivenUp,
@@ -8,7 +9,7 @@ import {
   isSidecarRunning,
   restartSidecar,
 } from "../lifecycle/spawn-sidecar";
-import { requestSidecar } from "../sidecar";
+import { buildQuery, requestSidecar } from "../sidecar";
 import type { AssistantStatus } from "../types";
 import type { JsonBody } from "../sidecar/json-body";
 import { bannerAnswer } from "./banner";
@@ -54,13 +55,15 @@ async function processState(): Promise<ProcessState> {
 }
 
 /**
- * The sidecar's own status, or `{ status: "offline" }` when it does not
- * answer, both with the process state: the chat and the Settings banner always
- * have something to draw, and knows whether a restart can help.
+ * The sidecar's own status of the conversations `viewer` may see, so its
+ * counts agree with the list their chat shows, or `{ status: "offline" }` when
+ * it does not answer, both with the process state: the chat and the Settings
+ * banner always have something to draw, and knows whether a restart can help.
  */
-async function readStatus(): Promise<AssistantStatus> {
+async function readStatus(viewer: User): Promise<AssistantStatus> {
+  const path = `${STATUS_PATH}${buildQuery({ viewer: viewer._id })}`;
   try {
-    const response = await requestSidecar(STATUS_PATH);
+    const response = await requestSidecar(path);
     const reported = SidecarStatus.safeParse(response.body);
     if (!response.isOk || !reported.success) {
       return { status: OFFLINE_STATUS, ...(await processState()) };
@@ -85,22 +88,22 @@ function fresh(body: StatusAnswer): HTTPResult {
 @AuthOwnerOnly()
 export class AIStatusController extends Controller(ROUTE_PREFIX) {
   @Get(STATUS_PATH)
-  async status(): Promise<HTTPResult> {
-    return fresh(await readStatus());
+  async status(@AuthRawUser() user: User): Promise<HTTPResult> {
+    return fresh(await readStatus(user));
   }
 
   @Get(`${STATUS_PATH}/banner`)
-  async banner(): Promise<HTTPResult> {
-    return fresh(bannerAnswer(statusBanner(await readStatus())));
+  async banner(@AuthRawUser() user: User): Promise<HTTPResult> {
+    return fresh(bannerAnswer(statusBanner(await readStatus(user))));
   }
 
   @Post("/sidecar/restart")
-  async restart(): Promise<HTTPResult> {
+  async restart(@AuthRawUser() user: User): Promise<HTTPResult> {
     try {
       await restartSidecar();
     } catch {
       return assistantUnavailable();
     }
-    return fresh(await readStatus());
+    return fresh(await readStatus(user));
   }
 }

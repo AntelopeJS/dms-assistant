@@ -33,7 +33,7 @@ import {
   switchPermissionMode,
   withLiveInit,
 } from "./permissions.js";
-import { traceOptions } from "./trace.js";
+import { appendTrace, traceOptions } from "./trace.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -89,6 +89,11 @@ interface BuildMockQueryArgs extends PermissionInputs {
 
 interface InterruptFlag {
   requested: boolean;
+}
+
+/** Set by `close()`: the CLI process is gone and the query yields nothing more. */
+interface ClosedFlag {
+  isClosed: boolean;
 }
 
 /**
@@ -169,6 +174,7 @@ function isTextPrompt(prompt: MockQueryParams["prompt"]): prompt is string {
 async function* createMessageStream(
   args: BuildMockQueryArgs,
   interrupted: InterruptFlag,
+  closed: ClosedFlag,
 ): AsyncGenerator<SDKMessage, void> {
   const entries = await loadScript(args.scriptPath);
   if (isTextPrompt(args.prompt)) {
@@ -176,12 +182,14 @@ async function* createMessageStream(
     return;
   }
   for await (const _turn of args.prompt) {
+    if (closed.isClosed) return;
     yield* replayOnce(entries, args, interrupted);
   }
 }
 
 function buildControlSurface(
   interrupted: InterruptFlag,
+  closed: ClosedFlag,
   permissions: PermissionState,
   modelState: ModelState,
 ): Omit<Query, keyof AsyncGenerator<SDKMessage, void>> {
@@ -222,15 +230,20 @@ function buildControlSurface(
     usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET: unsupported(
       "usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET",
     ),
-    close: unsupported("close"),
+    close: () => {
+      closed.isClosed = true;
+      appendTrace({ kind: "close" });
+    },
   };
 }
 
 function buildQuery(args: BuildMockQueryArgs): Query {
   const interrupted: InterruptFlag = { requested: false };
-  const stream = createMessageStream(args, interrupted);
+  const closed: ClosedFlag = { isClosed: false };
+  const stream = createMessageStream(args, interrupted, closed);
   const control = buildControlSurface(
     interrupted,
+    closed,
     args.permissions,
     args.modelState,
   );

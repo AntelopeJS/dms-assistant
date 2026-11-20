@@ -122,6 +122,32 @@ function listConversations(
     .map((summary) => enrichSummary(services, summary));
 }
 
+/** What the assistant is doing in the conversations a viewer may see. */
+export interface ViewerActivity {
+  workingConversations: number;
+  pendingApprovals: number;
+  pendingQuestions: number;
+}
+
+/**
+ * The work and the waiting requests of the conversations `viewerId` may see,
+ * read off the same summaries as their list: the tab's counts agree with the
+ * list it shows, whoever else's turns run.
+ */
+export function viewerActivity(
+  services: SidecarServices,
+  viewerId: string | null,
+): ViewerActivity {
+  const conversations = listConversations(services, viewerId);
+  const total = (count: (c: ConversationSummaryType) => number): number =>
+    conversations.reduce((sum, c) => sum + count(c), 0);
+  return {
+    workingConversations: total((c) => (c.isRunning ? 1 : 0)),
+    pendingApprovals: total((c) => c.pendingApprovals),
+    pendingQuestions: total((c) => c.pendingQuestions),
+  };
+}
+
 /** The conversations `viewerId` may see; see `isVisibleTo`. */
 export function buildConversationListEvent(
   services: SidecarServices,

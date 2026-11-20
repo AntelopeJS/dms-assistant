@@ -18,7 +18,8 @@ export interface ScriptedCall {
   answer?: { text: string; isError: boolean };
 }
 
-const SESSION_ID = "mock-session-scripted";
+/** The CLI session id every message of a scripted turn carries. */
+export const SCRIPT_SESSION_ID = "mock-session-scripted";
 const SCRIPT_MODEL = "claude-mock";
 const AUTO_REVIEW_DENIAL = "This action was blocked by Auto review.";
 const DONE_TEXT = "Done.";
@@ -37,7 +38,7 @@ const USAGE = {
 };
 
 function envelope() {
-  return { uuid: randomUUID(), session_id: SESSION_ID };
+  return { uuid: randomUUID(), session_id: SCRIPT_SESSION_ID };
 }
 
 interface ToolUseBlock {

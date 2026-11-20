@@ -7,7 +7,7 @@ settings:
 overrides:
   '@antelopejs/interface-core': 0.5.2-next.117.gae930be
   '@antelopejs/dms>@antelopejs/interface-dms': '>=0.14.6 <0.15.0'
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.1 <0.7.0'
+  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.975.g07fb6f8
 
 importers:
 
@@ -17,8 +17,8 @@ importers:
         specifier: '>=0.8.2 <0.9.0'
         version: 0.8.2
       '@antelopejs/dms':
-        specifier: 0.21.4-next.947.g7afce75
-        version: 0.21.4-next.947.g7afce75(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)
+        specifier: 0.21.4-next.976.g78176ed
+        version: 0.21.4-next.976.g78176ed(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)
       '@antelopejs/interface-api':
         specifier: '>=0.3.3 <0.4.0'
         version: 0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -29,8 +29,8 @@ importers:
         specifier: '>=0.14.6 <0.15.0'
         version: 0.14.6(4e084f8556357a6d854e1f2dcdc957db)
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.6.1 <0.7.0'
-        version: 0.6.1(@antelopejs/interface-core@0.5.2-next.117.gae930be)
+        specifier: 0.6.2-next.975.g07fb6f8
+        version: 0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.3.316
         version: 0.3.317(@anthropic-ai/sdk@0.93.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.29.0(zod@4.6.7))(zod@4.6.7)
@@ -128,10 +128,9 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms@0.21.4-next.947.g7afce75':
-    resolution: {integrity: sha512-ObNpa5LMqpnclQyTyLvmBm8B9La/kY+sMEJFrFuZwVooLQZujJuHiX3KKVYvWLfKrcy9K/D2ABMpwhXAKs6emw==}
+  '@antelopejs/dms@0.21.4-next.976.g78176ed':
+    resolution: {integrity: sha512-qUubppLZRVywlRIm+f1zq5vtwMTPwCJS4gdkWbEBo09cPoJjCV3+cj5T/GDgLBgsrHexQy2cKUnxdbcUH0nHgQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
-    hasBin: true
     peerDependencies:
       '@antelopejs/core': ~1.24.5
       '@playwright/test': ^1.65.0
@@ -189,8 +188,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
-  '@antelopejs/interface-dms-builder@0.6.1':
-    resolution: {integrity: sha512-Cmda7iyKfRI6yo0zS7Kje29gCnISRF6TpXhUQhAcxyVd1zT5q9+rzT7I9O3umy/RKLjalDYjJ8hhIg8EmB5yXw==}
+  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8':
+    resolution: {integrity: sha512-FfaxjZ0DF6YYVWbuMopDBJDMAz1JT+8kHv/VQGmHNhkpeKMlfD6n86ClPYRI+Qk6dPyBSXEGIuUS6ZvYcBQkyg==}
     peerDependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
@@ -3728,7 +3727,7 @@ snapshots:
       semver: 7.8.5
       typescript: 5.9.3
 
-  '@antelopejs/dms@0.21.4-next.947.g7afce75(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)':
+  '@antelopejs/dms@0.21.4-next.976.g78176ed(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -3738,7 +3737,7 @@ snapshots:
       '@antelopejs/interface-database': 0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-database-decorators': 0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be))
       '@antelopejs/interface-dms': 0.14.6(4e084f8556357a6d854e1f2dcdc957db)
-      '@antelopejs/interface-dms-builder': 0.6.1(@antelopejs/interface-core@0.5.2-next.117.gae930be)
+      '@antelopejs/interface-dms-builder': 0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-email': 0.2.1(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-file-storage': 0.1.4(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@csstools/css-tokenizer': 4.0.0
@@ -3820,7 +3819,7 @@ snapshots:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
     optional: true
 
-  '@antelopejs/interface-dms-builder@0.6.1(@antelopejs/interface-core@0.5.2-next.117.gae930be)':
+  '@antelopejs/interface-dms-builder@0.6.2-next.975.g07fb6f8(@antelopejs/interface-core@0.5.2-next.117.gae930be)':
     dependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 

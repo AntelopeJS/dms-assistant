@@ -118,6 +118,7 @@ describe("a reload of the page while the connection loads", () => {
 	it.each([
 		["its analysis failed", { id: "job1", status: "failed", progress: {} }],
 		["the database has no table", analysisWith([])],
+		["every table is mapped already", analysisWith([], ["orders"])],
 	])("opens on the form once %s", async (_, analysis) => {
 		vi.useFakeTimers();
 		const fake = fakeBuilder();

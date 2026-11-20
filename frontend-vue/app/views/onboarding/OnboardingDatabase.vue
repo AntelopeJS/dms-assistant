@@ -147,6 +147,9 @@ function checkText(check: ConnectCheck): string {
 			if (check.problem === "empty") {
 				return t("dms_assistant.views.onboarding.database.empty");
 			}
+			if (check.problem === "mapped") {
+				return t("dms_assistant.views.onboarding.database.mapped");
+			}
 			if (check.problem === "gave-up") {
 				return t("dms_assistant.views.onboarding.database.gave_up");
 			}

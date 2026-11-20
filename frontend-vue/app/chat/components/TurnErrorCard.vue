@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
+import { useCopyFeedback } from "../composables/useCopyFeedback";
 import type { ErrorMessage } from "../types/conversation";
 
 interface Props {
@@ -17,10 +18,8 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { t } = useChatI18n();
 
-const COPIED_FOR_MS = 1_600;
-
-const isCopied = ref(false);
-let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+const { copiedId, copy } = useCopyFeedback();
+const isCopied = computed(() => copiedId.value === props.error.id);
 
 const text = computed(() =>
 	props.error.contentKey === undefined
@@ -36,21 +35,10 @@ const title = computed(() =>
 	),
 );
 
-async function copyDetails(): Promise<void> {
+function copyDetails(): Promise<void> {
 	const details = `${title.value} ${text.value}\n${new Date(props.error.timestampMs).toISOString()}`;
-	try {
-		await navigator.clipboard.writeText(details);
-	} catch {
-		return;
-	}
-	isCopied.value = true;
-	if (copiedTimer !== null) clearTimeout(copiedTimer);
-	copiedTimer = setTimeout(() => (isCopied.value = false), COPIED_FOR_MS);
+	return copy(details, props.error.id);
 }
-
-onBeforeUnmount(() => {
-	if (copiedTimer !== null) clearTimeout(copiedTimer);
-});
 </script>
 
 <template>

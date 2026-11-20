@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
+import { useCopyFeedback } from "../composables/useCopyFeedback";
 import { ACTIVITY_KINDS } from "../constants/run-status";
 import { MESSAGE_ROLES } from "../constants/conversation";
 import type {
@@ -62,6 +63,7 @@ const emit = defineEmits<Emits>();
 const { t, locale } = useChatI18n();
 
 const MS_PER_DAY = 86_400_000;
+const { copiedId: copiedMessageId, copy } = useCopyFeedback();
 
 const items = computed<RenderItem[]>(() => buildRenderItems(props.messages));
 
@@ -137,14 +139,6 @@ function attachmentsOf(message: UserMessage): MessageAttachment[] {
 
 function canRetry(error: ErrorMessage): boolean {
 	return !props.isRunning && error.id === lastErrorId.value;
-}
-
-async function copyAnswer(content: string): Promise<void> {
-	try {
-		await navigator.clipboard.writeText(content);
-	} catch {
-		return;
-	}
 }
 </script>
 
@@ -239,11 +233,30 @@ async function copyAnswer(content: string): Promise<void> {
 						size="xs"
 						color="neutral"
 						variant="ghost"
-						square
-						icon="i-ph-copy"
-						:aria-label="t('dms_assistant.panel.copy_answer')"
-						:title="t('dms_assistant.panel.copy_answer')"
-						@click="copyAnswer(item.message.content)"
+						:square="copiedMessageId !== item.message.id"
+						:icon="
+							copiedMessageId === item.message.id ? 'i-ph-check' : 'i-ph-copy'
+						"
+						:label="
+							copiedMessageId === item.message.id
+								? t('dms_assistant.common.copied')
+								: undefined
+						"
+						:aria-label="
+							t(
+								copiedMessageId === item.message.id
+									? 'dms_assistant.common.copied'
+									: 'dms_assistant.panel.copy_answer',
+							)
+						"
+						:title="
+							t(
+								copiedMessageId === item.message.id
+									? 'dms_assistant.common.copied'
+									: 'dms_assistant.panel.copy_answer',
+							)
+						"
+						@click="copy(item.message.content, item.message.id)"
 					/>
 					<span class="cb-ai__meta">
 						{{ formatTimeOfDay(item.message.timestampMs, locale) }}

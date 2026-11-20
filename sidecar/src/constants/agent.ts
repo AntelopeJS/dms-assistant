@@ -6,6 +6,14 @@ import type { GenerationMode } from "../state/settings-types.js";
  */
 export const TURN_IDLE_TIMEOUT_MS = 5 * 60_000;
 
+/**
+ * How long a conversation's agent process may sit idle after its last turn
+ * before the provider gives it back; the next turn starts it again and picks
+ * the conversation up where it was. Five minutes is how long the API keeps a
+ * prompt cache warm, so a conversation resumed after it loses no cache.
+ */
+export const IDLE_PROCESS_RELEASE_MS = 5 * 60_000;
+
 /** Stands for a duration in words inside the turn-ending reasons below. */
 export const DURATION_TOKEN = "{{duration}}";
 

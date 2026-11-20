@@ -24,12 +24,12 @@ function projectRoot(): string {
 
 /**
  * The repository's playground with the ports, origins, secrets and mail
- * `dms-control` sets for a run, the module under verification built from the
+ * the e2e kit sets for a run, the module under verification built from the
  * checkout, and a fixture module (`playground`) that forwards trusted calls to
  * the builder's interface.
  */
 export default defineConfig({
-  name: "verify-dms-builder",
+  name: "dms-assistant-builder-e2e",
   modules: {
     playground: {
       source: { type: "local", path: "." },
@@ -40,9 +40,8 @@ export default defineConfig({
     },
     dms: {
       source: {
-        type: "package",
-        package: "@antelopejs/dms",
-        version: ">=0.21.3 <0.22.0",
+        type: "local",
+        path: "node_modules/@antelopejs/dms",
       },
       config: {
         apiBaseUrl: "${@api.API_PUBLIC_BASE_URL}",
@@ -60,6 +59,7 @@ export default defineConfig({
         frontend: { bootstrapSecret: process.env.DMS_BOOTSTRAP_SECRET },
         docsPreview: true,
         builder: { enabled: true, projectRoot: projectRoot() },
+        mcp: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
       },
     },
     mongodb: {

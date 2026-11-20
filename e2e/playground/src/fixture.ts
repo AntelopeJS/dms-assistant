@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { Controller, JSONBody, Post } from "@antelopejs/interface-api";
+import { Controller, Get, JSONBody, Post } from "@antelopejs/interface-api";
 import { GetModel, Model } from "@antelopejs/interface-database-decorators";
 import { UserModel } from "@antelopejs/interface-dms/auth/db";
 import { DEFAULT_TENANT_ID } from "@antelopejs/interface-dms/constants";
 import { RoleModel, UserInviteModel } from "@antelopejs/interface-dms/db";
 import { z } from "zod";
+import { constructs } from "./constructs";
 
 const INVITE_LIFETIME_MS = 3_600_000;
 
@@ -58,5 +59,10 @@ export class VerifyAiFixtureController extends Controller("/verify-ai") {
     if (user === undefined) return { updated: false };
     await users.update(user._id, { name });
     return { updated: true };
+  }
+
+  @Get("/app-constructs")
+  appConstructs() {
+    return { constructs: constructs() };
   }
 }

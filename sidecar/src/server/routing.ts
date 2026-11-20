@@ -174,6 +174,7 @@ function sendSnapshotIfKnown(
     send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     return;
   }
+  if (msg.role === ROLE.RELOAD) return;
   send(socket, buildSettingsUpdateEvent(ctx));
   if (msg.conversationId === undefined) return;
   const closure = ctx.conversationStore.closure(msg.conversationId);
@@ -196,6 +197,10 @@ function registerSocket(
 ): void {
   if (msg.role === ROLE.HOST) {
     ctx.hostSocketRegistry.set(socket);
+    return;
+  }
+  if (msg.role === ROLE.RELOAD) {
+    ctx.reloadHold.attach(socket);
     return;
   }
   if (
@@ -502,6 +507,13 @@ const handleSetSettings = on(MESSAGE_TYPES.SET_SETTINGS, (_s, msg, ctx) => {
   applySettingsPatch(ctx, patch);
 });
 
+const handleReloadHoldApplied = on(
+  MESSAGE_TYPES.RELOAD_HOLD_APPLIED,
+  (socket, msg, ctx) => {
+    if (ctx.reloadHold.isHost(socket)) ctx.reloadHold.applied(msg.seq);
+  },
+);
+
 const handleChangeSet = on(
   MESSAGE_TYPES.CHANGE_SET_ACTION,
   async (socket, msg, ctx) => {
@@ -545,6 +557,7 @@ const MESSAGE_HANDLERS = {
   [MESSAGE_TYPES.QUEUE_MOVE]: handleQueueMove,
   [MESSAGE_TYPES.QUEUE_CLEAR]: handleQueueClear,
   [MESSAGE_TYPES.CHANGE_SET_ACTION]: handleChangeSet,
+  [MESSAGE_TYPES.RELOAD_HOLD_APPLIED]: handleReloadHoldApplied,
 } satisfies Partial<Record<AnyClientMessageType["type"], ClientMessageHandler>>;
 
 function parseMessage(raw: string): AnyClientMessageType | null {

@@ -68,26 +68,44 @@ export interface SurfaceBackend extends StreamBackend {
   options: Options;
   /** The surface the running query started with, which a flip of the settings can change. */
   surface: ToolSurface;
+  /** The idle release closed the query: the next turn starts one again. */
+  isReleased: boolean;
   /** Where the DMS MCP launcher of a rebuilt query is found. */
   hostProjectRoot: string;
 }
 
 /**
- * Starts the query again with the surface the live settings give, when it is
- * not the one the running query started with: the CLI fixes its tool list and
- * its MCP servers when it starts, so a flip of Safe mode or Plan only takes
- * effect on the turn that follows, on a query that resumes the same
- * conversation, with the DMS MCP restarted at the new access. Called between
- * turns, so nothing in flight is lost.
+ * Closes the CLI of an idle session, which ends its process. The conversation
+ * lives on in the CLI's own session: `syncToolSurface` starts a query that
+ * resumes it at the next turn. A session with no session id yet has nothing to
+ * resume, so its CLI stays.
+ */
+export function releaseIdleQuery(backend: SurfaceBackend): void {
+  if (backend.sessionId === null || backend.isReleased) return;
+  backend.isReleased = true;
+  backend.queue.close();
+  backend.output.close();
+}
+
+/**
+ * Starts the query again when the idle release closed it, and when the surface
+ * the live settings give is not the one the running query started with: the
+ * CLI fixes its tool list and its MCP servers when it starts, so a flip of
+ * Safe mode or Plan only takes effect on the turn that follows, on a query
+ * that resumes the same conversation, with the DMS MCP restarted at the new
+ * access. Called between turns, so nothing in flight is lost.
  */
 export function syncToolSurface(backend: SurfaceBackend): void {
   const settings = backend.live.settings;
   const surface = toolSurfaceFor(settings);
-  if (isSameToolSurface(surface, backend.surface)) return;
+  if (!backend.isReleased && isSameToolSurface(surface, backend.surface))
+    return;
   const previous = backend.queue;
   const queue = createInputQueue();
+  const carried: Options = { ...backend.options };
+  delete carried.effort;
   const base = {
-    ...backend.options,
+    ...carried,
     ...resolveModelOptions(settings),
     permissionMode: resolvePermissionMode(settings),
     disallowedTools: disallowedToolsFor(settings),
@@ -105,6 +123,7 @@ export function syncToolSurface(backend: SurfaceBackend): void {
   backend.queue = queue;
   backend.options = options;
   backend.surface = surface;
+  backend.isReleased = false;
   previous.close();
   if (backend.model.refused !== null) {
     void backend.output.setModel(undefined).catch(() => undefined);

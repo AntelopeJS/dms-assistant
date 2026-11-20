@@ -102,7 +102,7 @@ void test("the manifest declares the dashboard layer, the skills, an exact Codex
 
 void test("the README and the extending guide name every skill folder the package ships (fails a new skill folder neither document names)", () => {
   const folders = skillFolders();
-  for (const doc of ["README.md", "docs/5.extending.md"]) {
+  for (const doc of ["README.md", "docs/8.extending.md"]) {
     const text = readDoc(doc);
     assert.deepEqual(
       folders.filter((name) => !text.includes(`\`${name}\``)),

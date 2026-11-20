@@ -76,6 +76,7 @@
     "e2e": "playwright test -c e2e",
     "e2e:dev": "playwright test -c e2e/playwright.dev.config.ts",
     "e2e:builder": "playwright test -c e2e/builder",
+    "docs:capture": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u ANTHROPIC_BASE_URL CLAUDE_CONFIG_DIR=\"$PWD/docs/capture-login\" XDG_CONFIG_HOME=\"$PWD/node_modules/.cache/docs-capture\" antelopejs-capture",
     "format": "oxfmt . && pnpm --dir frontend-vue format",
     "knip": "knip --dependencies && pnpm --dir sidecar knip",
     "knip:all": "knip",
@@ -90,11 +91,11 @@
   },
   "dependencies": {
     "@antelopejs/agent-skills": ">=0.8.2 <0.9.0",
-    "@antelopejs/dms": "0.21.4-next.939.g641c7fa",
+    "@antelopejs/dms": "0.21.4-next.982.g013b224",
     "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
-    "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
-    "@antelopejs/interface-dms": ">=0.14.6 <0.15.0",
-    "@antelopejs/interface-dms-builder": ">=0.6.1 <0.7.0",
+    "@antelopejs/interface-core": "0.5.2-next.117.gae930be",
+    "@antelopejs/interface-dms": "0.14.7-next.985.g3110f87",
+    "@antelopejs/interface-dms-builder": "0.6.2-next.980.gd957ab9",
     "@anthropic-ai/claude-agent-sdk": "^0.3.316",
     "@anthropic-ai/claude-code": "^2.1.316",
     "@modelcontextprotocol/sdk": "1.29.0",
@@ -102,7 +103,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@antelopejs/core": "~1.24.5",
+    "@antelopejs/core": "1.24.6-next.507.g33ee8fd",
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
     "@antelopejs/tooling-configs": ">=0.8.9 <0.9.0",

@@ -26,3 +26,8 @@ export const { journeys, integrationJourneys } = byRunner(
   },
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/builder/index.ts",
+];

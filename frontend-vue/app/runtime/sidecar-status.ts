@@ -31,7 +31,8 @@ export interface SidecarStatusController {
 	subscribe: (cb: (status: SidecarStatus) => void) => () => void;
 	/**
 	 * The host channel dropped: re-probe now, which also revives an idle-exited
-	 * sidecar, and report `connected` again once it answers.
+	 * sidecar. The status turns `reviving` only when the probe finds the sidecar
+	 * down, since leaving `reviving` makes the tab replace its stream at once.
 	 */
 	reportChannelDown: () => void;
 	/** Probes again from scratch, even after giving up: a restart was asked. */
@@ -165,12 +166,9 @@ export function createSidecarStatusController(
 			};
 		},
 		reportChannelDown: () => {
-			if (status !== SIDECAR_STATUS_CONNECTED) return;
-			// Surface the drop right away (amber dot + spinner) instead of waiting on
-			// the re-probe: that probe awaits a respawn and can take a second or two,
-			// during which the icon would otherwise look healthy. The answer flips
-			// back to connected once the sidecar answers again.
-			probeAgain();
+			if (status !== SIDECAR_STATUS_CONNECTED || disposed) return;
+			resetBackoff(backoff);
+			void read.refresh();
 		},
 		retry: probeAgain,
 		dispose,

@@ -3,7 +3,6 @@ import { buildAskUserTool } from "./tools/ask-user.js";
 import { buildFindPagesUsingTool } from "./tools/find-pages-using.js";
 import { buildGetCurrentPageTool } from "./tools/get-current-page.js";
 import { buildNavigateToPageTool } from "./tools/navigate-to-page.js";
-import { buildPreviewBlocksTool } from "./tools/preview-blocks.js";
 import type { AiMcpServerDeps } from "./types.js";
 
 /**
@@ -30,10 +29,6 @@ export function buildToolDefinitions(
     buildAskUserTool({
       conversationId: deps.conversationId,
       requestQuestion: deps.requestQuestion,
-    }),
-    buildPreviewBlocksTool({
-      showPreview: deps.showPreview,
-      listAttachedImages: deps.listAttachedImages,
     }),
   ];
 }

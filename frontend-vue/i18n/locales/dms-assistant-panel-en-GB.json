@@ -370,26 +370,6 @@
 					"not_running": "The assistant isn't running in this tab."
 				}
 			},
-			"preview": {
-				"eyebrow": "Block preview",
-				"open": "Preview",
-				"open_aria": "Open the block preview: {title}",
-				"blocks": "{count} block | {count} blocks",
-				"variants": "{count} variant | {count} variants",
-				"with_mockup": "vs your mockup",
-				"proposed": "Proposed",
-				"variants_aria": "Variants",
-				"mockup": "Your mockup",
-				"dms_blocks": "DMS blocks",
-				"mockup_missing": "{name} was attached before the chat reloaded, so it can no longer be shown. Attach it again to compare side by side.",
-				"mockup_external": "External image, not loaded in the dashboard.",
-				"mockup_open": "Open the mockup",
-				"fallback_title": "This DMS version cannot draw block previews",
-				"fallback_body": "Update the DMS to see the real blocks. Here is the tree the assistant sent.",
-				"custom_sketch": "Custom sketch — not a DMS block",
-				"sketch_badge": "Custom sketch",
-				"with_sketch": "custom sketch"
-			},
 			"fold": {
 				"open": "Open the assistant"
 			},
@@ -398,8 +378,8 @@
 				"titled": "“{title}” ({name})"
 			},
 			"build": {
-				"message": "Build the mockup {mockup} into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
-				"message_into": "Build the mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one. End your reply with a Markdown link to that page."
+				"message": "Build the mockup {mockup} into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. When you cannot build a block as the mockup has it (a KPI no query computes, say), build nothing else in its place and tell me which block and why. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
+				"message_into": "Build the mockup {mockup} into the existing page {page} with the dms-mockup-build skill. Update that page; do not create a new one. When you cannot build a block as the mockup has it (a KPI no query computes, say), build nothing else in its place and tell me which block and why. End your reply with a Markdown link to that page."
 			},
 			"resolve_comments": {
 				"message": "Resolve the open comments of the mockup {mockup}. These steps are all it takes, no skill needed:\n1. List the open comments with mockup_annotations (status \"open\").\n2. Each comment carries its block's JSON pointer (path) and node: patch the spec with mockup_patch_spec from those, without reading spec.json. A comment with a page and no path is about that whole page.\n3. Resolve each comment you applied with mockup_resolve_annotation. Leave a comment open when you cannot apply it, and ask me your question.\n4. Reply briefly: what changed, and what is still open with its question.",
@@ -471,7 +451,6 @@
 			"configure_query": "Configure query",
 			"remove_query": "Remove query",
 			"search_tools": "Load tools",
-			"show_preview": "Show a preview",
 			"verify_page": "Verifying the page"
 		}
 	}

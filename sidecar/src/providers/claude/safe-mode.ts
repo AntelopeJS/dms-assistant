@@ -15,7 +15,11 @@ import { z } from "zod";
 import { ToolArgsSchema } from "../../agent/edit-targets.js";
 import { sessionToolResultsRoot } from "../../agent/read-access.js";
 import type { ToolCallHooks } from "../../agent/provider.js";
-import { isMutatingTool, isWebTool } from "../../agent/tool-kinds.js";
+import {
+  isLiveReadTool,
+  isMutatingTool,
+  isWebTool,
+} from "../../agent/tool-kinds.js";
 import { effectiveGenerationMode } from "../../builder/capability.js";
 import type { TurnSettings } from "../../state/settings-types.js";
 import {
@@ -66,7 +70,10 @@ function isAutoReviewOrUnstated(call: PreToolUseCall): boolean {
 export interface PreToolUseDeps
   extends
     Omit<GuardScope, "settings">,
-    Pick<ToolCallHooks, "onToolDecision" | "beforeMutation"> {
+    Pick<
+      ToolCallHooks,
+      "onToolDecision" | "beforeMutation" | "beforeLiveRead"
+    > {
   getSettings: () => TurnSettings;
 }
 
@@ -140,6 +147,7 @@ export function buildSafeModeHooks(deps: PreToolUseDeps): SdkHooks {
       return SAFE_MODE_DENIAL;
     }
     if (isMutatingTool(call.tool_name)) await deps.beforeMutation?.();
+    if (isLiveReadTool(call.tool_name)) await deps.beforeLiveRead?.();
     return decideByMode(deps, call, guarded, scope);
   };
   return { [PRE_TOOL_USE_HOOK_EVENT]: [{ hooks: [preToolUse] }] };

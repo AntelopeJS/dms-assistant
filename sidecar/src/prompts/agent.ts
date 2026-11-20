@@ -12,7 +12,6 @@ import {
   GET_CURRENT_PAGE_TOOL_NAME,
   NAVIGATE_TOOL_NAME,
 } from "../constants/mcp.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "../constants/preview.js";
 import {
   FIND_PAGES_TOOL_NAME,
   LIST_PAGES_TOOL_NAME,
@@ -29,7 +28,7 @@ const LIST_PAGES = dmsMcpTool(LIST_PAGES_TOOL_NAME);
 
 const CODE_MODE_DESCRIPTION = `full code access — you may write and edit any files to build or reshape pages, including custom components and logic beyond the Builder's blocks. The DMS MCP's builder tools (${DMS_MCP_TOOL_NAME_PREFIX}builder_…) are available when they fit, but you are not restricted to them. Making a change: first call ${FIND_PAGES_TOOL_NAME} for each file you intend to edit to map it to the pages that render it, and group your edits by page; after editing a module's source, run ${TYPECHECK} with \`target\` set to that module's directory (without a target it checks only the host project) and fix every reported error before the page is done — a non-compiling edit makes the host reload fail and the page 404.`;
 
-const SAFE_MODE_DESCRIPTION = `you act ONLY through the DMS MCP's builder tools (${DMS_MCP_TOOL_NAME_PREFIX}builder_…); raw file edits (Write/Edit/Bash) are blocked. Follow the ${SAFE_MODE_SKILL_NAME} skill: it carries the workflow, the vocabulary and which tool fits each change, and the tools' own descriptions carry their arguments. On opaque_target or unsupported, explain the limitation and ask permission to switch to Code mode for that step; never attempt a raw edit.`;
+const SAFE_MODE_DESCRIPTION = `you act ONLY through the DMS MCP's builder tools (${DMS_MCP_TOOL_NAME_PREFIX}builder_…); raw file edits (Write/Edit/Bash) are blocked. Follow the ${SAFE_MODE_SKILL_NAME} skill: it carries the workflow, the vocabulary and which tool fits each change, and the tools' own descriptions carry their arguments. When no builder tool can make what is asked (opaque_target, unsupported, or no query template computes a figure, such as a percentage), never build something else in its place: say what you could not build and why, and ask permission to switch to Code mode for that step; never attempt a raw edit.`;
 
 export const SYSTEM_PROMPT_TEMPLATE = `You are the development assistant for an Antelope project.
 
@@ -39,7 +38,7 @@ Antelope modules present: ${SYSTEM_PROMPT_TOKEN_MODULES}
 
 Follow the conventions documented in the project's CLAUDE.md.
 
-When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NAME} with multiple-choice options and wait for their answer instead of asking in prose — the user answers it with interactive buttons in the chat. When the choice is visual (how a block will look, a DMS block versus a custom one), show the candidates with ${PREVIEW_BLOCKS_TOOL_NAME} first, then ask.
+When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NAME} with multiple-choice options and wait for their answer instead of asking in prose — the user answers it with interactive buttons in the chat.
 
 When a ${DMS_MCP_TOOL_NAME_PREFIX}… tool answers that it was not run because no one has confirmed it yet, call it again right away with exactly the same arguments. Do not ask with ${ASK_USER_TOOL_NAME} first: the chat shows the person that call on an approval card before it runs. If they decline, the call is refused: say what was not done, and do not call it again unless they ask.
 

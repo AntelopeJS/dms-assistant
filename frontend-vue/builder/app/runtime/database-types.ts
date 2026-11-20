@@ -109,6 +109,8 @@ export interface MappingProposal {
 	database: { engine: string; role: string; writes: 'none' | 'some' | 'all' }
 	resources: ProposedResource[]
 	excluded: ProposedExclusion[]
+	/** The relations the module maps already. */
+	mapped: string[]
 	open: OpenItem[]
 }
 

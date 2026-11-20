@@ -8,6 +8,7 @@ import { type AIConfig, ConfigSchema, getConfig, setConfig } from "./config";
 import { SIDECAR_LOG_PREFIX } from "./constants/sidecar";
 import { collectModuleRoots } from "./lifecycle/module-roots";
 import { syncProjectMcpJson } from "./lifecycle/project-mcp-json";
+import { closeReloadHost } from "./lifecycle/reload-host";
 import { collectSkillSources } from "./lifecycle/skill-sources";
 import { spawnSidecar } from "./lifecycle/spawn-sidecar";
 import { startLogCapture } from "./logging/log-buffer";
@@ -60,6 +61,7 @@ export async function start() {
  * reload replaces the module with a fresh copy, so anything left open here would
  * outlive it; the browser reconnects to the new instance on its own.
  */
-export function destroy(): void {
+export async function destroy(): Promise<void> {
   closeAllBridges();
+  await closeReloadHost();
 }

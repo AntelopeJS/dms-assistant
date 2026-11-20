@@ -126,3 +126,19 @@ export const { journeys, integrationJourneys } = byRunner(
   ...storageJourneys,
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/changes.ts",
+  "src/routes/undo-confirm.ts",
+  "src/pages/changes/**",
+  "src/types/changes.ts",
+  "sidecar/src/checkpoints/**",
+  "sidecar/src/state/change-sets.ts",
+  "sidecar/src/state/store.ts",
+  "sidecar/src/state/stored-schemas.ts",
+  "sidecar/src/state/conversations.ts",
+  "sidecar/src/constants/checkpoints.ts",
+  "sidecar/src/server/change-set-actions.ts",
+  "frontend-vue/app/views/**",
+];

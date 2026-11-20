@@ -7,5 +7,6 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - "@antelopejs/interface-*"
 overrides:
+  "@antelopejs/interface-core": "$@antelopejs/interface-core"
   "@antelopejs/dms>@antelopejs/interface-dms": "$@antelopejs/interface-dms"
   "@antelopejs/dms>@antelopejs/interface-dms-builder": "$@antelopejs/interface-dms-builder"

@@ -7,7 +7,6 @@ import {
 } from "../constants/conversation";
 import type {
 	AssistantMessage,
-	BlockPreviewMessage,
 	ConversationMessage,
 	ErrorMessage,
 	MessageAttachment,
@@ -15,11 +14,7 @@ import type {
 	ToolStatus,
 	UserMessage,
 } from "../types/conversation";
-import type {
-	BlockPreview,
-	SnapshotMessage,
-	ToolOutcome,
-} from "../types/protocol";
+import type { SnapshotMessage, ToolOutcome } from "../types/protocol";
 import { newUuid } from "./ids";
 
 const STOPPED_OUTCOME: ToolOutcome = "stopped";
@@ -84,17 +79,6 @@ export function buildLocalError(
 		...buildErrorMessage("", isRetryable),
 		contentKey,
 		isLocal: true,
-	};
-}
-
-export function buildBlockPreviewMessage(
-	preview: BlockPreview,
-): BlockPreviewMessage {
-	return {
-		id: newUuid(),
-		role: MESSAGE_ROLES.BLOCK_PREVIEW,
-		preview,
-		timestampMs: preview.timestampMs,
 	};
 }
 
@@ -240,11 +224,6 @@ function addQuestionAnswer(build: SnapshotBuild, snap: SnapshotMessage): void {
 	});
 }
 
-function addBlockPreview(build: SnapshotBuild, snap: SnapshotMessage): void {
-	if (snap.preview === undefined) return;
-	build.out.push(buildBlockPreviewMessage(snap.preview));
-}
-
 const SNAPSHOT_BUILDERS: Record<
 	string,
 	(build: SnapshotBuild, snap: SnapshotMessage) => void
@@ -257,7 +236,6 @@ const SNAPSHOT_BUILDERS: Record<
 	[MESSAGE_ROLES.NOTICE]: addNotice,
 	[MESSAGE_ROLES.CHANGE_SET]: addChangeSet,
 	[MESSAGE_ROLES.QUESTION_ANSWER]: addQuestionAnswer,
-	[MESSAGE_ROLES.BLOCK_PREVIEW]: addBlockPreview,
 };
 
 /**

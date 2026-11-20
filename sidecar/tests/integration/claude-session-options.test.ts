@@ -92,7 +92,7 @@ describe("the options a Claude session starts with", () => {
   }
 
   it(
-    "starts the DMS MCP over its launcher beside the chat's own server, with the DMS MCP's navigate_to_page and preview_blocks hidden (fails a session without the DMS MCP, one that does not name the chat as its client, or one that shows two tools of one name)",
+    "starts the DMS MCP over its launcher beside the chat's own server, with the DMS MCP's navigate_to_page hidden (fails a session without the DMS MCP, one that does not name the chat as its client, or one that shows two tools of one name)",
     async () => {
       const session = await startedSession([]);
 
@@ -114,15 +114,9 @@ describe("the options a Claude session starts with", () => {
         },
         "dms-assistant": { type: "sdk" },
       });
-      expect(session?.disallowedTools).toEqual(
-        expect.arrayContaining([
-          "mcp__dms__navigate_to_page",
-          "mcp__dms__preview_blocks",
-        ]),
-      );
       expect(
         session?.disallowedTools?.filter((name) => name.startsWith("mcp__")),
-      ).toHaveLength(2);
+      ).toEqual(["mcp__dms__navigate_to_page"]);
     },
     TEST_TIMEOUT_MS,
   );

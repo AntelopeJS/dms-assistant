@@ -33,9 +33,8 @@ export default defineConfig({
     },
     dms: {
       source: {
-        type: "package",
-        package: "@antelopejs/dms",
-        version: ">=0.21.3 <0.22.0",
+        type: "local",
+        path: "node_modules/@antelopejs/dms",
       },
       config: {
         homepage: "/home",

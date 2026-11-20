@@ -13,6 +13,7 @@ import {
 } from "../../src/mcp/http-binding.js";
 import { isProviderAvailable } from "../../src/providers/registry.js";
 import type { ProviderHostRuntime } from "../../src/providers/types.js";
+import type { IdleShutdownController } from "../../src/server/idle-shutdown.js";
 import { createHostSocketRegistry } from "../../src/server/host-socket-registry.js";
 import {
   checkpointExcludes,
@@ -67,6 +68,8 @@ export interface HarnessOptions {
   skillDirs?: SkillSource[];
   /** The contents of `state.json` the conversation store loads at start. */
   storedState?: string;
+  /** Told of every connection that counts toward the sidecar's idle shutdown. */
+  idleController?: IdleShutdownController;
 }
 
 export interface WsHarness {
@@ -214,6 +217,7 @@ export async function startWsHarness(
     navigationCompleter,
     permissionBus: options.permissionBus,
     chatSocketRegistry: options.chatSocketRegistry,
+    idleController: options.idleController,
   });
   return {
     port,

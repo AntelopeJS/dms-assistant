@@ -37,7 +37,10 @@ import {
   type SessionControls,
 } from "../../agent/session.js";
 import { buildSystemPrompt } from "../../agent/system-prompt.js";
-import { TURN_IDLE_TIMEOUT_MS } from "../../constants/agent.js";
+import {
+  IDLE_PROCESS_RELEASE_MS,
+  TURN_IDLE_TIMEOUT_MS,
+} from "../../constants/agent.js";
 import {
   SDK_INCLUDE_PARTIAL_MESSAGES,
   SDK_SETTING_SOURCES_ISOLATED,
@@ -62,6 +65,7 @@ import { buildTurnContent, type TurnContent } from "./attachments.js";
 import { isFirstPartyMcpTool } from "./tool-guard.js";
 import {
   disallowedToolsFor,
+  releaseIdleQuery,
   type SurfaceBackend,
   syncToolSurface,
   toolSurfaceFor,
@@ -406,6 +410,7 @@ function applyBackendSettings(
   settings: TurnSettings,
 ): void {
   backend.live.settings = settings;
+  if (backend.isReleased) return;
   const { model, effort } = resolveModelOptions(settings);
   if (backend.model.refused !== model) {
     backend.model.refused = null;
@@ -475,6 +480,7 @@ async function buildSessionOptions(
       hostProjectRoot: ctx.hostProjectRoot,
       onToolDecision: ctx.onToolDecision,
       beforeMutation: ctx.beforeMutation,
+      beforeLiveRead: ctx.beforeLiveRead,
     }),
     writeGroups,
     canUseTool: resolveCanUseTool(ctx, readRoots, () => live.settings),
@@ -515,6 +521,7 @@ async function createProviderSession(
     sdk,
     options,
     surface: toolSurfaceFor(ctx.settings),
+    isReleased: false,
   };
   const state: SessionState = {
     session: createAgentSession({
@@ -522,6 +529,10 @@ async function createProviderSession(
       controls: buildSessionControls(backend),
       abortController,
       onDisposed: ctx.onDisposed,
+      idleRelease: {
+        afterMs: IDLE_PROCESS_RELEASE_MS,
+        release: () => releaseIdleQuery(backend),
+      },
     }),
     backend,
     timeoutMs: config.timeoutMs,

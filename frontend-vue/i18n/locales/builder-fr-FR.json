@@ -26,6 +26,7 @@
 					"failed": "L’analyse a échoué : {error}",
 					"no_proposal": "aucune proposition",
 					"none": "Aucune table que l’utilisateur {role} puisse lire.",
+					"mapped": "Toutes les tables sont déjà mappées ({tables}). Ouvrez les pages existantes ou démarrez une nouvelle maquette.",
 					"done": "{tables} lues."
 				}
 			},

@@ -18,7 +18,7 @@ export type ConnectCheck =
 	| {
 			key: "schema";
 			status: CheckStatus;
-			problem?: "empty" | "failed" | "gave-up";
+			problem?: "empty" | "mapped" | "failed" | "gave-up";
 			/** The project answers without the connection, so only a restart loads it. */
 			restart?: boolean;
 			error?: string;
@@ -124,6 +124,8 @@ function schemaCheck({
 			error: failedRead(view),
 		};
 	}
+	if (view.allMapped)
+		return { key: "schema", status: "failed", problem: "mapped" };
 	if (view.empty) return { key: "schema", status: "failed", problem: "empty" };
 	return { key: "schema", status: view.fork ? "done" : "running" };
 }

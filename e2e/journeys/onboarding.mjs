@@ -94,3 +94,12 @@ export const { journeys, integrationJourneys } = byRunner(
   ...connectJourneys,
   ]),
 );
+
+/** The user-facing files these journeys cover, as globs relative to the repository root. */
+export const covers = [
+  "src/routes/onboarding.ts",
+  "src/routes/owner-ui.ts",
+  "sidecar/src/server/onboarding.ts",
+  "sidecar/src/providers/login.ts",
+  "frontend-vue/app/onboarding/**",
+];

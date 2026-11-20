@@ -12,7 +12,6 @@ import {
   NAVIGATE_TOOL_NAME,
 } from "./mcp.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
-import { PREVIEW_BLOCKS_TOOL_NAME } from "./preview.js";
 import { TYPECHECK_TOOL_NAME } from "./typecheck.js";
 
 /**
@@ -231,9 +230,19 @@ export const PROJECT_READ_TOOL_NAMES: readonly string[] = [
   ...DATABASE_TOOL_NAMES,
 ];
 
+/**
+ * The tools that read the running app, so they need every write so far
+ * reloaded first: `builder_map_resources` waits for its own reload, and the
+ * other two look at the page the dev watcher serves.
+ */
+export const LIVE_READ_TOOL_NAMES: readonly string[] = [
+  PAGE_VERIFY_TOOL_NAME,
+  "builder_map_resources",
+  NAVIGATE_TOOL_NAME,
+];
+
 export const ASSISTANT_TOOL_NAMES: readonly string[] = [
   ASK_USER_TOOL_NAME,
-  PREVIEW_BLOCKS_TOOL_NAME,
   "TodoWrite",
   "Skill",
   "Task",

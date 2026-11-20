@@ -23,6 +23,8 @@ export interface ActiveTurn {
   approvalsNeeded: number;
   builderOps: number;
   usage: TokenUsage;
+  /** The turn is finishing: a hook that settles from now on takes no reload hold. */
+  isEnding: boolean;
 }
 
 interface BeginTurnOptions {
@@ -46,14 +48,16 @@ export interface TurnRegistry {
   stopAutoFix(conversationId: string): void;
   isAutoFixStopped(conversationId: string): boolean;
   resetAutoFix(conversationId: string): void;
-  lastError(): string | undefined;
-  recordError(message: string): void;
+  /** The newest failure among `conversationIds`, or none when none of them failed. */
+  lastError(conversationIds: Iterable<string>): string | undefined;
+  recordError(conversationId: string, message: string): void;
 }
 
 export function createTurnRegistry(): TurnRegistry {
   const turns = new Map<string, ActiveTurn>();
   const autoFixStopped = new Set<string>();
-  let lastError: string | undefined;
+  let errorCount = 0;
+  const errors = new Map<string, { message: string; order: number }>();
   return {
     begin(options) {
       const turn: ActiveTurn = {
@@ -63,6 +67,7 @@ export function createTurnRegistry(): TurnRegistry {
         approvalsNeeded: 0,
         builderOps: 0,
         usage: EMPTY_TOKEN_USAGE,
+        isEnding: false,
       };
       turns.set(options.conversationId, turn);
       return turn;
@@ -81,9 +86,22 @@ export function createTurnRegistry(): TurnRegistry {
     resetAutoFix: (conversationId) => {
       autoFixStopped.delete(conversationId);
     },
-    lastError: () => lastError,
-    recordError: (message) => {
-      lastError = message;
+    lastError: (conversationIds) => {
+      let newest: { message: string; order: number } | undefined;
+      for (const id of conversationIds) {
+        const error = errors.get(id);
+        if (
+          error !== undefined &&
+          (newest === undefined || error.order > newest.order)
+        ) {
+          newest = error;
+        }
+      }
+      return newest?.message;
+    },
+    recordError: (conversationId, message) => {
+      errorCount += 1;
+      errors.set(conversationId, { message, order: errorCount });
     },
   };
 }

@@ -7,7 +7,6 @@ import type {
 import type {
 	AllowedBy,
 	AttachmentMeta,
-	BlockPreview,
 	ChangeSetSummary,
 	ConversationModeState,
 	Notice,
@@ -19,7 +18,6 @@ import type {
 import type { PendingAttachment } from "../utils/attachments";
 import {
 	buildAssistantMessage,
-	buildBlockPreviewMessage,
 	buildErrorMessage,
 	buildUserMessage,
 	closedStatus,
@@ -92,10 +90,6 @@ interface NoticeEvent {
 
 interface ChangeSetEvent {
 	changeSet?: ChangeSetSummary;
-}
-
-interface BlockPreviewEvent {
-	preview?: BlockPreview;
 }
 
 interface UsageEvent {
@@ -206,8 +200,7 @@ function isTurnStart(msg: ConversationMessage): boolean {
 function isOutOfTurn(msg: ConversationMessage): boolean {
 	return (
 		msg.role === MESSAGE_ROLES.NOTICE ||
-		msg.role === MESSAGE_ROLES.QUESTION_ANSWER ||
-		msg.role === MESSAGE_ROLES.BLOCK_PREVIEW
+		msg.role === MESSAGE_ROLES.QUESTION_ANSWER
 	);
 }
 
@@ -368,20 +361,6 @@ function applyChangeSet(state: ConversationState, event: ChangeSetEvent): void {
 	});
 }
 
-function appendBlockPreview(
-	state: ConversationState,
-	event: BlockPreviewEvent,
-): void {
-	const preview = event.preview;
-	if (preview === undefined) return;
-	const isKnown = state.messages.value.some(
-		(msg) =>
-			msg.role === MESSAGE_ROLES.BLOCK_PREVIEW && msg.preview.id === preview.id,
-	);
-	if (isKnown) return;
-	appendMessage(state, buildBlockPreviewMessage(preview));
-}
-
 function applyUsage(state: ConversationState, event: UsageEvent): void {
 	if (event.model !== undefined) state.model.value = event.model;
 	if (typeof event.totalTokens !== "number") return;
@@ -403,7 +382,6 @@ const EVENT_HANDLERS: Record<string, EventHandler> = {
 	[SERVER_EVENT_TYPES.NOTICE]: appendNotice,
 	[SERVER_EVENT_TYPES.CHANGE_SET]: applyChangeSet,
 	[SERVER_EVENT_TYPES.USAGE]: applyUsage,
-	[SERVER_EVENT_TYPES.BLOCK_PREVIEW]: appendBlockPreview,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

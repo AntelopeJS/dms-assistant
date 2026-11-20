@@ -45,6 +45,7 @@ const SEED: MappingProposal = {
 		resource('public.suppliers', false),
 	],
 	excluded: [],
+	mapped: [],
 	open: [
 		item('label:customers', 'label', { relation: 'public.customers' }),
 		item('label:orders', 'label', { relation: 'public.orders' }),
@@ -155,8 +156,22 @@ describe('the build steps, derived from the three answers', () => {
 		}
 		const view = buildState(answers)
 		expect(view.empty).toBe(true)
+		expect(view.allMapped).toBe(false)
 		expect(view.fork).toBeUndefined()
 		expect(view.steps[3]?.detail).toBe('No tables user reader can read.')
+	})
+
+	it('says every table is mapped already when the proposal holds none and the module maps some', () => {
+		const answers: BuildAnswers = {
+			declared: true,
+			listed: LISTED,
+			analysis: job('done', { ...SEED, resources: [], open: [], mapped: ['orders', 'users'] }),
+		}
+		const view = buildState(answers)
+		expect(view.allMapped).toBe(true)
+		expect(view.empty).toBe(false)
+		expect(view.fork).toBeUndefined()
+		expect(view.steps[3]?.detail).toContain('Every table is mapped already')
 	})
 
 	it('fails the reload after 3 minutes with how to restart by hand, and not before', () => {

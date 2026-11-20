@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
+  OWNER,
   answer,
   reset,
   textOf,
@@ -27,7 +28,7 @@ void test("answers the status and its banner in the bytes the chat and Settings 
   answer("GET", "/status", 200, ONLINE_STATUS);
   const status = new harness.routes.AIStatusController();
   assert.deepEqual(
-    [textOf(await status.status()), textOf(await status.banner())],
+    [textOf(await status.status(OWNER)), textOf(await status.banner(OWNER))],
     [
       '{"status":"ready","provider":"claude","builderAvailable":true,"mode":"normal","generationMode":"safe","workingConversations":0,"pendingApprovals":0,"pendingQuestions":1,"port":4123,"lastError":"Agent exited","isRunning":true,"hasGivenUp":false,"disabled":false}',
       '{"tone":"error","icon":"i-ph-warning-octagon","title":"$dms_assistant.status.banner.last_error.title","description":{"key":"$dms_assistant.status.banner.last_error.description","params":{"error":"Agent exited"}},"actions":[{"label":"$dms_assistant.status.banner.last_error.action","to":"/modules/ai/activity","icon":"i-ph-clock-counter-clockwise"}]}',

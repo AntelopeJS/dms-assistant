@@ -5,10 +5,18 @@ import {
 
 const DASHBOARD = "/helio/dashboard";
 const POPUP = '[role="dialog"]';
+const MOCKUP = "/mockup?name=helio-ops";
+const OPEN_PIN = '[data-dms-mockup-pin="split-installations"]';
 
 /** The onboarding window opens on every page until the project has content: these steps wait for it, then close it. */
 const CLOSE_ONBOARDING: CaptureStep[] = [
   { action: "wait", selector: 'text="Your assistant is ready"' },
+  { action: "press", key: "Escape" },
+];
+
+/** Closes the onboarding window on whichever view it opens: Continue once the project holds a mockup, else the ready view. */
+const CLOSE_POPUP: CaptureStep[] = [
+  { action: "wait", selector: POPUP },
   { action: "press", key: "Escape" },
 ];
 
@@ -22,7 +30,9 @@ function onboardingSteps(...until: CaptureStep[]): CaptureStep[] {
 
 /**
  * The screenshots of the dms-assistant docs, taken on the Helio demo by `pnpm docs:capture`. The Helio setup
- * runs first and creates the owner every other scene is signed in as.
+ * runs first and creates the owner every other scene is signed in as. The scenes run in order on one demo:
+ * the mockup scenes come first, then `ai-mockups-empty` deletes the demo's mockup, since the onboarding
+ * opens on Continue instead of its paths once the project holds one.
  */
 export default defineScenes([
   {
@@ -55,6 +65,61 @@ export default defineScenes([
       { action: "wait", selector: 'button:has-text("Open the dashboard")' },
       { action: "click", selector: 'button:has-text("Open the dashboard")' },
     ],
+  },
+  {
+    id: "ai-mockups",
+    route: "/mockups",
+    steps: [
+      ...CLOSE_POPUP,
+      { action: "wait", selector: 'text="Helio operations"' },
+    ],
+    output: "docs/images/captures/ai-mockups.webp",
+  },
+  {
+    id: "ai-mockup-overview",
+    route: MOCKUP,
+    steps: [
+      ...CLOSE_POPUP,
+      { action: "wait", selector: "[data-dms-mockup-overview-frame]" },
+    ],
+    output: "docs/images/captures/ai-mockup-overview.webp",
+  },
+  {
+    id: "ai-mockup-comment",
+    route: `${MOCKUP}&page=overview`,
+    steps: [
+      ...CLOSE_POPUP,
+      { action: "click", selector: OPEN_PIN },
+      { action: "wait", selector: "[data-dms-mockup-pin-card]" },
+    ],
+    output: "docs/images/captures/ai-mockup-comment.webp",
+  },
+  {
+    id: "ai-mockup-resolve-bar",
+    route: `${MOCKUP}&page=overview`,
+    steps: [
+      ...CLOSE_POPUP,
+      { action: "wait", selector: "[data-dms-mockup-resolve-bar]" },
+    ],
+    crop: "[data-dms-mockup-resolve-bar]",
+    output: "docs/images/captures/ai-mockup-resolve-bar.webp",
+  },
+  {
+    id: "ai-mockups-empty",
+    route: "/mockups",
+    steps: [
+      ...CLOSE_POPUP,
+      {
+        action: "click",
+        selector: '[data-dms-mockup-card="helio-ops"] [data-dms-mockup-menu]',
+      },
+      { action: "click", selector: 'text="Delete"' },
+      { action: "wait", selector: '[data-confirm-action="confirm"]' },
+      { action: "press", key: "Tab" },
+      { action: "press", key: "Enter" },
+      { action: "wait", selector: "div > button[data-dms-mockup-new]" },
+    ],
+    output: "docs/images/captures/ai-mockups-empty.webp",
   },
   {
     id: "ai-onboarding-ready",
@@ -94,12 +159,6 @@ export default defineScenes([
     ),
     crop: POPUP,
     output: "docs/images/captures/ai-onboarding-scratch.webp",
-  },
-  {
-    id: "ai-mockups",
-    route: "/mockups",
-    steps: CLOSE_ONBOARDING,
-    output: "docs/images/captures/ai-mockups.webp",
   },
   {
     id: "ai-changes",

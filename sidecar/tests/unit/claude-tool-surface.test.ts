@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import type { Options } from "@anthropic-ai/claude-agent-sdk";
+import type { Options, Query } from "@anthropic-ai/claude-agent-sdk";
+import { createInputQueue } from "../../src/providers/claude/input-queue.js";
+import { createModelTrack } from "../../src/providers/claude/model-fallback.js";
 import { resolveModelOptions } from "../../src/providers/claude/config.js";
 import {
   hiddenToolsFor,
@@ -52,27 +54,26 @@ describe("Safe mode without the Builder", () => {
 describe("the query a Claude session starts again", () => {
   function backendWith(settings: TurnSettings, options: Options) {
     const started: Options[] = [];
-    const sdk = {
-      query: ({ options: given }: { options: Options }) => {
-        started.push(given);
-        return { close: () => undefined };
-      },
+    const query = ({ options: given = {} }: { options?: Options }) => {
+      started.push(given);
+      // SAFETY: syncToolSurface reads only `close` and `setModel` of the query it starts.
+      return { close: () => undefined } as Query;
     };
-    const backend = {
-      sdk,
+    const backend: SurfaceBackend = {
+      sdk: { query },
       options,
       surface: toolSurfaceFor(settings),
       isReleased: true,
       hostProjectRoot: "/project",
       sessionId: "session-1",
       live: { settings },
-      queue: { close: () => undefined },
-      output: { close: () => undefined },
-      model: { refused: null, announceFrom: null, active: null },
+      queue: createInputQueue(),
+      // SAFETY: the released query is only closed, never read.
+      output: { close: () => undefined } as Query,
+      model: createModelTrack(),
       lastTurn: null,
     };
-    // SAFETY: the fake carries only the members syncToolSurface reads.
-    return { backend: backend as SurfaceBackend, started };
+    return { backend, started };
   }
 
   it("carries no effort once thinking is off (fails a restart that keeps the effort of the previous thinking level)", () => {

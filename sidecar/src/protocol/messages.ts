@@ -14,9 +14,9 @@ import {
 } from "../state/settings-types.js";
 import { PROVIDER_NAMES } from "../state/types.js";
 
-export const ROLES = ["chat", "host"] as const;
+export const ROLES = ["chat", "host", "reload"] as const;
 export type Role = (typeof ROLES)[number];
-export const ROLE = { CHAT: "chat", HOST: "host" } as const;
+export const ROLE = { CHAT: "chat", HOST: "host", RELOAD: "reload" } as const;
 
 export const MESSAGE_TYPES = {
   HELLO: "hello",
@@ -43,6 +43,7 @@ export const MESSAGE_TYPES = {
   STOP_AUTOFIX: "stop_autofix",
   RETRY_TURN: "retry_turn",
   CHANGE_SET_ACTION: "change_set_action",
+  RELOAD_HOLD_APPLIED: "reload_hold_applied",
 } as const;
 
 /**
@@ -270,6 +271,15 @@ export const ChangeSetActionMsg = z.object({
   includeLater: z.boolean().optional(),
 });
 
+/**
+ * Reload host -> server: the module applied the `reload_hold` event with this
+ * `seq` (the hold or release finished, reloads included).
+ */
+export const ReloadHoldAppliedMsg = z.object({
+  type: z.literal(MESSAGE_TYPES.RELOAD_HOLD_APPLIED),
+  seq: z.number().int().nonnegative(),
+});
+
 export const HostStateUpdateMsg = z.object({
   type: z.literal(MESSAGE_TYPES.HOST_STATE_UPDATE),
   currentPage: z.object({
@@ -388,6 +398,7 @@ export const AnyClientMessage = z.discriminatedUnion("type", [
   StopAutoFixMsg,
   RetryTurnMsg,
   ChangeSetActionMsg,
+  ReloadHoldAppliedMsg,
 ]);
 export type AnyClientMessageType = z.infer<typeof AnyClientMessage>;
 export type ClientHelloMsgType = z.infer<typeof ClientHelloMsg>;
@@ -415,5 +426,6 @@ export type PermissionRuleType = z.infer<typeof PermissionRuleSchema>;
 export type SettingsPatchType = z.infer<typeof SettingsPatchSchema>;
 export type SetConversationModeMsgType = z.infer<typeof SetConversationModeMsg>;
 export type ChangeSetActionMsgType = z.infer<typeof ChangeSetActionMsg>;
+export type ReloadHoldAppliedMsgType = z.infer<typeof ReloadHoldAppliedMsg>;
 export type PermissionDecisionValue =
   (typeof PERMISSION_DECISION_VALUES)[number];

@@ -8,6 +8,7 @@ import {
 import type { ToolDecision } from "../../agent/provider.js";
 import {
   asksBeforeBlockRemoval,
+  isLiveReadTool,
   isMutatingTool,
 } from "../../agent/tool-kinds.js";
 import {
@@ -66,6 +67,8 @@ export interface CodexPermissionDeps {
   onToolDecision?: (decision: ToolDecision) => void;
   /** Awaited before an approved change runs (the turn's checkpoint). */
   beforeMutation?: () => Promise<void>;
+  /** Awaited before a tool that reads the running app, after `beforeMutation`. */
+  beforeLiveRead?: () => Promise<void>;
   isHeldCall?: (call: ToolCallSubject) => boolean;
 }
 
@@ -161,6 +164,13 @@ function asksPerson(
   return deps.isHeldCall?.(subject) === true;
 }
 
+async function beforeLiveReadOf(
+  deps: CodexPermissionDeps,
+  toolName: string,
+): Promise<void> {
+  if (isLiveReadTool(toolName)) await deps.beforeLiveRead?.();
+}
+
 async function askBeforeMcpCall(
   deps: CodexPermissionDeps,
   decision: ToolDecision,
@@ -175,6 +185,7 @@ async function askBeforeMcpCall(
   });
   if (!outcome.isAllowed) return DECLINED_ELICITATION;
   await deps.beforeMutation?.();
+  await beforeLiveReadOf(deps, decision.toolName);
   return ACCEPTED_ELICITATION;
 }
 
@@ -191,6 +202,7 @@ async function answerElicitation(
   if (asksPerson(deps, decision)) return askBeforeMcpCall(deps, decision);
   deps.onToolDecision?.(decision);
   if (isMutatingTool(decision.toolName)) await deps.beforeMutation?.();
+  await beforeLiveReadOf(deps, decision.toolName);
   return ACCEPTED_ELICITATION;
 }
 

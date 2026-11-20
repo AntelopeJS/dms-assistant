@@ -32,6 +32,7 @@ function setup(
   calls: StartedCall[],
   beforeMutation?: () => Promise<void>,
   isHeldCall?: (call: ToolCallSubject) => boolean,
+  beforeLiveRead?: () => Promise<void>,
 ) {
   const adapter = createCodexAdapter();
   for (const call of calls) {
@@ -55,6 +56,7 @@ function setup(
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: (decision) => decisions.push(decision),
     beforeMutation,
+    beforeLiveRead,
     isHeldCall,
   });
   return { handler, decisions, requestPermission };
@@ -186,6 +188,48 @@ describe("a dms-assistant tool's call consent", () => {
     expect(decisions.map((decision) => decision.callId)).toEqual([
       "call_create",
     ]);
+  });
+});
+
+describe("a DMS MCP call that reads the running app", () => {
+  it("releases the reload hold after the checkpoint for a live read, and for no other call (fails a consent that never lets the reloads run before the app is read)", async () => {
+    const order: string[] = [];
+    const verify = {
+      id: "call_verify",
+      server: DMS_SERVER,
+      tool: "page_verify",
+      arguments: {},
+    };
+    const mapResources = {
+      id: "call_map",
+      server: DMS_SERVER,
+      tool: "builder_map_resources",
+      arguments: { mapping: "orders" },
+    };
+    const { handler } = setup(
+      TURN_SETTINGS,
+      [PAGE_CALL, CREATE_CALL, verify, mapResources],
+      async () => {
+        order.push("checkpoint");
+      },
+      undefined,
+      async () => {
+        order.push("release");
+      },
+    );
+    await handler.handle(
+      toolConsent(DMS_ASSISTANT_SERVER, "get_current_page", {}),
+    );
+    await handler.handle(
+      toolConsent(DMS_SERVER, "builder_create_page", CREATE_CALL.arguments),
+    );
+    expect(order).toEqual(["checkpoint"]);
+    await handler.handle(toolConsent(DMS_SERVER, "page_verify", {}));
+    expect(order).toEqual(["checkpoint", "release"]);
+    await handler.handle(
+      toolConsent(DMS_SERVER, "builder_map_resources", mapResources.arguments),
+    );
+    expect(order).toEqual(["checkpoint", "release", "checkpoint", "release"]);
   });
 });
 

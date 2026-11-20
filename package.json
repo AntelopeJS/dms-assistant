@@ -93,7 +93,7 @@
     "@antelopejs/agent-skills": ">=0.8.2 <0.9.0",
     "@antelopejs/dms": "0.21.4-next.982.g013b224",
     "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
-    "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
+    "@antelopejs/interface-core": "0.5.2-next.117.gae930be",
     "@antelopejs/interface-dms": "0.14.7-next.980.gd957ab9",
     "@antelopejs/interface-dms-builder": "0.6.2-next.980.gd957ab9",
     "@anthropic-ai/claude-agent-sdk": "^0.3.316",
@@ -103,7 +103,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@antelopejs/core": "~1.24.5",
+    "@antelopejs/core": "1.24.6-next.507.g33ee8fd",
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
     "@antelopejs/tooling-configs": ">=0.8.9 <0.9.0",

@@ -480,6 +480,7 @@ async function buildSessionOptions(
       hostProjectRoot: ctx.hostProjectRoot,
       onToolDecision: ctx.onToolDecision,
       beforeMutation: ctx.beforeMutation,
+      beforeLiveRead: ctx.beforeLiveRead,
     }),
     writeGroups,
     canUseTool: resolveCanUseTool(ctx, readRoots, () => live.settings),

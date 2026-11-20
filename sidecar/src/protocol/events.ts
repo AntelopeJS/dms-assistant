@@ -21,6 +21,7 @@ import {
 } from "../state/settings-types.js";
 import { PROVIDER_NAMES } from "../state/types.js";
 import { JsonValueSchema } from "./json.js";
+import { ReloadHoldEvent } from "./reload-hold.js";
 import {
   PERMISSION_DECISION_VALUES,
   PermissionRuleSchema,
@@ -591,9 +592,9 @@ export const AnyServerEvent = z.discriminatedUnion("type", [
   NoticeEvent,
   ChangeSetEvent,
   UsageEvent,
+  ReloadHoldEvent,
 ]);
 export type AnyServerEventType = z.infer<typeof AnyServerEvent>;
-export type RunResumedEventType = z.infer<typeof RunResumedEvent>;
 export type RunProgressEventType = z.infer<typeof RunProgressEvent>;
 export type ConversationSnapshotEventType = z.infer<
   typeof ConversationSnapshotEvent
@@ -616,7 +617,4 @@ export type HeldPreviewType = z.infer<typeof HeldPreviewSchema>;
 export type HeldToolPreviewType = z.infer<typeof HeldToolPreviewSchema>;
 export type ActiveRuleType = z.infer<typeof ActiveRuleSchema>;
 export type ConversationModeType = z.infer<typeof ConversationModeSchema>;
-export type ConversationModeEventType = z.infer<typeof ConversationModeEvent>;
 export type ConversationSummaryType = z.infer<typeof ConversationSummarySchema>;
-export type ChangeSetEventType = z.infer<typeof ChangeSetEvent>;
-export type NoticeEventType = z.infer<typeof NoticeEvent>;

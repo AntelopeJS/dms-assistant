@@ -19,6 +19,7 @@ import {
   CHANNEL_ROUTE_PREFIX,
   CONNECTION_ID_PARAM,
 } from "../constants/channels";
+import { ensureReloadHost } from "../lifecycle/reload-host";
 import { actorName } from "./actor";
 
 /**
@@ -34,6 +35,7 @@ export class AIChannelController extends Controller(CHANNEL_ROUTE_PREFIX) {
     @Context() ctx: RequestContext,
     @AuthRawUser() user: User,
   ): Promise<HTTPResult | undefined> {
+    void ensureReloadHost();
     return openChannel(ctx, { userId: user._id, name: actorName(user) });
   }
 

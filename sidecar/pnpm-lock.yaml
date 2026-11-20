@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  '@antelopejs/interface-core': 0.5.2-next.117.gae930be
   '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.980.gd957ab9
   '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.980.gd957ab9
 
@@ -30,7 +31,7 @@ importers:
     devDependencies:
       '@antelopejs/interface-dms-builder':
         specifier: 0.6.2-next.980.gd957ab9
-        version: 0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.1)
+        version: 0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/tooling-configs':
         specifier: '>=0.8.9 <0.9.0'
         version: 0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
@@ -61,13 +62,13 @@ importers:
 
 packages:
 
-  '@antelopejs/interface-core@0.5.1':
-    resolution: {integrity: sha512-ON/7TYA1yyT8UznzKi6vnwyjRU3byNE0OcFXBmf8dE/dqp8hKjeWHVyA2EUPOngmEimCLw4idZqOS5DJqMJx3g==}
+  '@antelopejs/interface-core@0.5.2-next.117.gae930be':
+    resolution: {integrity: sha512-CdezAkcUilUNItP9UO3bGvWxGvhTeGZibjUyZi+7OB5OWB+CKO201rykGTD5d4Dhh29huMU4DzKToX41vyKLgA==}
 
   '@antelopejs/interface-dms-builder@0.6.2-next.980.gd957ab9':
     resolution: {integrity: sha512-bXMhNWJKXayF8ZZO4V1bSX/Ww6MVNXfiKPOtob3HiYahwp6r3hjFCM/lUgLI9OsesDKGgU0sKCNG2bfjUbBH6g==}
     peerDependencies:
-      '@antelopejs/interface-core': '>=0.5.1 <0.6.0'
+      '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
   '@antelopejs/tooling-configs@0.8.9':
     resolution: {integrity: sha512-DMar3gDUBy73qpAqv8coGCmvIBrZ12FtyYwD+Igqn6jrb92GMxZAuI2YlW9pED9tS3tdk17+aZRIyVO0oDacHA==}
@@ -2228,13 +2229,13 @@ packages:
 
 snapshots:
 
-  '@antelopejs/interface-core@0.5.1':
+  '@antelopejs/interface-core@0.5.2-next.117.gae930be':
     dependencies:
       reflect-metadata: 0.2.2
 
-  '@antelopejs/interface-dms-builder@0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-builder@0.6.2-next.980.gd957ab9(@antelopejs/interface-core@0.5.2-next.117.gae930be)':
     dependencies:
-      '@antelopejs/interface-core': 0.5.1
+      '@antelopejs/interface-core': 0.5.2-next.117.gae930be
 
   '@antelopejs/tooling-configs@0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
     dependencies:

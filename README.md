@@ -115,7 +115,7 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 | `@antelopejs/agent-skills`          | `>=0.8.2 <0.9.0`           | `0.8.2`                    |
 | `@antelopejs/dms`                   | `0.21.4-next.982.g013b224` | `0.21.4-next.982.g013b224` |
 | `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`           | `0.3.3`                    |
-| `@antelopejs/interface-core`        | `>=0.5.1 <0.6.0`           | `0.5.1`                    |
+| `@antelopejs/interface-core`        | `0.5.2-next.117.gae930be`  | `0.5.2-next.117.gae930be`  |
 | `@antelopejs/interface-dms`         | `0.14.7-next.980.gd957ab9` | `0.14.7-next.980.gd957ab9` |
 | `@antelopejs/interface-dms-builder` | `0.6.2-next.980.gd957ab9`  | `0.6.2-next.980.gd957ab9`  |
 

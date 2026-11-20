@@ -35,3 +35,12 @@ export const SIDECAR_AUTH_HEADER = "x-dms-assistant-token";
 /** Answer of a route that needs the sidecar while it cannot be reached. */
 export const SIDECAR_UNAVAILABLE_STATUS = 503;
 export const SIDECAR_UNAVAILABLE_BODY = { error: "sidecar_unavailable" };
+
+/** The role the module's reload socket says hello with. */
+export const RELOAD_HOST_ROLE = "reload";
+export const RELOAD_HOLD_EVENT_TYPE = "reload_hold";
+export const RELOAD_HOLD_APPLIED_TYPE = "reload_hold_applied";
+/** How long the core gets to take a hold: a core without the API never answers. */
+export const RELOAD_HOLD_TIMEOUT_MS = 5_000;
+/** How long the core gets to release one, which waits for the reloads it kept; under the sidecar's own wait for the answer. */
+export const RELOAD_RELEASE_TIMEOUT_MS = 60_000;

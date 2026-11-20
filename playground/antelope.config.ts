@@ -35,7 +35,7 @@ export default defineConfig({
       source: {
         type: "package",
         package: "@antelopejs/dms",
-        version: ">=0.21.3 <0.22.0",
+        version: "0.21.4-next.976.g78176ed",
       },
       config: {
         homepage: "/home",

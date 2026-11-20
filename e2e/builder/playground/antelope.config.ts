@@ -40,9 +40,8 @@ export default defineConfig({
     },
     dms: {
       source: {
-        type: "package",
-        package: "@antelopejs/dms",
-        version: "0.21.4-next.976.g78176ed",
+        type: "local",
+        path: "node_modules/@antelopejs/dms",
       },
       config: {
         apiBaseUrl: "${@api.API_PUBLIC_BASE_URL}",

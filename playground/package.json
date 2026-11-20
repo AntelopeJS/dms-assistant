@@ -12,7 +12,7 @@
     "@antelopejs/dms": "0.21.4-next.976.g78176ed",
     "@antelopejs/interface-api": ">=0.3.3 <0.4.0",
     "@antelopejs/interface-api-util": ">=0.3.2 <0.4.0",
-    "@antelopejs/interface-core": ">=0.5.1 <0.6.0",
+    "@antelopejs/interface-core": "0.5.2-next.117.gae930be",
     "@antelopejs/interface-data-api": ">=0.8.0 <0.9.0",
     "@antelopejs/interface-database": ">=0.4.0 <0.5.0",
     "@antelopejs/interface-database-decorators": ">=0.5.2 <0.6.0",
@@ -23,13 +23,18 @@
     "@antelopejs/rethinkdb": "~1.10.6"
   },
   "devDependencies": {
-    "@antelopejs/core": "~1.24.5",
+    "@antelopejs/core": "1.24.6-next.507.g33ee8fd",
     "@antelopejs/dms-frontend": ">=0.11.8 <0.12.0",
     "@types/node": "^22.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@10.2.0",
+  "pnpm": {
+    "overrides": {
+      "@antelopejs/interface-core": "$@antelopejs/interface-core"
+    }
+  },
   "antelopeJs": {
     "baseUrl": "dist",
     "paths": {

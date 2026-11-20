@@ -18,7 +18,7 @@ importers:
         version: 0.8.2
       '@antelopejs/dms':
         specifier: 0.21.4-next.976.g78176ed
-        version: 0.21.4-next.976.g78176ed(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)
+        version: 0.21.4-next.976.g78176ed(@antelopejs/core@1.24.6-next.507.g33ee8fd)(@playwright/test@1.65.1)(typescript@6.0.3)
       '@antelopejs/interface-api':
         specifier: '>=0.3.3 <0.4.0'
         version: 0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -51,8 +51,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/core':
-        specifier: ~1.24.5
-        version: 1.24.5
+        specifier: 1.24.6-next.507.g33ee8fd
+        version: 1.24.6-next.507.g33ee8fd
       '@antelopejs/interface-data-api':
         specifier: '>=0.8.0 <0.9.0'
         version: 0.8.0(@antelopejs/interface-api-util@0.3.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database-decorators@0.5.2(@antelopejs/interface-api@0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be))(@antelopejs/interface-core@0.5.2-next.117.gae930be)(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)))(@antelopejs/interface-database@0.4.0(@antelopejs/interface-core@0.5.2-next.117.gae930be))
@@ -123,8 +123,8 @@ packages:
     resolution: {integrity: sha512-2E1gKciEhh+vTZ+FIrFIFlTvRxPW9unvkIquAp3n2UvcNBKnYM1lWZ26+J6aP+eaP8s7uKRyOqmis/GgWp4imA==}
     engines: {node: '>=20.19'}
 
-  '@antelopejs/core@1.24.5':
-    resolution: {integrity: sha512-05vcPpagrOi5VXhecjsR5TFQrDeEJrqZ9Vfrmjp/iKlydYIvvbuyxCz9E51eGgWCa3UnZLgvWqYNxlxvYt5MlA==}
+  '@antelopejs/core@1.24.6-next.507.g33ee8fd':
+    resolution: {integrity: sha512-utVX92vQ+06qeCNXGFdb8vbNM+HrxWn/VRTN891SRy6hPrkZNzil+syJJP9ywtVXk30Pv681/GJuMPmwhrgO3w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -3712,7 +3712,7 @@ snapshots:
 
   '@antelopejs/agent-skills@0.8.2': {}
 
-  '@antelopejs/core@1.24.5':
+  '@antelopejs/core@1.24.6-next.507.g33ee8fd':
     dependencies:
       '@antelopejs/interface-core': 0.5.2-next.117.gae930be
       '@clack/prompts': 1.9.0
@@ -3727,7 +3727,7 @@ snapshots:
       semver: 7.8.5
       typescript: 5.9.3
 
-  '@antelopejs/dms@0.21.4-next.976.g78176ed(@antelopejs/core@1.24.5)(@playwright/test@1.65.1)(typescript@6.0.3)':
+  '@antelopejs/dms@0.21.4-next.976.g78176ed(@antelopejs/core@1.24.6-next.507.g33ee8fd)(@playwright/test@1.65.1)(typescript@6.0.3)':
     dependencies:
       2fa: 0.1.2
       '@antelopejs/interface-api': 0.3.3(@antelopejs/interface-core@0.5.2-next.117.gae930be)
@@ -3761,7 +3761,7 @@ snapshots:
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
     optionalDependencies:
-      '@antelopejs/core': 1.24.5
+      '@antelopejs/core': 1.24.6-next.507.g33ee8fd
       '@antelopejs/interface-database-catalog': 0.1.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-dms-automation': 0.7.0(@antelopejs/interface-core@0.5.2-next.117.gae930be)
       '@antelopejs/interface-redis': 0.0.9(@antelopejs/interface-core@0.5.2-next.117.gae930be)

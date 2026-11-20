@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
-import WebSocket, { type RawData } from "ws";
+import WebSocket from "ws";
 import { z } from "zod";
 import { BRIDGE_CLOSE_CODE, CHANNEL_EVENTS } from "../constants/channels";
+import { rawDataToText } from "../lifecycle/raw-data";
 import type { SseStream } from "./sse-stream";
 
 const EMPTY_PAYLOAD = "{}";
@@ -39,12 +40,6 @@ export interface BridgeOptions {
   /** Runs before anything can close the bridge, then `onClosed` exactly once. */
   onOpened: (bridge: ChannelBridge) => void;
   onClosed: (bridge: ChannelBridge) => void;
-}
-
-function rawDataToText(data: RawData): string {
-  if (Array.isArray(data)) return Buffer.concat(data).toString("utf8");
-  if (Buffer.isBuffer(data)) return data.toString("utf8");
-  return Buffer.from(new Uint8Array(data)).toString("utf8");
 }
 
 function mayBeActorFrame(message: Buffer): boolean {

@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import type { PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ToolArgs } from "../../src/agent/edit-targets.js";
@@ -14,7 +14,7 @@ import type {
 } from "../../src/state/settings-types.js";
 import { TURN_SETTINGS } from "../helpers/turn-settings.js";
 
-const ROOT = "/work/app";
+const ROOT = resolve("/work/app");
 const ASK = "ask";
 const DENY = "deny";
 const NONE = "none";

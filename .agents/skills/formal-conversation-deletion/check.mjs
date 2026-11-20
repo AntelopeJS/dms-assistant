@@ -34,7 +34,8 @@ await checkSpec({
   findings: { DeletedStaysDeleted: 5, NoTurnStartsAfterDelete: 4 },
 });
 
-const replay = spawnSync("pnpm", ["--dir", "sidecar", "exec", "vitest", "run", REPLAYS, "--reporter=dot"], {
+const replay = spawnSync(`pnpm --dir sidecar exec vitest run ${REPLAYS} --reporter=dot`, {
+  shell: true,
   cwd: root,
   encoding: "utf8",
 });

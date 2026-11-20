@@ -13,7 +13,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.
 const SPEC = "tests/formal/agent-file-access.test.ts";
 const EXIT = { changed: 1, tool: 2 };
 
-const run = spawnSync("pnpm", ["--dir", "sidecar", "exec", "vitest", "run", SPEC, "--maxWorkers=1", "--reporter=dot"], {
+const run = spawnSync(`pnpm --dir sidecar exec vitest run ${SPEC} --maxWorkers=1 --reporter=dot`, {
+  shell: true,
   cwd: ROOT,
   encoding: "utf8",
   maxBuffer: 268_435_456,

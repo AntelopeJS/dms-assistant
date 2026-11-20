@@ -9,6 +9,12 @@ const ToolResultSchema = z.object({
   isError: z.boolean().optional(),
   content: z.array(z.object({ text: z.string().optional() })).catch([]),
 });
+const SidecarLaunchSchema = z.object({
+  dmsMcpLaunch: z.function({
+    input: [z.string(), z.enum(["safe", "full"])],
+    output: z.object({ command: z.string(), args: z.array(z.string()) }),
+  }),
+});
 
 /**
  * @typedef {{ call: (name: string, args: Record<string, unknown>) => Promise<{ isError: boolean, body: unknown }>, close: () => void }} DmsMcp
@@ -47,7 +53,7 @@ function toolAnswer(result) {
  * @returns {Promise<DmsMcp>} The started server
  */
 export async function startDmsMcp(projectRoot, access) {
-  const { dmsMcpLaunch } = await import("../../sidecar/dist/mcp/dms-server.js");
+  const { dmsMcpLaunch } = SidecarLaunchSchema.parse(await import("../../sidecar/dist/mcp/dms-server.js"));
   const launch = dmsMcpLaunch(projectRoot, access);
   const child = spawn(launch.command, launch.args, { cwd: projectRoot, stdio: ["pipe", "pipe", "inherit"] });
   /** @type {Map<number, { resolve: (value: unknown) => void, reject: (error: Error) => void }>} */

@@ -12,6 +12,7 @@ import {
   BUILDER_READ_TOOL_NAMES,
   BUILTIN_READ_TOOL_NAMES,
   BUILTIN_TOOL_REACH,
+  LIVE_READ_TOOL_NAMES,
   BASH_TOOL_NAMES,
   EDIT_TOOL_NAMES,
   PROJECT_READ_TOOL_NAMES,
@@ -50,6 +51,8 @@ function isIn(names: readonly string[]): (toolName: string) => boolean {
 
 export const isEditTool = isIn(EDIT_TOOL_NAMES);
 export const isBashTool = isIn(BASH_TOOL_NAMES);
+/** Tools that read the running app: the dev watcher's reloads must have run before they do. */
+export const isLiveReadTool = isIn(LIVE_READ_TOOL_NAMES);
 export const isWebTool = isIn(WEB_TOOL_NAMES);
 const isListedBuilderTool = isIn([
   ...BUILDER_READ_TOOL_NAMES,

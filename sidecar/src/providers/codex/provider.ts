@@ -478,6 +478,7 @@ async function createProviderSession(
     getPendingMcpCalls: () => adapter.pendingMcpCalls(),
     onToolDecision: ctx.onToolDecision,
     beforeMutation: ctx.beforeMutation,
+    beforeLiveRead: ctx.beforeLiveRead,
     isHeldCall: ctx.isHeldCall,
   });
 

@@ -39,6 +39,11 @@ export interface ToolCallHooks {
   /** Awaited before a mutating tool runs: the turn's checkpoint is taken. */
   beforeMutation?: () => Promise<void>;
   /**
+   * Awaited before a tool that reads the running app (see `isLiveReadTool`),
+   * after `beforeMutation`: every write so far must have reloaded.
+   */
+  beforeLiveRead?: () => Promise<void>;
+  /**
    * Whether the DMS MCP holds a call to this call's tool in the conversation
    * until someone confirms it: the DMS may run this one, so the person is
    * asked first.

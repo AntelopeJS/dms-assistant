@@ -1,7 +1,9 @@
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
+const http = require("node:http");
 const { afterEach, test } = require("node:test");
 const { HTTPResult } = require("@antelopejs/interface-api");
+const { z } = require("zod");
 const {
   INTRUDER,
   OWNER,
@@ -103,6 +105,60 @@ void test("refuses a posted message once the memory budget is spent, until one e
   reserveMessageBytes(next);
   for (const context of [...held.slice(1), next])
     context.rawResponse.emit("close");
+});
+
+/**
+ * Posts one chunked message, as the frontend relay forwards it: without a
+ * Content-Length. With `leaveAfterMs`, the client goes away before the
+ * server reserves the message, as a tab closed mid-post does.
+ * @param {number} port
+ * @param {number} [leaveAfterMs]
+ * @returns {Promise<number | "left">}
+ */
+function postChunked(port, leaveAfterMs) {
+  return new Promise((resolve) => {
+    const request = http.request(
+      { port, method: "POST", headers: { "transfer-encoding": "chunked" } },
+      (response) => {
+        response.resume();
+        response.on("end", () => resolve(response.statusCode ?? 0));
+      },
+    );
+    request.on("error", () => resolve("left"));
+    request.write('{"type":"hello"}');
+    if (leaveAfterMs === undefined) request.end();
+    else setTimeout(() => request.destroy(), leaveAfterMs);
+  });
+}
+
+void test("gives a posted message's budget back when its client left before the reservation", async (t) => {
+  const OWNER_CHECK_MS = 50;
+  const server = http.createServer(async (request, response) => {
+    await delay(OWNER_CHECK_MS);
+    try {
+      reserveMessageBytes({ rawRequest: request, rawResponse: response });
+      response.statusCode = 204;
+    } catch (error) {
+      response.statusCode =
+        error instanceof HTTPResult ? error.getStatus() : 500;
+    }
+    if (!response.closed) response.end();
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+  const { port } = z.object({ port: z.number() }).parse(server.address());
+  const fullMessages =
+    CHANNEL_PENDING_MESSAGES_MAX_BYTES / CHANNEL_MESSAGE_MAX_BYTES;
+  for (let i = 0; i < fullMessages; i += 1)
+    assert.equal(await postChunked(port, OWNER_CHECK_MS / 5), "left");
+  await delay(OWNER_CHECK_MS * 2);
+  assert.deepEqual(
+    await Promise.all([postChunked(port), postChunked(port)]),
+    [204, 204],
+  );
 });
 
 void test("pauses a sidecar socket once per full sink, however many frames arrive", async () => {

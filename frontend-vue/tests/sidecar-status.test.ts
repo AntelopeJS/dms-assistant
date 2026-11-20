@@ -60,16 +60,36 @@ describe("sidecar status", () => {
 		controller.dispose();
 	});
 
-	it("re-probes when the channel drops, and reports connected once the sidecar answers", async () => {
+	it("re-probes when the channel drops, and reports no restart while the sidecar runs", async () => {
 		const { open, read } = fakeRead([{ isRunning: true }]);
 		const statuses: string[] = [];
 		const controller = createSidecarStatusController(open);
 		await controller.init();
 		controller.subscribe((status) => statuses.push(status));
+		for (let drop = 0; drop < 3; drop += 1) {
+			controller.reportChannelDown();
+			await vi.waitFor(() => expect(read().reads()).toBe(drop + 2));
+			await nextTick();
+		}
+		expect(statuses).toEqual(["connected"]);
+		controller.dispose();
+	});
+
+	it("reports reviving when the re-probe finds the sidecar down, then connected once it runs", async () => {
+		const { open, read } = fakeRead([
+			{ isRunning: true },
+			{ isRunning: false },
+			{ isRunning: true },
+		]);
+		const statuses: string[] = [];
+		const controller = createSidecarStatusController(open);
+		await controller.init();
+		controller.subscribe((status) => statuses.push(status));
 		controller.reportChannelDown();
-		await vi.waitFor(() => expect(statuses.at(-1)).toBe("connected"));
+		await vi.waitFor(() => expect(statuses.at(-1)).toBe("reviving"));
+		await read().refresh();
+		await nextTick();
 		expect(statuses).toEqual(["connected", "reviving", "connected"]);
-		expect(read().reads()).toBe(2);
 		controller.dispose();
 	});
 

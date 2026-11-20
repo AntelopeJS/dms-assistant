@@ -59,6 +59,7 @@ export default defineConfig({
         frontend: { bootstrapSecret: process.env.DMS_BOOTSTRAP_SECRET },
         docsPreview: true,
         builder: { enabled: true, projectRoot: projectRoot() },
+        mcp: { backendUrl: "${@api.API_LOCAL_BASE_URL}" },
       },
     },
     mongodb: {

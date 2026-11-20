@@ -32,4 +32,12 @@ describe("system prompt", () => {
     expect(loopStep).toContain("refresh:true");
     expect(loopStep).toMatch(/never derive, guess or construct a URL/);
   });
+
+  it("forbids a Safe mode substitute for what no builder tool can build, and asks to switch instead (fails when a percentage KPI may be built as a count)", () => {
+    const safeMode = prompt
+      .split("\n")
+      .find((line) => line.startsWith("- SAFE: "));
+    expect(safeMode).toMatch(/never build something else in its place/);
+    expect(safeMode).toMatch(/ask permission to switch to Code mode/);
+  });
 });

@@ -13,6 +13,7 @@ export default {
       "--ignore-scripts",
     ],
     ["pnpm", "run", "build"],
+    ["pnpm", "run", "build:sidecar"],
     [
       "pnpm",
       "--dir",

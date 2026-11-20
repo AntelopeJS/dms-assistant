@@ -163,7 +163,7 @@ describe("building into an existing page", () => {
 		await flushPromises();
 		const [request] = sentOfType(harness, "user_message");
 		expect(request.content).toBe(
-			"Build the mockup “bikes” into the existing page /shop/board with the dms-mockup-build skill. Update that page; do not create a new one. End your reply with a Markdown link to that page.",
+			"Build the mockup “bikes” into the existing page /shop/board with the dms-mockup-build skill. Update that page; do not create a new one. When you cannot build a block as the mockup has it (a KPI no query computes, say), build nothing else in its place and tell me which block and why. End your reply with a Markdown link to that page.",
 		);
 	});
 });
@@ -247,7 +247,7 @@ describe("building a mockup", () => {
 		await flushPromises();
 		const [request] = sentOfType(harness, "user_message");
 		expect(request.content).toBe(
-			"Build the mockup “bikes” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
+			"Build the mockup “bikes” into real pages with the dms-mockup-build skill: create the pages, check the types, compare each page with the mockup and fix the differences, then tell me what remains. When you cannot build a block as the mockup has it (a KPI no query computes, say), build nothing else in its place and tell me which block and why. End your reply with a Markdown link to each page you built, at the route list_pages gives it.",
 		);
 	});
 });

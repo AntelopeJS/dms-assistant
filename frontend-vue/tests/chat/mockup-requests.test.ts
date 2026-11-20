@@ -97,4 +97,19 @@ describe("the request that builds a mockup", () => {
 			);
 		}
 	});
+
+	it("forbids building another block in place of one it cannot build, and asks for it to be reported, in every locale (fails when a build may swap a percentage KPI for a count)", () => {
+		const builds: MockupRequest[] = [
+			{ kind: "build", mockup: "bikes" },
+			{ kind: "build", mockup: "bikes", pageRef: "/shop/board" },
+		];
+		for (const request of builds) {
+			expect(message("en", request)).toMatch(
+				/build nothing else in its place and tell me which block and why/,
+			);
+			expect(message("fr", request)).toMatch(
+				/ne construis rien d’autre à sa place et dis-moi lequel et pourquoi/,
+			);
+		}
+	});
 });

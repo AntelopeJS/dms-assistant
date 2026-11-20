@@ -26,6 +26,7 @@ function turn(overrides: Partial<ActiveTurn>): ActiveTurn {
     },
     builderOps: 0,
     mutatingCallIds: [],
+    isEnding: false,
     ...overrides,
   };
 }

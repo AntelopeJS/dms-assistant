@@ -127,6 +127,8 @@ The module needs a DMS backend in a release that implements the `@antelopejs/int
 
 - [Introduction](https://dms.antelopejs.com/docs/modules/assistant/introduction)
 - [Installation](https://dms.antelopejs.com/docs/modules/assistant/installation)
+- [Onboarding](https://dms.antelopejs.com/docs/modules/assistant/onboarding): connect Claude or Codex, then start from scratch or from a database
+- [Mockups](https://dms.antelopejs.com/docs/modules/assistant/mockups): draft the pages, comment on them, and build them
 - [Configuration](https://dms.antelopejs.com/docs/modules/assistant/configuration), with the agent providers, Codex, Safe mode, the chat's MCP servers and remote access
 - [Usage](https://dms.antelopejs.com/docs/modules/assistant/usage/chat)
 - [Extending](https://dms.antelopejs.com/docs/modules/assistant/extending)

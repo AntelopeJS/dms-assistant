@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setBuilderAvailable } from "../../src/builder/capability.js";
-import type { Options, Query } from "@anthropic-ai/claude-agent-sdk";
+import type { Options } from "@anthropic-ai/claude-agent-sdk";
+import { query as mockQuery } from "../fixtures/mock-claude/index.js";
 import { createInputQueue } from "../../src/providers/claude/input-queue.js";
 import { createModelTrack } from "../../src/providers/claude/model-fallback.js";
 import { resolveModelOptions } from "../../src/providers/claude/config.js";
@@ -54,13 +55,13 @@ describe("Safe mode without the Builder", () => {
 describe("the query a Claude session starts again", () => {
   function backendWith(settings: TurnSettings, options: Options) {
     const started: Options[] = [];
-    const query = ({ options: given = {} }: { options?: Options }) => {
-      started.push(given);
-      // SAFETY: syncToolSurface reads only `close` and `setModel` of the query it starts.
-      return { close: () => undefined } as Query;
-    };
     const backend: SurfaceBackend = {
-      sdk: { query },
+      sdk: {
+        query: (params) => {
+          started.push(params.options ?? {});
+          return mockQuery(params);
+        },
+      },
       options,
       surface: toolSurfaceFor(settings),
       isReleased: true,
@@ -68,8 +69,7 @@ describe("the query a Claude session starts again", () => {
       sessionId: "session-1",
       live: { settings },
       queue: createInputQueue(),
-      // SAFETY: the released query is only closed, never read.
-      output: { close: () => undefined } as Query,
+      output: mockQuery({ prompt: "" }),
       model: createModelTrack(),
       lastTurn: null,
     };

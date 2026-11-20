@@ -21,6 +21,7 @@ import type { IdleShutdownController } from "./idle-shutdown.js";
 import type { LiveTurnStore } from "./live-turns.js";
 import type { NavigationCompleter } from "./navigation-completer.js";
 import type { PendingQueueStore } from "./pending-queue.js";
+import type { ReloadHold } from "./reload-hold.js";
 import type { TurnRegistry } from "./turn-registry.js";
 
 /** Who drives a connection, as the backend bridge announced it. */
@@ -52,6 +53,8 @@ export interface SidecarServices {
   callAudit: CallAudit;
   callLedger: CallLedger;
   heldCalls: HeldCalls;
+  /** Holds the dev watcher's module reloads while a turn writes. */
+  reloadHold: ReloadHold;
   turns: TurnRegistry;
   /** Who asked for each conversation's latest request (from the actor frame). */
   askers: Map<string, string>;

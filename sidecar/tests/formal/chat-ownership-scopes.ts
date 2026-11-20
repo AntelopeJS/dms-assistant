@@ -81,6 +81,10 @@ export const SCOPES: Record<
     ],
   },
   echo: { kind: "none", why: "echoes the payload and touches nothing else" },
+  reload_hold_applied: {
+    kind: "none",
+    why: "answers the module's reload host about the dev watcher, and touches no conversation",
+  },
   actor: {
     kind: "none",
     why: "names the connection's actor: the DMS backend asserts identity over its own credential, not the browser",

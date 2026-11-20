@@ -83,6 +83,7 @@ import {
   type ChatSocketRegistry,
 } from "./chat-socket-registry.js";
 import { createLiveTurnStore } from "./live-turns.js";
+import { createReloadHold } from "./reload-hold.js";
 import type { NavigationCompleter } from "./navigation-completer.js";
 import { createPendingQueueStore } from "./pending-queue.js";
 import {
@@ -201,9 +202,16 @@ function buildRunner(
 function bindConnection(socket: WebSocket, config: RoutingConfig): void {
   const ctx = buildConnectionContext(config);
   config.idleController.increment();
+  let isCounted = true;
+  const uncount = (): void => {
+    if (!isCounted) return;
+    isCounted = false;
+    config.idleController.decrement();
+  };
   socket.on("message", (data) => {
     const raw = rawDataToText(data);
     dispatchMessage(socket, raw, ctx);
+    if (config.reloadHold.isHost(socket)) uncount();
   });
   socket.on("error", (err) => {
     console.warn(`${WS_LOG_PREFIX} socket error: ${err.message}`);
@@ -211,7 +219,8 @@ function bindConnection(socket: WebSocket, config: RoutingConfig): void {
   socket.on("close", (code) => {
     config.hostSocketRegistry.clear(socket);
     config.chatSocketRegistry.clear(socket);
-    config.idleController.decrement();
+    config.reloadHold.detach(socket);
+    uncount();
     console.log(`${WS_LOG_PREFIX} close code=${code}`);
   });
 }
@@ -420,6 +429,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
     callAudit: createCallAudit(),
     callLedger: createCallLedger(),
     heldCalls: createHeldCalls(),
+    reloadHold: createReloadHold(),
     turns: createTurnRegistry(),
     askers: new Map(),
     viewers,

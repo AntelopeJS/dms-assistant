@@ -302,7 +302,8 @@ export function useDatabaseConnect(
 		if (
 			next.connectionError !== undefined ||
 			next.analysisFailed ||
-			next.empty
+			next.empty ||
+			next.allMapped
 		) {
 			memory.clear();
 			return false;

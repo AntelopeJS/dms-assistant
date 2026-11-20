@@ -41,7 +41,7 @@ export const PROJECT = {
 	},
 };
 
-export function analysisWith(open: unknown[]) {
+export function analysisWith(open: unknown[], mapped: string[] = []) {
 	return {
 		id: "job1",
 		status: "done",
@@ -52,6 +52,7 @@ export function analysisWith(open: unknown[]) {
 			database: { engine: "postgresql", role: "reader", writes: "none" },
 			resources: [],
 			excluded: [],
+			mapped,
 			open,
 		},
 	};

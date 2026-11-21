@@ -34,8 +34,9 @@ A mockup is `mockups/<name>/spec.json` in your repo, drawn by the real DMS rende
 - The mockup fills up while the AI writes it, page by page.
 - A change is a save of the file, and the page redraws at once, with no typecheck and no reload. Blocks read sample data, so no table or query is wired yet.
 - Pin a comment on any block, or on the page, and press **Resolve with AI**. The assistant applies the open comments and resolves them.
+- A part no DMS block can draw is sketched and labelled **Custom**. The assistant shows the closest block first, and a sketch appears only when you choose custom code.
 - Every change is a version you can preview or restore, and the **Mockups** page lists your mockups with how much of each is built.
-- **Build it** writes the real pages as TypeScript, binds them to your data and checks each one against the mockup.
+- **Build it** writes the real pages as TypeScript and a component for each **Custom** sketch, binds them to your data and checks each one against the mockup.
 
 ### Chat
 

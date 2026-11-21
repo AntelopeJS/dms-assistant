@@ -5,9 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@antelopejs/interface-core': 0.5.2-next.117.gae930be
-  '@antelopejs/dms>@antelopejs/interface-dms': 0.14.7-next.1008.g198383f
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': 0.6.2-next.987.gb437fd0
+  '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
+  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.15.0 <0.16.0'
+  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.2 <0.7.0'
 
 importers:
 
@@ -68,7 +68,7 @@ packages:
   '@antelopejs/interface-dms-builder@0.6.2-next.987.gb437fd0':
     resolution: {integrity: sha512-fs/Of6JpHGl7y1DeWzCm5zLQEwRGHnwli2quxKTs5+rSygWHvaQOkqq64mHsoGONveHN7CPw7tOpdOVHDaMPFA==}
     peerDependencies:
-      '@antelopejs/interface-core': 0.5.2-next.117.gae930be
+      '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
   '@antelopejs/tooling-configs@0.8.9':
     resolution: {integrity: sha512-DMar3gDUBy73qpAqv8coGCmvIBrZ12FtyYwD+Igqn6jrb92GMxZAuI2YlW9pED9tS3tdk17+aZRIyVO0oDacHA==}

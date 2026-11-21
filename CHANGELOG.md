@@ -2,6 +2,64 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.0
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.9...v0.3.0)
+
+### 🚀 Enhancements
+
+- **chat:** Confirm copied assistant answers ([#110](https://github.com/AntelopeJS/dms-assistant/pull/110))
+
+### 🔥 Performance
+
+- Reload the builder module once per AI build, not after every write ([#126](https://github.com/AntelopeJS/dms-assistant/pull/126))
+
+### 🩹 Fixes
+
+- Stop the channel reconnect loop that takes the assistant offline after Build it ([#123](https://github.com/AntelopeJS/dms-assistant/pull/123))
+- Count the assistant's status per owner and close idle Claude CLIs ([#125](https://github.com/AntelopeJS/dms-assistant/pull/125))
+- **builder:** Say every table is mapped already on connect ([#124](https://github.com/AntelopeJS/dms-assistant/pull/124))
+- **claude:** Drop the stale effort when a restarted query has thinking off ([#127](https://github.com/AntelopeJS/dms-assistant/pull/127))
+- Build a mockup's percentage KPI in Safe mode instead of a substitute ([#122](https://github.com/AntelopeJS/dms-assistant/pull/122))
+- Pin interface-dms to the version dms next depends on ([#129](https://github.com/AntelopeJS/dms-assistant/pull/129))
+- Scope the assistant status's last error to the signed-in owner ([#130](https://github.com/AntelopeJS/dms-assistant/pull/130))
+- **ci:** Run the formal checks and two sidecar tests on Windows ([#131](https://github.com/AntelopeJS/dms-assistant/pull/131))
+- **deps:** Pin a matching dms and interface-dms preview pair ([#132](https://github.com/AntelopeJS/dms-assistant/pull/132))
+- **deps:** Depend on the stable @antelopejs/dms, @antelopejs/interface-core, @antelopejs/interface-dms, @antelopejs/interface-dms-builder and @antelopejs/core
+
+### 💅 Refactors
+
+- Remove the preview_blocks tool and its chat card ([#128](https://github.com/AntelopeJS/dms-assistant/pull/128))
+
+### 📖 Documentation
+
+- **readme:** Lead with the onboarding and the mockup flow ([#119](https://github.com/AntelopeJS/dms-assistant/pull/119))
+- Add Onboarding and Mockups pages and rewrite the assistant guide ([#121](https://github.com/AntelopeJS/dms-assistant/pull/121))
+- **readme:** Say mockups sketch the custom parts ([#133](https://github.com/AntelopeJS/dms-assistant/pull/133))
+
+### 🏡 Chore
+
+- Delete the dangling verify skill links ([#118](https://github.com/AntelopeJS/dms-assistant/pull/118))
+
+### ✅ Tests
+
+- **e2e:** Run every verify journey in the Playwright suites ([#115](https://github.com/AntelopeJS/dms-assistant/pull/115))
+- Port the inventory's dms-assistant lines off dms-control ([#116](https://github.com/AntelopeJS/dms-assistant/pull/116))
+- **e2e:** Run the suites from journeys configs and delete the verify skills ([#117](https://github.com/AntelopeJS/dms-assistant/pull/117))
+
+### 🤖 CI
+
+- Cache and export both the dms-control and dms-e2e e2e names ([#120](https://github.com/AntelopeJS/dms-assistant/pull/120))
+
+#### ⚠️ Breaking Changes
+
+- Remove the preview_blocks tool and its chat card ([#128](https://github.com/AntelopeJS/dms-assistant/pull/128))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+- Oikantik Basu
+
 ## v0.2.9
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.8...v0.2.9)

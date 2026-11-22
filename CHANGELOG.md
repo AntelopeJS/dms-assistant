@@ -2,6 +2,33 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.1
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.0...v0.3.1)
+
+### 🩹 Fixes
+
+- **deps:** Update claude code and agent sdk ([#140](https://github.com/AntelopeJS/dms-assistant/pull/140))
+
+### 📦 Build
+
+- **deps:** Move off the remaining AntelopeJS previews ([#137](https://github.com/AntelopeJS/dms-assistant/pull/137))
+
+### 🏡 Chore
+
+- **deps:** Move the playgrounds and frontend onto dms 0.22 and interface-dms 0.15 ([5f13dac](https://github.com/AntelopeJS/dms-assistant/commit/5f13dacff0de52e39dc9b104f4be454f583b231e))
+- **deps:** Lock the frontend on interface-dms 0.15 ([54d2a6a](https://github.com/AntelopeJS/dms-assistant/commit/54d2a6a2bdf27228b32f1177c49fd5fb2d28a185))
+
+### 🤖 CI
+
+- Drop the dms-control cache names ([6cafa31](https://github.com/AntelopeJS/dms-assistant/commit/6cafa31763864907e7aeee1c08f2e75229c1a4f8))
+- Re-sync the AntelopeJS pack for the release app ([#138](https://github.com/AntelopeJS/dms-assistant/pull/138))
+- Stop forwarding the retired RELEASE_GITHUB_TOKEN ([#139](https://github.com/AntelopeJS/dms-assistant/pull/139))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.0
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.2.9...v0.3.0)

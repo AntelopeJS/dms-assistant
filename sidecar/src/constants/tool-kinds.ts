@@ -71,7 +71,7 @@ export const BUILTIN_TOOL_REACH = {
   ScheduleWakeup: "runsLater",
   RemoteTrigger: "runsLater",
   Workflow: "runsLater",
-  ProposeGoal: "runsLater",
+  SetGoal: "runsLater",
   WebFetch: "fetchesWeb",
   WebSearch: "fetchesWeb",
   Agent: "startsAgent",

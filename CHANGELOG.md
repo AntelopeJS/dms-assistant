@@ -2,6 +2,22 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.2
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.1...v0.3.2)
+
+### 🩹 Fixes
+
+- **deps:** Move to interface-dms 0.16 and dms 0.23 ([#142](https://github.com/AntelopeJS/dms-assistant/pull/142))
+
+### 🏡 Chore
+
+- **lint:** Adopt tooling-configs 0.10 and lint frontend-vue ([#143](https://github.com/AntelopeJS/dms-assistant/pull/143))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.1
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.0...v0.3.1)

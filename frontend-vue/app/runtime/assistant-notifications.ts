@@ -36,7 +36,7 @@ const NotifiedChangeSetSchema = z.object({
 	state: z.string(),
 });
 
-export type NotifiedChangeSet = z.infer<typeof NotifiedChangeSetSchema>;
+type NotifiedChangeSet = z.infer<typeof NotifiedChangeSetSchema>;
 
 const ChangeSetFrameSchema = z.object({
 	changeSet: z.optional(NotifiedChangeSetSchema),

@@ -2,19 +2,26 @@
  * Stand-in for the host runtime the DMS frontend loader materializes as
  * `#dms/frontend-module`. Only what this package imports from the host is
  * declared.
+ *
+ * @packageDocumentation
  */
 import englishMessages from '../../../i18n/locales/builder-en-GB.json'
 import frenchMessages from '../../../i18n/locales/builder-fr-FR.json'
 
 type Messages = { [key: string]: string | Messages }
 
-function lookup(messages: Messages, path: string): string | undefined {
-  let node: string | Messages | undefined = messages
-  for (const part of path.split('.')) {
-    node = typeof node === 'object' ? node[part] : undefined
-  }
-  return typeof node === 'string' ? node : undefined
+function isText(node: string | Messages): node is string {
+  return typeof node === 'string'
 }
+
+function flatten(messages: Messages, prefix: string): [string, string][] {
+  return Object.entries(messages).flatMap(([key, node]) =>
+    isText(node) ? [[`${prefix}${key}`, node]] : flatten(node, `${prefix}${key}.`),
+  )
+}
+
+const ENGLISH = new Map(flatten(englishMessages, ''))
+const FRENCH = new Map(flatten(frenchMessages, ''))
 
 /** vue-i18n's default choice: `zero | one | many`, or `one | many`. */
 function pluralForm(message: string, count: number | undefined): string {
@@ -44,20 +51,19 @@ export function setTestLocale(next: TestLocale): void {
  */
 function translate(
   key: string,
-  params: Record<string, unknown> = {},
+  params: Record<string, string | number> = {},
   count?: number,
 ): string {
   const message =
-    lookup((locale === 'fr-FR' ? frenchMessages : englishMessages) as Messages, key) ??
-    lookup(englishMessages as Messages, key)
+    (locale === 'fr-FR' ? FRENCH : ENGLISH).get(key) ?? ENGLISH.get(key)
   if (message === undefined) {
     return key
   }
   return pluralForm(message, count).replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? String(params[name]) : match,
+    Object.hasOwn(params, name) ? String(params[name]) : match,
   )
 }
 
-export function useDmsApp(): { $i18n: { t: typeof translate } } {
+export function useDmsApp() {
   return { $i18n: { t: translate } }
 }

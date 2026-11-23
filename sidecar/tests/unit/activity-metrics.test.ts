@@ -287,7 +287,6 @@ function describeComparisonWindows(): void {
       date.setUTCFullYear(date.getUTCFullYear() - 1);
       return date.getTime();
     };
-    /** The same actions a year earlier: the previous period holds none. */
     const twoYears = {
       ...sources,
       records: [

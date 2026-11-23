@@ -19,12 +19,6 @@ const NOBODY_HOLDS_IT = {
 };
 const MESSAGE = { role: "user", content: "hi", timestampMs: 1 } as const;
 
-/**
- * The counterexamples TLC finds in `.agents/skills/formal-conversation-deletion`
- * for the code before #59 and before #60, replayed step by step against the
- * real conversation store: each step is the store call the model's action
- * stands for, and the rule is the model's `DeletedStaysDeleted`.
- */
 describe("a deleted conversation (formal target: deleted conversations staying closed)", () => {
   let dir: string;
   let opened: Store[];

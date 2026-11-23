@@ -119,7 +119,6 @@ const HOST_COMMANDS = AnyServerEvent.options.filter((event) =>
 );
 
 describe.each(BINDINGS)("tools served by %s", (_binding, build) => {
-  /** Fails on a tool of the chat's MCP server that lets the model name a database URL, a host, a port or a socket. */
   it("take no connection address as input", async () => {
     const tools = await listTools(build());
     expect(tools.length).toBeGreaterThan(0);
@@ -131,7 +130,6 @@ describe.each(BINDINGS)("tools served by %s", (_binding, build) => {
 });
 
 describe("the agent's commands to the dashboard", () => {
-  /** Fails on a host command that carries a database URL, a host, a port or a socket to the owner's dashboard. */
   it("carry no connection address", () => {
     expect(HOST_COMMANDS.length).toBeGreaterThan(0);
     const offenders = HOST_COMMANDS.flatMap((command) =>

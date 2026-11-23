@@ -58,7 +58,6 @@ describe("isAutoAllowedRead", () => {
     expect(isAutoAllowedRead("Grep", {}, ROOTS, CWD)).toBe(true);
   });
 
-  /** Fails on a check that places a search by copying the CLI's path parsing instead of allowing only what is provably inside: a `~` or padded path, any absolute, drive or `~` Glob pattern, a pattern with `..`, or a `.. ` segment the CLI trims back to the parent. */
   it("auto-allows only a search it can place inside a root and leaves every other one to the person", () => {
     const unplaced: [string, Record<string, string>][] = [
       ["Grep", { pattern: "PRIVATE KEY", path: "~/.ssh" }],

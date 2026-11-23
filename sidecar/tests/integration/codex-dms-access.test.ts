@@ -73,7 +73,6 @@ describe("the access of a Codex chat's DMS MCP", () => {
     return session;
   }
 
-  /** The watched requests in order, with the access a batch write gives. */
   function requests(): string[] {
     return readCodexTrace(trace)
       .filter((entry) => WATCHED_METHODS.includes(entry.method ?? ""))

@@ -251,7 +251,6 @@ describe("the PreToolUse guard under Auto review in Code scope", () => {
     );
   });
 
-  /** Fails on a guard that lets the classifier approve an edit that changes the URL a database connection reads. */
   it("hands an edit of a file the project configuration is read from to the person", async () => {
     expect(await decideAll(PROJECT_CONFIG_FILES, "auto", "vibe")).toEqual(
       each(PROJECT_CONFIG_FILES, ASK),
@@ -273,7 +272,6 @@ describe.each<ChatMode>(["normal", "acceptEdits"])(
       expect(await decideAll(files, mode, "vibe")).toEqual(each(files, ASK));
     });
 
-    /** Fails on a guard that leaves to Accept edits an edit that changes the URL a database connection reads. */
     it("hands an edit of a file the project configuration is read from to the person, also when dependency files no longer ask", async () => {
       const settings = { alwaysAskDependencies: false };
       expect(
@@ -306,7 +304,6 @@ describe.each<ChatMode>(["normal", "acceptEdits"])(
 );
 
 describe("the PreToolUse guard in Plan only", () => {
-  /** Fails on a guard that leaves a read-only command such as `cat .env` to the CLI, which runs it unasked in plan mode. */
   it("hands every command to the person, read-only ones included", async () => {
     const commands = [...COMMANDS, call("Bash", { command: "cat .env" })];
     expect(await decideAll(commands, "plan", "vibe")).toEqual(
@@ -314,14 +311,12 @@ describe("the PreToolUse guard in Plan only", () => {
     );
   });
 
-  /** Fails on a guard that lets a tool the CLI adds under a new name run unasked in plan mode. */
   it("hands a tool it does not know to the person", async () => {
     expect(await decideAll(UNKNOWN_TOOLS, "plan", "vibe")).toEqual(
       each(UNKNOWN_TOOLS, ASK),
     );
   });
 
-  /** Fails on a guard that leaves a read outside the roots to the CLI, whose plan classifier runs it unasked: a Grep of `~` for private keys, say. */
   it("hands a read, a listing or a search outside the roots to the person", async () => {
     const calls = [
       call("Read", { file_path: "/etc/hostname" }),
@@ -332,7 +327,6 @@ describe("the PreToolUse guard in Plan only", () => {
     expect(await decideAll(calls, "plan", "vibe")).toEqual(each(calls, ASK));
   });
 
-  /** Fails on a guard that asks in plan about an edit, a read inside the roots or of the plan file, a sub-agent or a question, which the CLI settles itself. */
   it("leaves edits, reads, sub-agents, questions and scheduling to the CLI", async () => {
     const calls = [
       ...GIT_HOOK_FILES,

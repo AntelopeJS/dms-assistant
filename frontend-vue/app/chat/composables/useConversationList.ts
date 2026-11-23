@@ -5,16 +5,20 @@ import {
 	type Ref,
 	ref,
 } from "vue";
+import { z } from "zod";
 import { DELETE_UNDO_MS } from "../constants/conversation";
 import {
 	CLIENT_MESSAGE_TYPES,
 	SERVER_EVENT_TYPES,
 } from "../constants/protocol";
 import type { ConversationSummary } from "../types/conversation";
+import type { ClientMessage } from "../types/protocol";
+import { parseEvent, type WireEnvelope } from "../utils/wire-envelope";
+import { PROVIDER_NAME_SCHEMA, SCOPE_SCHEMA } from "../utils/wire-schemas";
 
 export interface UseConversationListOptions {
-	send: (msg: object) => boolean;
-	onMessage: (handler: (msg: unknown) => void) => () => void;
+	send: (msg: ClientMessage) => boolean;
+	onMessage: (handler: (msg: WireEnvelope) => void) => () => void;
 }
 
 /** A deletion still within its undo window. */
@@ -34,15 +38,26 @@ export interface UseConversationListResult {
 	pendingDelete: Ref<PendingDelete | null>;
 }
 
-interface ConversationListEvent {
-	type: typeof SERVER_EVENT_TYPES.CONVERSATION_LIST;
-	conversations?: ConversationSummary[];
-}
+const CONVERSATION_SUMMARY_SCHEMA: z.ZodType<ConversationSummary> = z.object({
+	id: z.string(),
+	title: z.string(),
+	createdAtMs: z.number(),
+	updatedAtMs: z.number(),
+	messageCount: z.number(),
+	provider: PROVIDER_NAME_SCHEMA.optional(),
+	totalTokens: z.number().optional(),
+	cacheReadTokens: z.number().optional(),
+	filesChanged: z.number().optional(),
+	filesUndone: z.number().optional(),
+	isRunning: z.boolean().optional(),
+	pendingApprovals: z.number().optional(),
+	pendingQuestions: z.number().optional(),
+	generationMode: SCOPE_SCHEMA.optional(),
+});
 
-function isListEvent(msg: unknown): msg is ConversationListEvent {
-	if (msg === null || typeof msg !== "object") return false;
-	return Reflect.get(msg, "type") === SERVER_EVENT_TYPES.CONVERSATION_LIST;
-}
+const CONVERSATION_LIST_SCHEMA = z.object({
+	conversations: z.array(CONVERSATION_SUMMARY_SCHEMA).optional(),
+});
 
 /**
  * The conversation history. A deletion waits out its undo window on this side:
@@ -57,8 +72,10 @@ export function useConversationList(
 	const hidden = ref<ReadonlySet<string>>(new Set());
 	const pendingDelete = ref<PendingDelete | null>(null);
 
-	options.onMessage((msg) => {
-		if (isListEvent(msg)) all.value = msg.conversations ?? [];
+	options.onMessage((envelope) => {
+		if (envelope.type !== SERVER_EVENT_TYPES.CONVERSATION_LIST) return;
+		const event = parseEvent(CONVERSATION_LIST_SCHEMA, envelope);
+		if (event !== null) all.value = event.conversations ?? [];
 	});
 
 	const setHidden = (id: string, isHidden: boolean): void => {

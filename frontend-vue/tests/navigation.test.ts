@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installCurrentPageTracker } from "../app/runtime/current-page";
 import { BLOCK_SETTLE_BUDGET_MS } from "../app/runtime/block-health";

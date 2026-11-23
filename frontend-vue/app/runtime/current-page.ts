@@ -1,12 +1,13 @@
 import { router } from "@inertiajs/vue3";
 import { HOST_STATE_UPDATE_TYPE } from "./constants";
+import type { TypedMessage } from "./typed-message";
 
-interface CurrentPagePayload {
+type CurrentPagePayload = {
 	path: string;
 	title?: string;
-}
+};
 
-interface HostStateUpdateMessage {
+interface HostStateUpdateMessage extends TypedMessage {
 	type: typeof HOST_STATE_UPDATE_TYPE;
 	currentPage: CurrentPagePayload;
 }

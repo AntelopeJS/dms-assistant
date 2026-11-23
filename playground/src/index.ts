@@ -1,8 +1,4 @@
 import { RegisterSchema } from "@antelopejs/interface-database-decorators";
-/**
- * Value imports, not type-only ones: evaluating these modules is what
- * registers their categories and pages.
- */
 import "./home/page";
 import "./board/page";
 

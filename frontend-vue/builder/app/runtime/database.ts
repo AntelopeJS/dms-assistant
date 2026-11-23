@@ -2,6 +2,8 @@
  * The builder's decision code for a database mapping: the proposal the analysis
  * answered, turned into a draft the integrator edits, and the draft turned into
  * the `MapResources` call Apply sends.
+ *
+ * @packageDocumentation
  */
 import type {
 	ColumnDisplay,
@@ -79,9 +81,9 @@ function resourceDraft(resource: ProposedResource, include: boolean): ResourceDr
 
 /** The proposal as it stands, every proposed relation in and every question unanswered. */
 export function draftFromProposal(proposal: MappingProposal): MappingDraft {
-	const asked = proposal.open
-		.filter((item) => item.kind === 'purpose' && item.resource)
-		.map((item) => resourceDraft(item.resource!, false))
+	const asked = proposal.open.flatMap((item) =>
+		item.kind === 'purpose' && item.resource ? [resourceDraft(item.resource, false)] : [],
+	)
 	return {
 		connection: proposal.connection,
 		module: proposal.module,

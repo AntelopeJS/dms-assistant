@@ -6,12 +6,14 @@ interface MenuItem {
 	onSelect?: () => void;
 }
 
+const menuItems: PropType<Array<MenuItem | MenuItem[]>> = Array;
+
 /** A menu drawn open, each item a button, so tests can pick one. */
 export const UDropdownMenu = defineComponent({
 	name: "UDropdownMenu",
-	props: { items: { type: Array as PropType<unknown[]>, default: () => [] } },
+	props: { items: { type: menuItems, default: () => [] } },
 	setup(props, { slots }) {
-		const flat = (): MenuItem[] => props.items.flat(2) as MenuItem[];
+		const flat = (): MenuItem[] => props.items.flat(2);
 		return () =>
 			h("div", { class: "u-dropdown" }, [
 				slots.default?.(),

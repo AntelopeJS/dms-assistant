@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -34,7 +37,7 @@ describe("the panel's header and empty chat", () => {
 		await buttonWithText(panel.find(".cb-suggest"), "Add a chart").trigger(
 			"click",
 		);
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe(
 			"Add a chart to Sales overview",
 		);
 		expect(panel.find(".att.is-page").text()).toContain("sales/overview");
@@ -232,7 +235,7 @@ describe("the dashboard can open the panel on a chat", () => {
 		const panel = await openPanel(harness);
 		harness.session.startConversation("Add a refund chart");
 		await flushPromises();
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe(
 			"Add a refund chart",
 		);
 		expect(sentOfType(harness, "hello").at(-1)?.conversationId).not.toBe(

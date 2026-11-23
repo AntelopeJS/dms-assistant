@@ -1,12 +1,13 @@
 import type { Ref } from "vue";
 import { CLIENT_MESSAGE_TYPES } from "../constants/protocol";
 import type { QueuedMessage } from "../types/conversation";
+import type { ClientMessage } from "../types/protocol";
 import { moveItem } from "../utils/queue";
 
 export interface UseQueueActionsOptions {
 	activeId: Ref<string>;
 	queued: Ref<QueuedMessage[]>;
-	send: (msg: object) => boolean;
+	send: (msg: ClientMessage) => boolean;
 }
 
 export interface UseQueueActionsResult {
@@ -23,32 +24,46 @@ export interface UseQueueActionsResult {
 export function useQueueActions(
 	options: UseQueueActionsOptions,
 ): UseQueueActionsResult {
-	const send = (type: string, fields: Record<string, unknown>): boolean =>
-		options.send({
-			type,
-			conversationId: options.activeId.value,
-			...fields,
-		});
-
 	return {
 		cancel: (id) => {
-			if (!send(CLIENT_MESSAGE_TYPES.QUEUE_CANCEL, { id })) return;
+			const isSent = options.send({
+				type: CLIENT_MESSAGE_TYPES.QUEUE_CANCEL,
+				conversationId: options.activeId.value,
+				id,
+			});
+			if (!isSent) return;
 			options.queued.value = options.queued.value.filter(
 				(item) => item.id !== id,
 			);
 		},
 		update: (id, content) => {
-			if (!send(CLIENT_MESSAGE_TYPES.QUEUE_UPDATE, { id, content })) return;
+			const isSent = options.send({
+				type: CLIENT_MESSAGE_TYPES.QUEUE_UPDATE,
+				conversationId: options.activeId.value,
+				id,
+				content,
+			});
+			if (!isSent) return;
 			options.queued.value = options.queued.value.map((item) =>
 				item.id === id ? { ...item, content } : item,
 			);
 		},
 		move: (id, toIndex) => {
-			if (!send(CLIENT_MESSAGE_TYPES.QUEUE_MOVE, { id, toIndex })) return;
+			const isSent = options.send({
+				type: CLIENT_MESSAGE_TYPES.QUEUE_MOVE,
+				conversationId: options.activeId.value,
+				id,
+				toIndex,
+			});
+			if (!isSent) return;
 			options.queued.value = moveItem(options.queued.value, id, toIndex);
 		},
 		clear: () => {
-			if (!send(CLIENT_MESSAGE_TYPES.QUEUE_CLEAR, {})) return;
+			const isSent = options.send({
+				type: CLIENT_MESSAGE_TYPES.QUEUE_CLEAR,
+				conversationId: options.activeId.value,
+			});
+			if (!isSent) return;
 			options.queued.value = [];
 		},
 	};

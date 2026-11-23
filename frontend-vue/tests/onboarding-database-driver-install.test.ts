@@ -1,25 +1,18 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import OnboardingDatabase from "../app/views/onboarding/OnboardingDatabase.vue";
 import views from "../i18n/locales/dms-assistant-views-en-GB.json";
+import { builderServer } from "./support/builder-server";
 import {
 	createOnboardingHarness,
 	ONBOARDING_STUBS,
 } from "./support/onboarding";
 
-const builder = vi.hoisted(() => ({
-	projectModules: vi.fn<() => Promise<unknown>>(),
-	checkConnection: vi.fn<(engine: string, url: string) => Promise<unknown>>(),
-}));
-
-vi.mock("../builder/app/runtime/api", () => ({
-	useBuilderApi: () => ({
-		projectModules: builder.projectModules,
-		checkConnection: builder.checkConnection,
-		failure: (error: unknown) => ({ detail: String(error) }),
-	}),
-}));
+const builder = builderServer();
 
 const PROJECT = {
 	modules: ["dms", "mongodb"],
@@ -48,7 +41,7 @@ const TEXT = views.dms_assistant.views.onboarding.database;
 let wrapper: VueWrapper | undefined;
 
 async function checked(): Promise<VueWrapper> {
-	builder.projectModules.mockResolvedValue(PROJECT);
+	builder.project.mockResolvedValue(PROJECT);
 	const harness = createOnboardingHarness();
 	wrapper = mount(OnboardingDatabase, {
 		global: { provide: harness.provide, stubs: ONBOARDING_STUBS },
@@ -68,17 +61,17 @@ function connectButton(picker: VueWrapper): HTMLButtonElement {
 	return found.element;
 }
 
+beforeEach(builder.serve);
+
 afterEach(() => {
 	wrapper?.unmount();
 	wrapper = undefined;
-	builder.projectModules.mockReset();
-	builder.checkConnection.mockReset();
+	builder.reset();
 });
 
 describe("a check that finds no driver", () => {
-	/** Fails on a missing driver shown as an unreachable server, without the install command or the way to retry. */
-	it("shows the sentence, the install command and how to retry", async () => {
-		builder.checkConnection.mockResolvedValue(MISSING_DRIVER);
+	it("shows the sentence, the install command and how to retry (fails on a missing driver shown as an unreachable server, without the install command or the way to retry)", async () => {
+		builder.check.mockResolvedValue(MISSING_DRIVER);
 		const picker = await checked();
 		const reachable = picker.find('[data-check="reachable"]');
 		expect(reachable.attributes("data-status")).toBe("failed");
@@ -91,10 +84,9 @@ describe("a check that finds no driver", () => {
 		expect(connectButton(picker).disabled).toBe(false);
 	});
 
-	/** Fails on a retry that does not run the check again, or keeps the install step once the driver loads. */
-	it("runs the check again on Connect and drops the install step once the driver loads", async () => {
-		builder.checkConnection.mockResolvedValueOnce(MISSING_DRIVER);
-		builder.checkConnection.mockResolvedValueOnce({
+	it("runs the check again on Connect and drops the install step once the driver loads (fails on a retry that does not run the check again, or keeps the install step once the driver loads)", async () => {
+		builder.check.mockResolvedValueOnce(MISSING_DRIVER);
+		builder.check.mockResolvedValueOnce({
 			reachable: false,
 			canRead: false,
 			canWrite: false,
@@ -103,7 +95,7 @@ describe("a check that finds no driver", () => {
 		const picker = await checked();
 		connectButton(picker).click();
 		await flushPromises();
-		expect(builder.checkConnection).toHaveBeenCalledTimes(2);
+		expect(builder.check).toHaveBeenCalledTimes(2);
 		expect(picker.find("[data-driver-install]").exists()).toBe(false);
 		expect(picker.find('[data-check="reachable"]').text()).toContain(
 			"Nothing is listening at this host and port.",

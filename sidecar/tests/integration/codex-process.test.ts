@@ -251,7 +251,6 @@ describe("codex app-server teardown", () => {
     stateDir = undefined;
   });
 
-  /** Spawns the mock and completes its handshake, which is answered only once the mock runs, so its SIGTERM handler is in place. */
   async function spawnMock(dir: string): Promise<CodexProcess> {
     const mock = resolveCodexInstallation();
     if (mock === undefined) throw new Error("the mock binary did not resolve");

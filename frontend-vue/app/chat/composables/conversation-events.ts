@@ -1,20 +1,11 @@
+import { z } from "zod";
 import { MESSAGE_ROLES } from "../constants/conversation";
 import { SERVER_EVENT_TYPES } from "../constants/protocol";
 import type {
 	ConversationMessage,
 	ToolCallMessage,
 } from "../types/conversation";
-import type {
-	AllowedBy,
-	AttachmentMeta,
-	ChangeSetSummary,
-	ConversationModeState,
-	Notice,
-	QueuedItemWire,
-	SnapshotMessage,
-	ToolOutcome,
-	WireAttachment,
-} from "../types/protocol";
+import type { ChangeSetSummary, WireAttachment } from "../types/protocol";
 import type { PendingAttachment } from "../utils/attachments";
 import {
 	buildAssistantMessage,
@@ -25,80 +16,107 @@ import {
 	snapshotToMessages,
 } from "../utils/conversation-messages";
 import { newUuid } from "../utils/ids";
+import { JSON_VALUE_SCHEMA } from "../utils/json";
 import { toActivityKind } from "../utils/run-status";
 import { tokenTally } from "../utils/token-tally";
+import {
+	isForConversation,
+	parseEvent,
+	type WireEnvelope,
+} from "../utils/wire-envelope";
+import {
+	ALLOWED_BY_SCHEMA,
+	APPROVAL_MODE_SCHEMA,
+	ATTACHMENT_META_LIST_SCHEMA,
+	CHANGE_SET_SCHEMA,
+	NOTICE_SCHEMA,
+	QUEUED_ITEM_SCHEMA,
+	SCOPE_SCHEMA,
+	SNAPSHOT_MESSAGE_SCHEMA,
+	TOOL_OUTCOME_SCHEMA,
+} from "../utils/wire-schemas";
 import type { ConversationState } from "./useConversation";
 
-interface ChunkEvent {
-	text: string;
-}
+const CHUNK_SCHEMA = z.object({ text: z.string() });
 
-interface ToolStartEvent {
-	callId: string;
-	toolName: string;
-	args: unknown;
-}
+const TOOL_START_SCHEMA = z.object({
+	callId: z.string(),
+	toolName: z.string(),
+	args: JSON_VALUE_SCHEMA.optional(),
+});
 
-interface ToolEndEvent {
-	callId: string;
-	status?: string;
-	result: unknown;
-	outcome?: ToolOutcome;
-	allowedBy?: AllowedBy;
-	changeSetId?: string;
-}
+const TOOL_END_SCHEMA = z.object({
+	callId: z.string(),
+	status: z.string().optional(),
+	result: JSON_VALUE_SCHEMA.optional(),
+	outcome: TOOL_OUTCOME_SCHEMA.optional(),
+	allowedBy: ALLOWED_BY_SCHEMA.optional(),
+	changeSetId: z.string().optional(),
+});
 
-interface RunErrorEvent {
-	error: string;
-	isRetryable?: boolean;
-}
+const RUN_ERROR_SCHEMA = z.object({
+	error: z.string(),
+	isRetryable: z.boolean().optional(),
+});
 
-interface RunProgressEvent {
-	activity: string;
-	detail?: string;
-	elapsedMs: number;
-	idleMs: number;
-}
+const RUN_PROGRESS_SCHEMA = z.object({
+	activity: z.string(),
+	detail: z.string().optional(),
+	elapsedMs: z.number().default(0),
+	idleMs: z.number().default(0),
+});
 
-interface SnapshotModeWire {
-	mode?: ConversationModeState["mode"];
-	generationMode?: ConversationModeState["generationMode"];
-}
+const MODE_SCHEMA = z.object({
+	mode: APPROVAL_MODE_SCHEMA.optional(),
+	generationMode: SCOPE_SCHEMA.optional(),
+});
 
-interface SnapshotEvent {
-	messages?: SnapshotMessage[];
-	changeSets?: ChangeSetSummary[];
-	mode?: SnapshotModeWire;
-	totalTokens?: number;
-	cacheReadTokens?: number;
-	model?: string;
-}
+type ChunkEvent = z.infer<typeof CHUNK_SCHEMA>;
+type ToolStartEvent = z.infer<typeof TOOL_START_SCHEMA>;
+type ToolEndEvent = z.infer<typeof TOOL_END_SCHEMA>;
+type RunErrorEvent = z.infer<typeof RUN_ERROR_SCHEMA>;
+type RunProgressEvent = z.infer<typeof RUN_PROGRESS_SCHEMA>;
+type ModeWire = z.infer<typeof MODE_SCHEMA>;
 
-interface QueueStateEvent {
-	items?: QueuedItemWire[];
-}
+const SNAPSHOT_SCHEMA = z.object({
+	messages: z.array(SNAPSHOT_MESSAGE_SCHEMA).optional(),
+	changeSets: z.array(CHANGE_SET_SCHEMA).optional(),
+	mode: MODE_SCHEMA.optional(),
+	totalTokens: z.number().optional(),
+	cacheReadTokens: z.number().optional(),
+	model: z.string().optional(),
+});
 
-interface UserMessageEchoEvent {
-	content: string;
-	attachments?: AttachmentMeta[];
-	timestampMs?: number;
-}
+const QUEUE_STATE_SCHEMA = z.object({
+	items: z.array(QUEUED_ITEM_SCHEMA).optional(),
+});
 
-interface NoticeEvent {
-	notice?: Notice;
-}
+const USER_MESSAGE_ECHO_SCHEMA = z.object({
+	content: z.string(),
+	attachments: ATTACHMENT_META_LIST_SCHEMA.optional(),
+	timestampMs: z.number().optional(),
+});
 
-interface ChangeSetEvent {
-	changeSet?: ChangeSetSummary;
-}
+const NOTICE_EVENT_SCHEMA = z.object({ notice: NOTICE_SCHEMA.optional() });
 
-interface UsageEvent {
-	totalTokens?: number;
-	cacheReadTokens?: number;
-	model?: string;
-}
+const CHANGE_SET_EVENT_SCHEMA = z.object({
+	changeSet: CHANGE_SET_SCHEMA.optional(),
+});
 
-type EventHandler = (state: ConversationState, event: never) => void;
+const USAGE_SCHEMA = z.object({
+	totalTokens: z.number().optional(),
+	cacheReadTokens: z.number().optional(),
+	model: z.string().optional(),
+});
+
+type SnapshotEvent = z.infer<typeof SNAPSHOT_SCHEMA>;
+type QueueStateEvent = z.infer<typeof QUEUE_STATE_SCHEMA>;
+type UserMessageEchoEvent = z.infer<typeof USER_MESSAGE_ECHO_SCHEMA>;
+type NoticeEvent = z.infer<typeof NOTICE_EVENT_SCHEMA>;
+type ChangeSetEvent = z.infer<typeof CHANGE_SET_EVENT_SCHEMA>;
+type UsageEvent = z.infer<typeof USAGE_SCHEMA>;
+
+type EventHandler = (state: ConversationState, envelope: WireEnvelope) => void;
 
 function setMessages(
 	state: ConversationState,
@@ -251,7 +269,7 @@ function reportProgress(
 	state.isTurnInFlight.value = true;
 }
 
-function toModeState(wire: SnapshotModeWire | undefined) {
+function toModeState(wire: ModeWire | undefined) {
 	if (wire?.mode === undefined || wire.generationMode === undefined)
 		return null;
 	return {
@@ -284,7 +302,7 @@ function applySnapshot(state: ConversationState, event: SnapshotEvent): void {
 	setMessages(state, messages);
 	state.changeSets.value = byId(event.changeSets ?? []);
 	state.mode.value = toModeState(event.mode) ?? state.mode.value;
-	if (typeof event.totalTokens === "number")
+	if (event.totalTokens !== undefined)
 		state.usage.value = tokenTally(event.totalTokens, event.cacheReadTokens);
 	state.model.value = event.model ?? null;
 	state.isRunning.value = false;
@@ -327,7 +345,7 @@ function echoUserMessage(
 	);
 }
 
-function applyMode(state: ConversationState, event: SnapshotModeWire): void {
+function applyMode(state: ConversationState, event: ModeWire): void {
 	state.mode.value = toModeState(event) ?? state.mode.value;
 }
 
@@ -363,47 +381,57 @@ function applyChangeSet(state: ConversationState, event: ChangeSetEvent): void {
 
 function applyUsage(state: ConversationState, event: UsageEvent): void {
 	if (event.model !== undefined) state.model.value = event.model;
-	if (typeof event.totalTokens !== "number") return;
+	if (event.totalTokens === undefined) return;
 	state.usage.value = tokenTally(event.totalTokens, event.cacheReadTokens);
 }
 
-const EVENT_HANDLERS: Record<string, EventHandler> = {
-	[SERVER_EVENT_TYPES.ASSISTANT_MESSAGE_CHUNK]: appendChunk,
-	[SERVER_EVENT_TYPES.TOOL_CALL_START]: startTool,
-	[SERVER_EVENT_TYPES.TOOL_CALL_END]: endTool,
-	[SERVER_EVENT_TYPES.RUN_DONE]: endTurn,
-	[SERVER_EVENT_TYPES.RUN_ERROR]: failRun,
-	[SERVER_EVENT_TYPES.RUN_RESUMED]: resumeRun,
-	[SERVER_EVENT_TYPES.RUN_PROGRESS]: reportProgress,
-	[SERVER_EVENT_TYPES.CONVERSATION_SNAPSHOT]: applySnapshot,
-	[SERVER_EVENT_TYPES.QUEUE_STATE]: applyQueue,
-	[SERVER_EVENT_TYPES.USER_MESSAGE_ECHO]: echoUserMessage,
-	[SERVER_EVENT_TYPES.CONVERSATION_MODE]: applyMode,
-	[SERVER_EVENT_TYPES.NOTICE]: appendNotice,
-	[SERVER_EVENT_TYPES.CHANGE_SET]: applyChangeSet,
-	[SERVER_EVENT_TYPES.USAGE]: applyUsage,
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object";
+function folds<Event>(
+	schema: z.ZodType<Event>,
+	apply: (state: ConversationState, event: Event) => void,
+): EventHandler {
+	return (state, envelope) => {
+		const event = parseEvent(schema, envelope);
+		if (event !== null) apply(state, event);
+	};
 }
 
-function isForActive(
-	state: ConversationState,
-	msg: Record<string, unknown>,
-): boolean {
-	const id = msg.conversationId;
-	return typeof id !== "string" || id === state.options.activeId.value;
-}
+const EVENT_HANDLERS: ReadonlyMap<string, EventHandler> = new Map([
+	[
+		SERVER_EVENT_TYPES.ASSISTANT_MESSAGE_CHUNK,
+		folds(CHUNK_SCHEMA, appendChunk),
+	],
+	[SERVER_EVENT_TYPES.TOOL_CALL_START, folds(TOOL_START_SCHEMA, startTool)],
+	[SERVER_EVENT_TYPES.TOOL_CALL_END, folds(TOOL_END_SCHEMA, endTool)],
+	[SERVER_EVENT_TYPES.RUN_DONE, endTurn],
+	[SERVER_EVENT_TYPES.RUN_ERROR, folds(RUN_ERROR_SCHEMA, failRun)],
+	[SERVER_EVENT_TYPES.RUN_RESUMED, resumeRun],
+	[SERVER_EVENT_TYPES.RUN_PROGRESS, folds(RUN_PROGRESS_SCHEMA, reportProgress)],
+	[
+		SERVER_EVENT_TYPES.CONVERSATION_SNAPSHOT,
+		folds(SNAPSHOT_SCHEMA, applySnapshot),
+	],
+	[SERVER_EVENT_TYPES.QUEUE_STATE, folds(QUEUE_STATE_SCHEMA, applyQueue)],
+	[
+		SERVER_EVENT_TYPES.USER_MESSAGE_ECHO,
+		folds(USER_MESSAGE_ECHO_SCHEMA, echoUserMessage),
+	],
+	[SERVER_EVENT_TYPES.CONVERSATION_MODE, folds(MODE_SCHEMA, applyMode)],
+	[SERVER_EVENT_TYPES.NOTICE, folds(NOTICE_EVENT_SCHEMA, appendNotice)],
+	[
+		SERVER_EVENT_TYPES.CHANGE_SET,
+		folds(CHANGE_SET_EVENT_SCHEMA, applyChangeSet),
+	],
+	[SERVER_EVENT_TYPES.USAGE, folds(USAGE_SCHEMA, applyUsage)],
+]);
 
 /** Folds one sidecar event into the active conversation; others are ignored. */
 export function dispatchConversationEvent(
 	state: ConversationState,
-	msg: unknown,
+	envelope: WireEnvelope,
 ): void {
-	if (!isRecord(msg) || typeof msg.type !== "string") return;
-	const handler = EVENT_HANDLERS[msg.type];
-	if (handler === undefined || !isForActive(state, msg)) return;
+	const handler = EVENT_HANDLERS.get(envelope.type);
+	if (handler === undefined) return;
+	if (!isForConversation(envelope, state.options.activeId.value)) return;
 	state.lastEventAtMs.value = Date.now();
-	handler(state, msg as never);
+	handler(state, envelope);
 }

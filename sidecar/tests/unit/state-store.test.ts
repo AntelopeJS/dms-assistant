@@ -194,9 +194,9 @@ describe("stored tool names", () => {
       },
     };
     await writeFile(filePath, JSON.stringify(stored), FILE_ENCODING);
-    const { messages } = (await createStore({ filePath }).read()).conversations[
-      "conv-1"
-    ]!;
+    const messages =
+      (await createStore({ filePath }).read()).conversations["conv-1"]
+        ?.messages ?? [];
     expect(messages.map((message) => message.toolName)).toEqual([
       "mcp__dms-assistant__BuilderDeletePage",
       "mcp__dms-assistant__Typecheck",

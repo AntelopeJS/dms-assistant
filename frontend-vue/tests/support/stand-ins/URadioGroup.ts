@@ -6,12 +6,14 @@ interface RadioItem {
 	description?: string;
 }
 
+const radioItems: PropType<RadioItem[]> = Array;
+
 export const URadioGroup = defineComponent({
 	name: "URadioGroup",
 	inheritAttrs: false,
 	props: {
 		modelValue: { type: String, default: "" },
-		items: { type: Array as PropType<RadioItem[]>, default: () => [] },
+		items: { type: radioItems, default: () => [] },
 		disabled: { type: Boolean, default: false },
 	},
 	emits: ["update:modelValue"],

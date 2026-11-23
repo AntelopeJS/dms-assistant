@@ -1,5 +1,6 @@
 import type { ACTIVITY_KINDS } from "../constants/run-status";
 import type { PendingAttachment } from "../utils/attachments";
+import type { JsonValue } from "./json";
 import type {
 	AllowedBy,
 	Notice,
@@ -110,8 +111,8 @@ export interface ToolCallMessage {
 	role: "tool";
 	callId: string;
 	toolName: string;
-	args: unknown;
-	result?: unknown;
+	args?: JsonValue;
+	result?: JsonValue;
 	status: ToolStatus;
 	outcome?: ToolOutcome;
 	allowedBy?: AllowedBy;

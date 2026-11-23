@@ -10,7 +10,10 @@ export const UInput = defineComponent({
 			h("input", {
 				...attrs,
 				value: props.modelValue,
-				onInput: (event: Event) =>
-					emit("update:modelValue", (event.target as HTMLInputElement).value),
+				onInput: (event: Event) => {
+					if (event.target instanceof HTMLInputElement) {
+						emit("update:modelValue", event.target.value);
+					}
+				},
 			}),
 });

@@ -5,14 +5,13 @@ interface SegmentItem {
 	label: string;
 }
 
+const segmentItems: PropType<SegmentItem[]> = Array;
+
 export const DmsSegmentedControl = defineComponent({
 	name: "DmsSegmentedControl",
 	props: {
 		modelValue: { type: [String, Number], default: "" },
-		items: {
-			type: Array as PropType<SegmentItem[]>,
-			default: () => [],
-		},
+		items: { type: segmentItems, default: () => [] },
 	},
 	emits: ["update:modelValue"],
 	setup:

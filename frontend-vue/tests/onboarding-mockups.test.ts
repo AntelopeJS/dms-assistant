@@ -21,7 +21,22 @@ const CRM = {
 	status: "draft",
 };
 
-function answering(body: unknown) {
+type MockupRow = {
+	name?: string;
+	title?: string;
+	pages?: number;
+	openComments?: number;
+	source?: string;
+	updatedAt?: string;
+	status?: string;
+};
+
+type MockupsBody = {
+	results: MockupRow[];
+	total: number;
+};
+
+function answering(body: MockupsBody) {
 	return async (path: string) => {
 		expect(path).toBe(MOCKUPS_PATH);
 		return body;

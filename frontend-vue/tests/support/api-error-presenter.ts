@@ -9,20 +9,23 @@ export function installApiErrorPresenter(
 ) {
 	vi.stubEnv("SSR", false);
 	const add = vi.fn(() => ({ id: "notice" }));
-	const messages: Record<string, string> = {
-		...extraMessages,
-		"error.read_only_demo": "This demo is read-only.",
-		"error.500.description": "Something went wrong.",
-		"dms_assistant.views.error.description":
+	const messages = new Map([
+		...Object.entries(extraMessages),
+		["error.read_only_demo", "This demo is read-only."],
+		["error.500.description", "Something went wrong."],
+		[
+			"dms_assistant.views.error.description",
 			"Could not load the assistant's data.",
-		"dms_assistant.views.unavailable.description":
+		],
+		[
+			"dms_assistant.views.unavailable.description",
 			"The assistant is not running.",
-	};
+		],
+	]);
 	vi.stubGlobal("useToast", () => ({ add }));
 	vi.stubGlobal("getPluginI18n", () => ({
 		i18n: {
-			tm: (key: string) =>
-				Object.hasOwn(messages, key) ? messages[key] : null,
+			tm: (key: string) => messages.get(key) ?? null,
 			rt: (message: string) => message,
 		},
 	}));

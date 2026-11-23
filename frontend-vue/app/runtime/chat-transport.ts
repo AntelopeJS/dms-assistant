@@ -1,5 +1,6 @@
 import type { ChannelStatus } from "./channel-client";
 import { createListeners } from "./listeners";
+import type { OutgoingMessage, TypedMessage } from "./typed-message";
 
 /**
  * The chat's side of the tab's stream: the dashboard owns the stream and hands
@@ -7,25 +8,25 @@ import { createListeners } from "./listeners";
  */
 export interface ChatTransport {
 	/** Sidecar messages for the chat, parsed once by the dashboard, in order. */
-	onMessage: (listener: (msg: object) => void) => () => void;
+	onMessage: (listener: (msg: TypedMessage) => void) => () => void;
 	/** Every (re)connection is a new sidecar socket: the chat says hello again. */
 	onReady: (listener: () => void) => () => void;
 	onStatus: (listener: (status: ChannelStatus) => void) => () => void;
 	getStatus: () => ChannelStatus;
 	/** False when the message was dropped because the stream is not connected. */
-	send: (msg: unknown) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	reconnect: () => void;
 }
 
 export interface ChatTransportActions {
-	send: (msg: unknown) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	reconnect: () => void;
 	getStatus: () => ChannelStatus;
 }
 
 export interface ChatTransportHub {
 	transport: ChatTransport;
-	deliver: (msg: object) => void;
+	deliver: (msg: TypedMessage) => void;
 	announceReady: () => void;
 	announceStatus: (status: ChannelStatus) => void;
 }
@@ -33,7 +34,7 @@ export interface ChatTransportHub {
 export function createChatTransport(
 	actions: ChatTransportActions,
 ): ChatTransportHub {
-	const messages = createListeners<object>();
+	const messages = createListeners<TypedMessage>();
 	const ready = createListeners<undefined>();
 	const statuses = createListeners<ChannelStatus>();
 	return {

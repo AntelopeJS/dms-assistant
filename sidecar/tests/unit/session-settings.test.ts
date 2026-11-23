@@ -13,7 +13,6 @@ const isDenied = (path: string) =>
   ruleGlobs.some((glob) => matchesGlob(path, `/${glob}`));
 
 describe("the Read rules that keep secret files out of a skill's @ references", () => {
-  /** Fails on rules anchored on the session's working directory, which let an `@` reference to a `.env` above or beside it through. */
   it("anchor every rule at the filesystem root", () => {
     expect(
       SECRET_FILE_READ_DENY_RULES.filter(
@@ -29,7 +28,6 @@ describe("the Read rules that keep secret files out of a skill's @ references", 
     },
   );
 
-  /** Fails on rules that keep a `[!...]` class, which Claude Code reads as the characters it lists: `.env.local` then slips through and `.env.example` is refused. */
   it("spell every excluded character class out as the characters it keeps", () => {
     expect(
       SECRET_FILE_READ_DENY_RULES.filter((rule) => rule.includes("[!")),

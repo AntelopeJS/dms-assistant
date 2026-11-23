@@ -5,32 +5,25 @@ import {
 	createAssistantActivity,
 } from "../app/runtime/assistant-activity";
 import type { ChannelStatus } from "../app/runtime/channel-client";
-import type { ChatTransport } from "../app/runtime/chat-transport";
-
-type Listener = (msg: object) => void;
-type StatusListener = (status: ChannelStatus) => void;
+import {
+	type ChatTransport,
+	type ChatTransportHub,
+	createChatTransport,
+} from "../app/runtime/chat-transport";
 
 function fakeChat(initial: ChannelStatus = "connected") {
-	const listeners = new Set<Listener>();
-	const statusListeners = new Set<StatusListener>();
 	let status = initial;
-	const chat = {
-		onMessage: (listener: Listener) => {
-			listeners.add(listener);
-			return () => listeners.delete(listener);
-		},
-		onStatus: (listener: StatusListener) => {
-			statusListeners.add(listener);
-			return () => statusListeners.delete(listener);
-		},
+	const hub = createChatTransport({
+		send: () => true,
+		reconnect: () => undefined,
 		getStatus: () => status,
-	} as unknown as ChatTransport;
+	});
 	return {
-		chat,
-		emit: (msg: object) => listeners.forEach((l) => l(msg)),
+		chat: hub.transport,
+		emit: hub.deliver,
 		announce: (next: ChannelStatus) => {
 			status = next;
-			statusListeners.forEach((l) => l(next));
+			hub.announceStatus(next);
 		},
 	};
 }
@@ -64,7 +57,7 @@ function activityOverHeldRefresh(chat: ChatTransport) {
 }
 
 function finishTurnThenLoseStream(
-	emit: (msg: object) => void,
+	emit: ChatTransportHub["deliver"],
 	announce: (next: ChannelStatus) => void,
 ): void {
 	emit({ type: "conversation_list", conversations: [{ isRunning: true }] });
@@ -72,7 +65,7 @@ function finishTurnThenLoseStream(
 	announce("disconnected");
 }
 
-describe("assistant activity", () => {
+describe("assistant activity, from the status and the stream's lists", () => {
 	it("polls the status through the read's interval while it is useful, and stops on teardown", async () => {
 		const data = ref<AssistantStatusPayload | null>(null);
 		let interval: () => number = () => -1;
@@ -183,7 +176,9 @@ describe("assistant activity", () => {
 		expect(activity.workingConversations.value).toBe(2);
 		activity.stop();
 	});
+});
 
+describe("assistant activity, once the stream lets go", () => {
 	it("keeps a finished turn when a status answer sent during the turn lands after the stream let go (fails if the release reopens the counts to any answer)", async () => {
 		const { chat, emit, announce } = fakeChat();
 		const { data, activity } = activityOverHeldRefresh(chat);

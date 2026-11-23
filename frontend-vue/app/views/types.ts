@@ -1,4 +1,5 @@
 import type { Tone } from "#dms-core/app/types/tone";
+import type { JsonValue } from "../../builder/app/runtime/types";
 
 type AgentId = "claude" | "codex";
 export type ScopeId = "safe" | "vibe";
@@ -131,7 +132,7 @@ export interface ActivityDiffFile {
  * `result`, the same key as the row's outcome: both readings are accepted.
  */
 export interface ActivityDetailPayload extends Omit<ActivityRow, "result"> {
-	args?: Record<string, unknown>;
+	args?: Record<string, JsonValue>;
 	result?: string;
 	output?: string;
 	diff?: ActivityDiffFile[];

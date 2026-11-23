@@ -29,8 +29,8 @@ import type {
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
 import { t } from "../../builder/app/runtime/i18n";
-import { tabAnalysisLead } from "./analysis-lead";
-import type { ConnectMemory } from "./connect-memory";
+import { type AnalysisLead, tabAnalysisLead } from "./analysis-lead";
+import type { ConnectMemory, RememberedConnection } from "./connect-memory";
 import {
 	canConnect,
 	type ConnectCheck,
@@ -150,6 +150,335 @@ export function connectForm(
 	return form;
 }
 
+interface Generation {
+	loop: number;
+	attempt: string;
+}
+
+/** What one popup's connect flow tracks while it checks, writes and follows a connection. */
+interface Connector {
+	api: BuilderApi;
+	memory: ConnectMemory;
+	lead: AnalysisLead;
+	resumeUntil: number | undefined;
+	phase: Ref<ConnectPhase>;
+	view: Ref<BuildView | null>;
+	access: Ref<DatabaseAccess | null>;
+	refusal: Ref<string | null>;
+	failure: Ref<string | null>;
+	checked: Checked | undefined;
+	reloadingSince: { reload: Reload; at: number } | undefined;
+	isAnalysing: boolean;
+	answeredSchemas: string | undefined;
+	written: { connection: string; url: string } | undefined;
+	generation: number;
+	timer: ReturnType<typeof setTimeout> | undefined;
+	isDisposed: boolean;
+}
+
+function isCurrent(c: Connector, loop: number): boolean {
+	return !c.isDisposed && loop === c.generation;
+}
+
+async function leads(
+	c: Connector,
+	connection: string,
+	loop: number,
+): Promise<boolean> {
+	return (await c.lead.take(connection)) && isCurrent(c, loop);
+}
+
+async function checkAccess(
+	c: Connector,
+	engine: DatabaseEngine,
+	url: string,
+): Promise<DatabaseAccess> {
+	try {
+		return await c.api.checkConnection(engine, url);
+	} catch (error) {
+		return {
+			reachable: false,
+			canRead: false,
+			canWrite: false,
+			reason: c.api.failure(error).detail,
+		};
+	}
+}
+
+async function analyse(
+	c: Connector,
+	connection: string,
+	module: string,
+	loop: number,
+	schemas?: string[],
+): Promise<void> {
+	c.isAnalysing = true;
+	try {
+		const result = await c.api.analyseDatabase(connection, module, schemas);
+		if (!result.ok && isCurrent(c, loop)) {
+			c.failure.value = refusalText(result.error);
+		}
+	} catch (error) {
+		if (isCurrent(c, loop)) c.failure.value = c.api.failure(error).detail;
+	} finally {
+		if (isCurrent(c, loop)) c.isAnalysing = false;
+	}
+}
+
+async function followBuild(
+	c: Connector,
+	connection: string,
+	module: string,
+	loop: number,
+): Promise<BuildView | null> {
+	const answers = await readBuild(c.api, connection);
+	if (!isCurrent(c, loop)) return null;
+	const { reload } = buildState(answers);
+	if (reload === undefined) c.reloadingSince = undefined;
+	else if (c.reloadingSince?.reload !== reload) {
+		c.reloadingSince = { reload, at: Date.now() };
+	}
+	const next = buildState(
+		answers,
+		c.reloadingSince === undefined ? 0 : Date.now() - c.reloadingSince.at,
+	);
+	c.view.value = next;
+	if (next.schemas && !c.isAnalysing && next.job !== c.answeredSchemas) {
+		if (!(await leads(c, connection, loop))) return next;
+		c.answeredSchemas = next.job;
+		await analyse(c, connection, module, loop, preferredSchemas(next.schemas));
+	} else if (
+		next.needsAnalysis &&
+		!c.isAnalysing &&
+		(await leads(c, connection, loop))
+	) {
+		await analyse(c, connection, module, loop);
+	}
+	return next;
+}
+
+async function keepsFollowing(
+	c: Connector,
+	connection: string,
+	module: string,
+	loop: number,
+): Promise<boolean> {
+	let next: BuildView | null;
+	try {
+		next = await followBuild(c, connection, module, loop);
+	} catch (error) {
+		if (isCurrent(c, loop)) c.failure.value = c.api.failure(error).detail;
+		return false;
+	}
+	if (next === null || !isCurrent(c, loop)) return false;
+	const expired =
+		loop === RESUMED_LOOP &&
+		c.resumeUntil !== undefined &&
+		Date.now() >= c.resumeUntil;
+	if (next.undeclared || expired) {
+		c.memory.clear();
+		c.phase.value = { kind: "form" };
+		return false;
+	}
+	if (next.fork && next.job) {
+		c.memory.clear();
+		c.phase.value = { kind: "analysed", connection, module };
+		return false;
+	}
+	if (
+		next.connectionError !== undefined ||
+		next.analysisFailed ||
+		next.empty ||
+		next.allMapped
+	) {
+		c.memory.clear();
+		return false;
+	}
+	return !next.gaveUp && c.failure.value === null;
+}
+
+async function poll(
+	c: Connector,
+	connection: string,
+	module: string,
+	loop: number,
+): Promise<void> {
+	if (await keepsFollowing(c, connection, module, loop)) {
+		c.timer = setTimeout(() => void poll(c, connection, module, loop), POLL_MS);
+	} else if (isCurrent(c, loop)) {
+		c.lead.release();
+	}
+}
+
+async function write(
+	c: Connector,
+	{ form, connection, writing }: Checked,
+	choice: ConnectionAccess,
+	loop: number,
+): Promise<boolean> {
+	const url = connectionUrl(form.engine, form.fields);
+	if (c.written?.connection === connection && c.written.url === url)
+		return true;
+	try {
+		const result =
+			writing.kind === "url"
+				? await c.api.setConnectionUrl(connection, url)
+				: await c.api.configureProject(
+						connectSteps(
+							{ ...form, access: choice },
+							writing.project,
+							writing.driver,
+						),
+						false,
+						connectVariables(form),
+					);
+		if (!result.ok) {
+			if (isCurrent(c, loop)) c.refusal.value = refusalText(result.error);
+			return false;
+		}
+	} catch (error) {
+		if (isCurrent(c, loop)) c.refusal.value = c.api.failure(error).detail;
+		return false;
+	}
+	c.written = { connection, url };
+	return true;
+}
+
+async function proceed(
+	c: Connector,
+	target: Checked,
+	choice: ConnectionAccess,
+	loop: number,
+): Promise<void> {
+	const { form, connection, module, access: answer } = target;
+	c.phase.value = { kind: "analysing", connection, module };
+	if (!(await write(c, target, choice, loop))) {
+		if (isCurrent(c, loop)) c.phase.value = { kind: "form" };
+		return;
+	}
+	c.memory.write(target.attempt, {
+		engine: form.engine,
+		connection,
+		access: answer,
+	});
+	if (isCurrent(c, loop)) await poll(c, connection, module, loop);
+}
+
+/** Drops everything the earlier attempt knew, and starts the next generation of attempts. */
+function supersede(c: Connector): Generation {
+	if (c.timer !== undefined) clearTimeout(c.timer);
+	c.lead.release();
+	c.generation += 1;
+	const attempt = c.memory.begin();
+	c.checked = undefined;
+	c.refusal.value = null;
+	c.failure.value = null;
+	c.view.value = null;
+	c.access.value = null;
+	c.reloadingSince = undefined;
+	c.isAnalysing = false;
+	c.answeredSchemas = undefined;
+	return { loop: c.generation, attempt };
+}
+
+async function connect(
+	c: Connector,
+	engine: DatabaseEngine,
+	url: string,
+): Promise<UrlProblem | null> {
+	const form = connectForm(engine, url);
+	if ("kind" in form) return form;
+	const { loop, attempt } = supersede(c);
+	c.phase.value = { kind: "checking" };
+	const answer = await checkAccess(c, engine, url);
+	if (!isCurrent(c, loop)) return null;
+	c.access.value = answer;
+	if (!canConnect(answer)) return null;
+	const connection = connectionId(form.name);
+	const target: Checked = {
+		form,
+		connection,
+		module: managedNames(form).tablesModule,
+		access: answer,
+		writing: { kind: "url" },
+		attempt,
+	};
+	if (c.written?.connection !== connection) {
+		let project: ProjectModules;
+		try {
+			project = await c.api.projectModules();
+		} catch (error) {
+			if (!isCurrent(c, loop)) return null;
+			c.refusal.value = c.api.failure(error).detail;
+			c.phase.value = { kind: "form" };
+			return null;
+		}
+		if (!isCurrent(c, loop)) return null;
+		if (!project.modules.includes(managedNames(form).driverModule)) {
+			const driver = project.drivers[engine];
+			if (driver === undefined) {
+				c.refusal.value = unavailableReason(engine, project.interfaceDatabase);
+				c.phase.value = { kind: "form" };
+				return null;
+			}
+			target.writing = { kind: "new", project, driver };
+			if (answer.canWrite) {
+				c.checked = target;
+				c.phase.value = { kind: "choosing" };
+				return null;
+			}
+		}
+	}
+	await proceed(c, target, "read", loop);
+	return null;
+}
+
+async function choose(c: Connector, choice: ConnectionAccess): Promise<void> {
+	const target = c.checked;
+	if (target === undefined || c.phase.value.kind !== "choosing") return;
+	c.checked = undefined;
+	await proceed(c, target, choice, c.generation);
+}
+
+function reset(c: Connector): void {
+	supersede(c);
+	c.phase.value = { kind: "form" };
+}
+
+function createConnector(
+	api: BuilderApi,
+	memory: ConnectMemory,
+	remembered: RememberedConnection | null,
+): Connector {
+	return {
+		api,
+		memory,
+		lead: tabAnalysisLead(),
+		resumeUntil: remembered?.until,
+		phase: ref<ConnectPhase>(
+			remembered === null
+				? { kind: "form" }
+				: {
+						kind: "analysing",
+						connection: remembered.connection,
+						module: remembered.module,
+					},
+		),
+		view: ref<BuildView | null>(null),
+		access: ref<DatabaseAccess | null>(remembered?.access ?? null),
+		refusal: ref<string | null>(null),
+		failure: ref<string | null>(null),
+		checked: undefined,
+		reloadingSince: undefined,
+		isAnalysing: false,
+		answeredSchemas: undefined,
+		written: undefined,
+		generation: RESUMED_LOOP,
+		timer: undefined,
+		isDisposed: false,
+	};
+}
+
 /**
  * "Connect and analyse" over the builder's live check and connect engine: the check of the URL
  * before anything is written, the `ConfigureProject` batch the builder's form writes with the
@@ -162,312 +491,32 @@ export function useDatabaseConnect(
 	memory: ConnectMemory,
 ): DatabaseConnect {
 	const remembered = memory.read();
-	const phase = ref<ConnectPhase>(
-		remembered === null
-			? { kind: "form" }
-			: {
-					kind: "analysing",
-					connection: remembered.connection,
-					module: remembered.module,
-				},
-	);
-	const resumeUntil = remembered?.until;
-	const view = ref<BuildView | null>(null);
-	const access = ref<DatabaseAccess | null>(remembered?.access ?? null);
-	const refusal = ref<string | null>(null);
-	const failure = ref<string | null>(null);
-	let checked: Checked | undefined;
-	let reloadingSince: { reload: Reload; at: number } | undefined;
-	let analysing = false;
-	let answeredSchemas: string | undefined;
-	let written: { connection: string; url: string } | undefined;
-	let generation = RESUMED_LOOP;
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	let disposed = false;
-	const lead = tabAnalysisLead();
-
-	function current(loop: number): boolean {
-		return !disposed && loop === generation;
-	}
-
-	async function leads(connection: string, loop: number): Promise<boolean> {
-		return (await lead.take(connection)) && current(loop);
-	}
-
-	async function checkAccess(
-		engine: DatabaseEngine,
-		url: string,
-	): Promise<DatabaseAccess> {
-		try {
-			return await api.checkConnection(engine, url);
-		} catch (error) {
-			return {
-				reachable: false,
-				canRead: false,
-				canWrite: false,
-				reason: api.failure(error).detail,
-			};
-		}
-	}
-
-	async function analyse(
-		connection: string,
-		module: string,
-		loop: number,
-		schemas?: string[],
-	): Promise<void> {
-		analysing = true;
-		try {
-			const result = await api.analyseDatabase(connection, module, schemas);
-			if (!result.ok && current(loop)) {
-				failure.value = refusalText(result.error);
-			}
-		} catch (error) {
-			if (current(loop)) failure.value = api.failure(error).detail;
-		} finally {
-			if (current(loop)) analysing = false;
-		}
-	}
-
-	async function followBuild(
-		connection: string,
-		module: string,
-		loop: number,
-	): Promise<BuildView | null> {
-		const answers = await readBuild(api, connection);
-		if (!current(loop)) return null;
-		const { reload } = buildState(answers);
-		if (reload === undefined) reloadingSince = undefined;
-		else if (reloadingSince?.reload !== reload) {
-			reloadingSince = { reload, at: Date.now() };
-		}
-		const next = buildState(
-			answers,
-			reloadingSince === undefined ? 0 : Date.now() - reloadingSince.at,
-		);
-		view.value = next;
-		if (next.schemas && !analysing && next.job !== answeredSchemas) {
-			if (!(await leads(connection, loop))) return next;
-			answeredSchemas = next.job;
-			await analyse(connection, module, loop, preferredSchemas(next.schemas));
-		} else if (
-			next.needsAnalysis &&
-			!analysing &&
-			(await leads(connection, loop))
-		) {
-			await analyse(connection, module, loop);
-		}
-		return next;
-	}
-
-	async function poll(
-		connection: string,
-		module: string,
-		loop: number,
-	): Promise<void> {
-		if (await keepsFollowing(connection, module, loop)) {
-			timer = setTimeout(() => void poll(connection, module, loop), POLL_MS);
-		} else if (current(loop)) {
-			lead.release();
-		}
-	}
-
-	async function keepsFollowing(
-		connection: string,
-		module: string,
-		loop: number,
-	): Promise<boolean> {
-		let next: BuildView | null;
-		try {
-			next = await followBuild(connection, module, loop);
-		} catch (error) {
-			if (current(loop)) failure.value = api.failure(error).detail;
-			return false;
-		}
-		if (next === null || !current(loop)) return false;
-		const expired =
-			loop === RESUMED_LOOP &&
-			resumeUntil !== undefined &&
-			Date.now() >= resumeUntil;
-		if (next.undeclared || expired) {
-			memory.clear();
-			phase.value = { kind: "form" };
-			return false;
-		}
-		if (next.fork && next.job) {
-			memory.clear();
-			phase.value = { kind: "analysed", connection, module };
-			return false;
-		}
-		if (
-			next.connectionError !== undefined ||
-			next.analysisFailed ||
-			next.empty ||
-			next.allMapped
-		) {
-			memory.clear();
-			return false;
-		}
-		return !next.gaveUp && failure.value === null;
-	}
-
-	async function write(
-		{ form, connection, writing }: Checked,
-		choice: ConnectionAccess,
-		loop: number,
-	): Promise<boolean> {
-		const url = connectionUrl(form.engine, form.fields);
-		if (written?.connection === connection && written.url === url) return true;
-		try {
-			const result =
-				writing.kind === "url"
-					? await api.setConnectionUrl(connection, url)
-					: await api.configureProject(
-							connectSteps(
-								{ ...form, access: choice },
-								writing.project,
-								writing.driver,
-							),
-							false,
-							connectVariables(form),
-						);
-			if (!result.ok) {
-				if (current(loop)) refusal.value = refusalText(result.error);
-				return false;
-			}
-		} catch (error) {
-			if (current(loop)) refusal.value = api.failure(error).detail;
-			return false;
-		}
-		written = { connection, url };
-		return true;
-	}
-
-	async function proceed(
-		target: Checked,
-		choice: ConnectionAccess,
-		loop: number,
-	): Promise<void> {
-		const { form, connection, module, access: answer } = target;
-		phase.value = { kind: "analysing", connection, module };
-		if (!(await write(target, choice, loop))) {
-			if (current(loop)) phase.value = { kind: "form" };
-			return;
-		}
-		memory.write(target.attempt, {
-			engine: form.engine,
-			connection,
-			access: answer,
-		});
-		if (current(loop)) await poll(connection, module, loop);
-	}
-
-	function stop(): { loop: number; attempt: string } {
-		if (timer !== undefined) clearTimeout(timer);
-		lead.release();
-		generation += 1;
-		const attempt = memory.begin();
-		checked = undefined;
-		refusal.value = null;
-		failure.value = null;
-		view.value = null;
-		access.value = null;
-		reloadingSince = undefined;
-		analysing = false;
-		answeredSchemas = undefined;
-		return { loop: generation, attempt };
-	}
-
-	async function connect(
-		engine: DatabaseEngine,
-		url: string,
-	): Promise<UrlProblem | null> {
-		const form = connectForm(engine, url);
-		if ("kind" in form) return form;
-		const { loop, attempt } = stop();
-		phase.value = { kind: "checking" };
-		const answer = await checkAccess(engine, url);
-		if (!current(loop)) return null;
-		access.value = answer;
-		if (!canConnect(answer)) return null;
-		const connection = connectionId(form.name);
-		const target: Checked = {
-			form,
-			connection,
-			module: managedNames(form).tablesModule,
-			access: answer,
-			writing: { kind: "url" },
-			attempt,
-		};
-		if (written?.connection !== connection) {
-			let project: ProjectModules;
-			try {
-				project = await api.projectModules();
-			} catch (error) {
-				if (!current(loop)) return null;
-				refusal.value = api.failure(error).detail;
-				phase.value = { kind: "form" };
-				return null;
-			}
-			if (!current(loop)) return null;
-			if (!project.modules.includes(managedNames(form).driverModule)) {
-				const driver = project.drivers[engine];
-				if (driver === undefined) {
-					refusal.value = unavailableReason(engine, project.interfaceDatabase);
-					phase.value = { kind: "form" };
-					return null;
-				}
-				target.writing = { kind: "new", project, driver };
-				if (answer.canWrite) {
-					checked = target;
-					phase.value = { kind: "choosing" };
-					return null;
-				}
-			}
-		}
-		await proceed(target, "read", loop);
-		return null;
-	}
-
-	async function choose(choice: ConnectionAccess): Promise<void> {
-		const target = checked;
-		if (target === undefined || phase.value.kind !== "choosing") return;
-		checked = undefined;
-		await proceed(target, choice, generation);
-	}
-
-	function reset(): void {
-		stop();
-		phase.value = { kind: "form" };
-	}
-
+	const c = createConnector(api, memory, remembered);
 	onBeforeUnmount(() => {
-		disposed = true;
-		if (timer !== undefined) clearTimeout(timer);
-		lead.release();
+		c.isDisposed = true;
+		if (c.timer !== undefined) clearTimeout(c.timer);
+		c.lead.release();
 	});
-
 	if (remembered !== null) {
-		void poll(remembered.connection, remembered.module, RESUMED_LOOP);
+		void poll(c, remembered.connection, remembered.module, RESUMED_LOOP);
 	}
-
 	return {
-		phase,
+		phase: c.phase,
 		checks: computed(() =>
-			phase.value.kind === "form"
+			c.phase.value.kind === "form"
 				? []
 				: connectChecks({
-						access: access.value,
+						access: c.access.value,
 						connecting:
-							phase.value.kind === "analysing" ||
-							phase.value.kind === "analysed",
-						view: view.value,
-						failure: failure.value,
+							c.phase.value.kind === "analysing" ||
+							c.phase.value.kind === "analysed",
+						view: c.view.value,
+						failure: c.failure.value,
 					}),
 		),
-		refusal,
-		connect,
-		choose,
-		reset,
+		refusal: c.refusal,
+		connect: (engine, url) => connect(c, engine, url),
+		choose: (choice) => choose(c, choice),
+		reset: () => reset(c),
 	};
 }

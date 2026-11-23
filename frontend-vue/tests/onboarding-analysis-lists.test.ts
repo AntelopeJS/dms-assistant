@@ -1,51 +1,36 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import OnboardingAnalysis from "../app/views/onboarding/OnboardingAnalysis.vue";
-import { CHAT_I18N_KEY } from "../app/chat/composables/useChatI18n";
-import { createTestI18n } from "./support/i18n";
-import { ONBOARDING_STUBS } from "./support/onboarding";
-import views from "../i18n/locales/dms-assistant-views-en-GB.json";
+import { builderServer } from "./support/builder-server";
+import {
+	analysisWith,
+	answered,
+	proposedRelation,
+} from "./support/database-connect";
+import {
+	createOnboardingHarness,
+	ONBOARDING_STUBS,
+} from "./support/onboarding";
 
-const proposed = <T>(value: T) => ({ value, rule: "test", kind: "inferred" });
-
-const proposal = {
-	connection: "shop",
-	module: "m",
-	database: { engine: "postgresql", role: "reader", writes: "none" },
-	resources: ["public.customers", "public.orders"].map((relation, index) => ({
-		relation,
+const resources = ["public.customers", "public.orders"].map(
+	(relation, index) => ({
+		...proposedRelation(relation),
 		rows: 1680 * (index + 1),
-		tableView: proposed(true),
-		writable: proposed(false),
-		label: proposed(null),
-		title: proposed(relation),
-		fields: [],
-		leftOut: [],
-		writes: { insert: false, update: false, delete: false },
-	})),
-	excluded: [],
-	open: [],
-};
-
-vi.mock("../builder/app/runtime/api", () => ({
-	useBuilderApi: () => ({
-		latestAnalysis: async () => ({ ok: true, data: { proposal } }),
-		failure: () => ({ detail: "" }),
-		mapDatabase: async () => ({ ok: true, data: { resources: [] } }),
 	}),
-}));
+);
 
-vi.mock("../app/onboarding/runtime", () => ({
-	useOnboarding: () => ({
-		problem: ref(null),
-		send: () => undefined,
-		close: () => undefined,
-		navigate: () => undefined,
-		startConversation: () => undefined,
-	}),
-}));
+const builder = builderServer();
+
+beforeEach(() => {
+	builder.serve();
+	builder.analysis.mockResolvedValue(answered(analysisWith([], [], resources)));
+});
+
+afterEach(builder.reset);
 
 describe("the analysis's scrolling lists", () => {
 	it("keep room at their end for a scrollbar, so it never covers a row count or a screen's kind (fails when a list scrolls with no gutter or padding)", async () => {
@@ -55,7 +40,7 @@ describe("the analysis's scrolling lists", () => {
 			},
 			global: {
 				stubs: ONBOARDING_STUBS,
-				provide: { [CHAT_I18N_KEY as symbol]: createTestI18n(views) },
+				provide: createOnboardingHarness().provide,
 			},
 		});
 		await flushPromises();

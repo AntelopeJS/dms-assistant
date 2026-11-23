@@ -296,7 +296,6 @@ function registerRejectedSignInCases(): void {
     });
     expect(await finishPastedLogin("not a url")).toMatchObject({ status: 400 });
     expect(calls).toEqual([]);
-    /** The real address still completes it. */
     const cancelled = await finishPastedLogin(
       `http://127.0.0.1:${PORT}/auth/chatgpt/callback?error=access_denied&state=${state}`,
     );

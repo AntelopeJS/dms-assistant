@@ -252,7 +252,6 @@ function createCallTracker() {
     return [toolResult(callId, result, isError)];
   }
 
-  /** Closes an item's own call plus the per-index ones a patch fans out into. */
   function closeMatching(
     itemId: string,
     result: JsonValue | undefined,
@@ -280,10 +279,6 @@ export function createCodexAdapter(): CodexAdapter {
     ];
   }
 
-  /**
-   * Opens one tool_use per changed file: that is what the edit tracker reads to
-   * drive the change animation, and a patch commonly touches several files.
-   */
   function startFileChange(item: FileChangeItem): RunnerEvent[] {
     changesByItemId.set(
       item.id,
@@ -315,10 +310,6 @@ export function createCodexAdapter(): CodexAdapter {
     );
   }
 
-  /**
-   * Closes the per-file calls, then anything opened at start but missing from
-   * the completion payload, or its call id would stay outstanding forever.
-   */
   function completeFileChange(item: FileChangeItem): RunnerEvent[] {
     const failed = isFailure(item.status);
     const paired = item.changes.flatMap((change, index) =>
@@ -333,11 +324,6 @@ export function createCodexAdapter(): CodexAdapter {
     return close(item.id, item.error ?? item.result, failed);
   }
 
-  /**
-   * Runs the handler for the item type. userMessage, reasoning and the rest
-   * also emit started/completed pairs; they are not tools and must never reach
-   * the outstanding-tool counter, so unknown types yield nothing.
-   */
   function startItem(item: StartedItem): RunnerEvent[] {
     switch (item.type) {
       case "commandExecution":
@@ -362,12 +348,6 @@ export function createCodexAdapter(): CodexAdapter {
     }
   }
 
-  /**
-   * Closes every call still open as interrupted, since an interruption leaves
-   * items in flight with no item/completed of their own. `done` still follows
-   * a failure's error: the neutral session ends a turn on `done` alone, so an
-   * error on its own would hang the turn forever.
-   */
   function handleTurnCompleted(
     params: z.infer<typeof turnCompletedParamsSchema>,
   ): RunnerEvent[] {

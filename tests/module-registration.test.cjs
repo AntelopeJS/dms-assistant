@@ -156,7 +156,6 @@ void test("an explicit builder.api.enabled overrides the development default", a
   );
 });
 
-/** Fails on a module that passes the builder the assistant's keys, or builder.projectRoot. */
 void test("constructs the builder with its own config, never the assistant keys or projectRoot", async () => {
   /** @type {unknown[]} */
   const builders = [];

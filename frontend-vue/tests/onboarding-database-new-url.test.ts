@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseConnect } from "../app/onboarding/connect-database";
 import {
@@ -6,19 +9,16 @@ import {
 	connectMemory,
 } from "../app/onboarding/connect-memory";
 import {
-	analysisWith,
+	analysisOfOrders,
+	failedAnalysis,
 	fakeBuilder,
 	LISTED,
 	mountConnect,
 	PROJECT,
 	schemaCheck,
 	unmountConnect,
+	URL_WRITTEN,
 } from "./support/database-connect";
-
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string) => key,
-}));
 
 afterEach(() => {
 	unmountConnect();
@@ -28,13 +28,7 @@ afterEach(() => {
 
 const CORRECTED = "postgres://app:fixed@db2.example.com/shop";
 
-const ANALYSED = {
-	...analysisWith([]),
-	proposal: {
-		...analysisWith([]).proposal,
-		resources: [{ relation: "orders", tableView: { value: true } }],
-	},
-};
+const ANALYSED = analysisOfOrders();
 
 /**
  * A project that loaded `.env` with the old URL of `shop`, so it lists `shop` with that URL's error
@@ -49,7 +43,7 @@ function failedConnection() {
 		projectModules: async () => ({ ...PROJECT, modules: ["builder-db-shop"] }),
 		setConnectionUrl: vi.fn(async (_connection: string, url: string) => {
 			env = url;
-			return { ok: true, data: { variable: "SHOP_URL" } };
+			return URL_WRITTEN;
 		}),
 		reloadDue: async () => ({ due: env !== loaded }),
 		databaseConnections: async () =>
@@ -57,7 +51,7 @@ function failedConnection() {
 				? [{ ...LISTED, error: "password authentication failed" }]
 				: [LISTED],
 	});
-	fake.setAnalysis({ id: "old-job", status: "failed", progress: {} });
+	fake.setAnalysis(failedAnalysis("old-job"));
 	return {
 		fake,
 		restart: () => {
@@ -155,7 +149,7 @@ describe("the URL the project already loaded, entered again", () => {
 			}),
 			setConnectionUrl: vi.fn(async (_connection: string, url: string) => {
 				env = url;
-				return { ok: true, data: { variable: "SHOP_URL" } };
+				return URL_WRITTEN;
 			}),
 			reloadDue: async () => ({ due: env !== LOADED }),
 		});

@@ -1,3 +1,4 @@
+import * as z from "zod/mini";
 import {
 	type BackoffState,
 	createBackoff,
@@ -18,6 +19,7 @@ import {
 	EVENT_STREAM_TYPE,
 } from "./constants";
 import { readEventStream, type StreamEvent } from "./event-stream";
+import type { OutgoingMessage } from "./typed-message";
 
 export type ChannelStatus =
 	| typeof CHANNEL_STATUS_CONNECTING
@@ -26,7 +28,7 @@ export type ChannelStatus =
 	| typeof CHANNEL_STATUS_RECONNECTING;
 
 /** Posts one message as JSON; `$authFetch` in the dashboard refreshes a stale session. */
-type PostMessage = (path: string, body: unknown) => Promise<unknown>;
+type PostMessage = (path: string, body: OutgoingMessage) => Promise<void>;
 
 /** Opens the tab's event stream. */
 type OpenStream = (path: string, signal: AbortSignal) => Promise<Response>;
@@ -46,7 +48,7 @@ export interface ChannelClient {
 	 * Queued and posted one at a time, in order. False when it was dropped
 	 * because the stream is not connected, so the caller knows nothing left.
 	 */
-	send: (msg: unknown) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	isConnected: () => boolean;
 	getStatus: () => ChannelStatus;
 	/** Opens the stream if it is not open yet. */
@@ -61,9 +63,7 @@ export interface ChannelClient {
 	reconnectNow: () => void;
 }
 
-interface ReadyPayload {
-	connectionId?: unknown;
-}
+const ReadyPayloadSchema = z.object({ connectionId: z.string() });
 
 interface ClientState {
 	options: ChannelClientOptions;
@@ -71,7 +71,7 @@ interface ClientState {
 	connectionId: string | null;
 	stream: AbortController | null;
 	retryTimer: ReturnType<typeof setTimeout> | null;
-	queue: unknown[];
+	queue: OutgoingMessage[];
 	isDraining: boolean;
 	isStarted: boolean;
 	backoff: BackoffState;
@@ -98,8 +98,8 @@ function setStatus(state: ClientState, next: ChannelStatus): void {
 
 function readConnectionId(data: string): string | null {
 	try {
-		const { connectionId } = JSON.parse(data) as ReadyPayload;
-		return typeof connectionId === "string" ? connectionId : null;
+		const ready = ReadyPayloadSchema.safeParse(JSON.parse(data));
+		return ready.success ? ready.data.connectionId : null;
 	} catch {
 		return null;
 	}
@@ -168,8 +168,9 @@ function restart(state: ClientState): void {
 async function drain(state: ClientState): Promise<void> {
 	if (state.isDraining) return;
 	state.isDraining = true;
-	while (state.queue.length > 0 && state.connectionId !== null) {
+	while (state.connectionId !== null) {
 		const next = state.queue.shift();
+		if (next === undefined) break;
 		try {
 			await state.options.post(channelMessagesPath(state.connectionId), next);
 		} catch {
@@ -179,7 +180,7 @@ async function drain(state: ClientState): Promise<void> {
 	state.isDraining = false;
 }
 
-function send(state: ClientState, msg: unknown): boolean {
+function send(state: ClientState, msg: OutgoingMessage): boolean {
 	if (state.connectionId === null) return false;
 	state.queue.push(msg);
 	void drain(state);

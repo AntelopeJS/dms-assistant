@@ -1,15 +1,17 @@
 import type { PermissionRequestData } from "../types/permission";
 import type { Translate } from "../composables/useChatI18n";
+import type { JsonValue } from "../types/json";
 import type {
 	CommandPreview,
 	DestructivePreview,
 	DiffPreview,
 	HeldPreview,
-	PermissionPreview,
+	PermissionKind,
 	PermissionRule,
 	RuleKind,
 	WebPreview,
 } from "../types/protocol";
+import { ownMember, toJsonObject, toText } from "./json";
 import {
 	bareToolName,
 	describeTool,
@@ -40,14 +42,8 @@ function verbAndTarget(req: PermissionRequestData, t: Translate): string {
 	return description.target === "" ? verb : `${verb} ${description.target}`;
 }
 
-type TextBuilder = (
-	req: PermissionRequestData,
-	preview: never,
-	t: Translate,
-) => PermissionCardText;
-
-const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
-	diff: (_req, preview: DiffPreview, t) => ({
+function diffText(preview: DiffPreview, t: Translate): PermissionCardText {
+	return {
 		title: t(
 			preview.isNewFile
 				? "dms_assistant.panel.approvals.create_file"
@@ -58,29 +54,51 @@ const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
 		onceLabel: t("dms_assistant.panel.approvals.once_edit"),
 		allowLabel: t("dms_assistant.panel.approvals.allow_edit"),
 		why: "",
-	}),
-	command: (_req, preview: CommandPreview, t) => ({
+	};
+}
+
+function commandText(
+	preview: CommandPreview,
+	t: Translate,
+): PermissionCardText {
+	return {
 		title: t("dms_assistant.panel.approvals.run", { command: preview.command }),
 		sub: commandSub(preview, t),
 		onceLabel: t("dms_assistant.panel.approvals.once_command"),
 		allowLabel: t("dms_assistant.panel.approvals.allow_command"),
 		why: "",
-	}),
-	destructive: (req, preview: DestructivePreview, t) => ({
+	};
+}
+
+function destructiveText(
+	req: PermissionRequestData,
+	preview: DestructivePreview,
+	t: Translate,
+): PermissionCardText {
+	return {
 		title: destructiveTitle(req, preview, t),
 		sub: t(`dms_assistant.panel.approvals.consequence_${preview.consequence}`),
 		onceLabel: t("dms_assistant.panel.approvals.once_time"),
 		allowLabel: t("dms_assistant.panel.approvals.confirm_delete"),
 		why: t(`dms_assistant.panel.approvals.why_${preview.consequence}`),
-	}),
-	web: (_req, preview: WebPreview, t) => ({
+	};
+}
+
+function webText(preview: WebPreview, t: Translate): PermissionCardText {
+	return {
 		title: t("dms_assistant.panel.approvals.fetch", { host: preview.host }),
 		sub: preview.url,
 		onceLabel: t("dms_assistant.panel.approvals.once_request"),
 		allowLabel: t("dms_assistant.panel.approvals.allow_request"),
 		why: "",
-	}),
-	generic: (req, _preview, t) => ({
+	};
+}
+
+function genericText(
+	req: PermissionRequestData,
+	t: Translate,
+): PermissionCardText {
+	return {
 		title: verbAndTarget(req, t),
 		sub: "",
 		onceLabel: t("dms_assistant.panel.approvals.once_time"),
@@ -89,34 +107,43 @@ const TEXT_BY_PREVIEW: Record<PermissionPreview["type"], TextBuilder> = {
 			req.kind === "builder"
 				? t("dms_assistant.panel.approvals.why_builder")
 				: "",
-	}),
-	held: (req, preview: HeldPreview, t) => ({
+	};
+}
+
+function heldText(
+	req: PermissionRequestData,
+	preview: HeldPreview,
+	t: Translate,
+): PermissionCardText {
+	return {
 		title: verbAndTarget(req, t),
 		sub: "",
 		onceLabel: t("dms_assistant.panel.approvals.once_time"),
 		allowLabel: t("dms_assistant.panel.approvals.allow"),
 		why: heldWhy(preview, t),
-	}),
-	held_tool: (req, _preview, t) => ({
+	};
+}
+
+function heldToolText(
+	req: PermissionRequestData,
+	t: Translate,
+): PermissionCardText {
+	return {
 		title: verbAndTarget(req, t),
 		sub: "",
 		onceLabel: t("dms_assistant.panel.approvals.once_time"),
 		allowLabel: t("dms_assistant.panel.approvals.allow"),
 		why: t("dms_assistant.panel.approvals.why_held_tool"),
-	}),
-};
+	};
+}
 
 const CONFIGURE_PROJECT_TOOL_NAME = "builder_configure_project";
 const MAP_RESOURCES_TOOL_NAME = "builder_map_resources";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function pagesToRemove(details: unknown): string[] {
-	const pages = isRecord(details) ? details.pagesToRemove : undefined;
+function pagesToRemove(details: JsonValue): string[] {
+	const pages = ownMember(toJsonObject(details), "pagesToRemove");
 	if (!Array.isArray(pages)) return [];
-	return pages.filter((page): page is string => typeof page === "string");
+	return pages.flatMap((page) => toText(page) ?? []);
 }
 
 function heldWhy(preview: HeldPreview, t: Translate): string {
@@ -134,20 +161,20 @@ function heldWhy(preview: HeldPreview, t: Translate): string {
  * Every value of a held call's preview on a row of its own, in full: nested
  * keys joined by dots, list items by index, text such as a diff as it is.
  */
-export function heldPreviewRows(details: unknown, name = ""): NamedArgument[] {
+export function heldPreviewRows(
+	details: JsonValue,
+	name = "",
+): NamedArgument[] {
 	if (Array.isArray(details) && details.length > 0)
-		return details.flatMap((item: unknown, index) =>
+		return details.flatMap((item, index) =>
 			heldPreviewRows(item, `${name}[${index}]`),
 		);
-	if (isRecord(details) && Object.keys(details).length > 0)
-		return Object.entries(details).flatMap(([key, value]) =>
+	const entries = Object.entries(toJsonObject(details));
+	if (entries.length > 0)
+		return entries.flatMap(([key, value]) =>
 			heldPreviewRows(value, name === "" ? key : `${name}.${key}`),
 		);
-	const value =
-		typeof details === "string"
-			? details
-			: (JSON.stringify(details) ?? String(details));
-	return [{ name, value }];
+	return [{ name, value: toText(details) ?? JSON.stringify(details) }];
 }
 
 const MAX_SIDE_BY_SIDE_NAME_CHARS = 16;
@@ -167,19 +194,32 @@ export function isStackedRow(row: NamedArgument): boolean {
 }
 
 /** "Delete the page {target}": the Builder's destructive operations by name. */
-const DESTRUCTIVE_TITLE_KEYS: Record<string, string> = {
-	builder_delete_page: "dms_assistant.panel.approvals.destructive.delete_page",
-	builder_delete_resource:
+const DESTRUCTIVE_TITLE_KEYS: ReadonlyMap<string, string> = new Map([
+	[
+		"builder_delete_page",
+		"dms_assistant.panel.approvals.destructive.delete_page",
+	],
+	[
+		"builder_delete_resource",
 		"dms_assistant.panel.approvals.destructive.delete_table",
-	builder_remove_field:
+	],
+	[
+		"builder_remove_field",
 		"dms_assistant.panel.approvals.destructive.remove_field",
-	builder_delete_category:
+	],
+	[
+		"builder_delete_category",
 		"dms_assistant.panel.approvals.destructive.delete_category",
-	builder_remove_query:
+	],
+	[
+		"builder_remove_query",
 		"dms_assistant.panel.approvals.destructive.remove_query",
-	builder_map_resources:
+	],
+	[
+		"builder_map_resources",
 		"dms_assistant.panel.approvals.destructive.map_resources",
-};
+	],
+]);
 
 function destructiveTitle(
 	req: PermissionRequestData,
@@ -187,7 +227,7 @@ function destructiveTitle(
 	t: Translate,
 ): string {
 	const operation = bareToolName(preview.operation || req.toolName);
-	const key = DESTRUCTIVE_TITLE_KEYS[operation];
+	const key = DESTRUCTIVE_TITLE_KEYS.get(operation);
 	if (key !== undefined) return t(key, { target: preview.target });
 	const verb = toolVerb(describeTool(operation, req.args), t);
 	return preview.target === "" ? verb : `${verb} ${preview.target}`;
@@ -205,8 +245,23 @@ export function permissionCardText(
 	req: PermissionRequestData,
 	t: Translate,
 ): PermissionCardText {
-	const build = TEXT_BY_PREVIEW[req.preview.type] ?? TEXT_BY_PREVIEW.generic;
-	return build(req, req.preview as never, t);
+	const preview = req.preview;
+	switch (preview.type) {
+		case "diff":
+			return diffText(preview, t);
+		case "command":
+			return commandText(preview, t);
+		case "destructive":
+			return destructiveText(req, preview, t);
+		case "web":
+			return webText(preview, t);
+		case "held":
+			return heldText(req, preview, t);
+		case "held_tool":
+			return heldToolText(req, t);
+		default:
+			return genericText(req, t);
+	}
 }
 
 const RULE_LABEL_KEYS: Record<RuleKind, string> = {
@@ -232,7 +287,7 @@ export function ruleIcon(kind: RuleKind): string {
 	return RULE_ICONS[kind] ?? "i-ph-key";
 }
 
-const KIND_ICONS: Record<string, string> = {
+const KIND_ICONS: Record<PermissionKind, string> = {
 	edit: "i-ph-pencil-simple-line",
 	command: "i-ph-terminal-window",
 	web: "i-ph-globe",
@@ -244,5 +299,5 @@ const KIND_ICONS: Record<string, string> = {
 /** The card's icon: by kind, else the tool's own. */
 export function permissionIcon(req: PermissionRequestData): string {
 	if (req.kind === "other") return describeTool(req.toolName, req.args).icon;
-	return KIND_ICONS[req.kind] ?? KIND_ICONS.other;
+	return KIND_ICONS[req.kind];
 }

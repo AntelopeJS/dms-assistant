@@ -49,7 +49,6 @@ describe("the conversation list a tab's socket receives", () => {
     harness = await startWsHarness({ provider: CLAUDE_FIXTURE.name });
   }
 
-  /** Everything the server sent the client before it answered a fresh echo. */
   async function framesSoFar(client: Client): Promise<WireMessage[]> {
     syncCount += 1;
     const payload = `sync-${syncCount}`;

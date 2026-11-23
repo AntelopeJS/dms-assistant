@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -139,7 +142,9 @@ describe("the chat as a component of the dashboard", () => {
 		await nextTick();
 		expect(panel.find(".dms-assistant-panel-status").exists()).toBe(false);
 	});
+});
 
+describe("the model's markup in the dashboard document", () => {
 	it("renders the answer as markup, with nothing the model wrote running in the dashboard", async () => {
 		vi.useFakeTimers();
 		const harness = createHarness();
@@ -156,7 +161,7 @@ describe("the chat as a component of the dashboard", () => {
 		expect(answer.find("strong").text()).toBe("Done");
 		expect(answer.find("img").exists()).toBe(false);
 		expect(answer.find("a").exists()).toBe(false);
-		expect(Reflect.get(globalThis, "pwned")).toBeUndefined();
+		expect(Reflect.has(globalThis, "pwned")).toBe(false);
 	});
 });
 

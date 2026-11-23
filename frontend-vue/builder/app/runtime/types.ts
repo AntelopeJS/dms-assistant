@@ -1,3 +1,12 @@
+/** A JSON value: what the module's routes send and answer, and what a project's configuration holds. */
+export type JsonValue =
+	| string
+	| number
+	| boolean
+	| null
+	| JsonValue[]
+	| { [key: string]: JsonValue }
+
 interface ValidationIssue {
 	pointer: string
 	message: string

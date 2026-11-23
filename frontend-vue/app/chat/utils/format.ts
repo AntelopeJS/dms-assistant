@@ -1,3 +1,6 @@
+import type { JsonValue } from "../types/json";
+import { toText } from "./json";
+
 const THOUSAND = 1_000;
 const MILLION = 1_000_000;
 const MS_PER_SECOND = 1_000;
@@ -5,18 +8,12 @@ const SECONDS_PER_MINUTE = 60;
 const SECONDS_WIDTH = 2;
 
 /**
- * Render an arbitrary tool argument / result value for display: strings pass
- * through, everything else is pretty-printed JSON, with a safe fallback for
- * values JSON can't serialize (e.g. circular refs).
+ * Render a tool argument or result for display: text passes through,
+ * everything else is pretty-printed JSON.
  */
-export function stringifyValue(value: unknown): string {
+export function stringifyValue(value: JsonValue | undefined): string {
 	if (value === undefined) return "";
-	if (typeof value === "string") return value;
-	try {
-		return JSON.stringify(value, null, 2);
-	} catch {
-		return String(value);
-	}
+	return toText(value) ?? JSON.stringify(value, null, 2);
 }
 
 function trimZero(value: number): string {

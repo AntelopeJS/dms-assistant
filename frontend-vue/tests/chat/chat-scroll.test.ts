@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview How the chat follows the conversation as it grows.
+ * @vitest-environment jsdom
+ */
 import { flushPromises, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
@@ -106,7 +109,9 @@ describe("the chat follows the conversation", () => {
 			BOTTOM_TOLERANCE_PX,
 		);
 	});
+});
 
+describe("the chat lets the person read up the conversation", () => {
 	it("does not pull the person back down once they scroll up", async () => {
 		const chat = await openChat();
 		chat.scroller.scrollTo(500);
@@ -152,7 +157,9 @@ describe("the chat follows the conversation", () => {
 			chat.panel.find<HTMLElement>(".chat-view-body").element.scrollTop,
 		).toBe(500);
 	});
+});
 
+describe("the chat keeps following through layout shifts", () => {
 	it("keeps following when content above the view collapses and scroll anchoring moves the view up", async () => {
 		const chat = await openChat();
 		chat.scroller.extraContentPx += 800;
@@ -203,7 +210,9 @@ describe("the chat follows the conversation", () => {
 			BOTTOM_TOLERANCE_PX,
 		);
 	});
+});
 
+describe("the chat follows a conversation started or opened from elsewhere", () => {
 	it("ends at the bottom for a chat started from outside that sends its prompt", async () => {
 		const chat = await openChat();
 		chat.scroller.scrollTo(200);

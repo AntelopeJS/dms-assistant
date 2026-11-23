@@ -33,8 +33,8 @@ importers:
         specifier: '>=0.6.2 <0.7.0'
         version: 0.6.2(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
-        specifier: '>=0.8.9 <0.9.0'
-        version: 0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
+        specifier: '>=0.10.0 <0.11.0'
+        version: 0.10.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
       '@openai/codex':
         specifier: 0.166.0
         version: 0.166.0
@@ -70,8 +70,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
-  '@antelopejs/tooling-configs@0.8.9':
-    resolution: {integrity: sha512-DMar3gDUBy73qpAqv8coGCmvIBrZ12FtyYwD+Igqn6jrb92GMxZAuI2YlW9pED9tS3tdk17+aZRIyVO0oDacHA==}
+  '@antelopejs/tooling-configs@0.10.0':
+    resolution: {integrity: sha512-5UwQirzbFvd6Elzab7B8sssS2zVp5m2zIc0sAr7hpAMvHq7Cy0JIqY0XEZlwFJ3NwJZez5fBPbTU/6/lYJt+0Q==}
     engines: {node: '>=22.18.0'}
     hasBin: true
     peerDependencies:
@@ -2237,7 +2237,7 @@ snapshots:
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 
-  '@antelopejs/tooling-configs@0.8.9(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
+  '@antelopejs/tooling-configs@0.10.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
     dependencies:
       '@oxlint/plugins': 1.94.0
       dts-bundle-generator: 9.5.1

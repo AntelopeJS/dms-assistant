@@ -84,10 +84,13 @@ function imageLinkLabel(alt: string, src: string): string {
 	return alt ? `${alt} (${destination})` : destination;
 }
 
-// A chat message keeps every newline the model wrote as a line break.
+/** A chat message keeps every newline the model wrote as a line break. */
 const md = createParser(true);
-// A document (a SKILL.md) is hard-wrapped at a fixed column: a single newline
-// inside a paragraph is a CommonMark soft break, rendered as a space.
+
+/**
+ * A document (a SKILL.md) is hard-wrapped at a fixed column: a single newline
+ * inside a paragraph is a CommonMark soft break, rendered as a space.
+ */
 const documentMd = createParser(false);
 
 let purifier: Purifier | null = null;
@@ -172,10 +175,15 @@ export interface IncrementalMarkdown {
 	render: (source: string) => MarkdownBlocks;
 }
 
+/** markdown-it's environment sandbox: the link references a parse collects. */
+interface MarkdownEnv {
+	references?: Record<string, { href: string; title?: string }>;
+}
+
 interface IncrementalState {
 	settledSource: string;
 	settled: DocumentFragment[];
-	env: Record<string, unknown>;
+	env: MarkdownEnv;
 }
 
 function renderBlock(

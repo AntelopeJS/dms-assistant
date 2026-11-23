@@ -14,8 +14,10 @@ import type {
 	ToolStatus,
 	UserMessage,
 } from "../types/conversation";
+import type { JsonValue } from "../types/json";
 import type { SnapshotMessage, ToolOutcome } from "../types/protocol";
 import { newUuid } from "./ids";
+import { JSON_VALUE_SCHEMA } from "./json";
 
 const STOPPED_OUTCOME: ToolOutcome = "stopped";
 
@@ -98,9 +100,11 @@ export function closedStatus(
 	return normalized === TOOL_STATUS.PENDING ? TOOL_STATUS.SUCCESS : normalized;
 }
 
-function safeParse(raw: string): unknown {
+/** A stored call's arguments or result: the JSON it was, else its text. */
+function parseStoredValue(raw: string): JsonValue {
 	try {
-		return JSON.parse(raw);
+		const parsed = JSON_VALUE_SCHEMA.safeParse(JSON.parse(raw));
+		return parsed.success ? parsed.data : raw;
 	} catch {
 		return raw;
 	}
@@ -137,7 +141,7 @@ function toolFromUse(snap: SnapshotMessage): ToolCallMessage | null {
 		role: MESSAGE_ROLES.TOOL,
 		callId: snap.callId,
 		toolName: snap.toolName,
-		args: safeParse(snap.content),
+		args: parseStoredValue(snap.content),
 		status: TOOL_STATUS.PENDING,
 		allowedBy: snap.allowedBy,
 		timestampMs: snap.timestampMs,
@@ -145,7 +149,7 @@ function toolFromUse(snap: SnapshotMessage): ToolCallMessage | null {
 }
 
 function closeFromResult(tool: ToolCallMessage, snap: SnapshotMessage): void {
-	tool.result = safeParse(snap.content);
+	tool.result = parseStoredValue(snap.content);
 	tool.status = closedStatus(snap.outcome, snap.status);
 	tool.outcome = snap.outcome;
 	tool.allowedBy = snap.allowedBy ?? tool.allowedBy;
@@ -224,19 +228,19 @@ function addQuestionAnswer(build: SnapshotBuild, snap: SnapshotMessage): void {
 	});
 }
 
-const SNAPSHOT_BUILDERS: Record<
+const SNAPSHOT_BUILDERS: ReadonlyMap<
 	string,
 	(build: SnapshotBuild, snap: SnapshotMessage) => void
-> = {
-	[MESSAGE_ROLES.USER]: addUser,
-	[MESSAGE_ROLES.ASSISTANT]: addAssistant,
-	[STORED_ERROR_ROLE]: addError,
-	[STORED_TOOL_USE_ROLE]: addToolUse,
-	[STORED_TOOL_RESULT_ROLE]: addToolResult,
-	[MESSAGE_ROLES.NOTICE]: addNotice,
-	[MESSAGE_ROLES.CHANGE_SET]: addChangeSet,
-	[MESSAGE_ROLES.QUESTION_ANSWER]: addQuestionAnswer,
-};
+> = new Map([
+	[MESSAGE_ROLES.USER, addUser],
+	[MESSAGE_ROLES.ASSISTANT, addAssistant],
+	[STORED_ERROR_ROLE, addError],
+	[STORED_TOOL_USE_ROLE, addToolUse],
+	[STORED_TOOL_RESULT_ROLE, addToolResult],
+	[MESSAGE_ROLES.NOTICE, addNotice],
+	[MESSAGE_ROLES.CHANGE_SET, addChangeSet],
+	[MESSAGE_ROLES.QUESTION_ANSWER, addQuestionAnswer],
+]);
 
 /**
  * The stored transcript as the chat draws it. Calls left open stay open: the
@@ -247,6 +251,6 @@ export function snapshotToMessages(
 	snapshot: readonly SnapshotMessage[],
 ): ConversationMessage[] {
 	const build: SnapshotBuild = { out: [], toolByCallId: new Map() };
-	for (const item of snapshot) SNAPSHOT_BUILDERS[item.role]?.(build, item);
+	for (const item of snapshot) SNAPSHOT_BUILDERS.get(item.role)?.(build, item);
 	return build.out;
 }

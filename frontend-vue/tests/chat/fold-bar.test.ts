@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview The fold bar's rendering.
+ * @vitest-environment jsdom
+ */
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import { ref } from "vue";

@@ -4,6 +4,8 @@
  * sent by one person on another person's conversation, against the real
  * sidecar. Prints nothing when it passes. Exits 0 when every rule holds and
  * every recorded defect still fails, 1 when one changed, 2 when it could not run.
+ *
+ * @packageDocumentation
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";

@@ -27,11 +27,6 @@ function isRunError(msg: WireMessage): boolean {
   return msg.type === "run_error";
 }
 
-/**
- * The provider is selected while it works, and stops working afterwards — a
- * ChatGPT sign-out, a package uninstalled. What must not happen is
- * the conversation quietly continuing on the other backend.
- */
 describe("a selected provider that cannot run", () => {
   let harness: WsHarness | undefined;
   let client: WebSocket | undefined;

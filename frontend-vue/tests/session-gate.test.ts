@@ -26,7 +26,7 @@ describe("session gate", () => {
 		expect(start).toHaveBeenCalledTimes(1);
 	});
 
-	it("starts in the new session scope after login watchers settle", async () => {
+	it("starts in the new session scope after login watchers settle, though the DMS hydrates the user before the session and its scope watcher clears outstanding reads, an AI probe started in the old scope included", async () => {
 		const loggedIn = ref(false);
 		const session = ref("guest");
 		let scope = session.value;
@@ -39,8 +39,6 @@ describe("session gate", () => {
 				probe = new AbortController();
 			},
 		);
-		// DMS hydrates the user before the session. Its scope watcher clears
-		// outstanding reads, including an AI probe started in the old scope.
 		const stopScope = watch(session, (next) => {
 			probe?.abort();
 			scope = next;

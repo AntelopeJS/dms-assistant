@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseConnect } from "../app/onboarding/connect-database";
 import {
@@ -6,20 +9,21 @@ import {
 	type ConnectMemory,
 	connectMemory,
 } from "../app/onboarding/connect-memory";
+import type { ProjectConfigResult } from "../builder/app/runtime/database-types";
+import type { OpResult } from "../builder/app/runtime/types";
 import {
+	analysisOfOrders,
 	analysisWith,
+	answered,
+	type BuilderApi,
+	failedAnalysis,
 	fakeBuilder,
-	READER,
 	mountConnect,
+	READER,
 	unmountConnect,
 	URL,
 } from "./support/database-connect";
 import { memoryConnects } from "./support/onboarding";
-
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string) => key,
-}));
 
 afterEach(() => {
 	unmountConnect();
@@ -39,20 +43,27 @@ function browserStorage(): string {
 	return [...entries, document.cookie].join("\n");
 }
 
+const ANALYSED = analysisOfOrders();
+
+function reload(api: BuilderApi, memory: ConnectMemory): DatabaseConnect {
+	unmountConnect();
+	return mountConnect(api, memory);
+}
+
+function slowWrite() {
+	let answer: (result: OpResult<ProjectConfigResult>) => void = () => undefined;
+	const fake = fakeBuilder({
+		configureProject: vi.fn(
+			() =>
+				new Promise<OpResult<ProjectConfigResult>>((resolve) => {
+					answer = resolve;
+				}),
+		),
+	});
+	return { api: fake.api, answer: () => answer(answered({ files: [] })) };
+}
+
 describe("a reload of the page while the connection loads", () => {
-	const ANALYSED = {
-		...analysisWith([]),
-		proposal: {
-			...analysisWith([]).proposal,
-			resources: [{ relation: "orders", tableView: { value: true } }],
-		},
-	};
-
-	function reload(api: unknown, memory: ConnectMemory): DatabaseConnect {
-		unmountConnect();
-		return mountConnect(api, memory);
-	}
-
 	it("follows the connection it wrote to its analysis, with the live check's answer, keeping no part of the URL in the browser", async () => {
 		vi.useFakeTimers();
 		const fake = fakeBuilder();
@@ -116,7 +127,7 @@ describe("a reload of the page while the connection loads", () => {
 	});
 
 	it.each([
-		["its analysis failed", { id: "job1", status: "failed", progress: {} }],
+		["its analysis failed", failedAnalysis("job1")],
 		["the database has no table", analysisWith([])],
 		["every table is mapped already", analysisWith([], ["orders"])],
 	])("opens on the form once %s", async (_, analysis) => {
@@ -129,20 +140,9 @@ describe("a reload of the page while the connection loads", () => {
 
 		expect(memory.read()).toBeNull();
 	});
+});
 
-	function slowWrite() {
-		let answer: (result: { ok: true }) => void = () => undefined;
-		const fake = fakeBuilder({
-			configureProject: vi.fn(
-				() =>
-					new Promise<{ ok: true }>((resolve) => {
-						answer = resolve;
-					}),
-			),
-		});
-		return { api: fake.api, answer: () => answer({ ok: true }) };
-	}
-
+describe("a reload of the page while the connection loads, with a popup closed or replaced", () => {
 	it("follows the connection it wrote when the popup closed before the write answered", async () => {
 		vi.useFakeTimers();
 		const closed = slowWrite();

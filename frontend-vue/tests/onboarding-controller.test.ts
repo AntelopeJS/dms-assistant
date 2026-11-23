@@ -224,7 +224,7 @@ async function waitingForChatGpt(): Promise<OnboardingHarness> {
 	return harness;
 }
 
-function lateAnswer(api: OnboardingHarness["api"]): { signedIn: () => void } {
+function lateAnswer(api: OnboardingHarness["api"]) {
 	let answer: (state: ReturnType<typeof onboardingState>) => void = () =>
 		undefined;
 	api.readState.mockImplementation(

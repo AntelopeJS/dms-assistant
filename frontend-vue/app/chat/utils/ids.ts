@@ -9,6 +9,11 @@ const HEX_RADIX = 16;
 const HEX_BYTE_WIDTH = 2;
 const UUID_GROUP_ENDS = [8, 12, 16, 20, 32];
 
+/** The page's crypto, whose `randomUUID` a page outside a secure context lacks. */
+interface PageCrypto extends Omit<Crypto, "randomUUID"> {
+	randomUUID?: Crypto["randomUUID"];
+}
+
 function formatUuid(bytes: Uint8Array): string {
 	const hex = Array.from(bytes, (byte) =>
 		byte.toString(HEX_RADIX).padStart(HEX_BYTE_WIDTH, "0"),
@@ -24,8 +29,9 @@ function formatUuid(bytes: Uint8Array): string {
  * address), where `crypto.getRandomValues` is still there.
  */
 export function newUuid(): string {
-	if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-	const bytes = crypto.getRandomValues(new Uint8Array(UUID_BYTE_COUNT));
+	const pageCrypto: PageCrypto = crypto;
+	if (pageCrypto.randomUUID !== undefined) return pageCrypto.randomUUID();
+	const bytes = pageCrypto.getRandomValues(new Uint8Array(UUID_BYTE_COUNT));
 	bytes[VERSION_BYTE_INDEX] =
 		(bytes[VERSION_BYTE_INDEX] & VERSION_MASK) | VERSION_4;
 	bytes[VARIANT_BYTE_INDEX] =

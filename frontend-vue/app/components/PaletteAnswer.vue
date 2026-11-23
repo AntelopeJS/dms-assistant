@@ -19,11 +19,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-// A read-only answer changes no file: no change set is ever being undone.
+/** A read-only answer changes no file: no change set is ever being undone. */
 const NO_BUSY_CHANGE_SETS: ReadonlySet<string> = new Set();
 const { t } = useChatI18n();
 const sessionRef = inject(ASSISTANT_SESSION_KEY, null);
-// Read once: a palette answer belongs to the session it was asked in.
+/** Read once: a palette answer belongs to the session it was asked in. */
 const session: AssistantSession | null = sessionRef?.value ?? null;
 
 const turn =

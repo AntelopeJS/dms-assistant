@@ -1,4 +1,5 @@
 import { ref, type Ref } from "vue";
+import type { ConfirmValues } from "#dms-ui/app/composables/confirm/types";
 import { AI_ROUTES } from "../constants";
 import type { ChangeSetSummary } from "../types";
 import { classifyFailure } from "./useAiData";
@@ -28,7 +29,7 @@ function changeSetPath(changeSetId: string, action: string): string {
 export function useChangeSetActions(): ChangeSetActions {
 	const { t } = useI18n();
 	const toast = useToast();
-	const { presentError } = useApiErrorPresenter();
+	const presenter = useApiErrorPresenter();
 	const { $authFetch } = useAuthFetch();
 	const { confirmFrom } = useConfirmFrom();
 	const isBusy = ref(false);
@@ -49,7 +50,7 @@ export function useChangeSetActions(): ChangeSetActions {
 			});
 			await refreshPageBlocks();
 		} catch (error) {
-			presentError(error, {
+			presenter.presentError(error, {
 				fallbackKey: `dms_assistant.views.${classifyFailure(error)}.description`,
 			});
 		} finally {
@@ -59,7 +60,7 @@ export function useChangeSetActions(): ChangeSetActions {
 
 	async function sendUndo(
 		changeSet: ChangeSetSummary,
-		values: Record<string, unknown>,
+		values: ConfirmValues,
 	): Promise<void> {
 		const result = await $authFetch<UndoResult>(
 			changeSetPath(changeSet.id, "undo"),

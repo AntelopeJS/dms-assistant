@@ -2,8 +2,10 @@
  * What the *Connect a database* form asks for, and the `ConfigureProject` batch it
  * turns into. The integrator names the connection and gives its connection details;
  * the modules and the variable the builder manages are named after it.
+ *
+ * @packageDocumentation
  */
-import { type DatabaseEngine, ENGINES } from './database-engines'
+import { DATABASE_ENGINES, type DatabaseEngine, ENGINES } from './database-engines'
 import { t } from './i18n'
 import type {
 	DriverPackage,
@@ -12,6 +14,7 @@ import type {
 	ProjectModules,
 	ProjectVariable,
 } from './database-types'
+import type { BuilderError } from './types'
 
 export { type DatabaseEngine, ENGINES } from './database-engines'
 
@@ -45,7 +48,7 @@ interface ConnectionFields {
 /** The engine whose URLs have this scheme, as `postgres` or `postgres:`. */
 export function engineOfScheme(scheme: string): DatabaseEngine | undefined {
 	const protocol = scheme.endsWith(':') ? scheme : `${scheme}:`
-	return (Object.keys(ENGINES) as DatabaseEngine[]).find((engine) => ENGINES[engine].schemes.includes(protocol))
+	return DATABASE_ENGINES.find((engine) => ENGINES[engine].schemes.includes(protocol))
 }
 
 /** The names the builder manages for a connection, under *Advanced settings*. */
@@ -211,8 +214,10 @@ export function missingField(form: ConnectForm): string | undefined {
 		['driver', names.driverModule],
 		['tables', names.tablesModule],
 		['variable', names.variable],
-		...(ENGINES[form.engine].separateDatabase ? [['database_variable', names.databaseVariable] as [string, string]] : []),
-	]
+		]
+	if (ENGINES[form.engine].separateDatabase) {
+		required.push(['database_variable', names.databaseVariable])
+	}
 	const missing = required.find(([, value]) => value.trim() === '')?.[0]
 	return missing === undefined ? undefined : t(`database.connect.missing_${missing}`)
 }
@@ -311,37 +316,27 @@ export function connectSteps(form: ConnectForm, project: ProjectModules, driver:
 	return steps
 }
 
-interface Refusal {
-	code?: string
-	detail?: string
-	ref?: string
-	issues?: { message: string }[]
-	diagnostics?: { file: string; line: number; message: string }[]
-	blockedBy?: string[]
-}
-
 function fileName(file: string): string {
 	return file.split(/[\\/]/).slice(-3).join('/')
 }
 
 /** What a refused change says, in the module's own words. */
-export function refusalText(error: unknown): string {
-	const refusal = (error ?? {}) as Refusal
-	if (refusal.issues) {
-		return refusal.issues.map((issue) => issue.message).join('; ')
+export function refusalText(error: BuilderError): string {
+	if ('issues' in error) {
+		return error.issues.map((issue) => issue.message).join('; ')
 	}
-	if (refusal.diagnostics) {
-		const found = refusal.diagnostics.map((item) => `${fileName(item.file)}:${item.line} ${item.message}`)
+	if ('diagnostics' in error) {
+		const found = error.diagnostics.map((item) => `${fileName(item.file)}:${item.line} ${item.message}`)
 		return t('database.connect.refusal_typecheck', { found: found.join('; ') })
 	}
-	if (refusal.detail) {
-		return refusal.detail
+	if ('detail' in error && error.detail) {
+		return error.detail
 	}
-	if (refusal.code === 'not_found' && refusal.ref) {
-		return t('database.connect.refusal_not_found', { ref: refusal.ref })
+	if (error.code === 'not_found' && error.ref) {
+		return t('database.connect.refusal_not_found', { ref: error.ref })
 	}
-	if (refusal.blockedBy) {
-		return t('database.connect.refusal_blocked', { modules: refusal.blockedBy.join(', ') })
+	if ('blockedBy' in error) {
+		return t('database.connect.refusal_blocked', { modules: error.blockedBy.join(', ') })
 	}
 	return JSON.stringify(error)
 }

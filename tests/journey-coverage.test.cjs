@@ -29,6 +29,7 @@ const SUITES = {
       "frontend-vue/vitest.config.ts",
       "frontend-vue/pnpm-lock.yaml",
       "frontend-vue/tsconfig.chat.json",
+      "frontend-vue/tsconfig.json",
       "frontend-vue/.*",
       "src/builder/**",
       "frontend-vue/builder/**",

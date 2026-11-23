@@ -190,12 +190,6 @@ function answering(operation, answer) {
   return fakeCore({ [operation]: answer });
 }
 
-/**
- * Fails on a route bound to another verb or path, open to any tenant user, reading its input from
- * elsewhere, calling another operation or with other arguments, calling it without asking core for
- * the project first, or answering in another shape than the onboarding reads: a bare value for the
- * reads it takes as is, core's `OpResult` for the rest.
- */
 void test("each database route runs its core operation for the tenant owner and answers in the onboarding's shape", async () => {
   for (const row of ROUTES) {
     const { core, calls } = answering(row.operation, row.answer);
@@ -220,10 +214,6 @@ void test("each database route runs its core operation for the tenant owner and 
   }
 });
 
-/**
- * Fails on a controller that binds a handler to `/database/sample` on any verb, so the API server
- * answers it instead of its 404, and hands the tenant owner raw rows of the external database.
- */
 void test("no route answers rows of the external database: /database/sample is bound to no verb", () => {
   const controller = loadDatabaseController({});
   for (const verb of ["GET", "POST"]) {
@@ -246,10 +236,6 @@ const REFUSED = {
   },
 };
 
-/**
- * Fails on a read that answers core's refusal or its `not_found` as a success the onboarding would
- * take for a value, or that changes the status or the body the onboarding branches on.
- */
 void test("a read the onboarding takes as is answers 404 when core finds nothing and 422 when it refuses", async () => {
   const cases = [
     {
@@ -314,10 +300,6 @@ const UnavailableSchema = z.object({
   message: z.string(),
 });
 
-/**
- * Fails on a route that calls an operation no module serves, and so never answers, that gives up
- * before the 10 s deadline, or that answers without naming builder.enabled on the dms entry.
- */
 void test(
   "with no provider of the builder operations, every route answers 503 at the 10 s deadline, naming builder.enabled on the dms entry",
   { timeout: 5000 },
@@ -360,10 +342,6 @@ void test(
   },
 );
 
-/**
- * Fails on a route that keeps answering 503 once core serves the builder operations after leaving
- * an earlier request unanswered.
- */
 void test(
   "after core left a request unanswered, a later one runs its operation once core answers",
   { timeout: 5000 },
@@ -391,10 +369,6 @@ void test(
 const CORE_BUILDER_DISABLED =
   "The DMS builder is not enabled in this environment. Set builder.enabled to true in the dms module's config, or leave it unset and run the project with ajs project dev.";
 
-/**
- * Fails on a route that waits for the 10 s deadline, or throws a 500, when a DMS that serves its
- * builder off rejects every operation at once, or that answers with another message than core's.
- */
 void test(
   "when the DMS rejects every operation as off, every route answers 503 at once, with core's message",
   { timeout: 5000 },
@@ -430,11 +404,6 @@ void test(
   },
 );
 
-/**
- * Fails on a route that, once core answered the project, lets an operation that a reloaded DMS now
- * rejects as off throw a 500 instead of answering 503 with core's message, or that keeps answering
- * 503 after core serves the operations again.
- */
 void test(
   "an operation core rejects as off after it answered the project answers 503 with core's message, and the next request asks again",
   { timeout: 5000 },
@@ -461,11 +430,6 @@ void test(
   },
 );
 
-/**
- * Fails on a route that takes any rejection of GetDatabaseProject for a DMS that serves no builder,
- * and so waits for the 10 s deadline and answers 503, when the DMS answered by refusing to read the
- * project.
- */
 void test(
   "a DMS that rejects the project read for another reason still serves the operations, with no wait",
   { timeout: 5000 },

@@ -2,6 +2,8 @@
  * The build screen's state, derived from what the server answers and never stored: whether the
  * configuration declares the connection, whether the builder lists it and with what, and the
  * connection's latest analysis. A closed tab or a reload of the project resumes where things stand.
+ *
+ * @packageDocumentation
  */
 import type { useBuilderApi } from './api'
 import { questionText } from './database-server-text'
@@ -91,8 +93,20 @@ interface FetchFailure {
 	data?: { code?: string }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null
+}
+
+function isFetchFailure(error: unknown): error is FetchFailure {
+	if (!isRecord(error)) {
+		return false
+	}
+	const { data } = error
+	return data === undefined || (isRecord(data) && (data.code === undefined || typeof data.code === 'string'))
+}
+
 function isNotFound(error: unknown): boolean {
-	return (error as FetchFailure | undefined)?.data?.code === 'not_found'
+	return isFetchFailure(error) && error.data?.code === 'not_found'
 }
 
 async function readDeclared(
@@ -257,40 +271,63 @@ function reloadOf(answers: BuildAnswers, entry: DatabaseConnection | undefined):
 	return answers.declared === true && !entry ? 'stale' : undefined
 }
 
+function reloadState(
+	answers: BuildAnswers,
+	entry: DatabaseConnection | undefined,
+	reloadingFor: number,
+): Pick<BuildView, 'reload' | 'gaveUp' | 'restartNeeded'> {
+	const reload = reloadOf(answers, entry)
+	return {
+		reload,
+		gaveUp: reload === 'down' && reloadingFor >= RELOAD_LIMIT_MS,
+		restartNeeded: reload === 'stale' && reloadingFor >= RESTART_AFTER_MS,
+	}
+}
+
+function currentAnalysis(answers: BuildAnswers, connected: boolean): AnalysisState | undefined {
+	return connected && answers.analysis && answers.analysis !== UNREACHABLE ? answers.analysis : undefined
+}
+
+function mappingView(
+	analysis: AnalysisState | undefined,
+): Pick<BuildView, 'schemas' | 'empty' | 'allMapped' | 'fork'> & { role?: string } {
+	const proposal = analysis?.status === 'done' ? analysis.proposal : undefined
+	const schemas = proposal?.open.find((item) => item.kind === 'schemas')
+	const summary = proposal && !schemas ? forkSummary(proposal) : undefined
+	return {
+		role: proposal?.database.role,
+		schemas,
+		empty: summary?.tables === 0 && proposal?.mapped.length === 0,
+		allMapped: summary?.tables === 0 && (proposal?.mapped.length ?? 0) > 0,
+		fork: summary && summary.tables > 0 ? summary : undefined,
+	}
+}
+
 /**
  * Each step's status from the three answers. `reloadingFor` is how long the project has stood in
  * its current {@link Reload}, as the screen measured it.
  */
 export function buildState(answers: BuildAnswers, reloadingFor = 0): BuildView {
 	const entry = listedEntry(answers)
-	const reload = reloadOf(answers, entry)
-	const reloading = reload !== undefined
-	const gaveUp = reload === 'down' && reloadingFor >= RELOAD_LIMIT_MS
-	const restartNeeded = reload === 'stale' && reloadingFor >= RESTART_AFTER_MS
+	const reload = reloadState(answers, entry, reloadingFor)
+	const reloading = reload.reload !== undefined
 	const connected = !reloading && !!entry && !entry.error
-	const analysis = connected && answers.analysis && answers.analysis !== UNREACHABLE ? answers.analysis : undefined
-	const proposal = analysis?.status === 'done' ? analysis.proposal : undefined
-	const schemas = proposal?.open.find((item) => item.kind === 'schemas')
-	const summary = proposal && !schemas ? forkSummary(proposal) : undefined
+	const analysis = currentAnalysis(answers, connected)
+	const { role, ...mapping } = mappingView(analysis)
 	return {
 		steps: [
 			addStep(answers),
-			reloadStep(answers, { reload, gaveUp, restartNeeded }),
+			reloadStep(answers, reload),
 			connectStep(reloading ? undefined : entry),
-			readStep(analysis, connected, proposal?.database.role ?? entry?.role ?? ''),
+			readStep(analysis, connected, role ?? entry?.role ?? ''),
 		],
-		reload,
-		gaveUp,
-		restartNeeded,
+		...reload,
+		...mapping,
 		undeclared: answers.declared === false,
 		connectionError: !reloading ? entry?.error : undefined,
-		schemas,
 		needsAnalysis: connected && !analysis,
-		empty: summary?.tables === 0 && proposal?.mapped.length === 0,
-		allMapped: summary?.tables === 0 && (proposal?.mapped.length ?? 0) > 0,
 		analysisFailed: !!analysis && analysis.status !== 'running' && !analysis.proposal,
 		job: analysis?.id,
-		fork: summary && summary.tables > 0 ? summary : undefined,
 	}
 }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { WireValue } from "../runtime/wire-value";
 
 /** Who wrote a mockup, as `spec.json` names it. */
 export type MockupSource = "chat" | "claude-code" | "codex";
@@ -33,13 +34,10 @@ const RowSchema = z.object({
 const ListSchema = z.object({ results: z.array(z.unknown()) });
 
 /** `$authFetch` rejects with the HTTP status as `statusCode` and `status`. */
-function isNotFound(error: unknown): boolean {
-	if (error === null || typeof error !== "object") return false;
-	return (
-		Reflect.get(error, "statusCode") === NOT_FOUND ||
-		Reflect.get(error, "status") === NOT_FOUND
-	);
-}
+const NotFoundSchema = z.union([
+	z.object({ statusCode: z.literal(NOT_FOUND) }),
+	z.object({ status: z.literal(NOT_FOUND) }),
+]);
 
 function mockupOf(row: unknown): Mockup[] {
 	const parsed = RowSchema.safeParse(row);
@@ -65,13 +63,13 @@ function mockupOf(row: unknown): Mockup[] {
  * as none; a row of another shape is left out.
  */
 export async function listMockups(
-	get: (path: string) => Promise<unknown>,
+	get: (path: string) => Promise<WireValue>,
 ): Promise<Mockup[]> {
-	let body: unknown;
+	let body: WireValue;
 	try {
 		body = await get(MOCKUPS_PATH);
 	} catch (error) {
-		if (isNotFound(error)) return [];
+		if (NotFoundSchema.safeParse(error).success) return [];
 		throw error;
 	}
 	const list = ListSchema.safeParse(body);

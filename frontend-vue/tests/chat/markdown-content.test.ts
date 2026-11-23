@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview The markdown component's output.
+ * @vitest-environment jsdom
+ */
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -18,7 +21,9 @@ function list(last: string): string {
 }
 
 function scopeOf(wrapper: VueWrapper): string {
-	const scope = [...wrapper.element.attributes].find((attribute) =>
+	const root: unknown = wrapper.element;
+	const attributes = root instanceof Element ? [...root.attributes] : [];
+	const scope = attributes.find((attribute) =>
 		attribute.name.startsWith("data-v-"),
 	);
 	expect(scope).toBeDefined();

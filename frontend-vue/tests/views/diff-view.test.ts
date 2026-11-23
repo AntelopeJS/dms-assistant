@@ -1,36 +1,41 @@
-// @vitest-environment jsdom
+/**
+ * DiffView draws a change set's files, and the diff utilities number their lines.
+ *
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DiffView from "../../app/views/DiffView.vue";
-import type { DiffFile } from "../../app/views/types";
+import type { DiffFile, DiffHunk } from "../../app/views/types";
 import {
 	countLines,
 	hunkHeader,
 	renderHunks,
 } from "../../app/views/utils/diff";
 
+const PAGE_HUNK: DiffHunk = {
+	oldStart: 38,
+	newStart: 38,
+	lines: [
+		{
+			kind: "context",
+			text: "  static revenue = ChartCard();",
+			oldLine: 38,
+			newLine: 38,
+		},
+		{ kind: "remove", text: "  static latest = TableView();", oldLine: 39 },
+		{ kind: "add", text: "  static top = TopListCard();", newLine: 39 },
+		{ kind: "add", text: "  static latest = TableView();", newLine: 40 },
+	],
+};
+
 const PAGE_FILE: DiffFile = {
 	path: "src/modules/sales/pages/overview.page.ts",
 	status: "modified",
 	added: 2,
 	removed: 1,
-	hunks: [
-		{
-			oldStart: 38,
-			newStart: 38,
-			lines: [
-				{
-					kind: "context",
-					text: "  static revenue = ChartCard();",
-					oldLine: 38,
-					newLine: 38,
-				},
-				{ kind: "remove", text: "  static latest = TableView();", oldLine: 39 },
-				{ kind: "add", text: "  static top = TopListCard();", newLine: 39 },
-				{ kind: "add", text: "  static latest = TableView();", newLine: 40 },
-			],
-		},
-	],
+	hunks: [PAGE_HUNK],
 };
 
 const NEW_FILE: DiffFile = {
@@ -64,7 +69,7 @@ function mountDiff(files: DiffFile[]) {
 
 beforeEach(() => {
 	vi.stubGlobal("useI18n", () => ({
-		t: (key: string, params?: Record<string, unknown>) =>
+		t: (key: string, params?: Record<string, string | number>) =>
 			params?.path ? `${key}:${String(params.path)}` : key,
 	}));
 });
@@ -75,7 +80,7 @@ afterEach(() => {
 
 describe("diff utils", () => {
 	it("writes a unified hunk header from the hunk's lines", () => {
-		expect(hunkHeader(PAGE_FILE.hunks[0]!)).toBe("@@ -38,2 +38,3 @@");
+		expect(hunkHeader(PAGE_HUNK)).toBe("@@ -38,2 +38,3 @@");
 	});
 
 	it("counts added and removed lines", () => {

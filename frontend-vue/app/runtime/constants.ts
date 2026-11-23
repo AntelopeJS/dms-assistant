@@ -18,17 +18,22 @@ export const JSON_CONTENT_TYPE = "application/json";
 export const CHANNEL_RECONNECT_DELAYS_MS = [
 	1000, 2000, 4000, 8000, 15000, 30000,
 ] as const;
-// Sidecar reachability, as seen by the host. `reviving` is the self-healing
-// state (idle-exited / crashed-respawning): the probe loop revives the sidecar
-// and the channels reconnect once it answers. `unavailable` is terminal (the
-// crash budget is spent) and needs a reload.
+/** Sidecar reachability, as seen by the host: the first probe is in flight. */
 export const SIDECAR_STATUS_CONNECTING = "connecting";
+/** Sidecar reachability, as seen by the host: the sidecar answers. */
 export const SIDECAR_STATUS_CONNECTED = "connected";
+/**
+ * The self-healing state (idle-exited / crashed-respawning): the probe loop
+ * revives the sidecar and the channels reconnect once it answers.
+ */
 export const SIDECAR_STATUS_REVIVING = "reviving";
+/** Terminal: the crash budget is spent and only a reload brings the sidecar back. */
 export const SIDECAR_STATUS_UNAVAILABLE = "unavailable";
-// Re-probe cadence while reviving. Each probe also revives the daemon backend
-// side, so this doubles as the respawn heartbeat; capped so a genuinely stuck
-// sidecar is polled sparingly rather than hammered.
+/**
+ * Re-probe cadence while reviving. Each probe also revives the daemon backend
+ * side, so this doubles as the respawn heartbeat; capped so a genuinely stuck
+ * sidecar is polled sparingly rather than hammered.
+ */
 export const SIDECAR_POLL_DELAYS_MS = [500, 1000, 2000, 4000, 8000] as const;
 
 export const CHANNEL_STATUS_CONNECTING = "connecting";

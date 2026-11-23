@@ -112,7 +112,6 @@ void test("mounts no routes when the project does not run in development", async
   assert.deepEqual(booted.loadedRoutes, []);
 });
 
-/** Fails on a module that keeps the routes off in development. */
 void test("mounts the routes in development", async () => {
   const booted = bootModule(true);
   await booted.index.construct();

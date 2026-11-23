@@ -25,7 +25,6 @@ function sorted(values) {
   return [...values].toSorted();
 }
 
-/** Fails on a popup that offers an engine core does not connect, or leaves out one it does. */
 void test("the popup offers exactly the engines core connects", () => {
   assert.deepEqual(
     sorted(Object.keys(popupEngines.ENGINES)),
@@ -33,7 +32,6 @@ void test("the popup offers exactly the engines core connects", () => {
   );
 });
 
-/** Fails on a popup that reads a URL scheme core refuses for its engine, or misses one core accepts. */
 void test("the popup reads each engine's URLs by the schemes core accepts for it", () => {
   for (const [engine, schemes] of Object.entries(coreSchemes)) {
     assert.deepEqual(

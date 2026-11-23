@@ -14,11 +14,11 @@ export const UCheckbox = defineComponent({
 				h("input", {
 					type: "checkbox",
 					checked: props.modelValue,
-					onChange: (event: Event) =>
-						emit(
-							"update:modelValue",
-							(event.target as HTMLInputElement).checked,
-						),
+					onChange: (event: Event) => {
+						if (event.target instanceof HTMLInputElement) {
+							emit("update:modelValue", event.target.checked);
+						}
+					},
 				}),
 				props.label,
 			]),

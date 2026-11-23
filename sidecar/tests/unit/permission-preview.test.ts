@@ -251,7 +251,6 @@ describe("project config files reached through a link", () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  /** Fails on a match by the written name alone, which a link named like any source file leads past, a link to a file not written yet or into folders not made yet included. */
   it("always asks before an edit through a link onto a project config file", async () => {
     await writeFile(join(root, "antelope.config.ts"), "export default {};\n");
     await mkdir(join(root, "src"));

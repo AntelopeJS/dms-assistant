@@ -1,8 +1,10 @@
 import { MESSAGE_ROLES } from "../constants/conversation";
+import type { JsonValue } from "../types/json";
 import type {
 	ConversationMessage,
 	ToolCallMessage,
 } from "../types/conversation";
+import { ownMember, toJsonObject, toText } from "./json";
 import { bareToolName } from "./tool-lexicon";
 
 const PAGE_SEPARATOR = "#";
@@ -10,11 +12,12 @@ const BUILDER_SEPARATOR = "/";
 const LAYOUT_SEPARATOR = ".";
 const TRAILING_SLASHES = /\/+$/;
 
-function readStringField(args: unknown, key: string): string | null {
-	if (args === null || typeof args !== "object" || !Object.hasOwn(args, key))
-		return null;
-	const value: unknown = Reflect.get(args, key);
-	return typeof value === "string" && value !== "" ? value : null;
+function readStringField(
+	args: JsonValue | undefined,
+	key: string,
+): string | null {
+	const value = toText(ownMember(toJsonObject(args), key));
+	return value !== null && value !== "" ? value : null;
 }
 
 /** A block of one page: the page's path and the block's layout path on it. */

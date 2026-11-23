@@ -37,7 +37,7 @@ export function installResizeObserver(): void {
 }
 
 function dispatchPendingScrollEvents(): void {
-	for (const dispatch of [...pendingScrollEvents]) dispatch();
+	for (const dispatch of Array.from(pendingScrollEvents)) dispatch();
 	pendingScrollEvents.clear();
 }
 
@@ -49,7 +49,7 @@ function dispatchPendingScrollEvents(): void {
 export function settleLayout(): void {
 	dispatchPendingScrollEvents();
 	for (const pass of layoutPasses) pass();
-	for (const observer of [...observers]) observer.deliver();
+	for (const observer of Array.from(observers)) observer.deliver();
 	dispatchPendingScrollEvents();
 }
 

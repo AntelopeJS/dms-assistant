@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { nextTick, ref } from "vue";
@@ -13,10 +16,12 @@ import {
 	createHarness,
 	type Harness,
 	providedSession,
+	type SidecarEvent,
 	sentOfType,
 } from "./support/panel-harness";
 import { createTestI18n } from "./support/i18n";
 import { PANEL_STUBS } from "./support/stubs";
+import { z } from "zod";
 
 const PROMPT = "What does this page show?";
 
@@ -37,14 +42,10 @@ function askFromPalette(harness: Harness, close = vi.fn()): VueWrapper {
 }
 
 function paletteConversation(harness: Harness): string {
-	const hello = sentOfType(harness, "hello")[0];
-	return String(hello?.conversationId);
+	return z.string().parse(sentOfType(harness, "hello")[0]?.conversationId);
 }
 
-function deliverToPalette(
-	harness: Harness,
-	event: Record<string, unknown>,
-): void {
+function deliverToPalette(harness: Harness, event: SidecarEvent): void {
 	harness.hub.deliver({
 		conversationId: paletteConversation(harness),
 		...event,

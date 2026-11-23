@@ -28,13 +28,11 @@ function checkRoute(answer) {
   };
 }
 
-/** Fails on a check left open to any tenant user, or that reads its input from elsewhere than the body. */
 void test("the check is bound to the owner guard and reads the body", () => {
   const { route } = checkRoute({ ok: true, data: {}, changes: [] });
   assert.deepEqual(route.reads, ["owner", "body", "header:x-dms-ui-assistant"]);
 });
 
-/** Fails on a route that changes the body before core checks it, or answers anything else than what core found. */
 void test("the body goes to core as it came, and the route answers what core found", async () => {
   const access = {
     reachable: true,
@@ -53,7 +51,6 @@ void test("the body goes to core as it came, and the route answers what core fou
   assert.deepEqual(checked, [body]);
 });
 
-/** Fails on a route that answers core's refusal outside development as a success, or with another status. */
 void test("outside development the check answers 403 with core's reason", async () => {
   const { route } = checkRoute({
     ok: false,
@@ -79,7 +76,6 @@ void test("outside development the check answers 403 with core's reason", async 
   );
 });
 
-/** Fails on a route that answers a body core could not read as a success, or with another status or message. */
 void test("a body core refuses answers 400 with core's message", async () => {
   const message =
     "Expected an engine of postgres, mysql, mongodb, rethinkdb and a URL of that engine; check url.";
@@ -148,7 +144,6 @@ function missingDriverRoute(access, projectPath) {
   ).route("POST", "/database/connections/check");
 }
 
-/** Fails on a missing driver answered without the install step, or with a command for another package manager or range. */
 void test("a check that misses the driver answers the command that installs it with the project's package manager", async (t) => {
   const pnpmProject = projectWith({ "pnpm-lock.yaml": "" });
   const yarnProject = projectWith({
@@ -189,7 +184,6 @@ void test("a check that misses the driver answers the command that installs it w
   );
 });
 
-/** Fails on an install step added to an answer whose reason is another failure, such as a refused sign-in. */
 void test("an unreachable database keeps its answer without an install step", async () => {
   const refused = {
     reachable: false,

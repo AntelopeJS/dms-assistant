@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
 	connectionId,
 	type DatabaseEngine,
@@ -60,70 +61,44 @@ interface Stored {
 	written?: Kept;
 }
 
-function textOf(value: object, key: string): string | undefined {
-	const field: unknown = Reflect.get(value, key);
-	return typeof field === "string" ? field : undefined;
-}
+const ENGINE_NAMES: ReadonlySet<string> = new Set(CONNECTABLE_ENGINES);
 
-function accessOf(value: unknown): DatabaseAccess | null {
-	if (value === null || typeof value !== "object") return null;
-	const reachable: unknown = Reflect.get(value, "reachable");
-	const canRead: unknown = Reflect.get(value, "canRead");
-	const canWrite: unknown = Reflect.get(value, "canWrite");
-	const latencyMs: unknown = Reflect.get(value, "latencyMs");
-	if (
-		typeof reachable !== "boolean" ||
-		typeof canRead !== "boolean" ||
-		typeof canWrite !== "boolean"
-	) {
-		return null;
-	}
-	return {
-		reachable,
-		canRead,
-		canWrite,
-		latencyMs: typeof latencyMs === "number" ? latencyMs : undefined,
-		user: textOf(value, "user"),
-		reason: textOf(value, "reason"),
-	};
-}
+const OptionalText = z.string().optional().catch(undefined);
 
-function isConnectionId(text: string | undefined): text is string {
-	return text !== undefined && text !== "" && connectionId(text) === text;
-}
+const AccessSchema = z.object({
+	reachable: z.boolean(),
+	canRead: z.boolean(),
+	canWrite: z.boolean(),
+	latencyMs: z.number().optional().catch(undefined),
+	user: OptionalText,
+	reason: OptionalText,
+});
 
-function keptOf(value: unknown): Kept | null {
-	if (value === null || typeof value !== "object") return null;
-	const stored = textOf(value, "engine");
-	const engine = CONNECTABLE_ENGINES.find((known) => known === stored);
-	const connection = textOf(value, "connection");
-	const access = accessOf(Reflect.get(value, "access"));
-	const writtenAt: unknown = Reflect.get(value, "writtenAt");
-	if (
-		engine === undefined ||
-		!isConnectionId(connection) ||
-		access === null ||
-		typeof writtenAt !== "number"
-	) {
-		return null;
-	}
-	return { engine, connection, access, writtenAt };
-}
+const KeptSchema = z.object({
+	engine: z
+		.string()
+		.refine((text): text is DatabaseEngine => ENGINE_NAMES.has(text)),
+	connection: z
+		.string()
+		.refine((text) => text !== "" && connectionId(text) === text),
+	access: AccessSchema,
+	writtenAt: z.number(),
+});
+
+const StoredSchema = z.object({
+	owner: z.string().nullable().catch(null),
+	attempt: z.string(),
+	written: KeptSchema.optional().catch(undefined),
+});
 
 function parsed(text: string | null): Stored | null {
 	if (text === null) return null;
-	let value: unknown;
 	try {
-		value = JSON.parse(text);
+		const stored = StoredSchema.safeParse(JSON.parse(text));
+		return stored.success ? stored.data : null;
 	} catch {
 		return null;
 	}
-	if (value === null || typeof value !== "object") return null;
-	const attempt = textOf(value, "attempt");
-	if (attempt === undefined) return null;
-	const owner = textOf(value, "owner") ?? null;
-	const written = keptOf(Reflect.get(value, "written"));
-	return written === null ? { owner, attempt } : { owner, attempt, written };
 }
 
 function newAttempt(): string {

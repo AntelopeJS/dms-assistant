@@ -4,16 +4,7 @@ import {
 	defineDmsPlugin,
 	useDmsRouter,
 } from "#dms/frontend-module";
-import {
-	type App,
-	computed,
-	type Ref,
-	readonly,
-	ref,
-	shallowRef,
-	type ShallowRef,
-	watch,
-} from "vue";
+import { type App, computed, ref, shallowRef, type ShallowRef } from "vue";
 import { CHAT_I18N_KEY, type ChatI18n } from "../chat/composables/useChatI18n";
 import type { ChatApi } from "../chat/composables/useChangeSetActions";
 import type { CurrentPage } from "../chat/types/conversation";
@@ -25,7 +16,6 @@ import {
 	publicOnboarding,
 } from "../onboarding/runtime";
 import {
-	type AssistantActivity,
 	type AssistantStatusPayload,
 	createAssistantActivity,
 } from "../runtime/assistant-activity";
@@ -38,220 +28,54 @@ import {
 	ASSISTANT_ACTIONS_KEY,
 	publicAssistantActions,
 } from "../runtime/assistant-actions";
+import {
+	createAssistantChannel,
+	followPanel,
+	followSidecarStatus,
+	installHostState,
+} from "../runtime/assistant-channel";
 import { installAssistantNotifications } from "../runtime/assistant-notifications";
 import {
 	ASSISTANT_SESSION_KEY,
 	type AssistantSession,
 	type ChatPanelState,
 } from "../runtime/assistant-session";
-import {
-	type ChannelClient,
-	createChannelClient,
-} from "../runtime/channel-client";
-import {
-	type ChatTransportHub,
-	createChatTransport,
-} from "../runtime/chat-transport";
+import { createSession, jsonPost } from "../runtime/assistant-session-factory";
 import {
 	CHANGES_PATH,
-	CHANNEL_IDLE_STOP_MS,
-	CHANNEL_STATUS_RECONNECTING,
-	HELLO_MESSAGE_TYPE,
-	HOST_ROLE,
-	JSON_CONTENT_TYPE,
 	RESTART_PATH,
 	SIDECAR_INFO_PATH,
 	SIDECAR_STATUS_CONNECTED,
-	SIDECAR_STATUS_REVIVING,
 	SIDE_PANEL_ID,
 	STATUS_PATH,
-	VISIBILITY_CHANGE_EVENT,
 } from "../runtime/constants";
-import {
-	buildCurrentPageUpdate,
-	installCurrentPageTracker,
-} from "../runtime/current-page";
 import { installAssistantPromptListener } from "../runtime/assistant-prompt";
 import { isEmbedded } from "../runtime/embedding";
-import { mountFoldBar } from "../runtime/fold-bar";
-import { createFrameRouter } from "../runtime/frame-router";
 import {
 	createHostCommandDispatcher,
 	createNavigator,
-	type Navigator,
-	type HostCommandDispatcher,
 } from "../runtime/host-commands";
-import {
-	createLauncherState,
-	type LauncherStateHandle,
-} from "../runtime/launcher-state";
-import { installNavigationCompleteEmitter } from "../runtime/navigation-complete";
+import { createLauncherState } from "../runtime/launcher-state";
 import { createMockupFold } from "../runtime/mockup-fold";
+import { mountFoldBar } from "../runtime/fold-bar";
 import {
 	createMockupRuns,
 	dispatchMockupRun,
 	installMockupRunAnswers,
-	type MockupRuns,
 	routePrompt,
 } from "../runtime/mockup-runs";
-import { createPanelIntents } from "../runtime/panel-intents";
 import { runWhenLoggedIn } from "../runtime/session-gate";
-import { OWNER_UI_HEADERS } from "../../builder/app/runtime/owner-ui";
 import { installToggleShortcut } from "../runtime/shortcuts";
 import {
 	createSidecarStatusController,
 	type SidecarInfoPayload,
-	type SidecarStatus,
 	type SidecarStatusController,
 } from "../runtime/sidecar-status";
-import { createStreamHolds, type StreamHolds } from "../runtime/stream-holds";
+import { createStreamHolds } from "../runtime/stream-holds";
+import type { TypedMessage } from "../runtime/typed-message";
 
 type AuthFetch = ReturnType<typeof useAuthFetch>["$authFetch"];
 type Toaster = ReturnType<typeof useToast>;
-
-interface ChannelDeps {
-	$authFetch: AuthFetch;
-	controller: SidecarStatusController;
-	dispatchHostCommand: HostCommandDispatcher;
-}
-
-interface AssistantChannel {
-	client: ChannelClient;
-	chat: ChatTransportHub;
-}
-
-/** What the plugin takes from the DMS before its first await, while in context. */
-interface DashboardDeps {
-	$authFetch: AuthFetch;
-	toaster: Toaster;
-	devReload: ReturnType<typeof useDevReload>;
-	router: ReturnType<typeof useDmsRouter>;
-}
-
-function postJson(
-	$authFetch: AuthFetch,
-	path: string,
-	body?: unknown,
-): Promise<unknown> {
-	return $authFetch(path, {
-		method: "POST",
-		body: JSON.stringify(body ?? {}),
-		headers: { "content-type": JSON_CONTENT_TYPE, ...OWNER_UI_HEADERS },
-	});
-}
-
-function createAssistantChannel(deps: ChannelDeps): AssistantChannel {
-	const chat = createChatTransport({
-		send: (msg) => client.send(msg),
-		reconnect: () => client.reconnectNow(),
-		getStatus: () => client.getStatus(),
-	});
-	const client = createChannelClient({
-		post: (path, body) => postJson(deps.$authFetch, path, body),
-		onReady: () => {
-			client.send({ type: HELLO_MESSAGE_TYPE, role: HOST_ROLE });
-			client.send(buildCurrentPageUpdate(window.location.href));
-			chat.announceReady();
-		},
-		onFrame: createFrameRouter({
-			host: deps.dispatchHostCommand,
-			chat: chat.deliver,
-		}),
-		onStatusChange: (status) => {
-			chat.announceStatus(status);
-			if (status === CHANNEL_STATUS_RECONNECTING)
-				deps.controller.reportChannelDown();
-		},
-	});
-	return { client, chat };
-}
-
-/** What keeps the tab's stream open. */
-interface StreamNeeds {
-	panel: ChatPanelState;
-	activity: AssistantActivity;
-	holds: StreamHolds;
-}
-
-/**
- * The stream is open while the panel is, while the tab shows a chat that
- * works or waits, so its events (and their toasts) still arrive, and while the
- * command palette streams an answer; otherwise it gives its connection back
- * shortly after.
- */
-function followPanel(needs: StreamNeeds, client: ChannelClient): () => void {
-	const { panel, activity, holds } = needs;
-	let stopTimer: ReturnType<typeof setTimeout> | null = null;
-	const clearStopTimer = (): void => {
-		if (stopTimer !== null) clearTimeout(stopTimer);
-		stopTimer = null;
-	};
-	const follow = (): void => {
-		clearStopTimer();
-		const isVisible = document.visibilityState === "visible";
-		const isWanted =
-			panel.isOpen.value || activity.isBusy.value || holds.isHeld.value;
-		if (isVisible && isWanted) client.start();
-		else stopTimer = setTimeout(() => client.stop(), CHANNEL_IDLE_STOP_MS);
-	};
-	const stopWatching = watch(
-		[panel.isOpen, activity.isBusy, holds.isHeld],
-		follow,
-	);
-	document.addEventListener(VISIBILITY_CHANGE_EVENT, follow);
-	follow();
-	return () => {
-		clearStopTimer();
-		stopWatching();
-		document.removeEventListener(VISIBILITY_CHANGE_EVENT, follow);
-	};
-}
-
-interface FollowedSidecarStatus {
-	status: Readonly<Ref<SidecarStatus>>;
-	stop: () => void;
-}
-
-function followSidecarStatus(
-	controller: SidecarStatusController,
-	client: ChannelClient,
-): FollowedSidecarStatus {
-	const status = ref<SidecarStatus>(controller.getStatus());
-	// Only a sidecar coming back needs a fresh stream: replacing the one that
-	// just opened would re-attach every chat and replay its running turn.
-	const stop = controller.subscribe((next) => {
-		if (
-			next === SIDECAR_STATUS_CONNECTED &&
-			status.value === SIDECAR_STATUS_REVIVING
-		)
-			client.reconnectNow();
-		status.value = next;
-	});
-	return { status: readonly(status), stop };
-}
-
-function installHostState(
-	client: ChannelClient,
-	currentPage: Ref<CurrentPage | null>,
-): () => void {
-	const sendWhenConnected = (msg: unknown): void => {
-		if (!client.isConnected()) return;
-		client.send(msg);
-	};
-	const stopTracking = installCurrentPageTracker({
-		send: (msg) => {
-			currentPage.value = msg.currentPage;
-			sendWhenConnected(msg);
-		},
-	});
-	const stopNavigation = installNavigationCompleteEmitter({
-		send: sendWhenConnected,
-	});
-	return () => {
-		stopTracking();
-		stopNavigation();
-	};
-}
 
 function createChatI18n(i18n: DmsI18n): ChatI18n {
 	return {
@@ -263,61 +87,22 @@ function createChatI18n(i18n: DmsI18n): ChatI18n {
 	};
 }
 
+type PostBody = Parameters<ChatApi["post"]>[1];
+
 function createApi($authFetch: AuthFetch): ChatApi {
 	return {
-		get: <T>(path: string) => $authFetch(path) as Promise<T>,
-		post: <T>(path: string, body?: unknown) =>
-			postJson($authFetch, path, body) as Promise<T>,
+		get: <T>(path: string) => $authFetch<T>(path),
+		post: <T>(path: string, body?: PostBody) =>
+			$authFetch<T>(path, jsonPost(JSON.stringify(body ?? {}))),
 	};
 }
 
-interface SessionParts {
-	deps: DashboardDeps;
-	controller: SidecarStatusController;
-	chat: ChatTransportHub;
-	panel: ChatPanelState;
-	holds: StreamHolds;
-	status: Readonly<Ref<SidecarStatus>>;
-	activity: AssistantActivity;
-	launcher: LauncherStateHandle;
-	currentPage: Ref<CurrentPage | null>;
-	navigate: Navigator;
-	runs: MockupRuns;
-}
-
-function createSession(parts: SessionParts): AssistantSession {
-	const { deps, panel, activity } = parts;
-	const intents = createPanelIntents();
-	return {
-		status: parts.status,
-		chat: parts.chat.transport,
-		panel,
-		navigate: parts.navigate,
-		openConversation: (conversationId) => {
-			intents.push({ kind: "open", conversationId });
-			panel.open();
-		},
-		startConversation: (prompt, mode, send) => {
-			intents.push({ kind: "start", prompt, mode, send });
-			panel.open();
-		},
-		holdStream: parts.holds.hold,
-		pendingApprovals: activity.pendingApprovals,
-		launcherState: parts.launcher.state,
-		intents,
-		runs: parts.runs,
-		currentPage: readonly(parts.currentPage),
-		api: createApi(deps.$authFetch),
-		lastError: activity.lastError,
-		restart: async () => {
-			try {
-				await postJson(deps.$authFetch, RESTART_PATH);
-			} finally {
-				parts.controller.retry();
-				void activity.refresh();
-			}
-		},
-	};
+/** What the plugin takes from the DMS before its first await, while in context. */
+interface DashboardDeps {
+	$authFetch: AuthFetch;
+	toaster: Toaster;
+	devReload: ReturnType<typeof useDevReload>;
+	router: ReturnType<typeof useDmsRouter>;
 }
 
 function installFold(app: App, session: AssistantSession): () => void {
@@ -367,6 +152,13 @@ function registerDashboardEntries(
 	return stopWatchingLauncher;
 }
 
+/** The message that asks the sidecar to undo a change set. */
+interface ChangeSetActionMessage extends TypedMessage {
+	conversationId: string;
+	changeSetId: string;
+	action: "undo";
+}
+
 function installToasts(
 	session: AssistantSession,
 	i18n: ChatI18n,
@@ -384,13 +176,15 @@ function installToasts(
 			session.intents.push({ kind: "approvals" });
 			session.panel.open();
 		},
-		undoChangeSet: (set) =>
-			session.chat.send({
+		undoChangeSet: (set) => {
+			const undo: ChangeSetActionMessage = {
 				type: "change_set_action",
 				conversationId: set.conversationId,
 				changeSetId: set.id,
 				action: "undo",
-			}),
+			};
+			session.chat.send(undo);
+		},
 		reviewChangeSet: (id) =>
 			session.navigate(`${CHANGES_PATH}?set=${encodeURIComponent(id)}`),
 	});
@@ -446,6 +240,11 @@ interface AssistantRuntime {
 	stops: Array<() => void>;
 }
 
+/**
+ * Builds the tab's stream, the activity read of the backend's status, which
+ * the application polls for as long as it runs while the interval says so, and
+ * the session the panel and the pages share.
+ */
 function createRuntime(
 	deps: DashboardDeps,
 	controller: SidecarStatusController,
@@ -457,7 +256,9 @@ function createRuntime(
 	});
 	const dispatchHostCommand = createHostCommandDispatcher({ navigate });
 	const { client, chat } = createAssistantChannel({
-		$authFetch: deps.$authFetch,
+		post: async (path, body) => {
+			await deps.$authFetch(path, jsonPost(JSON.stringify(body)));
+		},
 		controller,
 		dispatchHostCommand,
 	});
@@ -465,8 +266,6 @@ function createRuntime(
 	const holds = createStreamHolds();
 	const sidecarStatus = followSidecarStatus(controller, client);
 	const activity = createAssistantActivity({
-		// The application's read: polled for as long as the app runs, while
-		// the interval says so.
 		readStatus: (interval) =>
 			useApiData<AssistantStatusPayload>(STATUS_PATH, {
 				refreshInterval: interval,
@@ -494,7 +293,10 @@ function createRuntime(
 		emit: dispatchMockupRun,
 	});
 	const session = createSession({
-		deps,
+		api: createApi(deps.$authFetch),
+		restartBackend: async () => {
+			await deps.$authFetch(RESTART_PATH, jsonPost("{}"));
+		},
 		controller,
 		chat,
 		panel,
@@ -558,6 +360,10 @@ function wireAssistant(
 	};
 }
 
+/**
+ * Takes what it needs from the DMS before its first await, reads the sidecar
+ * once the gate opens, then polls it while the sidecar comes back.
+ */
 async function startAssistant(
 	context: DmsAppContext,
 	appMounted: Promise<void>,
@@ -570,7 +376,6 @@ async function startAssistant(
 		devReload: useDevReload(),
 		router: useDmsRouter(),
 	};
-	// Read once the gate opens, then polled while the sidecar comes back.
 	const controller = createSidecarStatusController((interval) =>
 		useApiData<SidecarInfoPayload>(SIDECAR_INFO_PATH, {
 			immediate: false,

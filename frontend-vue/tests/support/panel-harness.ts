@@ -9,6 +9,7 @@ import {
 	type Ref,
 	shallowRef,
 } from "vue";
+import type { ChatApi } from "../../app/chat/composables/useChangeSetActions";
 import ChatPanel from "../../app/components/ChatPanel.vue";
 import {
 	ASSISTANT_SESSION_KEY,
@@ -26,6 +27,10 @@ import {
 	dispatchMockupRun,
 } from "../../app/runtime/mockup-runs";
 import { createPanelIntents } from "../../app/runtime/panel-intents";
+import {
+	isTypedMessage,
+	type TypedMessage,
+} from "../../app/runtime/typed-message";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import { createTestI18n } from "./i18n";
 import { PANEL_STUBS } from "./stubs";
@@ -33,11 +38,17 @@ import type { SidecarStatus } from "../../app/runtime/sidecar-status";
 
 export const CONVERSATION_ID = "conv-native-1";
 
+/** What the stream hands the chat: the sidecar's message, as the transport hub takes it. */
+export type SidecarEvent = Parameters<ChatTransportHub["deliver"]>[0];
+
+/** A message the panel sent through the stream. */
+export type SentMessage = TypedMessage;
+
 /** A panel mounted on a fake stream: what it sent, and handles to drive it. */
 export interface Harness {
 	session: AssistantSession;
 	hub: ChatTransportHub;
-	sent: Array<Record<string, unknown>>;
+	sent: SentMessage[];
 	reconnects: number;
 	sidecarStatus: Ref<SidecarStatus>;
 	setChannelStatus: (status: ChannelStatus) => void;
@@ -73,20 +84,12 @@ export function createSidePanel(): ChatPanelState {
 
 export function createHarness(): Harness {
 	let channelStatus: ChannelStatus = "connected";
-	const harness = {
-		sent: [] as Array<Record<string, unknown>>,
-		reconnects: 0,
-		sidecarStatus: ref<SidecarStatus>("connected"),
-		navigate: vi.fn(),
-		restart: vi.fn(async () => undefined),
-		lastError: ref<string | null>(null),
-		launcherState: ref<LauncherState>("connected"),
-		api: { get: vi.fn(async () => ({ conflicts: [] })), post: vi.fn() },
-	} as unknown as Harness;
-	harness.hub = createChatTransport({
+	const sent: SentMessage[] = [];
+	const hub = createChatTransport({
 		send: (msg) => {
 			if (channelStatus !== "connected") return false;
-			harness.sent.push(msg as Record<string, unknown>);
+			const wire: unknown = JSON.parse(JSON.stringify(msg));
+			if (isTypedMessage(wire)) sent.push(wire);
 			return true;
 		},
 		reconnect: () => {
@@ -94,18 +97,22 @@ export function createHarness(): Harness {
 		},
 		getStatus: () => channelStatus,
 	});
-	harness.streamHolds = 0;
-	harness.setChannelStatus = (status) => {
-		channelStatus = status;
-		harness.hub.announceStatus(status);
+	const sidecarStatus = ref<SidecarStatus>("connected");
+	const navigate = vi.fn<(path: string) => void>();
+	const restart = vi.fn<() => Promise<void>>(async () => undefined);
+	const lastError = ref<string | null>(null);
+	const launcherState = ref<LauncherState>("connected");
+	const api: ChatApi = {
+		get: vi.fn().mockResolvedValue({ conflicts: [] }),
+		post: vi.fn(),
 	};
 	const panel = createSidePanel();
 	const intents = createPanelIntents();
-	harness.session = {
-		status: harness.sidecarStatus,
-		chat: harness.hub.transport,
+	const session: AssistantSession = {
+		status: sidecarStatus,
+		chat: hub.transport,
 		panel,
-		navigate: harness.navigate,
+		navigate,
 		openConversation: (conversationId) => {
 			intents.push({ kind: "open", conversationId });
 			panel.open();
@@ -121,10 +128,10 @@ export function createHarness(): Harness {
 			};
 		},
 		pendingApprovals: ref(0),
-		launcherState: readonly(harness.launcherState),
+		launcherState: readonly(launcherState),
 		intents,
 		runs: createMockupRuns({
-			chat: harness.hub.transport,
+			chat: hub.transport,
 			storage: () => window.sessionStorage,
 			emit: dispatchMockupRun,
 		}),
@@ -132,9 +139,26 @@ export function createHarness(): Harness {
 			path: "/sales/overview",
 			title: "Sales overview · DMS",
 		}),
-		api: harness.api,
-		lastError: harness.lastError,
-		restart: harness.restart,
+		api,
+		lastError,
+		restart,
+	};
+	const harness: Harness = {
+		session,
+		hub,
+		sent,
+		reconnects: 0,
+		sidecarStatus,
+		setChannelStatus: (status) => {
+			channelStatus = status;
+			hub.announceStatus(status);
+		},
+		navigate,
+		restart,
+		lastError,
+		launcherState,
+		api,
+		streamHolds: 0,
 	};
 	return harness;
 }
@@ -163,8 +187,8 @@ function sidePanelHost(panel: ChatPanelState) {
 /** The providers the plugin installs, as a test mounts them. */
 export function providedSession(session: AssistantSession | null) {
 	return {
-		[ASSISTANT_SESSION_KEY as symbol]: shallowRef(session),
-		[CHAT_I18N_KEY as symbol]: createTestI18n(),
+		[ASSISTANT_SESSION_KEY]: shallowRef(session),
+		[CHAT_I18N_KEY]: createTestI18n(),
 	};
 }
 
@@ -188,10 +212,7 @@ export async function openPanel(harness: Harness): Promise<VueWrapper> {
 }
 
 /** A sidecar event for the panel's conversation. */
-export function deliver(
-	harness: Harness,
-	event: Record<string, unknown>,
-): void {
+export function deliver(harness: Harness, event: SidecarEvent): void {
 	harness.hub.deliver({ conversationId: CONVERSATION_ID, ...event });
 }
 

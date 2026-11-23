@@ -62,7 +62,6 @@ describe("the PreToolUse hook and the permission mode the CLI states", () => {
     expect(run.decisions).toEqual([]);
   });
 
-  /** Fails on a hook that leaves a command to the CLI in Plan only, which runs a read-only one such as `cat .env` unasked. */
   it("hands a command to canUseTool in Plan only, recording no review", async () => {
     const run = await preToolUse("node -e 1", "plan");
     expect(run.output).toEqual(ASK);

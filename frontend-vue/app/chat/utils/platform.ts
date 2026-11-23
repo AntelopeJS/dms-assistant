@@ -17,9 +17,8 @@ const OTHER_SHIFT = "Shift+";
  * actually uses: ⌘ on Apple, Ctrl elsewhere.
  */
 function isApplePlatform(): boolean {
-	const nav = globalThis.navigator as
-		| (Navigator & NavigatorUserAgentData)
-		| undefined;
+	const nav: (Navigator & NavigatorUserAgentData) | undefined =
+		globalThis.navigator;
 	if (nav === undefined) return false;
 	const platform = nav.userAgentData?.platform ?? nav.platform ?? "";
 	return APPLE_PLATFORM.test(platform);

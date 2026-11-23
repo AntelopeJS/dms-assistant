@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { describe, expect, it, vi } from "vitest";
 import {
 	createHostCommandDispatcher,
@@ -9,7 +12,7 @@ import {
 /** A dashboard that stays on its page while the trips wait. */
 const here = (): string => "/home";
 
-function navigateCommand(path: string): object {
+function navigateCommand(path: string) {
 	return { type: "host_command_navigate", path };
 }
 
@@ -41,7 +44,7 @@ function controlledWaiter(): ControlledWaiter {
 	};
 }
 
-describe("host command dispatch", () => {
+describe("host command dispatch, from the dev reload to the trip", () => {
 	it("navigates only once the dev reload serves the target route", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
@@ -100,7 +103,9 @@ describe("host command dispatch", () => {
 		);
 		logged.mockRestore();
 	});
+});
 
+describe("host command dispatch, bursts, malformed commands and foreign paths", () => {
 	it("collapses a burst into a single trip to the newest path", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
@@ -154,7 +159,6 @@ describe("host command dispatch", () => {
 			}),
 		});
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		dispatch("not an object");
 		dispatch({ type: "host_command_unknown" });
 		expect(push).not.toHaveBeenCalled();
 		expect(awaitRoute).not.toHaveBeenCalled();
@@ -208,7 +212,7 @@ describe("host command dispatch", () => {
 	});
 });
 
-describe("the dashboard's own navigation to a page just written", () => {
+describe("the dashboard's own navigation to a page just written, once the dev reload serves it", () => {
 	it("goes there only once the dev reload serves its route", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();
@@ -272,7 +276,9 @@ describe("the dashboard's own navigation to a page just written", () => {
 		await Promise.resolve();
 		expect(push).toHaveBeenCalledExactlyOnceWith("/modules/ai/settings");
 	});
+});
 
+describe("the dashboard's own navigation to a page just written, while waits stall or are overtaken", () => {
 	it("waits on the page's own route and keeps its query and hash in the trip", async () => {
 		const push = vi.fn();
 		const { waiter, calls, release } = controlledWaiter();

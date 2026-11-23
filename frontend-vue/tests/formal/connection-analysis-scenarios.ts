@@ -26,14 +26,15 @@ function duplicated(
 	second: Step[],
 	defect?: string,
 ): Scenario {
-	return {
+	const scenario: Scenario = {
 		name,
 		job,
 		declared: ["shop"],
 		remembered: ["shop", "shop"],
 		programs: [first, second],
-		...(defect === undefined ? {} : { defect }),
 	};
+	if (defect !== undefined) scenario.defect = defect;
+	return scenario;
 }
 
 /** A tab with nothing remembered, which connects by hand. */

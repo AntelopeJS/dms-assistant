@@ -9,6 +9,8 @@
  * `@antelopejs/tooling-configs/formal`, which this repository's pinned pack
  * does not ship yet. Exits 0 when TLC agrees, 1 when a rule changed, 2 when
  * TLC could not run.
+ *
+ * @packageDocumentation
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";

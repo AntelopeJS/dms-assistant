@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	resetBrowser,
@@ -7,11 +10,6 @@ import {
 	UNFINISHED,
 	widget,
 } from "./support/onboarding-host";
-
-vi.mock("#dms/frontend-module", async () => {
-	const { dmsModule } = await import("./support/dms-state");
-	return dmsModule;
-});
 
 beforeEach(silenceStartup);
 afterEach(resetBrowser);

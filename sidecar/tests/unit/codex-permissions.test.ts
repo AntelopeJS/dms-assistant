@@ -77,7 +77,6 @@ const FILE_CHANGE_REQUEST = {
 };
 
 describe("patch paths", () => {
-  /** Fails on a description that drops a rename's destination, which lets a rename onto `antelope.config.ts` or a git hook file escape the files that always ask. */
   it("lists a rename's destination among the patch's paths", async () => {
     const destination = `${PROJECT_ROOT}/antelope.config.ts`;
     const renamed = () => [
@@ -107,7 +106,6 @@ describe("patch paths", () => {
     });
   });
 
-  /** Fails on a handler that asks about, or a kept rule that accepts, a patch writing `.env`, which Claude's hook never lets through. */
   it("declines a patch that writes or renames onto a secret file, without asking", async () => {
     const patches = [
       { path: `${PROJECT_ROOT}/.env`, kind: "update", diff: PATCH_DIFF },

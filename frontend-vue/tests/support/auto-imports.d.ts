@@ -5,6 +5,7 @@
  * declarations never meet the workspace's own `auto-imports.d.ts`.
  */
 declare global {
+	const $fetch: (typeof import("ofetch"))["$fetch"];
 	const getPluginI18n: (typeof import("#dms-core/app/composables/translation/useTranslation"))["getPluginI18n"];
 	const refreshPageBlocks: (typeof import("#dms-ui/app/utils/blockRefresh"))["refreshPageBlocks"];
 	const registerCommandPaletteAssistant: (typeof import("#dms-layout/app/composables/useCommandPaletteAssistant"))["registerCommandPaletteAssistant"];

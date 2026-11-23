@@ -1,5 +1,7 @@
 /** The engines the *Connect a database* form connects, by the name it sends to the module. */
-export type DatabaseEngine = 'postgres' | 'mongodb' | 'rethinkdb' | 'mysql'
+export const DATABASE_ENGINES = ['postgres', 'mongodb', 'rethinkdb', 'mysql'] as const
+
+export type DatabaseEngine = (typeof DATABASE_ENGINES)[number]
 
 interface EngineSpec {
 	label: string

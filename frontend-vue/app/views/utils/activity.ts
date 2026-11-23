@@ -3,6 +3,7 @@ import type {
 	ActivityResult,
 	ActivityRow,
 } from "../types";
+import type { JsonValue } from "../../../builder/app/runtime/types";
 
 /** A named argument as DmsKeyValueList draws it. */
 export interface ArgumentItem {
@@ -33,19 +34,17 @@ function shorten(text: string): string {
 	return `${text.slice(0, MAX_ARGUMENT_CHARS - ELLIPSIS.length)}${ELLIPSIS}`;
 }
 
-function stringifyArgument(value: unknown): string {
-	if (typeof value === "string") return value;
-	if (value === undefined) return "";
-	try {
-		return JSON.stringify(value) ?? String(value);
-	} catch {
-		return String(value);
-	}
+function isText(value: JsonValue): value is string {
+	return typeof value === "string";
+}
+
+function stringifyArgument(value: JsonValue): string {
+	return isText(value) ? value : JSON.stringify(value);
 }
 
 /** A call's arguments, one row per name, long values cut short but copied whole. */
 export function argumentItems(
-	args: Record<string, unknown> | undefined,
+	args: Record<string, JsonValue> | undefined,
 ): ArgumentItem[] {
 	return Object.entries(args ?? {}).map(([name, value]) => {
 		const text = stringifyArgument(value);

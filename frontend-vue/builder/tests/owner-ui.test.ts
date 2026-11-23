@@ -16,8 +16,7 @@ function recordingApi() {
 }
 
 describe('the builder client', () => {
-	/** Fails on a client that sends a URL-taking request without the header the module requires, which the module would refuse. */
-	it('sends the assistant UI header on the connection check and on a builder POST', async () => {
+	it('sends the assistant UI header the module requires on the connection check and on a builder POST', async () => {
 		const { api, calls } = recordingApi()
 		await api.checkConnection('postgres', 'postgres://u:p@h/db')
 		await api.analyseDatabase('erp', 'erp')

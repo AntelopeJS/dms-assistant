@@ -107,7 +107,11 @@ export const SWITCH_ROWS: readonly SwitchRow[] = [
 /** A field of the guard rails the card saves on its own. */
 export type GuardRailField = ModeRow["field"] | SavedSwitchField;
 
+function isText(value: unknown): value is string {
+	return typeof value === "string";
+}
+
 /** The mode a radio group's value names for the provider, if it offers one. */
 export function modeOf(row: ModeRow, value: unknown): ApprovalMode | undefined {
-	return row.modes.find((mode) => mode === value);
+	return isText(value) ? row.modes.find((mode) => mode === value) : undefined;
 }

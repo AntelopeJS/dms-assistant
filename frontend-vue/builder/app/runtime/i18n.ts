@@ -11,7 +11,7 @@ import { useDmsApp } from '#dms/frontend-module'
  */
 const I18N_NAMESPACE = 'dms_builder'
 
-type MessageParams = Record<string, unknown>
+type MessageParams = Record<string, string | number>
 
 /**
  * A builder message in the active locale. `count` picks the plural form of a

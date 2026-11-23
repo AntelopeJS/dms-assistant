@@ -1,6 +1,9 @@
 import { getCurrentInstance, inject, onMounted, ref } from "vue";
-import { useDmsRouter } from "#dms/frontend-module";
+import { useDmsRouter, type DmsRouter } from "#dms/frontend-module";
 import { ASSISTANT_SESSION_KEY } from "../../runtime/assistant-session";
+
+/** What the actions need of the dashboard's router. */
+type AssistantRouter = Pick<DmsRouter, "push">;
 
 export interface AssistantActions {
 	/** The assistant runs in this tab: its buttons can be offered. Reactive. */
@@ -20,10 +23,13 @@ export interface AssistantActions {
  * A view only offers them once mounted: the server never has a session, and a
  * probe that answered before the view hydrated would otherwise make the
  * browser render buttons the server's HTML lacks.
+ *
+ * `router` opens the pages `goTo` names; the dashboard's own is the default.
  */
-export function useAssistant(): AssistantActions {
+export function useAssistant(
+	router: AssistantRouter = useDmsRouter(),
+): AssistantActions {
 	const session = inject(ASSISTANT_SESSION_KEY, null);
-	const router = useDmsRouter();
 	const isMounted = ref(!getCurrentInstance());
 	if (!isMounted.value) onMounted(() => (isMounted.value = true));
 	return {

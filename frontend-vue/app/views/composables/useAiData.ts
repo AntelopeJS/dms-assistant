@@ -37,25 +37,47 @@ interface FailingRead {
 }
 
 interface FetchErrorResponse {
-	status?: number;
+	status?: number | null;
 }
 
 interface FetchErrorLike {
-	status?: number;
-	statusCode?: number;
-	response?: FetchErrorResponse;
+	status?: number | null;
+	statusCode?: number | null;
+	response?: FetchErrorResponse | null;
 }
 
-/** The HTTP status of a `$authFetch` rejection, if it got an answer. */
-function errorStatus(error: unknown): number | undefined {
-	const candidate = error as FetchErrorLike | null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function isOptionalStatus(value: unknown): value is number | null | undefined {
+	return value === undefined || value === null || typeof value === "number";
+}
+
+function isFetchErrorResponse(value: unknown): value is FetchErrorResponse {
+	return isRecord(value) && isOptionalStatus(value.status);
+}
+
+function isFetchErrorLike(error: unknown): error is FetchErrorLike {
 	return (
-		candidate?.status ?? candidate?.statusCode ?? candidate?.response?.status
+		isRecord(error) &&
+		isOptionalStatus(error.status) &&
+		isOptionalStatus(error.statusCode) &&
+		(error.response === undefined ||
+			error.response === null ||
+			isFetchErrorResponse(error.response))
 	);
 }
 
+/** The HTTP status of a `$authFetch` rejection, if it got an answer. */
+function httpStatus(error: FetchErrorLike): number | null | undefined {
+	return error.status ?? error.statusCode ?? error.response?.status;
+}
+
+/** Whether a read failed with the sidecar down (503) or with anything else. */
 export function classifyFailure(error: unknown): RequestFailure {
-	return errorStatus(error) === HTTP_SERVICE_UNAVAILABLE
+	return isFetchErrorLike(error) &&
+		httpStatus(error) === HTTP_SERVICE_UNAVAILABLE
 		? "unavailable"
 		: "error";
 }
@@ -66,10 +88,10 @@ export function classifyFailure(error: unknown): RequestFailure {
  * whether the assistant isn't running (503) rather than an error.
  */
 function describeFailure(result: FailingRead): FailureDescription {
-	const { resolveError } = useApiErrorPresenter();
+	const presenter = useApiErrorPresenter();
 	const notice = computed(() =>
 		result.error.value
-			? resolveError(result.error.value, {
+			? presenter.resolveError(result.error.value, {
 					fallbackKey: `dms_assistant.views.${classifyFailure(result.error.value)}.description`,
 				})
 			: null,

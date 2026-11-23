@@ -1,3 +1,4 @@
+import type { ApiErrorPresenter } from '#dms-core/app/composables/useApiErrorPresenter'
 import { API_PREFIX } from './constants'
 import type { DatabaseEngine } from './database-connect'
 import type {
@@ -16,6 +17,16 @@ import type {
 import { OWNER_UI_HEADERS } from './owner-ui'
 import type { BuilderError, OpResult } from './types'
 
+type ApiFailure = Parameters<ApiErrorPresenter['resolveError']>[0]
+
+/** What each route that takes a body is sent, as the module reads it. */
+type RouteBody =
+	| MapResourcesInput
+	| { connection: string; module: string; schemas?: string[] }
+	| { steps: ProjectConfigStep[]; opts: { dryRun: boolean }; variables?: ProjectVariable[] }
+	| { connection: string; dryRun: boolean }
+	| { connection: string; url: string }
+
 /**
  * The typed client over the module's database routes. Plain reads answer with
  * their value; writes, and the reads the module answers with an `OpResult`,
@@ -24,12 +35,12 @@ import type { BuilderError, OpResult } from './types'
  */
 export function useBuilderApi() {
 	const { $authFetch } = useAuthFetch()
-	const { presentError, resolveError } = useApiErrorPresenter()
+	const presenter = useApiErrorPresenter()
 
-	function failure(error: unknown): Extract<BuilderError, { code: 'unsupported' }> {
+	function failure(error: ApiFailure): Extract<BuilderError, { code: 'unsupported' }> {
 		const options = { fallbackKey: 'error.500.description' }
-		const notice = resolveError(error, options)
-		presentError(error, options)
+		const notice = presenter.resolveError(error, options)
+		presenter.presentError(error, options)
 		return { code: 'unsupported', detail: notice?.message ?? '' }
 	}
 
@@ -50,7 +61,7 @@ export function useBuilderApi() {
 
 	function post<T>(
 		path: string,
-		body: object,
+		body: RouteBody,
 	): Promise<OpResult<T>> {
 		return answered(
 			$authFetch<OpResult<T>>(`${API_PREFIX}${path}`, { method: 'POST', body, headers: OWNER_UI_HEADERS }),

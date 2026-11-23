@@ -36,7 +36,7 @@ export interface GuardRails {
  */
 export function useGuardRails(): GuardRails {
 	const { $authFetch } = useAuthFetch();
-	const { presentError } = useApiErrorPresenter();
+	const presenter = useApiErrorPresenter();
 	const read = useAiData<GuardRailValues>(AI_ROUTES.settings);
 	const status = useAiData<AssistantStatus>(AI_ROUTES.status);
 	const confirmed = ref<GuardRailValues | null>(null);
@@ -83,7 +83,7 @@ export function useGuardRails(): GuardRails {
 				};
 			}
 		} catch (error) {
-			presentError(error, {
+			presenter.presentError(error, {
 				fallbackKey:
 					classifyFailure(error) === "unavailable"
 						? "dms_assistant.views.unavailable.description"

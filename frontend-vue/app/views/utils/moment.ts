@@ -4,7 +4,7 @@ type DateTimeFormatter = (
 
 export type Translate = (
 	key: string,
-	params?: Record<string, unknown>,
+	params?: Record<string, string | number>,
 ) => string;
 
 export interface MomentOptions {
@@ -69,10 +69,10 @@ function formatDay(ms: number, options: MomentOptions): string {
 		.format(ms);
 }
 
-const RECENT_DAY_KEYS: Record<number, string> = {
-	0: "dms_assistant.views.moment.today",
-	1: "dms_assistant.views.moment.yesterday",
-};
+const RECENT_DAY_KEYS: ReadonlyMap<number, string> = new Map([
+	[0, "dms_assistant.views.moment.today"],
+	[1, "dms_assistant.views.moment.yesterday"],
+]);
 
 /**
  * A moment the way the mockup writes it: "Today 14:02", "Yesterday 09:51",
@@ -82,7 +82,7 @@ const RECENT_DAY_KEYS: Record<number, string> = {
 export function formatMoment(ms: number, options: MomentOptions): string {
 	const days = daysAgo(ms, options);
 	const time = formatClock(ms, options);
-	const recentKey = RECENT_DAY_KEYS[days];
+	const recentKey = RECENT_DAY_KEYS.get(days);
 	if (recentKey !== undefined) return options.t(recentKey, { time });
 	if (days < WEEK_DAYS) {
 		const weekday = options.format(WEEKDAY_OPTIONS).format(ms);

@@ -7,8 +7,6 @@ export default defineConfig({
   plugins: [backendBoundary()],
   resolve: {
     alias: {
-      // The host runtime only exists inside a generated Inertia workspace; the
-      // tests substitute the slice of it this package imports.
       '#dms/frontend-module': fileURLToPath(
         new URL('./tests/stubs/frontend-module.ts', import.meta.url),
       ),

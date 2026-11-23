@@ -25,17 +25,17 @@ const { t } = useI18n();
 
 const EXPANDED_LINE_LIMIT = 200;
 const DEFAULT_FILE_ICON = "i-ph-file";
-const FILE_ICONS: Record<string, string> = {
-	ts: "i-ph-file-ts",
-	tsx: "i-ph-file-tsx",
-	js: "i-ph-file-js",
-	mjs: "i-ph-file-js",
-	vue: "i-ph-file-vue",
-	css: "i-ph-file-css",
-	html: "i-ph-file-html",
-	md: "i-ph-file-md",
-	json: "i-ph-brackets-curly",
-};
+const FILE_ICONS: ReadonlyMap<string, string> = new Map([
+	["ts", "i-ph-file-ts"],
+	["tsx", "i-ph-file-tsx"],
+	["js", "i-ph-file-js"],
+	["mjs", "i-ph-file-js"],
+	["vue", "i-ph-file-vue"],
+	["css", "i-ph-file-css"],
+	["html", "i-ph-file-html"],
+	["md", "i-ph-file-md"],
+	["json", "i-ph-brackets-curly"],
+]);
 const STATUS_BADGES: Partial<Record<ChangeFileStatus, string>> = {
 	added: "dms_assistant.views.diff.new",
 	deleted: "dms_assistant.views.diff.deleted",
@@ -88,7 +88,7 @@ function toFileView(file: DiffFile, index: number): FileView {
 		file,
 		directory,
 		name,
-		icon: FILE_ICONS[extensionOf(name)] ?? DEFAULT_FILE_ICON,
+		icon: FILE_ICONS.get(extensionOf(name)) ?? DEFAULT_FILE_ICON,
 		added: file.added ?? counts.added,
 		removed: file.removed ?? counts.removed,
 		lines: renderHunks(file.hunks),

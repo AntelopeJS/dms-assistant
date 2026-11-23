@@ -16,6 +16,21 @@ declare global {
 	const useApiPagedData: (typeof import("#dms-core/app/composables/auth/useApiData"))["useApiPagedData"];
 	const useApiErrorPresenter: (typeof import("#dms-core/app/composables/useApiErrorPresenter"))["useApiErrorPresenter"];
 	const useAuthFetch: (typeof import("#dms-core/app/composables/auth/useAuthFetch"))["useAuthFetch"];
+	const useToast: () => {
+		add: (toast: {
+			title?: string;
+			description?: string;
+			color?: string;
+			icon?: string;
+			actions?: {
+				label: string;
+				icon?: string;
+				color?: string;
+				variant?: string;
+				onClick: () => void;
+			}[];
+		}) => void;
+	};
 	const useConfirmFrom: (typeof import("#dms-ui/app/composables/confirm/useConfirmFrom"))["useConfirmFrom"];
 	const useDevReload: (typeof import("#dms-layout/app/composables/useDevReload"))["useDevReload"];
 	const useRegionalFormat: (typeof import("#dms-core/app/composables/user/useRegionalFormat"))["useRegionalFormat"];

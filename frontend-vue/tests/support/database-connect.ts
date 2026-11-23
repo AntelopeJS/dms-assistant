@@ -6,12 +6,25 @@ import {
 	useDatabaseConnect,
 } from "../../app/onboarding/connect-database";
 import type { ConnectMemory } from "../../app/onboarding/connect-memory";
-import type { ProjectConfigStep } from "../../builder/app/runtime/database-types";
+import type { useBuilderApi } from "../../builder/app/runtime/api";
+import type {
+	AnalysisState,
+	ConnectionInfo,
+	DatabaseAccess,
+	DatabaseConnection,
+	OpenItem,
+	ProjectModules,
+	ProposedResource,
+} from "../../builder/app/runtime/database-types";
+import type { OpResult } from "../../builder/app/runtime/types";
 import { memoryConnects } from "./onboarding";
+
+/** The builder's API client, which a test fakes call by call. */
+export type BuilderApi = ReturnType<typeof useBuilderApi>;
 
 export const URL = "postgres://app:secret@db.example.com/shop";
 
-export const LISTED = {
+export const LISTED: DatabaseConnection = {
 	id: "shop",
 	engine: "postgresql",
 	version: "16",
@@ -19,7 +32,7 @@ export const LISTED = {
 	role: "reader",
 };
 
-export const READER = {
+export const READER: DatabaseAccess = {
 	reachable: true,
 	latencyMs: 4,
 	user: "reader",
@@ -27,10 +40,14 @@ export const READER = {
 	canWrite: false,
 };
 
-export const WRITER = { ...READER, user: "owner", canWrite: true };
+export const WRITER: DatabaseAccess = {
+	...READER,
+	user: "owner",
+	canWrite: true,
+};
 
-export const PROJECT = {
-	modules: [] as string[],
+export const PROJECT: ProjectModules = {
+	modules: [],
 	self: "dms",
 	databasePins: [],
 	dmsDatabase: "dms-database",
@@ -41,16 +58,69 @@ export const PROJECT = {
 	},
 };
 
-export function analysisWith(open: unknown[], mapped: string[] = []) {
+/** What a connection wired into the project, as a project that lists `shop` by `SHOP_URL` answers. */
+export const WIRED: ConnectionInfo = {
+	wiring: {
+		connection: "shop",
+		driver: "@antelopejs/postgres",
+		modules: [],
+		unrecorded: [],
+		ownsDriver: false,
+		variable: "SHOP_URL",
+		variables: ["SHOP_URL"],
+	},
+};
+
+/** What the builder answers when an operation went through and changed nothing. */
+export function answered<T>(data: T): OpResult<T> {
+	return { ok: true, data, changes: [] };
+}
+
+/** The question of an analysis that asks which schemas to read. */
+export const SCHEMAS_QUESTION: OpenItem = {
+	id: "schemas",
+	kind: "schemas",
+	question: "which",
+	options: [{ value: "public", title: "public (4)" }],
+	proposed: null,
+};
+
+/** A relation the analysis proposes to map, with nothing in it but the table view. */
+export function proposedRelation(relation: string): ProposedResource {
+	return {
+		relation,
+		tableView: { value: true, rule: "test", kind: "fact" },
+		writable: { value: false, rule: "test", kind: "default" },
+		label: { value: null, rule: "test", kind: "default" },
+		title: { value: relation, rule: "test", kind: "default" },
+		fields: [],
+		leftOut: [],
+		writes: { insert: false, update: false, delete: false },
+	};
+}
+
+/** A finished analysis of `shop`, with the questions it left `open` and the relations `mapped` already. */
+export function analysisWith(
+	open: OpenItem[],
+	mapped: string[] = [],
+	resources: ProposedResource[] = [],
+): AnalysisState {
 	return {
 		id: "job1",
+		connection: "shop",
 		status: "done",
-		progress: {},
+		progress: {
+			relations: 0,
+			described: 0,
+			toProfile: 0,
+			profiled: 0,
+			timeouts: 0,
+		},
 		proposal: {
 			connection: "shop",
 			module: "m",
 			database: { engine: "postgresql", role: "reader", writes: "none" },
-			resources: [],
+			resources,
 			excluded: [],
 			mapped,
 			open,
@@ -58,43 +128,55 @@ export function analysisWith(open: unknown[], mapped: string[] = []) {
 	};
 }
 
-export function fakeBuilder(overrides: Record<string, unknown> = {}) {
-	let analysis: unknown = null;
-	const analyseDatabase = vi.fn(
-		async (_connection: string, _module: string, _schemas?: string[]) => ({
-			ok: true,
-			data: {},
-		}),
+/** A finished analysis of `shop` that proposes the `orders` relation. */
+export function analysisOfOrders(): AnalysisState {
+	return analysisWith([], [], [proposedRelation("orders")]);
+}
+
+async function unfaked(): Promise<never> {
+	throw new Error("this builder call is not faked in the test");
+}
+
+/**
+ * A builder API whose calls all answer a project that is ready to connect, apart from the `overrides`;
+ * the analysis it holds is the one `setAnalysis` sets, and none until then.
+ */
+export function fakeBuilder(overrides: Partial<BuilderApi> = {}) {
+	let analysis: AnalysisState | null = null;
+	const analyseDatabase = vi.fn<BuilderApi["analyseDatabase"]>(async () =>
+		answered(analysisWith([])),
 	);
-	const configureProject = vi.fn(
-		async (
-			_steps: ProjectConfigStep[],
-			_dryRun: boolean,
-			_variables?: unknown,
-		) => ({
-			ok: true,
-		}),
+	const configureProject = vi.fn<BuilderApi["configureProject"]>(async () =>
+		answered({ files: [] }),
 	);
-	const api = {
-		checkConnection: vi.fn(async () => READER),
+	const api: BuilderApi = {
+		checkConnection: vi.fn<BuilderApi["checkConnection"]>(async () => READER),
 		projectModules: async () => PROJECT,
 		configureProject,
-		failure: (error: unknown) => ({
+		failure: (error) => ({
+			code: "unsupported",
 			detail: error instanceof Error ? error.message : String(error),
 		}),
-		databaseConnection: async () => ({ wiring: { variable: "SHOP_URL" } }),
+		databaseConnection: async () => WIRED,
 		databaseConnections: async () => [LISTED],
 		latestAnalysis: async () =>
-			analysis === null ? { ok: false } : { ok: true, data: analysis },
+			analysis === null
+				? { ok: false, error: { code: "unsupported", detail: "none" } }
+				: answered(analysis),
 		analyseDatabase,
 		reloadDue: async () => ({ due: false }),
+		analysis: unfaked,
+		mapping: unfaked,
+		mapDatabase: unfaked,
+		removeConnection: unfaked,
+		setConnectionUrl: unfaked,
 		...overrides,
 	};
 	return {
 		api,
 		analyseDatabase,
 		configureProject,
-		setAnalysis: (next: unknown) => {
+		setAnalysis: (next: AnalysisState) => {
 			analysis = next;
 		},
 	};
@@ -103,14 +185,14 @@ export function fakeBuilder(overrides: Record<string, unknown> = {}) {
 let wrapper: VueWrapper | undefined;
 
 export function mountConnect(
-	api: unknown,
+	api: BuilderApi,
 	memory: ConnectMemory = memoryConnects(),
 ): DatabaseConnect {
 	let connect: DatabaseConnect | undefined;
 	wrapper = mount(
 		defineComponent({
 			setup() {
-				connect = useDatabaseConnect(api as never, memory);
+				connect = useDatabaseConnect(api, memory);
 				return () => null;
 			},
 		}),

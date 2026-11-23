@@ -105,7 +105,14 @@ export interface OnboardingHarness {
 	/** Changes what the project holds, as the next read of its content answers. */
 	setContent: (next: ProjectContent) => void;
 	/** What a mounted view injects: the controller and the views' English strings. */
-	provide: Record<symbol, unknown>;
+	provide: ReturnType<typeof provided>;
+}
+
+function provided(controller: OnboardingController) {
+	return {
+		[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
+		[CHAT_I18N_KEY]: createTestI18n(views),
+	};
 }
 
 export interface HarnessOptions {
@@ -159,10 +166,7 @@ export function createOnboardingHarness(
 		setContent: (next) => {
 			content = next;
 		},
-		provide: {
-			[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
-			[CHAT_I18N_KEY]: createTestI18n(views),
-		},
+		provide: provided(controller),
 	};
 }
 

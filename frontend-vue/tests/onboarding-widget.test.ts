@@ -1,7 +1,10 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ONBOARDING_SELECTED_STATE_KEY } from "../app/onboarding/install";
-import { dmsState } from "./support/dms-state";
+import { dmsStateOf } from "./support/dms-frontend-module";
 import {
 	type Backend,
 	CONVERSATION,
@@ -12,15 +15,10 @@ import {
 	widget,
 } from "./support/onboarding-host";
 
-vi.mock("#dms/frontend-module", async () => {
-	const { dmsModule } = await import("./support/dms-state");
-	return dmsModule;
-});
-
 function chipClicked(): void {
-	const clicks = dmsState.get(ONBOARDING_SELECTED_STATE_KEY);
+	const clicks = dmsStateOf(ONBOARDING_SELECTED_STATE_KEY);
 	if (clicks === undefined) throw new Error("the chip was never registered");
-	clicks.value = (clicks.value as number) + 1;
+	clicks.value += 1;
 }
 
 beforeEach(silenceStartup);

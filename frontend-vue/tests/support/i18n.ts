@@ -5,21 +5,26 @@ import type {
 } from "../../app/chat/composables/useChatI18n";
 import en from "../../i18n/locales/dms-assistant-panel-en-GB.json";
 
-type Messages = Record<string, unknown>;
+/** A message catalog: strings, nested by the dots of their keys. */
+export interface MessageCatalog {
+	[name: string]: string | MessageCatalog;
+}
 
 const PLURAL_SEPARATOR = " | ";
 
-function lookup(messages: Messages, key: string): string | null {
-	const value = key
-		.split(".")
-		.reduce<unknown>(
-			(node, part) =>
-				node !== null && typeof node === "object"
-					? (node as Messages)[part]
-					: undefined,
-			messages,
-		);
-	return typeof value === "string" ? value : null;
+function isCatalog(
+	node: string | MessageCatalog | undefined,
+): node is MessageCatalog {
+	return node !== undefined && typeof node === "object";
+}
+
+function lookup(messages: MessageCatalog, key: string): string | null {
+	let node: string | MessageCatalog | undefined = messages;
+	for (const part of key.split(".")) {
+		if (!isCatalog(node)) return null;
+		node = Object.hasOwn(node, part) ? node[part] : undefined;
+	}
+	return isCatalog(node) ? null : (node ?? null);
 }
 
 /** vue-i18n's default choice: two forms are singular/plural, three add zero. */
@@ -35,7 +40,7 @@ function interpolate(text: string, params: TranslateParams = {}): string {
 }
 
 /** The panel's English strings behind the chat's translator, as in the dashboard. */
-export function createTestI18n(messages: Messages = en): ChatI18n {
+export function createTestI18n(messages: MessageCatalog = en): ChatI18n {
 	return {
 		t: (key, params, plural) => {
 			const text = lookup(messages, key);

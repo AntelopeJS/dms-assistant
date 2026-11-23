@@ -7,13 +7,18 @@ import {
 import {
 	type ConnectMemory,
 	connectMemory,
-	CONNECT_MEMORY_KEY,
 } from "../../app/onboarding/connect-memory";
+import type { OpenItem } from "../../builder/app/runtime/database-types";
 import {
 	analysisWith,
+	answered,
+	type BuilderApi,
+	fakeBuilder,
 	LISTED,
 	PROJECT,
 	READER,
+	SCHEMAS_QUESTION,
+	WIRED,
 } from "../support/database-connect";
 
 /**
@@ -73,16 +78,16 @@ interface Tab {
 
 interface Analysis {
 	id: string;
-	open: unknown[];
+	open: OpenItem[];
 }
 
-const SCHEMAS_QUESTION = {
-	id: "schemas",
-	kind: "schemas",
-	question: "which",
-	options: [{ value: "public", title: "public (4)" }],
-	proposed: null,
-};
+/** What the page hands a Web Lock's holder: the lock that was granted, or none when it is taken. */
+interface Grant {
+	name: string;
+	mode: LockMode;
+}
+
+type LockHolder = (lock: Grant | null) => Promise<void> | undefined;
 
 const OWNER = "owner-1";
 
@@ -234,7 +239,7 @@ export class World {
 			}
 		}
 		for (const tab of this.tabs) {
-			const kept = writtenBy(tab.storage);
+			const kept = tab.memory.read()?.connection;
 			if (kept !== undefined && kept !== tab.expected) {
 				broken.push(
 					`tab ${tab.index} remembers ${kept} after its latest attempt moved to ${tab.expected ?? "nothing"}`,
@@ -254,21 +259,21 @@ export class World {
 
 	private async run(tab: Tab, body: () => void): Promise<void> {
 		const { setTimeout: realSet, clearTimeout: realClear } = globalThis;
-		globalThis.setTimeout = ((run: () => void) => {
+		Reflect.set(globalThis, "setTimeout", (run: () => void): number => {
 			this.counter += 1;
 			this.timers.push({ id: this.counter, tab, run });
 			return this.counter;
-		}) as never;
-		globalThis.clearTimeout = ((id: number) => {
+		});
+		Reflect.set(globalThis, "clearTimeout", (id: number): void => {
 			this.timers = this.timers.filter((timer) => timer.id !== id);
-		}) as never;
+		});
 		try {
 			body();
 			await nextTask();
 			await nextTask();
 		} finally {
-			globalThis.setTimeout = realSet;
-			globalThis.clearTimeout = realClear;
+			Reflect.set(globalThis, "setTimeout", realSet);
+			Reflect.set(globalThis, "clearTimeout", realClear);
 		}
 	}
 
@@ -315,7 +320,7 @@ export class World {
 		const wrapper = mount(
 			defineComponent({
 				setup() {
-					connect = useDatabaseConnect(api as never, tab.memory);
+					connect = useDatabaseConnect(api, tab.memory);
 					return () => null;
 				},
 			}),
@@ -338,16 +343,12 @@ export class World {
 
 	private locksOf(tab: Tab) {
 		return {
-			request: (
-				name: string,
-				_options: { ifAvailable: boolean },
-				callback: (lock: { name: string } | null) => unknown,
-			): Promise<unknown> => {
+			request: (name: string, _options: LockOptions, callback: LockHolder) => {
 				const taken = this.held.has(name);
 				if (!taken) this.held.set(name, tab);
 				return this.later(tab, `lock ${name} answered`, () => {
 					if (taken) return callback(null);
-					const result = Promise.resolve(callback({ name }));
+					const result = Promise.resolve(callback({ name, mode: "exclusive" }));
 					void result.finally(() => {
 						if (this.held.get(name) === tab) this.held.delete(name);
 					});
@@ -357,51 +358,46 @@ export class World {
 		};
 	}
 
-	private apiOf(tab: Tab) {
-		const connection = (database: string): string => database;
-		return {
+	private apiOf(tab: Tab): BuilderApi {
+		return fakeBuilder({
 			checkConnection: () =>
 				this.later(tab, "connection check answered", () => READER),
 			projectModules: async () => PROJECT,
-			configureProject: (
-				_steps: unknown,
-				_dryRun: boolean,
-				variables?: { value: string }[],
-			) => {
+			configureProject: (_steps, _dryRun, variables) => {
 				const url = variables?.[0]?.value;
 				if (url !== undefined) this.declared.add(databaseOf(url));
-				return this.later(tab, "project write answered", () => ({ ok: true }));
+				return this.later(tab, "project write answered", () =>
+					answered({ files: [] }),
+				);
 			},
-			setConnectionUrl: (id: string) => {
-				this.declared.add(connection(id));
-				return this.later(tab, "project write answered", () => ({ ok: true }));
+			setConnectionUrl: (id) => {
+				this.declared.add(id);
+				return this.later(tab, "project write answered", () =>
+					answered({ variable: "SHOP_URL" }),
+				);
 			},
-			failure: (error: unknown) => ({
-				detail: error instanceof Error ? error.message : String(error),
-			}),
-			databaseConnection: async (id: string) => {
+			databaseConnection: async (id) => {
 				if (!this.declared.has(id)) throw notFound();
-				return { wiring: { variable: "SHOP_URL" } };
+				return WIRED;
 			},
 			databaseConnections: async () =>
 				[...this.declared].map((id) => ({ ...LISTED, id })),
-			latestAnalysis: (id: string) => {
+			latestAnalysis: (id) => {
 				const sent = this.analyses.get(id);
-				return this.later(tab, "analysis read answered", () => {
-					return sent === undefined
-						? { ok: false }
-						: { ok: true, data: { ...analysisWith(sent.open), id: sent.id } };
-				});
+				return this.later(tab, "analysis read answered", () =>
+					sent === undefined
+						? { ok: false, error: { code: "unsupported", detail: "none" } }
+						: answered({ ...analysisWith(sent.open), id: sent.id }),
+				);
 			},
-			analyseDatabase: (id: string, _module: string, schemas?: string[]) => {
+			analyseDatabase: (id, _module, schemas) => {
 				this.analyse(id, schemas);
-				return this.later(tab, "analysis request answered", () => ({
-					ok: true,
-					data: {},
-				}));
+				return this.later(tab, "analysis request answered", () =>
+					answered(analysisWith([])),
+				);
 			},
 			reloadDue: async () => ({ due: false }),
-		};
+		}).api;
 	}
 
 	private analyse(id: string, schemas: string[] | undefined): void {
@@ -424,17 +420,6 @@ export class World {
 		this.counter += 1;
 		this.analyses.set(id, { id: `job-${this.counter}`, open: [] });
 	}
-}
-
-function writtenBy(storage: Map<string, string>): string | undefined {
-	const text = storage.get(CONNECT_MEMORY_KEY);
-	if (text === undefined) return undefined;
-	const stored: unknown = JSON.parse(text);
-	if (stored === null || typeof stored !== "object") return undefined;
-	const written: unknown = Reflect.get(stored, "written");
-	if (written === null || typeof written !== "object") return undefined;
-	const connection: unknown = Reflect.get(written, "connection");
-	return typeof connection === "string" ? connection : undefined;
 }
 
 function describe(step: Step): string {

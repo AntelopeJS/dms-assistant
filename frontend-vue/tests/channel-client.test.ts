@@ -76,7 +76,7 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-describe("channel client", () => {
+describe("channel client, from opening to posting", () => {
 	it("stays closed until started", async () => {
 		const streams: FakeStream[] = [];
 		const client = createChannelClient({
@@ -140,7 +140,9 @@ describe("channel client", () => {
 		});
 		client.stop();
 	});
+});
 
+describe("channel client, when the connection is lost or stopped", () => {
 	it("drops a message sent before the connection is ready, and says so", async () => {
 		const { client, harness } = startClient();
 		expect(client.send({ n: 1 })).toBe(false);

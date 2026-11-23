@@ -234,11 +234,6 @@ export function createCodexPermissionHandler(
     };
   }
 
-  /**
-   * The request itself carries no paths, only the item they belong to. The
-   * first file's diff feeds the card; every path feeds the rule check, so a
-   * rule for one file never approves a patch that also touches another.
-   */
   function describeFileChange(
     params: FileChangeApprovalParams,
   ): ApprovalSubject {
@@ -298,7 +293,6 @@ export function createCodexPermissionHandler(
     return accept();
   }
 
-  /** Safe and plan modes, and a write of a secret file, refuse without asking: the call is blocked. */
   function block(subject: ApprovalSubject): CodexApprovalDecisionResponse {
     deps.onToolDecision?.({
       callId: subject.callId,

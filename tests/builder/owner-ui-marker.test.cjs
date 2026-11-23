@@ -52,7 +52,6 @@ function controllerRecording(operation) {
   return { controller, calls };
 }
 
-/** Fails on a URL-taking route that runs its operation for a request carrying the owner's session but not the assistant UI's header, as a form a page posts does. */
 void test("each route that takes a database target refuses the owner's request without the assistant UI's header", async () => {
   for (const [routePath, operation, body] of MARKED_ROUTES) {
     const { controller, calls } = controllerRecording(operation);
@@ -63,7 +62,6 @@ void test("each route that takes a database target refuses the owner's request w
   }
 });
 
-/** Fails on a route that refuses the assistant's own UI, or a refusal that holds a marker value other than the one the UI sends. */
 void test("each route that takes a database target runs its operation for the assistant UI's request", async () => {
   for (const [routePath, operation, body] of MARKED_ROUTES) {
     const { controller, calls } = controllerRecording(operation);
@@ -79,7 +77,6 @@ void test("each route that takes a database target runs its operation for the as
   }
 });
 
-/** Fails on a URL-taking route of the controller left out of the two tests above, or a marker read on a route that takes no URL. */
 void test("the URL-taking routes, and only they, read the assistant UI's header", () => {
   const reading = loadDatabaseController({})
     .routes()

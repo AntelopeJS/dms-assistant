@@ -37,7 +37,6 @@ function putSettings(body, marker) {
   return new harness.routes.AISettingsController().updateSettings(body, marker);
 }
 
-/** Fails on a PUT that forwards a guard rail the owner's session wrote without the assistant UI's header, as a form block on a page the assistant built does. */
 void test("refuses each form of a guard-rail write without the assistant UI's header, nothing reaching the sidecar", async () => {
   for (const [body] of GUARD_RAIL_WRITES) {
     for (const marker of [undefined, "", "true", "0"]) {
@@ -53,7 +52,6 @@ void test("refuses each form of a guard-rail write without the assistant UI's he
   }
 });
 
-/** Fails on a PUT that refuses the assistant's own Guard rails card, or that forwards a guard rail in a shape the sidecar does not read. */
 void test("forwards each form of a guard-rail write that carries the assistant UI's header", async () => {
   for (const [body, forwarded] of GUARD_RAIL_WRITES) {
     reset();
@@ -69,7 +67,6 @@ void test("forwards each form of a guard-rail write that carries the assistant U
   }
 });
 
-/** Fails on a PUT that checks only the first key, or only the keys that are not free: a free key must not carry a guard rail through. */
 void test("refuses a free key and a guard rail sent together as a whole", async () => {
   reset();
   answer("PUT", "/settings", 200, {});
@@ -79,7 +76,6 @@ void test("refuses a free key and a guard rail sent together as a whole", async 
   assert.deepEqual(sidecar.requests, []);
 });
 
-/** Fails on a PUT that lets through a key it does not know: a setting added to the sidecar later is a guard rail until named free. */
 void test("refuses a key the module does not name as free", async () => {
   reset();
   answer("PUT", "/settings", 200, {});
@@ -106,7 +102,6 @@ function savedValue(field) {
   return "claude-opus-5-5";
 }
 
-/** Fails on a guard rail kept in the settings form, whose save cannot send the header, or on a free key the route gates: the page would stop saving. */
 void test("saves every field the settings form has without the assistant UI's header", async () => {
   const fields = SETTINGS_SECTIONS.flatMap((section) => section.fields)
     .flatMap((entry) => ("fields" in entry ? entry.fields : [entry]))

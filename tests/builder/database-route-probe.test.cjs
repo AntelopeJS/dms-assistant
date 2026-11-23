@@ -37,11 +37,6 @@ function assertBuilderOff(answered) {
   );
 }
 
-/**
- * Fails on a route that takes interface-core's ProviderQueueFullError, which rejects the project
- * read at once once earlier requests filled the queue of calls without a provider, for a DMS that
- * serves the builder, and so calls an operation that never answers.
- */
 void test(
   "once interface-core's queue of calls without a provider is full, every request still answers 503 within 10 s",
   { timeout: 5000 },
@@ -74,11 +69,6 @@ void test(
   },
 );
 
-/**
- * Fails on a route that keeps the answer of its first project read after an operation was rejected
- * as off: once the DMS then serves no builder operation at all, the next request calls an operation
- * that never answers instead of asking for the project again and answering 503 at the 10 s deadline.
- */
 void test(
   "after an operation was rejected as off, the next request asks for the project again and answers 503 at the deadline when nothing serves it",
   { timeout: 5000 },

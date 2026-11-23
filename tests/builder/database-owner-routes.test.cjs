@@ -13,7 +13,6 @@ const URL_ROUTES = [
   "POST /database/project",
 ];
 
-/** Fails on a route of the controller that the test does not see, which would leave it out of the checks below. */
 void test("the test sees every route of the connect flow", () => {
   const paths = new Set(bound.map((route) => route.path));
   assert.deepEqual(
@@ -22,7 +21,6 @@ void test("the test sees every route of the connect flow", () => {
   );
 });
 
-/** Fails on a connect route that a caller without the owner's session reaches, such as one checking the sidecar's token in place of the owner. */
 void test("every connect route reads the owner first", () => {
   const open = bound
     .filter((route) => route.reads[0] !== "owner")
@@ -32,7 +30,6 @@ void test("every connect route reads the owner first", () => {
 
 const MARKER = "header:x-dms-ui-assistant";
 
-/** Fails on a connect route that reads another header, such as the sidecar's token, or a URL-taking route that does not read the assistant UI's marker. */
 void test("every URL-taking route reads the assistant UI's marker, and no route reads another header", () => {
   const reading = bound.map((route) => [
     `${route.verb} ${route.path}`,
@@ -57,7 +54,6 @@ const ALLOWED_READS = new Set([
   MARKER,
 ]);
 
-/** Fails on a route that reads a URL from a query, a path or a header, which a link or an image address the agent writes can fill. */
 void test("the connect routes read nothing but the owner, the body and ids from a query", () => {
   const reading = bound.flatMap((route) =>
     route.reads
@@ -67,7 +63,6 @@ void test("the connect routes read nothing but the owner, the body and ids from 
   assert.deepEqual(reading, []);
 });
 
-/** Fails on a route that takes its URL from anywhere else than the body of the owner's request. */
 void test("a route that takes a URL reads it from the owner's request body alone", () => {
   const reads = URL_ROUTES.map((name) => {
     const [verb, routePath] = name.split(" ");

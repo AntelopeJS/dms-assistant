@@ -115,7 +115,6 @@ void test("relays the provider choice and refuses an unknown one before the side
   assert.equal(sidecar.requests.length, 1);
 });
 
-/** Fails on a token route that relays a token posted with the owner's session but without the assistant UI's header, as a form a page posts does. */
 void test("refuses a token posted without the assistant UI's header before it reaches the sidecar", async () => {
   reset();
   const controller = new harness.routes.AIOnboardingController();

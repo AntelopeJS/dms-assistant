@@ -4,12 +4,13 @@ import {
 	readonly,
 	type Ref,
 	ref,
+	type ShallowRef,
 	shallowRef,
 	watch,
 	type WritableComputedRef,
 } from "vue";
 import type { AssistantSession } from "../runtime/assistant-session";
-import { type OnboardingApi, refusalMessage } from "./api";
+import { type OnboardingApi, RefusalSchema } from "./api";
 import type { ConnectMemory } from "./connect-memory";
 import { hasContent, NO_CONTENT, type ProjectContent } from "./content";
 import type {
@@ -25,7 +26,7 @@ import {
 	opensOnItsOwn,
 	transition,
 } from "./flow";
-import type { PreferenceStore } from "./preferences";
+import type { OnboardingPreferences, PreferenceStore } from "./preferences";
 import type { OnboardingStep } from "./public";
 
 /** How often the popup asks whether the ChatGPT sign-in in the other tab completed. */
@@ -104,87 +105,123 @@ export interface OnboardingController {
 const NO_FLOW: OnboardingFlow = {
 	view: { kind: "welcome" },
 	history: [],
-	then: "start",
+	landing: "start",
 	start: "paths",
 };
 
-function messageOf(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+/** The popup's reactive state, shared by the parts that open it and the parts that sign in. */
+interface Model {
+	deps: OnboardingDeps;
+	isOpen: Ref<boolean>;
+	flow: ShallowRef<OnboardingFlow>;
+	state: ShallowRef<OnboardingState | null>;
+	content: ShallowRef<ProjectContent>;
+	preferences: Ref<OnboardingPreferences>;
+	problem: Ref<string | null>;
+	isFinished: ComputedRef<boolean>;
 }
 
-export function createOnboarding(deps: OnboardingDeps): OnboardingController {
-	const isOpen = ref(false);
-	const flow = shallowRef<OnboardingFlow>(NO_FLOW);
+function createModel(deps: OnboardingDeps): Model {
 	const state = shallowRef<OnboardingState | null>(null);
 	const content = shallowRef<ProjectContent>(NO_CONTENT);
-	const preferences = ref(deps.preferences.read());
-	const problem = ref<string | null>(null);
+	return {
+		deps,
+		isOpen: ref(false),
+		flow: shallowRef<OnboardingFlow>(NO_FLOW),
+		state,
+		content,
+		preferences: ref<OnboardingPreferences>(deps.preferences.read()),
+		problem: ref<string | null>(null),
+		isFinished: computed(
+			() =>
+				state.value !== null && isDone(state.value, hasContent(content.value)),
+		),
+	};
+}
+
+function remember(model: Model, next: OnboardingPreferences): void {
+	model.preferences.value = next;
+	model.deps.preferences.write(next);
+}
+
+function firstFlowOf(
+	model: Model,
+	state: OnboardingState,
+	step: OnboardingStep | null,
+): OnboardingFlow {
+	return firstFlow({
+		state,
+		hasContent: hasContent(model.content.value),
+		canConnectDatabase: model.deps.canConnectDatabase,
+		step,
+	});
+}
+
+function show(
+	model: Model,
+	current: OnboardingState,
+	step: OnboardingStep | null,
+): void {
+	model.problem.value = null;
+	model.flow.value = firstFlowOf(model, current, step);
+	model.isOpen.value = true;
+	remember(model, { ...model.preferences.value, seenBootId: current.bootId });
+}
+
+async function refresh(
+	model: Model,
+	step: OnboardingStep | null,
+	shown: OnboardingFlow,
+): Promise<void> {
+	const [next, project] = await Promise.all([
+		model.deps.api.readState().catch(() => null),
+		model.deps.readContent().catch(() => null),
+	]);
+	if (next !== null) model.state.value = next;
+	if (project !== null) model.content.value = project;
+	if (model.flow.value !== shown || model.state.value === null) return;
+	model.flow.value = firstFlowOf(model, model.state.value, step);
+}
+
+function stepOrResumed(
+	deps: OnboardingDeps,
+	step: OnboardingStep | null,
+): OnboardingStep | null {
+	if (
+		step !== null ||
+		!deps.canConnectDatabase ||
+		deps.connecting.read() === null
+	) {
+		return step;
+	}
+	return "connect-database";
+}
+
+/** Reads the state and the content, and opens the popup when it should. */
+interface Opener {
+	load: () => Promise<void>;
+	open: (step?: OnboardingStep) => void;
+	stop: () => void;
+}
+
+function createOpener(model: Model): Opener {
+	const { deps } = model;
 	let pendingStep: OnboardingStep | null | undefined;
-	let codexTimer: ReturnType<typeof setInterval> | undefined;
 	let loading: Promise<void> | undefined;
 	let loadFailed = false;
 	let stopped = false;
 	let retry: ReturnType<typeof setTimeout> | undefined;
 
-	const done = computed(
-		() =>
-			state.value !== null && isDone(state.value, hasContent(content.value)),
-	);
-
-	function remember(next: typeof preferences.value): void {
-		preferences.value = next;
-		deps.preferences.write(next);
-	}
-
-	function show(current: OnboardingState, step: OnboardingStep | null): void {
-		problem.value = null;
-		flow.value = firstFlow({
-			state: current,
-			hasContent: hasContent(content.value),
-			canConnectDatabase: deps.canConnectDatabase,
-			step,
-		});
-		isOpen.value = true;
-		remember({ ...preferences.value, seenBootId: current.bootId });
-	}
-
-	async function refresh(step: OnboardingStep | null, shown: OnboardingFlow) {
-		const [next, project] = await Promise.all([
-			deps.api.readState().catch(() => null),
-			deps.readContent().catch(() => null),
-		]);
-		if (next !== null) state.value = next;
-		if (project !== null) content.value = project;
-		if (flow.value !== shown || state.value === null) return;
-		flow.value = firstFlow({
-			state: state.value,
-			hasContent: hasContent(content.value),
-			canConnectDatabase: deps.canConnectDatabase,
-			step,
-		});
-	}
-
-	function stepOrResumed(step: OnboardingStep | null): OnboardingStep | null {
-		if (
-			step !== null ||
-			!deps.canConnectDatabase ||
-			deps.connecting.read() === null
-		) {
-			return step;
-		}
-		return "connect-database";
-	}
-
 	function open(step?: OnboardingStep): void {
-		const current = state.value;
+		const current = model.state.value;
 		if (current === null) {
 			pendingStep = step ?? pendingStep ?? null;
 			if (loadFailed) void load().catch(() => undefined);
 			return;
 		}
-		const shown = stepOrResumed(step ?? null);
-		show(current, shown);
-		void refresh(shown, flow.value);
+		const shown = stepOrResumed(deps, step ?? null);
+		show(model, current, shown);
+		void refresh(model, shown, model.flow.value);
 	}
 
 	function load(): Promise<void> {
@@ -200,12 +237,12 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		try {
 			[read, project] = await Promise.all([
 				deps.api.readState(),
-				deps.readContent().catch(() => content.value),
+				deps.readContent().catch(() => model.content.value),
 			]);
 		} catch (error) {
 			loadFailed = true;
 			if (retry !== undefined) clearTimeout(retry);
-			if (!stopped && stepOrResumed(null) !== null) {
+			if (!stopped && stepOrResumed(deps, null) !== null) {
 				retry = setTimeout(
 					() => void load().catch(() => undefined),
 					RESUME_RETRY_MS,
@@ -215,22 +252,47 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		}
 		loadFailed = false;
 		if (retry !== undefined) clearTimeout(retry);
-		state.value = read;
-		content.value = project;
-		const step = stepOrResumed(pendingStep ?? null);
+		model.state.value = read;
+		model.content.value = project;
+		const step = stepOrResumed(deps, pendingStep ?? null);
 		const asked = pendingStep !== undefined;
 		pendingStep = undefined;
+		const { preferences } = model;
 		const opens =
 			asked ||
 			opensOnItsOwn({
-				done: done.value,
+				done: model.isFinished.value,
 				dontShow: preferences.value.dontShow,
 				bootId: read.bootId,
 				seenBootId: preferences.value.seenBootId,
 				step,
 			});
-		if (opens) show(read, step);
+		if (opens) show(model, read, step);
 	}
+
+	return {
+		load,
+		open,
+		stop: () => {
+			stopped = true;
+			if (retry !== undefined) clearTimeout(retry);
+		},
+	};
+}
+
+/** What the popup does about the assistant's logins. */
+interface Logins {
+	send: (event: FlowEvent) => void;
+	useLogin: OnboardingController["useLogin"];
+	confirmLogin: OnboardingController["confirmLogin"];
+	signInWithChatGpt: () => void;
+	finishCodexSignIn: OnboardingController["finishCodexSignIn"];
+	stop: () => void;
+}
+
+function createLogins(model: Model): Logins {
+	const { deps, flow, state, problem } = model;
+	let codexTimer: ReturnType<typeof setInterval> | undefined;
 
 	function send(event: FlowEvent): void {
 		problem.value = null;
@@ -246,7 +308,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 				state.value = await deps.api.setProvider(provider);
 			}
 		} catch (error) {
-			problem.value = messageOf(error);
+			problem.value = error instanceof Error ? error.message : String(error);
 			return;
 		}
 		send(
@@ -258,7 +320,7 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 		try {
 			state.value = await deps.api.readState();
 		} catch (error) {
-			problem.value = messageOf(error);
+			problem.value = error instanceof Error ? error.message : String(error);
 			return;
 		}
 		if (state.value.logins[provider].status === "signed-in") {
@@ -273,7 +335,9 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 
 	const waitingOnCodex = computed(() => {
 		const view = flow.value.view;
-		return isOpen.value && view.kind === "codex" && view.mode === "waiting";
+		return (
+			model.isOpen.value && view.kind === "codex" && view.mode === "waiting"
+		);
 	});
 
 	async function pollCodex(): Promise<void> {
@@ -291,36 +355,9 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 	});
 
 	return {
-		isOpen: readonly(isOpen),
-		flow: readonly(flow),
-		state: readonly(state),
-		content: computed(() => content.value),
-		isAvailable: computed(() => state.value !== null),
-		needsAttention: computed(
-			() =>
-				state.value !== null &&
-				(!done.value ||
-					state.value.logins[state.value.provider].status === "expired"),
-		),
-		dontShow: computed({
-			get: () => preferences.value.dontShow,
-			set: (dontShow) => remember({ ...preferences.value, dontShow }),
-		}),
-		problem: readonly(problem),
-		canConnectDatabase: deps.canConnectDatabase,
-		connecting: deps.connecting,
-		load,
-		open,
-		close: () => {
-			isOpen.value = false;
-		},
 		send,
 		useLogin,
 		confirmLogin,
-		checkClaudeToken: (token) =>
-			deps.api
-				.checkClaudeToken(token)
-				.catch((): ClaudeTokenCheck => ({ ok: false, reason: "unreachable" })),
 		signInWithChatGpt: () => {
 			const url = state.value?.codexLoginUrl;
 			if (url === undefined) return;
@@ -331,28 +368,73 @@ export function createOnboarding(deps: OnboardingDeps): OnboardingController {
 			try {
 				await deps.api.finishCodexSignIn(url);
 			} catch (error) {
-				return refusalMessage(error) ?? messageOf(error);
+				const refusal = RefusalSchema.safeParse(error);
+				if (refusal.success) return refusal.data.data.message;
+				return error instanceof Error ? error.message : String(error);
 			}
 			await confirmLogin("codex");
 			return null;
 		},
+		stop: () => {
+			stopCodexPoll();
+			stopWatchingCodex();
+		},
+	};
+}
+
+export function createOnboarding(deps: OnboardingDeps): OnboardingController {
+	const model = createModel(deps);
+	const { state, preferences } = model;
+	const opener = createOpener(model);
+	const logins = createLogins(model);
+	return {
+		isOpen: readonly(model.isOpen),
+		flow: readonly(model.flow),
+		state: readonly(state),
+		content: computed(() => model.content.value),
+		isAvailable: computed(() => state.value !== null),
+		needsAttention: computed(
+			() =>
+				state.value !== null &&
+				(!model.isFinished.value ||
+					state.value.logins[state.value.provider].status === "expired"),
+		),
+		dontShow: computed({
+			get: () => preferences.value.dontShow,
+			set: (dontShow) => remember(model, { ...preferences.value, dontShow }),
+		}),
+		problem: readonly(model.problem),
+		canConnectDatabase: deps.canConnectDatabase,
+		connecting: deps.connecting,
+		load: opener.load,
+		open: opener.open,
+		close: () => {
+			model.isOpen.value = false;
+		},
+		send: logins.send,
+		useLogin: logins.useLogin,
+		confirmLogin: logins.confirmLogin,
+		checkClaudeToken: (token) =>
+			deps.api
+				.checkClaudeToken(token)
+				.catch((): ClaudeTokenCheck => ({ ok: false, reason: "unreachable" })),
+		signInWithChatGpt: logins.signInWithChatGpt,
+		finishCodexSignIn: logins.finishCodexSignIn,
 		startConversation: (prompt) => {
-			isOpen.value = false;
+			model.isOpen.value = false;
 			deps.assistant.startConversation(prompt, undefined, true);
 		},
 		resume: (conversationId) => {
-			isOpen.value = false;
+			model.isOpen.value = false;
 			deps.assistant.openConversation(conversationId);
 		},
 		navigate: (path) => {
-			isOpen.value = false;
+			model.isOpen.value = false;
 			deps.assistant.navigate(path);
 		},
 		stop: () => {
-			stopped = true;
-			if (retry !== undefined) clearTimeout(retry);
-			stopCodexPoll();
-			stopWatchingCodex();
+			opener.stop();
+			logins.stop();
 		},
 	};
 }

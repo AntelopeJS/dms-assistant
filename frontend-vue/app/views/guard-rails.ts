@@ -108,6 +108,6 @@ export const SWITCH_ROWS: readonly SwitchRow[] = [
 export type GuardRailField = ModeRow["field"] | SavedSwitchField;
 
 /** The mode a radio group's value names for the provider, if it offers one. */
-export function modeOf(row: ModeRow, value: unknown): ApprovalMode | undefined {
+export function modeOf(row: ModeRow, value: string): ApprovalMode | undefined {
 	return row.modes.find((mode) => mode === value);
 }

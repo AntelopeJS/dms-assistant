@@ -11,12 +11,12 @@ import { relativeTime } from "./when";
 /** A project with content: its last conversation, latest mockups and connected databases. */
 const MOCKUPS_SHOWN = 3;
 
-const ENGINE_ICONS: Record<string, string> = {
-	postgres: "i-ph-cylinder",
-	postgresql: "i-ph-cylinder",
-	mongodb: "i-ph-leaf",
-	rethinkdb: "i-ph-circles-three",
-};
+const ENGINE_ICONS: ReadonlyMap<string, string> = new Map([
+	["postgres", "i-ph-cylinder"],
+	["postgresql", "i-ph-cylinder"],
+	["mongodb", "i-ph-leaf"],
+	["rethinkdb", "i-ph-circles-three"],
+]);
 
 const SOURCE_KEYS: Record<MockupSource, string> = {
 	chat: "dms_assistant.views.onboarding.continue.sources.chat",
@@ -169,7 +169,7 @@ function openMockup(mockup: Mockup): void {
 					:key="database.id"
 					color="primary"
 					variant="soft"
-					:icon="ENGINE_ICONS[database.engine ?? ''] ?? 'i-ph-database'"
+					:icon="ENGINE_ICONS.get(database.engine ?? '') ?? 'i-ph-database'"
 					:label="
 						t('dms_assistant.views.onboarding.continue.external', {
 							name: database.id,

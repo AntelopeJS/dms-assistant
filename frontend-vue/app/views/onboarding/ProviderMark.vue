@@ -2,7 +2,12 @@
 import type { ProviderName } from "../../onboarding/contract";
 
 /** The provider's mark in its brand colour: Anthropic's A, OpenAI's logo. */
-defineProps<{ provider: ProviderName; size?: "sm" | "md" }>();
+interface Props {
+	provider: ProviderName;
+	size?: "sm" | "md";
+}
+
+defineProps<Props>();
 </script>
 
 <template>

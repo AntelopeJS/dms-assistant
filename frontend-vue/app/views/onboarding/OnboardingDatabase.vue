@@ -101,69 +101,90 @@ const canConnect = computed(
 		!unavailable.value.includes(engine.value),
 );
 
+type CheckOf<Key extends ConnectCheck["key"]> = Extract<
+	ConnectCheck,
+	{ key: Key }
+>;
+
+function reachableText(check: CheckOf<"reachable">): string {
+	if (check.status === "running") {
+		return t("dms_assistant.views.onboarding.database.reachable_running");
+	}
+	if (check.status === "failed" && check.install !== undefined) {
+		return check.error ?? "";
+	}
+	if (check.status === "failed") {
+		return t("dms_assistant.views.onboarding.database.unreachable", {
+			error: check.error ?? "",
+		});
+	}
+	return check.latencyMs === undefined
+		? t("dms_assistant.views.onboarding.database.reachable")
+		: t("dms_assistant.views.onboarding.database.reachable_latency", {
+				ms: check.latencyMs,
+			});
+}
+
+function signedInText(check: CheckOf<"signed-in">): string {
+	if (check.status === "failed") {
+		return t("dms_assistant.views.onboarding.database.signed_in_failed", {
+			error: check.error ?? "",
+		});
+	}
+	if (check.status !== "done") {
+		return t("dms_assistant.views.onboarding.database.signed_in_pending");
+	}
+	return check.user === undefined
+		? t("dms_assistant.views.onboarding.database.signed_in_no_user")
+		: t("dms_assistant.views.onboarding.database.signed_in", {
+				user: check.user,
+			});
+}
+
+function readText(check: CheckOf<"read">): string {
+	if (check.status === "failed") {
+		return t("dms_assistant.views.onboarding.database.read_failed", {
+			error: check.error ?? "",
+		});
+	}
+	return check.canWrite
+		? t("dms_assistant.views.onboarding.database.read_write")
+		: t("dms_assistant.views.onboarding.database.read");
+}
+
+function schemaText(check: CheckOf<"schema">): string {
+	if (check.problem === "empty") {
+		return t("dms_assistant.views.onboarding.database.empty");
+	}
+	if (check.problem === "mapped") {
+		return t("dms_assistant.views.onboarding.database.mapped");
+	}
+	if (check.problem === "gave-up") {
+		return t("dms_assistant.views.onboarding.database.gave_up");
+	}
+	if (check.restart) {
+		return t("dms_assistant.views.onboarding.database.restart");
+	}
+	if (check.problem === "failed") {
+		return t("dms_assistant.views.onboarding.database.schema_failed", {
+			error: check.error ?? "",
+		});
+	}
+	return check.status === "done"
+		? t("dms_assistant.views.onboarding.database.schema_done")
+		: t("dms_assistant.views.onboarding.database.schema_running");
+}
+
 function checkText(check: ConnectCheck): string {
 	switch (check.key) {
 		case "reachable":
-			if (check.status === "running") {
-				return t("dms_assistant.views.onboarding.database.reachable_running");
-			}
-			if (check.status === "failed" && check.install !== undefined) {
-				return check.error ?? "";
-			}
-			if (check.status === "failed") {
-				return t("dms_assistant.views.onboarding.database.unreachable", {
-					error: check.error ?? "",
-				});
-			}
-			return check.latencyMs === undefined
-				? t("dms_assistant.views.onboarding.database.reachable")
-				: t("dms_assistant.views.onboarding.database.reachable_latency", {
-						ms: check.latencyMs,
-					});
+			return reachableText(check);
 		case "signed-in":
-			if (check.status === "failed") {
-				return t("dms_assistant.views.onboarding.database.signed_in_failed", {
-					error: check.error ?? "",
-				});
-			}
-			if (check.status !== "done") {
-				return t("dms_assistant.views.onboarding.database.signed_in_pending");
-			}
-			return check.user === undefined
-				? t("dms_assistant.views.onboarding.database.signed_in_no_user")
-				: t("dms_assistant.views.onboarding.database.signed_in", {
-						user: check.user,
-					});
+			return signedInText(check);
 		case "read":
-			if (check.status === "failed") {
-				return t("dms_assistant.views.onboarding.database.read_failed", {
-					error: check.error ?? "",
-				});
-			}
-			return check.canWrite
-				? t("dms_assistant.views.onboarding.database.read_write")
-				: t("dms_assistant.views.onboarding.database.read");
+			return readText(check);
 		case "schema":
-			if (check.problem === "empty") {
-				return t("dms_assistant.views.onboarding.database.empty");
-			}
-			if (check.problem === "mapped") {
-				return t("dms_assistant.views.onboarding.database.mapped");
-			}
-			if (check.problem === "gave-up") {
-				return t("dms_assistant.views.onboarding.database.gave_up");
-			}
-			if (check.restart) {
-				return t("dms_assistant.views.onboarding.database.restart");
-			}
-			if (check.problem === "failed") {
-				return t("dms_assistant.views.onboarding.database.schema_failed", {
-					error: check.error ?? "",
-				});
-			}
-			return check.status === "done"
-				? t("dms_assistant.views.onboarding.database.schema_done")
-				: t("dms_assistant.views.onboarding.database.schema_running");
+			return schemaText(check);
 	}
 }
 

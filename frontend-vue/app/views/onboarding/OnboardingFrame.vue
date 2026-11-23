@@ -5,7 +5,12 @@ import { useOnboarding } from "../../onboarding/runtime";
  * One view of the onboarding popup: its heading, its content, then its footer under a rule. The
  * content scrolls inside the popup's height and the footer stays in view under it.
  */
-defineProps<{ title?: string; lede?: string }>();
+interface Props {
+	title?: string;
+	lede?: string;
+}
+
+defineProps<Props>();
 
 const onboarding = useOnboarding();
 </script>

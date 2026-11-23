@@ -21,13 +21,13 @@ export interface ViewFormat {
  * and regional preferences.
  */
 export function useViewFormat(): ViewFormat {
-	const { t, te } = useI18n();
+	const i18n = useI18n();
 	const regional = useRegionalFormat();
 
 	function momentOptions(withSeconds: boolean): MomentOptions {
 		return {
 			format: (options) => regional.dateTimeFormat(options),
-			t: (key, params) => t(key, params ?? {}),
+			t: (key, params) => i18n.t(key, params ?? {}),
 			nowMs: Date.now(),
 			withSeconds,
 		};
@@ -37,12 +37,12 @@ export function useViewFormat(): ViewFormat {
 		const name = bareToolName(tool);
 		if (name.includes(I18N_PATH_SEPARATOR)) return readableToolName(tool);
 		const key = `${TOOL_LEXICON_PREFIX}.${name}.label`;
-		return te(key) ? t(key) : readableToolName(tool);
+		return i18n.te(key) ? i18n.t(key) : readableToolName(tool);
 	}
 
 	function serverMessage(message: string): string {
 		const key = message.startsWith(I18N_KEY_SIGIL) ? message.slice(1) : message;
-		return te(key) ? t(key) : message;
+		return i18n.te(key) ? i18n.t(key) : message;
 	}
 
 	return {

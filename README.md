@@ -122,6 +122,8 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 
 <!-- antelopejs-docs-compat:end -->
 
+Since 0.4.0 the module requires `@antelopejs/interface-dms` `>=0.16.0 <0.17.0` and `@antelopejs/dms` `>=0.23.0`, and refuses `@antelopejs/interface-dms` 0.15. A project on `@antelopejs/interface-dms` 0.15 stays on `@antelopejs/dms-assistant` 0.3.x until it upgrades `@antelopejs/dms` to 0.23.
+
 The module needs a DMS backend in a release that implements the `@antelopejs/interface-dms` range in the table. The dashboard needs an `@antelopejs/dms-frontend` renderer in the range that `engines["@antelopejs/dms-frontend"]` of `frontend-vue/package.json` declares. The `ajs dms` CLI refuses to build the module with a renderer outside that range. The database connect routes need an API provider, such as `@antelopejs/api`.
 
 ## Documentation

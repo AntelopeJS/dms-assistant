@@ -1,0 +1,35 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"allowJs": true,
+		"types": ["node", "vite/client"],
+		"paths": {
+			"#dms/frontend-module": [
+				"./node_modules/@antelopejs/dms-frontend/templates/vue/frontend-module.ts"
+			],
+			"#dms/frontend-build": [
+				"./node_modules/@antelopejs/dms-frontend/templates/vue/frontend-build.ts"
+			],
+			"#dms-core/*": [
+				"./node_modules/@antelopejs/dms/frontend-vue/layers/dms-core/*"
+			],
+			"#dms-ui/*": [
+				"./node_modules/@antelopejs/dms/frontend-vue/layers/dms-ui/*"
+			],
+			"#dms-layout/*": [
+				"./node_modules/@antelopejs/dms/frontend-vue/layers/dms-layout/*"
+			]
+		}
+	},
+	"include": ["**/*.ts", "**/*.vue", "eslint.config.mjs"],
+	"exclude": ["node_modules"]
+}

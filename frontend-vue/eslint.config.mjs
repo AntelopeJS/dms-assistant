@@ -2,7 +2,9 @@ import dmsGlobals from "@antelopejs/dms/eslint-globals";
 import dmsFrontendGlobals from "@antelopejs/dms-frontend/eslint-globals";
 import { antelopeNuxtConfig } from "@antelopejs/tooling-configs/eslint";
 
-export default antelopeNuxtConfig().append({
+export default antelopeNuxtConfig({
+	typeAware: { tsconfigRootDir: import.meta.dirname },
+}).append({
 	files: ["**/*.{ts,vue}"],
 	languageOptions: {
 		globals: { ...dmsFrontendGlobals, ...dmsGlobals },

@@ -15,8 +15,10 @@ import {
 	type BuilderApi,
 	fakeBuilder,
 	LISTED,
+	type LockHolder,
 	PROJECT,
 	READER,
+	refused,
 	SCHEMAS_QUESTION,
 	WIRED,
 } from "../support/database-connect";
@@ -80,14 +82,6 @@ interface Analysis {
 	id: string;
 	open: OpenItem[];
 }
-
-/** What the page hands a Web Lock's holder: the lock that was granted, or none when it is taken. */
-interface Grant {
-	name: string;
-	mode: LockMode;
-}
-
-type LockHolder = (lock: Grant | null) => Promise<void> | undefined;
 
 const OWNER = "owner-1";
 
@@ -386,7 +380,7 @@ export class World {
 				const sent = this.analyses.get(id);
 				return this.later(tab, "analysis read answered", () =>
 					sent === undefined
-						? { ok: false, error: { code: "unsupported", detail: "none" } }
+						? refused("none")
 						: answered({ ...analysisWith(sent.open), id: sent.id }),
 				);
 			},

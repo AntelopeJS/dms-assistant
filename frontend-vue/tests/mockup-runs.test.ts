@@ -1,12 +1,17 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as z from "zod/mini";
 import {
 	installAssistantPromptListener,
 	MOCKUP_ASSISTANT_PROMPT_EVENT,
 	MOCKUP_ASSISTANT_RUN_EVENT,
 	MOCKUP_ASSISTANT_RUN_QUERY_EVENT,
 	type MockupAssistantRun,
+	MockupRunSourceSchema,
 } from "../app/runtime/assistant-prompt";
 import { createChatTransport } from "../app/runtime/chat-transport";
 import {
@@ -24,11 +29,19 @@ import {
 	unmountPanel,
 } from "./support/panel-harness";
 
+const RunEventSchema = z.object({
+	mockup: z.string(),
+	source: MockupRunSourceSchema,
+	running: z.boolean(),
+});
+
 let events: MockupAssistantRun[] = [];
 let stops: Array<() => void> = [];
 
 function onRunEvent(event: Event): void {
-	if (event instanceof CustomEvent) events.push(event.detail);
+	if (event instanceof CustomEvent) {
+		events.push(RunEventSchema.parse(event.detail));
+	}
 }
 
 beforeEach(() => {
@@ -66,8 +79,9 @@ function click(source: "build" | "resolve-comments", mockup = "bikes"): Event {
 
 function startedConversation(harness: Harness): string {
 	const sent = sentOfType(harness, "user_message").at(-1);
-	if (sent === undefined || typeof sent.conversationId !== "string")
+	if (sent?.conversationId === undefined) {
 		throw new Error("no user message sent");
+	}
 	return sent.conversationId;
 }
 

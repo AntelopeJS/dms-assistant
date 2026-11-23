@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
@@ -6,29 +9,20 @@ import {
 	type DatabaseConnect,
 	useDatabaseConnect,
 } from "../app/onboarding/connect-database";
-import { analysisWith, fakeBuilder, READER } from "./support/database-connect";
+import {
+	analysisOfOrders,
+	analysisWith,
+	type BuilderApi,
+	fakeBuilder,
+	type LockHolder,
+	READER,
+	SCHEMAS_QUESTION as SCHEMAS_OF_SHOP,
+} from "./support/database-connect";
 import { memoryConnects } from "./support/onboarding";
 
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string) => key,
-}));
+const SCHEMAS_QUESTION = { ...SCHEMAS_OF_SHOP, id: "schemas:shop" };
 
-const SCHEMAS_QUESTION = {
-	id: "schemas:shop",
-	kind: "schemas",
-	question: "which",
-	options: [{ value: "public", title: "public (4)" }],
-	proposed: null,
-};
-
-const ANALYSED = {
-	...analysisWith([]),
-	proposal: {
-		...analysisWith([]).proposal,
-		resources: [{ relation: "orders", tableView: { value: true } }],
-	},
-};
+const ANALYSED = analysisOfOrders();
 
 /**
  * The browser's Web Locks, which every tab of the origin shares and a closed tab releases. A lock
@@ -39,14 +33,14 @@ function sharedLocks(grantMs = 0) {
 	return {
 		request: async (
 			name: string,
-			_options: { ifAvailable: boolean },
-			callback: (lock: { name: string } | null) => unknown,
-		): Promise<unknown> => {
+			_options: LockOptions,
+			callback: LockHolder,
+		) => {
 			if (held.has(name)) return callback(null);
 			held.add(name);
 			await new Promise((granted) => setTimeout(granted, grantMs));
 			try {
-				return await callback({ name });
+				return await callback({ name, mode: "exclusive" });
 			} finally {
 				held.delete(name);
 			}
@@ -60,7 +54,7 @@ const tabs: VueWrapper[] = [];
  * A tab that follows `shop`, remembered in its copy of the tab's storage, with its own analysis
  * requests counted.
  */
-function tab(api: ReturnType<typeof fakeBuilder>["api"]) {
+function tab(api: BuilderApi) {
 	const analyseDatabase = vi.fn(
 		(...args: Parameters<typeof api.analyseDatabase>) =>
 			api.analyseDatabase(...args),
@@ -74,10 +68,7 @@ function tab(api: ReturnType<typeof fakeBuilder>["api"]) {
 	const wrapper = mount(
 		defineComponent({
 			setup() {
-				connect = useDatabaseConnect(
-					{ ...api, analyseDatabase } as never,
-					memory,
-				);
+				connect = useDatabaseConnect({ ...api, analyseDatabase }, memory);
 				return () => null;
 			},
 		}),

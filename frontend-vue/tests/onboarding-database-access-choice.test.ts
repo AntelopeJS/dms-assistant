@@ -1,34 +1,29 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OnboardingDatabase from "../app/views/onboarding/OnboardingDatabase.vue";
 import OnboardingFrame from "../app/views/onboarding/OnboardingFrame.vue";
 import views from "../i18n/locales/dms-assistant-views-en-GB.json";
-import { fakeBuilder, URL, WRITER } from "./support/database-connect";
+import { builderServer } from "./support/builder-server";
+import { PROJECT, URL, WRITER } from "./support/database-connect";
 import {
 	createOnboardingHarness,
 	ONBOARDING_STUBS,
 } from "./support/onboarding";
 
-const builder = vi.hoisted(() => ({
-	fake: undefined as unknown,
-}));
-
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string, params?: Record<string, unknown>) =>
-		params === undefined ? key : `${key} ${JSON.stringify(params)}`,
-}));
-
-vi.mock("../builder/app/runtime/api", () => ({
-	useBuilderApi: () => builder.fake,
-}));
+const builder = builderServer();
 
 let wrapper: VueWrapper | undefined;
+
+beforeEach(builder.serve);
 
 afterEach(() => {
 	wrapper?.unmount();
 	wrapper = undefined;
+	builder.reset();
 	vi.restoreAllMocks();
 });
 
@@ -42,11 +37,9 @@ function connectButton(popup: VueWrapper): HTMLButtonElement {
 }
 
 describe("the access choice of an account that can write", () => {
-	/** Fails on a popup that shows the read or write choice out of view, where the footer covers it and a click on Read and write misses it. */
-	it("scrolls the choice into view when it appears", async () => {
-		builder.fake = fakeBuilder({
-			checkConnection: vi.fn(async () => WRITER),
-		}).api;
+	it("scrolls the choice into view when it appears (fails on a popup that shows the read or write choice out of view, where the footer covers it and a click on Read and write misses it)", async () => {
+		builder.project.mockResolvedValue(PROJECT);
+		builder.check.mockResolvedValue(WRITER);
 		const scrolled: Element[] = [];
 		Element.prototype.scrollIntoView = function (this: Element) {
 			scrolled.push(this);
@@ -67,8 +60,7 @@ describe("the access choice of an account that can write", () => {
 });
 
 describe("the popup's frame", () => {
-	/** Fails on a frame whose content cannot scroll, so a view taller than the window hides what is under the footer. */
-	it("scrolls its content and keeps the footer out of the scroll", () => {
+	it("scrolls its content and keeps the footer out of the scroll (fails on a frame whose content cannot scroll, so a view taller than the window hides what is under the footer)", () => {
 		wrapper = mount(OnboardingFrame, {
 			slots: { default: "<p>content</p>", footer: "<button>next</button>" },
 			global: {

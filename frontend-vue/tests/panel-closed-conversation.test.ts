@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
 import {

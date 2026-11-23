@@ -76,6 +76,25 @@ export function answered<T>(data: T): OpResult<T> {
 	return { ok: true, data, changes: [] };
 }
 
+/** What the builder answers when it refuses an operation. */
+export function refused(detail: string) {
+	return {
+		ok: false as const,
+		error: { code: "unsupported" as const, detail },
+	};
+}
+
+/** What the builder answers once it wrote a connection's new URL into `.env`. */
+export const URL_WRITTEN = answered({ variable: "SHOP_URL" });
+
+/** What a Web Lock's holder receives: the lock granted, or none when another tab holds it. */
+export interface LockGrant {
+	name: string;
+	mode: LockMode;
+}
+
+export type LockHolder = (lock: LockGrant | null) => Promise<void> | undefined;
+
 /** The question of an analysis that asks which schemas to read. */
 export const SCHEMAS_QUESTION: OpenItem = {
 	id: "schemas",
@@ -99,6 +118,19 @@ export function proposedRelation(relation: string): ProposedResource {
 	};
 }
 
+const NO_PROGRESS = {
+	relations: 0,
+	described: 0,
+	toProfile: 0,
+	profiled: 0,
+	timeouts: 0,
+};
+
+/** An analysis of `shop` that failed before it proposed anything. */
+export function failedAnalysis(id: string): AnalysisState {
+	return { id, connection: "shop", status: "failed", progress: NO_PROGRESS };
+}
+
 /** A finished analysis of `shop`, with the questions it left `open` and the relations `mapped` already. */
 export function analysisWith(
 	open: OpenItem[],
@@ -109,13 +141,7 @@ export function analysisWith(
 		id: "job1",
 		connection: "shop",
 		status: "done",
-		progress: {
-			relations: 0,
-			described: 0,
-			toProfile: 0,
-			profiled: 0,
-			timeouts: 0,
-		},
+		progress: NO_PROGRESS,
 		proposal: {
 			connection: "shop",
 			module: "m",
@@ -149,8 +175,11 @@ export function fakeBuilder(overrides: Partial<BuilderApi> = {}) {
 	const configureProject = vi.fn<BuilderApi["configureProject"]>(async () =>
 		answered({ files: [] }),
 	);
+	const checkConnection = vi.fn<BuilderApi["checkConnection"]>(
+		async () => READER,
+	);
 	const api: BuilderApi = {
-		checkConnection: vi.fn<BuilderApi["checkConnection"]>(async () => READER),
+		checkConnection,
 		projectModules: async () => PROJECT,
 		configureProject,
 		failure: (error) => ({
@@ -160,9 +189,7 @@ export function fakeBuilder(overrides: Partial<BuilderApi> = {}) {
 		databaseConnection: async () => WIRED,
 		databaseConnections: async () => [LISTED],
 		latestAnalysis: async () =>
-			analysis === null
-				? { ok: false, error: { code: "unsupported", detail: "none" } }
-				: answered(analysis),
+			analysis === null ? refused("none") : answered(analysis),
 		analyseDatabase,
 		reloadDue: async () => ({ due: false }),
 		analysis: unfaked,
@@ -174,9 +201,10 @@ export function fakeBuilder(overrides: Partial<BuilderApi> = {}) {
 	};
 	return {
 		api,
+		checkConnection,
 		analyseDatabase,
 		configureProject,
-		setAnalysis: (next: AnalysisState) => {
+		setAnalysis: (next: AnalysisState | null) => {
 			analysis = next;
 		},
 	};

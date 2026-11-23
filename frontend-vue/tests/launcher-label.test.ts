@@ -9,11 +9,13 @@ import type { LauncherState } from "../app/runtime/launcher-state";
 
 const LAUNCHER_KEY = "dms_assistant.panel.launcher";
 
-/** Like vue-i18n: `t` reads its messages reactively, and gives an empty name while they are missing, as the dashboard does. */
-function lateMessages(): {
+interface LateMessages {
 	t: Translate;
 	load: () => void;
-} {
+}
+
+/** Like vue-i18n: `t` reads its messages reactively, and gives an empty name while they are missing, as the dashboard does. */
+function lateMessages(): LateMessages {
 	const messages = ref<Record<string, string>>({});
 	return {
 		t: (key) => messages.value[key] ?? "",

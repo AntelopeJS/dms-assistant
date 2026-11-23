@@ -1,9 +1,9 @@
 import { type Ref, watch } from "vue";
+import * as z from "zod/mini";
 import type { Translate } from "../chat/composables/useChatI18n";
-import type { ChangeSetSummary } from "../chat/types/protocol";
 import type { ChatTransport } from "./chat-transport";
 import { TOAST_DURATION_MS } from "./constants";
-import { isTypedMessage } from "./typed-message";
+import type { TypedMessage } from "./typed-message";
 
 /** One button of a toast, as Nuxt UI's `useToast().add` takes it. */
 interface ToastAction {
@@ -22,6 +22,30 @@ interface ToastInput {
 	actions: ToastAction[];
 }
 
+const PermissionRequestSchema = z.object({
+	conversationId: z.optional(z.string()),
+	summary: z.optional(z.string()),
+});
+
+/** The part of a change set the toast shows and the Undo button names. */
+const NotifiedChangeSetSchema = z.object({
+	id: z.string(),
+	number: z.number(),
+	conversationId: z.string(),
+	title: z.string(),
+	state: z.string(),
+});
+
+export type NotifiedChangeSet = z.infer<typeof NotifiedChangeSetSchema>;
+
+const ChangeSetFrameSchema = z.object({
+	changeSet: z.optional(NotifiedChangeSetSchema),
+});
+
+const SettingsFrameSchema = z.object({
+	settings: z.optional(z.object({ notifyRequests: z.optional(z.boolean()) })),
+});
+
 export interface AssistantNotificationsOptions {
 	chat: ChatTransport;
 	isPanelOpen: Readonly<Ref<boolean>>;
@@ -29,28 +53,8 @@ export interface AssistantNotificationsOptions {
 	t: Translate;
 	toast: (input: ToastInput) => void;
 	reviewApprovals: (conversationId?: string) => void;
-	undoChangeSet: (changeSet: ChangeSetSummary) => void;
+	undoChangeSet: (changeSet: NotifiedChangeSet) => void;
 	reviewChangeSet: (changeSetId: string) => void;
-}
-
-interface PermissionRequestFrame {
-	type: "permission_request";
-	conversationId?: string;
-	summary?: string;
-}
-
-interface ChangeSetFrame {
-	type: "change_set";
-	changeSet?: ChangeSetSummary;
-}
-
-interface SettingsFrame {
-	type: "settings_update";
-	settings?: SettingsFlags;
-}
-
-interface SettingsFlags {
-	notifyRequests?: boolean;
 }
 
 const ICON = "i-ph-sparkle";
@@ -96,17 +100,15 @@ function approvalToast(
 	});
 }
 
-function onPermissionRequest(
-	state: NotifierState,
-	frame: PermissionRequestFrame,
-): void {
+function onPermissionRequest(state: NotifierState, msg: TypedMessage): void {
+	const frame = PermissionRequestSchema.safeParse(msg);
+	if (!frame.success) return;
 	if (state.options.isPanelOpen.value || !state.isEnabled) return;
-	const title = frame.summary
-		? t(state, "dms_assistant.panel.toast.request_title", {
-				summary: frame.summary,
-			})
+	const { conversationId, summary } = frame.data;
+	const title = summary
+		? t(state, "dms_assistant.panel.toast.request_title", { summary })
 		: t(state, "dms_assistant.panel.toast.request_generic");
-	approvalToast(state, title, frame.conversationId);
+	approvalToast(state, title, conversationId);
 }
 
 function t(
@@ -117,8 +119,10 @@ function t(
 	return state.options.t(key, params);
 }
 
-function onChangeSet(state: NotifierState, frame: ChangeSetFrame): void {
-	const set = frame.changeSet;
+function onChangeSet(state: NotifierState, msg: TypedMessage): void {
+	const frame = ChangeSetFrameSchema.safeParse(msg);
+	if (!frame.success) return;
+	const set = frame.data.changeSet;
 	if (set === undefined || state.seenChangeSets.has(set.id)) return;
 	state.seenChangeSets.add(set.id);
 	if (set.state !== "applied" || state.options.isPanelOpen.value) return;
@@ -147,16 +151,20 @@ function onChangeSet(state: NotifierState, frame: ChangeSetFrame): void {
 	});
 }
 
-const FRAME_HANDLERS: Record<
+function onSettingsUpdate(state: NotifierState, msg: TypedMessage): void {
+	const frame = SettingsFrameSchema.safeParse(msg);
+	if (!frame.success) return;
+	state.isEnabled = frame.data.settings?.notifyRequests !== false;
+}
+
+const FRAME_HANDLERS = new Map<
 	string,
-	(state: NotifierState, frame: never) => void
-> = {
-	permission_request: onPermissionRequest,
-	change_set: onChangeSet,
-	settings_update: (state, frame: SettingsFrame) => {
-		state.isEnabled = frame.settings?.notifyRequests !== false;
-	},
-};
+	(state: NotifierState, msg: TypedMessage) => void
+>([
+	["permission_request", onPermissionRequest],
+	["change_set", onChangeSet],
+	["settings_update", onSettingsUpdate],
+]);
 
 /**
  * DMS toasts for what happens while the panel is closed: a request waiting
@@ -173,8 +181,7 @@ export function installAssistantNotifications(
 		seenChangeSets: new Set(),
 	};
 	const stopListening = options.chat.onMessage((msg) => {
-		if (!isTypedMessage(msg)) return;
-		FRAME_HANDLERS[msg.type]?.(state, msg as never);
+		FRAME_HANDLERS.get(msg.type)?.(state, msg);
 	});
 	const stopWatching = watch(options.pendingApprovals, (count) => {
 		const isNew = count > state.announcedApprovals;

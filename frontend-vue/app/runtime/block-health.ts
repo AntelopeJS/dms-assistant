@@ -52,11 +52,8 @@ function readBlock(element: Element): BlockFact | null {
 	const state = element.getAttribute(STATE_ATTRIBUTE);
 	if (!isBlockState(state)) return null;
 	const path = element.getAttribute(PATH_ATTRIBUTE);
-	return {
-		...(path === null ? {} : { path }),
-		type: element.getAttribute(TYPE_ATTRIBUTE) ?? UNKNOWN_TYPE,
-		state,
-	};
+	const type = element.getAttribute(TYPE_ATTRIBUTE) ?? UNKNOWN_TYPE;
+	return path === null ? { type, state } : { path, type, state };
 }
 
 /** The data blocks under `root`, in document order. */

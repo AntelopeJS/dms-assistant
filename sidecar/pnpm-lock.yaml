@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
-  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.15.0 <0.16.0'
+  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.16.0 <0.17.0'
   '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.2 <0.7.0'
 
 importers:

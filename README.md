@@ -114,10 +114,10 @@ Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev
 | Package                             | Supported          | Tested with |
 | ----------------------------------- | ------------------ | ----------- |
 | `@antelopejs/agent-skills`          | `>=0.8.2 <0.9.0`   | `0.8.2`     |
-| `@antelopejs/dms`                   | `>=0.22.0 <0.23.0` | `0.22.0`    |
+| `@antelopejs/dms`                   | `>=0.23.0 <0.24.0` | `0.23.0`    |
 | `@antelopejs/interface-api`         | `>=0.3.3 <0.4.0`   | `0.3.3`     |
 | `@antelopejs/interface-core`        | `>=0.5.2 <0.6.0`   | `0.5.2`     |
-| `@antelopejs/interface-dms`         | `>=0.15.0 <0.16.0` | `0.15.0`    |
+| `@antelopejs/interface-dms`         | `>=0.16.0 <0.17.0` | `0.16.0`    |
 | `@antelopejs/interface-dms-builder` | `>=0.6.2 <0.7.0`   | `0.6.2`     |
 
 <!-- antelopejs-docs-compat:end -->

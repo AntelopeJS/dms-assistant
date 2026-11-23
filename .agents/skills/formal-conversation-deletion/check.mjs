@@ -8,6 +8,8 @@
  * counterexamples. Then replays those counterexamples against the real
  * conversation store. Exits 1 when a rule changed, 2 when TLC or Vitest
  * could not run.
+ *
+ * @packageDocumentation
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";

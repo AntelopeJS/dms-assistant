@@ -4,6 +4,8 @@
  * valid and malformed entries in any mix, loaded and written by the real
  * stores. Prints nothing when it passes. Exits 1 when a property fails, 2 when
  * it could not run.
+ *
+ * @packageDocumentation
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";

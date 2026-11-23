@@ -10,8 +10,10 @@ interface VueModule {
 
 const VUE_EXTENSION = /\.vue$/;
 
-// Every component is addressed by name from the backend, so registering the
-// whole directory keeps the two sides in sync without a manual list.
+/**
+ * Every component is addressed by name from the backend, so registering the
+ * whole directory keeps the two sides in sync without a manual list.
+ */
 const components = import.meta.glob<VueModule>("./app/components/**/*.vue");
 
 function componentName(path: string): string {
@@ -19,8 +21,10 @@ function componentName(path: string): string {
 }
 
 const frontendModule: DmsFrontendModule = {
-	// Put in front of every name registered below: StatusCard.vue registers as
-	// DmsAssistantStatusCard, the name the backend's CustomComponent() sends.
+	/**
+	 * Put in front of every name registered below: StatusCard.vue registers as
+	 * DmsAssistantStatusCard, the name the backend's CustomComponent() sends.
+	 */
 	componentPrefix: "DmsAssistant",
 	setup(sdk) {
 		Object.entries(components)

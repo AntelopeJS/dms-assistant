@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /** What this browser remembers of the popup. */
 export interface OnboardingPreferences {
 	/** "Don't show on startup" is ticked. */
@@ -15,17 +17,16 @@ export const PREFERENCES_KEY = "dms-assistant:onboarding";
 
 const DEFAULTS: OnboardingPreferences = { dontShow: false, seenBootId: null };
 
+const PreferencesSchema = z.object({
+	dontShow: z.boolean().catch(false),
+	seenBootId: z.string().nullable().catch(null),
+});
+
 function parsed(text: string | null): OnboardingPreferences {
 	if (text === null) return DEFAULTS;
 	try {
-		const value: unknown = JSON.parse(text);
-		if (value === null || typeof value !== "object") return DEFAULTS;
-		const dontShow = Reflect.get(value, "dontShow");
-		const seenBootId = Reflect.get(value, "seenBootId");
-		return {
-			dontShow: dontShow === true,
-			seenBootId: typeof seenBootId === "string" ? seenBootId : null,
-		};
+		const stored = PreferencesSchema.safeParse(JSON.parse(text));
+		return stored.success ? stored.data : DEFAULTS;
 	} catch {
 		return DEFAULTS;
 	}

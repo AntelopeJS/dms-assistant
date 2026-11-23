@@ -1,4 +1,5 @@
 import { type ShallowRef, watch } from "vue";
+import { z } from "zod";
 import { useDmsState } from "#dms/frontend-module";
 import {
 	API_PREFIX,
@@ -6,6 +7,7 @@ import {
 } from "../../builder/app/runtime/constants";
 import type { DatabaseConnection } from "../../builder/app/runtime/database-types";
 import type { AssistantSession } from "../runtime/assistant-session";
+import type { WireValue } from "../runtime/wire-value";
 import { createOnboardingApi } from "./api";
 import { type ProjectContent, readConversations } from "./content";
 import { connectMemory } from "./connect-memory";
@@ -98,18 +100,26 @@ function registerOverlay(controller: OnboardingController): () => void {
 	};
 }
 
+const OptionalText = z.string().optional().catch(undefined);
+
+const DatabaseConnectionSchema = z.looseObject({
+	id: z.string(),
+	engine: OptionalText,
+	version: OptionalText,
+	database: OptionalText,
+	role: OptionalText,
+	error: OptionalText,
+});
+
 async function readDatabases(
 	session: AssistantSession,
 ): Promise<DatabaseConnection[]> {
-	const list = await session.api.get<unknown>(DATABASE_CONNECTIONS_PATH);
-	return Array.isArray(list)
-		? list.filter(
-				(entry): entry is DatabaseConnection =>
-					entry !== null &&
-					typeof entry === "object" &&
-					typeof Reflect.get(entry, "id") === "string",
-			)
-		: [];
+	const list = await session.api.get<WireValue>(DATABASE_CONNECTIONS_PATH);
+	if (!Array.isArray(list)) return [];
+	return list.flatMap((entry) => {
+		const connection = DatabaseConnectionSchema.safeParse(entry);
+		return connection.success ? [connection.data] : [];
+	});
 }
 
 async function readContent(
@@ -118,7 +128,7 @@ async function readContent(
 ): Promise<ProjectContent> {
 	const [conversations, mockups, databases] = await Promise.all([
 		readConversations({ chat: session.chat, holdStream: session.holdStream }),
-		listMockups((path) => session.api.get<unknown>(path)).catch(() => []),
+		listMockups((path) => session.api.get<WireValue>(path)).catch(() => []),
 		canConnectDatabase
 			? readDatabases(session).catch(() => [])
 			: Promise.resolve([]),
@@ -137,8 +147,8 @@ export function startOnboarding(host: OnboardingHost): () => void {
 	const { session } = host;
 	const controller = createOnboarding({
 		api: createOnboardingApi({
-			get: (path) => session.api.get<unknown>(path),
-			post: (path, body) => session.api.post<unknown>(path, body),
+			get: (path) => session.api.get<WireValue>(path),
+			post: (path, body) => session.api.post<WireValue>(path, body),
 		}),
 		assistant: session,
 		readContent: () => readContent(session, host.canConnectDatabase),
@@ -186,11 +196,13 @@ export function startOnboarding(host: OnboardingHost): () => void {
 /** The DMS's own setup wizard, where a project nobody has set up yet is sent. */
 const SETUP_WIZARD_PATH = "/onboarding";
 
-/** Resolves once the route is outside the DMS's setup wizard: the popup never covers it. */
-function afterSetupWizard(router: OnboardingHost["router"]): {
+interface SetupWizardWatch {
 	done: Promise<void>;
 	stop: () => void;
-} {
+}
+
+/** Resolves once the route is outside the DMS's setup wizard: the popup never covers it. */
+function afterSetupWizard(router: OnboardingHost["router"]): SetupWizardWatch {
 	const inWizard = (): boolean =>
 		router.currentRoute.value.path.startsWith(SETUP_WIZARD_PATH);
 	if (!inWizard()) return { done: Promise.resolve(), stop: () => undefined };

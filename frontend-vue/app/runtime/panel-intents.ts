@@ -101,22 +101,24 @@ export function createPanelIntents(): PanelIntents {
 /** What the panel does for a prompt the mockup editor handed over. */
 export function intentOfPrompt(prompt: MockupAssistantPrompt): PanelIntent {
 	switch (prompt.source) {
-		case "build":
-			return {
+		case "build": {
+			const intent: BuildMockupIntent = {
 				kind: "build",
 				mockup: prompt.prompt,
-				...(prompt.title === undefined ? {} : { title: prompt.title }),
-				...(prompt.target === undefined
-					? {}
-					: { pageRef: prompt.target.pageRef }),
 			};
-		case "resolve-comments":
-			return {
+			if (prompt.title !== undefined) intent.title = prompt.title;
+			if (prompt.target !== undefined) intent.pageRef = prompt.target.pageRef;
+			return intent;
+		}
+		case "resolve-comments": {
+			const intent: ResolveCommentsIntent = {
 				kind: "resolve-comments",
 				mockup: prompt.prompt,
-				...(prompt.title === undefined ? {} : { title: prompt.title }),
-				...(prompt.page === undefined ? {} : { page: prompt.page }),
 			};
+			if (prompt.title !== undefined) intent.title = prompt.title;
+			if (prompt.page !== undefined) intent.page = prompt.page;
+			return intent;
+		}
 		case "new-mockup":
 			return { kind: "start", prompt: prompt.prompt };
 		default:

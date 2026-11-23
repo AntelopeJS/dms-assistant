@@ -19,22 +19,20 @@ const BLOCK_STATES = ["loading", "ok", "empty", "error"] as const;
 type BlockState = (typeof BLOCK_STATES)[number];
 type ReportedState = Exclude<BlockState, "ok">;
 
-export interface BlockFact {
+export type BlockFact = {
 	path?: string;
 	type: string;
 	state: BlockState;
-}
+};
 
-export interface ReportedBlock extends BlockFact {
-	state: ReportedState;
-}
+export type ReportedBlock = BlockFact & { state: ReportedState };
 
-export interface PageBlocks {
+export type PageBlocks = {
 	status: "settled" | "timeout" | "superseded";
 	checked: number;
 	/** The blocks showing no data: empty, failed, or still loading. */
 	blocks: ReportedBlock[];
-}
+};
 
 const KNOWN_STATES: ReadonlySet<string | null> = new Set<string | null>(
 	BLOCK_STATES,
@@ -52,11 +50,8 @@ function readBlock(element: Element): BlockFact | null {
 	const state = element.getAttribute(STATE_ATTRIBUTE);
 	if (!isBlockState(state)) return null;
 	const path = element.getAttribute(PATH_ATTRIBUTE);
-	return {
-		...(path === null ? {} : { path }),
-		type: element.getAttribute(TYPE_ATTRIBUTE) ?? UNKNOWN_TYPE,
-		state,
-	};
+	const type = element.getAttribute(TYPE_ATTRIBUTE) ?? UNKNOWN_TYPE;
+	return path === null ? { type, state } : { path, type, state };
 }
 
 /** The data blocks under `root`, in document order. */

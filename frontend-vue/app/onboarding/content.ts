@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { DatabaseConnection } from "../../builder/app/runtime/database-types";
 import {
 	CLIENT_MESSAGE_TYPES,
@@ -5,6 +6,7 @@ import {
 } from "../chat/constants/protocol";
 import type { ChatTransport } from "../runtime/chat-transport";
 import { CHANNEL_STATUS_CONNECTED } from "../runtime/constants";
+import type { TypedMessage } from "../runtime/typed-message";
 import type { Mockup } from "./mockups";
 
 /** A conversation of the assistant, as Continue offers to resume it. */
@@ -46,22 +48,23 @@ export interface ConversationStream {
 	holdStream: () => () => void;
 }
 
-function conversationsOf(message: object): RecentConversation[] | null {
-	if (Reflect.get(message, "type") !== SERVER_EVENT_TYPES.CONVERSATION_LIST) {
-		return null;
-	}
-	const list: unknown = Reflect.get(message, "conversations");
-	if (!Array.isArray(list)) return [];
-	return list
-		.filter(
-			(item): item is RecentConversation =>
-				item !== null &&
-				typeof item === "object" &&
-				typeof Reflect.get(item, "id") === "string" &&
-				typeof Reflect.get(item, "title") === "string" &&
-				typeof Reflect.get(item, "updatedAtMs") === "number",
-		)
-		.map(({ id, title, updatedAtMs }) => ({ id, title, updatedAtMs }))
+const RecentConversationSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	updatedAtMs: z.number(),
+});
+
+const ConversationListSchema = z.object({
+	conversations: z.array(z.unknown()).catch([]),
+});
+
+function conversationsOf(message: TypedMessage): RecentConversation[] | null {
+	if (message.type !== SERVER_EVENT_TYPES.CONVERSATION_LIST) return null;
+	return ConversationListSchema.parse(message)
+		.conversations.flatMap((item) => {
+			const conversation = RecentConversationSchema.safeParse(item);
+			return conversation.success ? [conversation.data] : [];
+		})
 		.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
 }
 

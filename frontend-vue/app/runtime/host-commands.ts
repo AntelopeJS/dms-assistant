@@ -1,8 +1,9 @@
+import * as z from "zod/mini";
 import { HOST_COMMAND_NAVIGATE_TYPE, LOG_PREFIX } from "./constants";
-import { isTypedMessage } from "./typed-message";
+import { isTypedMessage, type TypedMessage } from "./typed-message";
 
 interface RouterLike {
-	push: (path: string) => unknown;
+	push: (path: string) => void;
 }
 
 /**
@@ -28,8 +29,13 @@ const ROUTE_WAITS = 4;
  */
 const TRIP_WAIT_MS = 60_000;
 
+interface Lapse {
+	lapsed: Promise<boolean>;
+	cancel: () => void;
+}
+
 /** Resolves `false` after `ms`, or never once `cancel` ran. */
-function lapse(ms: number): { lapsed: Promise<boolean>; cancel: () => void } {
+function lapse(ms: number): Lapse {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const lapsed = new Promise<boolean>((resolve) => {
 		timer = setTimeout(() => resolve(false), ms);
@@ -59,20 +65,15 @@ export interface HostCommandContext {
 	navigate: Navigator;
 }
 
-interface HostCommandNavigateMessage {
-	type: typeof HOST_COMMAND_NAVIGATE_TYPE;
-	path: string;
-}
-
-type HostCommandMessage = HostCommandNavigateMessage;
+const NavigateCommandSchema = z.object({
+	type: z.literal(HOST_COMMAND_NAVIGATE_TYPE),
+	path: z.string(),
+});
 
 /** Takes a sidecar message already parsed; anything that is not a host command is ignored. */
-export type HostCommandDispatcher = (msg: unknown) => void;
+export type HostCommandDispatcher = (msg: TypedMessage) => void;
 
-type HostCommandHandler = (
-	msg: HostCommandMessage,
-	ctx: HostCommandContext,
-) => void;
+type HostCommandHandler = (msg: TypedMessage, ctx: HostCommandContext) => void;
 
 const IN_APP_PATH = /^\/(?![/\\])/;
 
@@ -112,7 +113,7 @@ export function createNavigator(ctx: NavigationContext): Navigator {
 				console.error(`${LOG_PREFIX} dev reload wait failed for ${path}`, err);
 			})
 			.then(() => {
-				if (stillWanted()) void ctx.router.push(path);
+				if (stillWanted()) ctx.router.push(path);
 			});
 	};
 }
@@ -121,8 +122,8 @@ export function createNavigator(ctx: NavigationContext): Navigator {
  * Whether the agent may send the dashboard to `path`. What it asks for comes
  * from model output, so it may only ever lead to a page of this origin.
  */
-function isInAppPath(path: unknown): path is string {
-	if (typeof path !== "string" || !IN_APP_PATH.test(path)) return false;
+function isInAppPath(path: string): boolean {
+	if (!IN_APP_PATH.test(path)) return false;
 	try {
 		const origin = globalThis.location.origin;
 		return new URL(path, origin).origin === origin;
@@ -131,29 +132,26 @@ function isInAppPath(path: unknown): path is string {
 	}
 }
 
-function handleNavigate(
-	msg: HostCommandMessage,
-	ctx: HostCommandContext,
-): void {
-	if (msg.type !== HOST_COMMAND_NAVIGATE_TYPE) return;
-	if (!isInAppPath(msg.path)) {
+function handleNavigate(msg: TypedMessage, ctx: HostCommandContext): void {
+	const command = NavigateCommandSchema.safeParse(msg);
+	if (!command.success || !isInAppPath(command.data.path)) {
 		console.warn(`${LOG_PREFIX} refused to navigate off the dashboard`);
 		return;
 	}
-	ctx.navigate(msg.path);
+	ctx.navigate(command.data.path);
 }
 
-const COMMAND_HANDLERS: Record<string, HostCommandHandler> = {
-	[HOST_COMMAND_NAVIGATE_TYPE]: handleNavigate,
-};
+const COMMAND_HANDLERS = new Map<string, HostCommandHandler>([
+	[HOST_COMMAND_NAVIGATE_TYPE, handleNavigate],
+]);
 
 /** Runs the agent's host commands; its navigations go through `ctx.navigate`, the dashboard's own queue. */
 export function createHostCommandDispatcher(
 	ctx: HostCommandContext,
 ): HostCommandDispatcher {
-	return (msg: unknown): void => {
-		if (!isTypedMessage<HostCommandMessage>(msg)) return;
-		const handler = COMMAND_HANDLERS[msg.type];
+	return (msg) => {
+		if (!isTypedMessage(msg)) return;
+		const handler = COMMAND_HANDLERS.get(msg.type);
 		if (handler === undefined) {
 			console.warn(`${LOG_PREFIX} unknown host command type=${msg.type}`);
 			return;

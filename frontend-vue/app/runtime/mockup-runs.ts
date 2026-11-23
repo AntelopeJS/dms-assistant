@@ -8,7 +8,7 @@ import {
 } from "./assistant-prompt";
 import type { ChatTransport } from "./chat-transport";
 import { intentOfPrompt, type PanelIntent } from "./panel-intents";
-import { isTypedMessage } from "./typed-message";
+import type { TypedMessage } from "./typed-message";
 
 const STORAGE_KEY = "dms-assistant-mockup-runs";
 
@@ -57,21 +57,31 @@ function keyOf(target: MockupRunTarget): string {
 
 const ENDING_FRAMES = new Set(["run_done", "run_error", "conversation_closed"]);
 
-function conversationOf(msg: object): string | null {
-	const id: unknown = Reflect.get(msg, "conversationId");
-	return typeof id === "string" ? id : null;
+const ConversationIdSchema = z.object({ conversationId: z.string() });
+
+const ConversationListSchema = z.object({
+	conversations: z.optional(z.array(z.unknown())),
+});
+
+const ListedConversationSchema = z.object({
+	id: z.string(),
+	isRunning: z.optional(z.unknown()),
+});
+
+function conversationOf(msg: TypedMessage): string | null {
+	const frame = ConversationIdSchema.safeParse(msg);
+	return frame.success ? frame.data.conversationId : null;
 }
 
 /** Whether each conversation of a list frame runs a turn, by id. */
-function listedRunning(msg: object): Map<string, boolean> {
-	const list: unknown = Reflect.get(msg, "conversations");
+function listedRunning(msg: TypedMessage): Map<string, boolean> {
 	const running = new Map<string, boolean>();
-	if (!Array.isArray(list)) return running;
-	for (const item of list) {
-		if (item === null || typeof item !== "object") continue;
-		const id: unknown = Reflect.get(item, "id");
-		if (typeof id === "string")
-			running.set(id, Reflect.get(item, "isRunning") === true);
+	const list = ConversationListSchema.safeParse(msg);
+	if (!list.success) return running;
+	for (const item of list.data.conversations ?? []) {
+		const listed = ListedConversationSchema.safeParse(item);
+		if (listed.success)
+			running.set(listed.data.id, listed.data.isRunning === true);
 	}
 	return running;
 }
@@ -123,11 +133,10 @@ export function createMockupRuns(options: MockupRunsOptions): MockupRuns {
 		options.emit({ mockup: run.mockup, source: run.source, running: false });
 	}
 
-	function onFrame(msg: object): void {
-		if (!isTypedMessage(msg)) return;
+	function onFrame(msg: TypedMessage): void {
 		if (msg.type === "conversation_list") {
 			const listed = listedRunning(msg);
-			for (const run of [...runs.values()]) {
+			for (const run of runs.values()) {
 				if (listed.get(run.conversationId) === true) run.isConfirmed = true;
 				else if (run.isConfirmed) end(run);
 			}
@@ -135,7 +144,7 @@ export function createMockupRuns(options: MockupRunsOptions): MockupRuns {
 		}
 		const conversationId = conversationOf(msg);
 		if (conversationId === null) return;
-		for (const run of [...runs.values()]) {
+		for (const run of runs.values()) {
 			if (run.conversationId !== conversationId) continue;
 			if (ENDING_FRAMES.has(msg.type)) end(run);
 			else if (msg.type === "run_progress") run.isConfirmed = true;

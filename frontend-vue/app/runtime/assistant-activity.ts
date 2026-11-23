@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
+import * as z from "zod/mini";
 import type { ChatTransport } from "./chat-transport";
 import { CHANNEL_STATUS_CONNECTED, STATUS_POLL_MS } from "./constants";
-import { isTypedMessage } from "./typed-message";
 
 /** The backend's `/ai/status`, as far as the tab reads it. */
 export interface AssistantStatusPayload {
@@ -11,21 +11,22 @@ export interface AssistantStatusPayload {
 	lastError?: string;
 }
 
-interface ConversationListItem {
-	isRunning?: boolean;
-	pendingApprovals?: number;
-	pendingQuestions?: number;
-}
+const ConversationListItemSchema = z.object({
+	isRunning: z.optional(z.boolean()),
+	pendingApprovals: z.optional(z.number()),
+	pendingQuestions: z.optional(z.number()),
+});
+
+type ConversationListItem = z.infer<typeof ConversationListItemSchema>;
+
+const ConversationListFrameSchema = z.object({
+	conversations: z.optional(z.array(ConversationListItemSchema)),
+});
 
 interface ActivityCounts {
 	pendingApprovals: number;
 	pendingQuestions: number;
 	workingConversations: number;
-}
-
-interface ConversationListFrame {
-	type: "conversation_list";
-	conversations?: ConversationListItem[];
 }
 
 const CONVERSATION_LIST_TYPE = "conversation_list";
@@ -70,10 +71,6 @@ export interface AssistantActivityOptions {
 	shouldPoll: () => boolean;
 }
 
-function isListFrame(msg: object): msg is ConversationListFrame {
-	return isTypedMessage(msg) && msg.type === CONVERSATION_LIST_TYPE;
-}
-
 function sum(
 	items: ConversationListItem[],
 	read: (item: ConversationListItem) => number,
@@ -84,7 +81,8 @@ function sum(
 /**
  * What the tab knows of the assistant's work across chats, from the backend's
  * status (polled while the panel is closed or its stream down: the polling
- * follows `shouldPoll`) and from the conversation lists the sidecar
+ * follows `shouldPoll`; a failed read keeps the last answer, so the counts stay
+ * as they were) and from the conversation lists the sidecar
  * broadcasts while the stream is open. Once a list arrives on a connection,
  * the lists own the counts until that connection ends: the sidecar sends one
  * on every change, and a status answer may predate the last one. Past that
@@ -118,7 +116,6 @@ export function createAssistantActivity(
 			workingConversations: payload.workingConversations ?? 0,
 		});
 	};
-	// A failed read keeps the last answer: the counts stay as they were.
 	const stopFollowing = watch(
 		status.data,
 		(payload) => {
@@ -145,8 +142,10 @@ export function createAssistantActivity(
 	};
 
 	const stopListening = options.chat.onMessage((msg) => {
-		if (!isListFrame(msg)) return;
-		const items = msg.conversations ?? [];
+		if (msg.type !== CONVERSATION_LIST_TYPE) return;
+		const frame = ConversationListFrameSchema.safeParse(msg);
+		if (!frame.success) return;
+		const items = frame.data.conversations ?? [];
 		doListsOwnCounts = true;
 		setCounts({
 			pendingApprovals: sum(items, (item) => item.pendingApprovals ?? 0),

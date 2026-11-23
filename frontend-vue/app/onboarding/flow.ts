@@ -28,7 +28,7 @@ export interface OnboardingFlow {
 	/** The views Back returns to, latest last. */
 	history: readonly OnboardingView[];
 	/** Where a login that works leads: the starting point, or the connect form a link asked for. */
-	then: "start" | "connect-database";
+	landing: "start" | "connect-database";
 	start: StartingPoint;
 }
 
@@ -95,7 +95,7 @@ export function firstFlow(input: FirstViewInput): OnboardingFlow {
 	const connect = input.step === "connect-database" && input.canConnectDatabase;
 	const base = {
 		history: [],
-		then: connect ? ("connect-database" as const) : ("start" as const),
+		landing: connect ? ("connect-database" as const) : ("start" as const),
 		start: input.hasContent ? ("continue" as const) : ("paths" as const),
 	};
 	const works = isSignedIn(state, state.provider);
@@ -141,7 +141,7 @@ function settle(flow: OnboardingFlow, view: OnboardingView): OnboardingFlow {
 }
 
 function afterLogin(flow: OnboardingFlow): OnboardingView {
-	return flow.then === "connect-database"
+	return flow.landing === "connect-database"
 		? { kind: "connect-database" }
 		: { kind: flow.start };
 }
@@ -179,7 +179,7 @@ export function transition(
 		case "signed-in":
 			return settle(
 				flow,
-				flow.then === "connect-database"
+				flow.landing === "connect-database"
 					? { kind: "connect-database" }
 					: { kind: "connected", provider: event.provider },
 			);

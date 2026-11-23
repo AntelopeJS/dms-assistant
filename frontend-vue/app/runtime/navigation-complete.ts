@@ -8,15 +8,16 @@ import {
 	HOST_NAVIGATION_COMPLETE_TYPE,
 	HOST_PAGE_BLOCKS_TYPE,
 } from "./constants";
+import type { TypedMessage } from "./typed-message";
 
-interface HostNavigationCompleteMessage {
+interface HostNavigationCompleteMessage extends TypedMessage {
 	type: typeof HOST_NAVIGATION_COMPLETE_TYPE;
 	path: string;
 	/** A `host_page_blocks` message for this path follows within this long. */
 	blocksWithinMs: number;
 }
 
-interface HostPageBlocksMessage extends PageBlocks {
+interface HostPageBlocksMessage extends TypedMessage, PageBlocks {
 	type: typeof HOST_PAGE_BLOCKS_TYPE;
 	path: string;
 }

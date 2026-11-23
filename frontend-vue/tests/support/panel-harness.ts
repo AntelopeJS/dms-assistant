@@ -27,10 +27,7 @@ import {
 	dispatchMockupRun,
 } from "../../app/runtime/mockup-runs";
 import { createPanelIntents } from "../../app/runtime/panel-intents";
-import {
-	isTypedMessage,
-	type TypedMessage,
-} from "../../app/runtime/typed-message";
+import type { TypedMessage } from "../../app/runtime/typed-message";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import { createTestI18n } from "./i18n";
 import { PANEL_STUBS } from "./stubs";
@@ -41,13 +38,8 @@ export const CONVERSATION_ID = "conv-native-1";
 /** What the stream hands the chat: the sidecar's message, as the transport hub takes it. */
 export type SidecarEvent = Parameters<ChatTransportHub["deliver"]>[0];
 
-/** A message the panel sent through the stream, with the fields the suites read. */
-export interface SentMessage extends TypedMessage {
-	conversationId?: string;
-	content?: string;
-	focusBlock?: object;
-	item?: object;
-}
+/** A message the panel sent through the stream. */
+export type SentMessage = TypedMessage;
 
 /** A panel mounted on a fake stream: what it sent, and handles to drive it. */
 export interface Harness {
@@ -93,7 +85,7 @@ export function createHarness(): Harness {
 	const hub = createChatTransport({
 		send: (msg) => {
 			if (channelStatus !== "connected") return false;
-			if (isTypedMessage<SentMessage>(msg)) sent.push(msg);
+			sent.push(msg);
 			return true;
 		},
 		reconnect: () => {

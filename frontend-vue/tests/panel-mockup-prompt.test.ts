@@ -5,6 +5,7 @@
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
+import { z } from "zod";
 import {
 	installAssistantPromptListener,
 	MOCKUP_ASSISTANT_PROMPT_EVENT,
@@ -228,10 +229,7 @@ describe("a block handed to one conversation", () => {
 
 function lastSentConversation(harness: Harness): string {
 	const sent = sentOfType(harness, "user_message").at(-1);
-	if (sent?.conversationId === undefined) {
-		throw new Error("no user message sent");
-	}
-	return sent.conversationId;
+	return z.string().parse(sent?.conversationId);
 }
 
 describe("building a mockup", () => {

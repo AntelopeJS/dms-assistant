@@ -21,7 +21,7 @@ const CRM = {
 	status: "draft",
 };
 
-interface MockupRow {
+type MockupRow = {
 	name?: string;
 	title?: string;
 	pages?: number;
@@ -29,12 +29,12 @@ interface MockupRow {
 	source?: string;
 	updatedAt?: string;
 	status?: string;
-}
+};
 
-interface MockupsBody {
+type MockupsBody = {
 	results: MockupRow[];
 	total: number;
-}
+};
 
 function answering(body: MockupsBody) {
 	return async (path: string) => {

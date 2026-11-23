@@ -4,6 +4,16 @@ import {
 	createChannelClient,
 } from "../app/runtime/channel-client";
 import { CHANNEL_RECONNECT_DELAYS_MS } from "../app/runtime/constants";
+import type { OutgoingMessage } from "../app/runtime/typed-message";
+
+/** A message numbered `n`, which the client posts as it is. */
+interface Probe extends OutgoingMessage {
+	n: number;
+}
+
+function probe(n: number): Probe {
+	return { type: "probe", n };
+}
 
 interface FakeStream {
 	path: string;
@@ -128,17 +138,17 @@ describe("channel client, from opening to posting", () => {
 		await flush();
 		harness.streams[0]?.emit("ready", READY);
 		await flush();
-		client.send({ n: 1 });
-		client.send({ n: 2 });
+		client.send(probe(1));
+		client.send(probe(2));
 		await flush();
 		expect(harness.posts).toEqual([
-			{ path: "/ai/channel/c%201/messages", body: { n: 1 } },
+			{ path: "/ai/channel/c%201/messages", body: probe(1) },
 		]);
 		pending.shift()?.();
 		await flush();
 		expect(harness.posts.at(-1)).toEqual({
 			path: "/ai/channel/c%201/messages",
-			body: { n: 2 },
+			body: probe(2),
 		});
 		client.stop();
 	});
@@ -147,12 +157,12 @@ describe("channel client, from opening to posting", () => {
 describe("channel client, when the connection is lost or stopped", () => {
 	it("drops a message sent before the connection is ready, and says so", async () => {
 		const { client, harness } = startClient();
-		expect(client.send({ n: 1 })).toBe(false);
+		expect(client.send(probe(1))).toBe(false);
 		await flush();
 		expect(harness.posts).toEqual([]);
 		harness.streams[0]?.emit("ready", READY);
 		await flush();
-		expect(client.send({ n: 2 })).toBe(true);
+		expect(client.send(probe(2))).toBe(true);
 		client.stop();
 	});
 
@@ -188,7 +198,7 @@ describe("channel client, when the connection is lost or stopped", () => {
 		await vi.advanceTimersByTimeAsync(0);
 		harness.streams[0]?.emit("ready", READY);
 		await vi.advanceTimersByTimeAsync(0);
-		client.send({ n: 1 });
+		client.send(probe(1));
 		await vi.advanceTimersByTimeAsync(0);
 		expect(client.getStatus()).toBe("reconnecting");
 		await vi.advanceTimersByTimeAsync(CHANNEL_RECONNECT_DELAYS_MS[0]);
@@ -204,7 +214,7 @@ describe("channel client, when the connection is lost or stopped", () => {
 		client.reconnectNow();
 		await flush();
 		expect(client.getStatus()).toBe("connecting");
-		expect(client.send({ n: 1 })).toBe(false);
+		expect(client.send(probe(1))).toBe(false);
 		harness.streams[1]?.emit("ready", READY);
 		await flush();
 		expect(harness.statuses).toEqual([

@@ -19,7 +19,7 @@ import {
 	EVENT_STREAM_TYPE,
 } from "./constants";
 import { readEventStream, type StreamEvent } from "./event-stream";
-import type { TypedMessage } from "./typed-message";
+import type { OutgoingMessage } from "./typed-message";
 
 export type ChannelStatus =
 	| typeof CHANNEL_STATUS_CONNECTING
@@ -28,7 +28,7 @@ export type ChannelStatus =
 	| typeof CHANNEL_STATUS_RECONNECTING;
 
 /** Posts one message as JSON; `$authFetch` in the dashboard refreshes a stale session. */
-type PostMessage = (path: string, body: TypedMessage) => Promise<void>;
+type PostMessage = (path: string, body: OutgoingMessage) => Promise<void>;
 
 /** Opens the tab's event stream. */
 type OpenStream = (path: string, signal: AbortSignal) => Promise<Response>;
@@ -48,7 +48,7 @@ export interface ChannelClient {
 	 * Queued and posted one at a time, in order. False when it was dropped
 	 * because the stream is not connected, so the caller knows nothing left.
 	 */
-	send: (msg: TypedMessage) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	isConnected: () => boolean;
 	getStatus: () => ChannelStatus;
 	/** Opens the stream if it is not open yet. */
@@ -71,7 +71,7 @@ interface ClientState {
 	connectionId: string | null;
 	stream: AbortController | null;
 	retryTimer: ReturnType<typeof setTimeout> | null;
-	queue: TypedMessage[];
+	queue: OutgoingMessage[];
 	isDraining: boolean;
 	isStarted: boolean;
 	backoff: BackoffState;
@@ -180,7 +180,7 @@ async function drain(state: ClientState): Promise<void> {
 	state.isDraining = false;
 }
 
-function send(state: ClientState, msg: TypedMessage): boolean {
+function send(state: ClientState, msg: OutgoingMessage): boolean {
 	if (state.connectionId === null) return false;
 	state.queue.push(msg);
 	void drain(state);

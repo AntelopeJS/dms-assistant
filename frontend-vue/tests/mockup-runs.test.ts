@@ -79,10 +79,7 @@ function click(source: "build" | "resolve-comments", mockup = "bikes"): Event {
 
 function startedConversation(harness: Harness): string {
 	const sent = sentOfType(harness, "user_message").at(-1);
-	if (sent?.conversationId === undefined) {
-		throw new Error("no user message sent");
-	}
-	return sent.conversationId;
+	return z.string().parse(sent?.conversationId);
 }
 
 function activeConversation(): string | null {

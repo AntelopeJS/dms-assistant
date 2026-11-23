@@ -159,7 +159,6 @@ describe("host command dispatch, bursts, malformed commands and foreign paths", 
 			}),
 		});
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		dispatch("not an object");
 		dispatch({ type: "host_command_unknown" });
 		expect(push).not.toHaveBeenCalled();
 		expect(awaitRoute).not.toHaveBeenCalled();

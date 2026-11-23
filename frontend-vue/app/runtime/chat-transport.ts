@@ -1,6 +1,6 @@
 import type { ChannelStatus } from "./channel-client";
 import { createListeners } from "./listeners";
-import type { TypedMessage } from "./typed-message";
+import type { OutgoingMessage, TypedMessage } from "./typed-message";
 
 /**
  * The chat's side of the tab's stream: the dashboard owns the stream and hands
@@ -14,12 +14,12 @@ export interface ChatTransport {
 	onStatus: (listener: (status: ChannelStatus) => void) => () => void;
 	getStatus: () => ChannelStatus;
 	/** False when the message was dropped because the stream is not connected. */
-	send: (msg: TypedMessage) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	reconnect: () => void;
 }
 
 export interface ChatTransportActions {
-	send: (msg: TypedMessage) => boolean;
+	send: (msg: OutgoingMessage) => boolean;
 	reconnect: () => void;
 	getStatus: () => ChannelStatus;
 }

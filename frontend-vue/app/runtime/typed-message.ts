@@ -9,6 +9,11 @@ export interface TypedMessage {
 	[field: string]: WireValue;
 }
 
+/** A message this tab sends on the stream; the sidecar reads it by its `type`. */
+export interface OutgoingMessage {
+	readonly type: string;
+}
+
 /** Whether `value` is an object carrying a string `type`, as every protocol message does. */
 export function isTypedMessage(value: unknown): value is TypedMessage {
 	return (

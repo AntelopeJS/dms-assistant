@@ -27,7 +27,10 @@ import {
 	dispatchMockupRun,
 } from "../../app/runtime/mockup-runs";
 import { createPanelIntents } from "../../app/runtime/panel-intents";
-import type { TypedMessage } from "../../app/runtime/typed-message";
+import {
+	isTypedMessage,
+	type TypedMessage,
+} from "../../app/runtime/typed-message";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import { createTestI18n } from "./i18n";
 import { PANEL_STUBS } from "./stubs";
@@ -85,7 +88,8 @@ export function createHarness(): Harness {
 	const hub = createChatTransport({
 		send: (msg) => {
 			if (channelStatus !== "connected") return false;
-			sent.push(msg);
+			const wire: unknown = JSON.parse(JSON.stringify(msg));
+			if (isTypedMessage(wire)) sent.push(wire);
 			return true;
 		},
 		reconnect: () => {

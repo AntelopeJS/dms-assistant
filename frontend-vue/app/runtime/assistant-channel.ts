@@ -22,11 +22,11 @@ import type { HostCommandDispatcher } from "./host-commands";
 import { installNavigationCompleteEmitter } from "./navigation-complete";
 import type { SidecarStatus, SidecarStatusController } from "./sidecar-status";
 import type { StreamHolds } from "./stream-holds";
-import type { TypedMessage } from "./typed-message";
+import type { OutgoingMessage, TypedMessage } from "./typed-message";
 
 export interface ChannelDeps {
 	/** Posts one message to the stream's messages route, authenticated as the dashboard is. */
-	post: (path: string, body: TypedMessage) => Promise<void>;
+	post: (path: string, body: OutgoingMessage) => Promise<void>;
 	controller: SidecarStatusController;
 	dispatchHostCommand: HostCommandDispatcher;
 }
@@ -146,7 +146,7 @@ export function installHostState(
 	client: ChannelClient,
 	currentPage: Ref<CurrentPage | null>,
 ): () => void {
-	const sendWhenConnected = (msg: TypedMessage): void => {
+	const sendWhenConnected = (msg: OutgoingMessage): void => {
 		if (!client.isConnected()) return;
 		client.send(msg);
 	};

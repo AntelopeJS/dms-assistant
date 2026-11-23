@@ -41,7 +41,7 @@ describe("chat transport", () => {
 		const messages: object[] = [];
 		const unsubscribe = chat.transport.onMessage((msg) => messages.push(msg));
 		unsubscribe();
-		chat.deliver({});
+		chat.deliver({ type: "probe" });
 		expect(messages).toEqual([]);
 	});
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { JsonValue } from "../chat/types/json";
 import type { WireValue } from "../runtime/wire-value";
 import {
 	CLAUDE_TOKEN_PATH,
@@ -13,7 +14,7 @@ import {
 /** The dashboard's authenticated requests, as the assistant session hands them out. */
 export interface OnboardingHttp {
 	get: (path: string) => Promise<WireValue>;
-	post: (path: string, body: WireValue) => Promise<WireValue>;
+	post: (path: string, body: JsonValue) => Promise<WireValue>;
 }
 
 export interface OnboardingApi {

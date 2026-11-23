@@ -10,15 +10,19 @@ import {
 	SIDECAR_STATUS_UNAVAILABLE,
 } from "../runtime/constants";
 
-// The DMS docks this component in its side panel and mounts it while the
-// panel is open; the session arrives once the sidecar answered its first
-// probe, and the panel shows the first connection until then.
+/**
+ * The DMS docks this component in its side panel and mounts it while the
+ * panel is open; the session arrives once the sidecar answered its first
+ * probe, and the panel shows the first connection until then.
+ */
 const sessionRef = inject(ASSISTANT_SESSION_KEY, null);
 const session = computed(() => sessionRef?.value ?? null);
 const { t } = useChatI18n();
 const isRestarting = ref(false);
-// Drawn once mounted, inside a host element rendered on the server and the
-// client alike, so hydration always finds the same node.
+/**
+ * Drawn once mounted, inside a host element rendered on the server and the
+ * client alike, so hydration always finds the same node.
+ */
 const isMounted = ref(false);
 
 const status = computed(

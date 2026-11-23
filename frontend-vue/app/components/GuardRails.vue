@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { APPROVAL_MODE_SCHEMA } from "../chat/utils/wire-schemas";
 import UnavailableState from "../views/UnavailableState.vue";
 import { useGuardRails } from "../views/composables/useGuardRails";
 import {
@@ -37,7 +38,8 @@ function modeItems(row: ModeRow) {
 }
 
 function pickMode(row: ModeRow, value: unknown): void {
-	const mode = modeOf(row, value);
+	const picked = APPROVAL_MODE_SCHEMA.safeParse(value);
+	const mode = picked.success ? modeOf(row, picked.data) : undefined;
 	if (mode) void guard.save(row.field, mode);
 }
 

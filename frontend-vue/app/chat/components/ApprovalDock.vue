@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
 import type {
+	CardHandle,
 	ExpiredRequest,
 	PermissionAnswer,
 	PermissionRequestData,
@@ -31,11 +32,6 @@ interface Emits {
 	revokeRule: [ruleId: string];
 	askAgain: [request: ExpiredRequest];
 	dismissExpired: [requestId: string];
-}
-
-interface CardHandle {
-	allow: () => void;
-	deny: () => void;
 }
 
 const props = defineProps<Props>();
@@ -124,9 +120,9 @@ function onKeydown(event: KeyboardEvent): void {
 	KEY_ACTIONS[action]();
 }
 
-function setCardRef(requestId: string, card: unknown): void {
-	if (card === null) cards.delete(requestId);
-	else cards.set(requestId, card as CardHandle);
+function setCardHandle(requestId: string, handle: CardHandle | null): void {
+	if (handle === null) cards.delete(requestId);
+	else cards.set(requestId, handle);
 }
 
 watch(
@@ -182,11 +178,11 @@ defineExpose({ focusRequest });
 			<PermissionCard
 				v-for="request in requests"
 				:key="request.requestId"
-				:ref="(card) => setCardRef(request.requestId, card)"
 				:request="request"
 				:is-focused="request.requestId === focused?.requestId"
 				@focus="focusRequest(request.requestId)"
 				@answer="(answer) => emit('answer', request.requestId, answer)"
+				@handle="(handle) => setCardHandle(request.requestId, handle)"
 			/>
 			<div class="cb-approve__foot">
 				<UButton

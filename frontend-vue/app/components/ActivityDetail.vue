@@ -35,9 +35,11 @@ const OUTPUT_MAX_LINES = 14;
 const RAW_MAX_LINES = 20;
 
 const rowId = computed(() => props.rowData?.id ?? props.rowData?._id);
-// Read with the page: a deep link (`?record=<id>`) renders the entry on the
-// server and hands it over. The drawer opened again shows the entry read
-// before and reads it again, as a pending call may have ended since.
+/**
+ * Read with the page: a deep link (`?record=<id>`) renders the entry on the
+ * server and hands it over. The drawer opened again shows the entry read
+ * before and reads it again, as a pending call may have ended since.
+ */
 const detail = useAiData<ActivityDetailPayload>(() =>
 	rowId.value
 		? `${AI_ROUTES.activity}/${encodeURIComponent(rowId.value)}`

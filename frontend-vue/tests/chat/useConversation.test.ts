@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { ref } from "vue";
 import { useConversation } from "../../app/chat/composables/useConversation";
 import {
 	LOCAL_ERROR_KEYS,
@@ -14,48 +13,22 @@ import {
 	ACTIVITY_KINDS,
 	QUIET_NOTICE_AFTER_MS,
 } from "../../app/chat/constants/run-status";
-import type {
-	RunProgress,
-	ToolCallMessage,
-} from "../../app/chat/types/conversation";
+import type { RunProgress } from "../../app/chat/types/conversation";
 import type { PendingAttachment } from "../../app/chat/utils/attachments";
 import { isAgentQuiet } from "../../app/chat/utils/run-status";
 import { toolRowState } from "../../app/chat/utils/tool-state";
+import { createEventBus, type EventBus } from "./event-bus";
 
 const CONVERSATION_ID = "conv-chat-1";
 const FILE_DATA = "PGh0bWw+PC9odG1sPg==";
 
-interface Harness {
+interface Harness extends EventBus {
 	conversation: ReturnType<typeof useConversation>;
-	sent: Record<string, unknown>[];
-	receive: (event: Record<string, unknown>) => void;
-	setConnected: (isConnected: boolean) => void;
 }
 
 function harness(): Harness {
-	const sent: Record<string, unknown>[] = [];
-	let isConnected = true;
-	let deliver: (msg: unknown) => void = () => {};
-	const conversation = useConversation({
-		activeId: ref(CONVERSATION_ID),
-		send: (msg) => {
-			if (!isConnected) return false;
-			sent.push(msg as Record<string, unknown>);
-			return true;
-		},
-		onMessage: (handler) => {
-			deliver = handler;
-			return () => {};
-		},
-	});
-	return {
-		conversation,
-		sent,
-		receive: (event) => deliver({ conversationId: CONVERSATION_ID, ...event }),
-		setConnected: (value) => {
-			isConnected = value;
-		},
-	};
+	const bus = createEventBus(CONVERSATION_ID);
+	return { ...bus, conversation: useConversation(bus.options) };
 }
 
 function attachment(): PendingAttachment {
@@ -128,7 +101,9 @@ describe("a run that fails reaches the user", () => {
 		});
 		expect(h.conversation.isRunning.value).toBe(true);
 	});
+});
 
+describe("a message that never left or a failure that was stored is kept", () => {
 	it("resends a message that never left, with its file", () => {
 		const h = harness();
 		h.setConnected(false);
@@ -214,7 +189,8 @@ describe("a run that fails reaches the user", () => {
 			],
 		});
 		const [, tool, error] = h.conversation.messages.value;
-		expect(toolRowState(tool as ToolCallMessage, false, null)).toBe("stopped");
+		if (tool.role !== MESSAGE_ROLES.TOOL) throw new Error("no tool call");
+		expect(toolRowState(tool, false, null)).toBe("stopped");
 		expect(error).toMatchObject({
 			role: MESSAGE_ROLES.ERROR,
 			content: "The run was stopped.",

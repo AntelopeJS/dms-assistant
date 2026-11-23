@@ -1,11 +1,16 @@
 import { type Ref, ref, watch } from "vue";
 import { CLIENT_MESSAGE_TYPES } from "../constants/protocol";
-import type { ChangeSetSummary } from "../types/protocol";
+import type { JsonValue } from "../types/json";
+import type {
+	ChangeSetActionMessage,
+	ChangeSetSummary,
+	ClientMessage,
+} from "../types/protocol";
 
 /** What the dashboard's authenticated fetch gives the chat. */
 export interface ChatApi {
 	get: <T>(path: string) => Promise<T>;
-	post: <T>(path: string, body?: unknown) => Promise<T>;
+	post: <T>(path: string, body?: JsonValue) => Promise<T>;
 }
 
 export interface UndoConflict {
@@ -29,7 +34,7 @@ export interface PendingUndo {
 export interface UseChangeSetActionsOptions {
 	activeId: Ref<string>;
 	changeSets: Ref<Record<string, ChangeSetSummary>>;
-	send: (msg: object) => boolean;
+	send: (msg: ClientMessage) => boolean;
 	api: ChatApi | null;
 }
 
@@ -73,13 +78,14 @@ export function useChangeSetActions(
 		action: "undo" | "redo",
 		includeLater = false,
 	): void => {
-		const isSent = options.send({
+		const message: ChangeSetActionMessage = {
 			type: CLIENT_MESSAGE_TYPES.CHANGE_SET_ACTION,
 			conversationId: options.activeId.value,
 			changeSetId,
 			action,
-			...(includeLater ? { includeLater: true } : {}),
-		});
+		};
+		if (includeLater) message.includeLater = true;
+		const isSent = options.send(message);
 		if (!isSent) return;
 		stateAtAction.set(
 			changeSetId,

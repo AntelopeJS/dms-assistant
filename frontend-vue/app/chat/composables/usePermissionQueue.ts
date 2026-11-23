@@ -1,4 +1,5 @@
-import { type Ref, ref } from "vue";
+import { type Ref, ref, shallowRef } from "vue";
+import { z } from "zod";
 import {
 	CLIENT_MESSAGE_TYPES,
 	FEEDBACK_MAX_CHARS,
@@ -11,15 +12,26 @@ import type {
 } from "../types/permission";
 import type {
 	ActiveRule,
-	PermissionKind,
-	PermissionPreview,
-	PermissionRule,
+	ClientMessage,
+	PermissionResponseMessage,
 } from "../types/protocol";
+import { JSON_VALUE_SCHEMA } from "../utils/json";
+import {
+	isForConversation,
+	parseEvent,
+	type WireEnvelope,
+} from "../utils/wire-envelope";
+import {
+	ACTIVE_RULE_SCHEMA,
+	PERMISSION_KIND_SCHEMA,
+	PERMISSION_PREVIEW_SCHEMA,
+	PERMISSION_RULE_SCHEMA,
+} from "../utils/wire-schemas";
 
 export interface UsePermissionQueueOptions {
 	activeId: Ref<string>;
-	send: (msg: object) => boolean;
-	onMessage: (handler: (msg: unknown) => void) => () => void;
+	send: (msg: ClientMessage) => boolean;
+	onMessage: (handler: (msg: WireEnvelope) => void) => () => void;
 }
 
 export interface UsePermissionQueueResult {
@@ -37,36 +49,37 @@ export interface UsePermissionQueueResult {
 	clear: () => void;
 }
 
-interface PermissionRequestWire {
-	conversationId: string;
-	requestId: string;
-	callId?: string;
-	toolName: string;
-	args: unknown;
-	summary: string;
-	kind: PermissionKind;
-	alwaysAsk: boolean;
-	preview: PermissionPreview;
-	ruleOptions: PermissionRule[];
-	createdAtMs: number;
-	expiresAtMs: number;
-}
+const PERMISSION_REQUEST_SCHEMA = z.object({
+	conversationId: z.string(),
+	requestId: z.string(),
+	callId: z.string().optional(),
+	toolName: z.string(),
+	args: JSON_VALUE_SCHEMA.optional(),
+	summary: z.string(),
+	kind: PERMISSION_KIND_SCHEMA,
+	alwaysAsk: z.boolean(),
+	preview: PERMISSION_PREVIEW_SCHEMA,
+	ruleOptions: z.array(PERMISSION_RULE_SCHEMA),
+	createdAtMs: z.number(),
+	expiresAtMs: z.number(),
+});
 
-interface PermissionExpiredWire {
-	conversationId: string;
-	requestId: string;
-	toolName?: string;
-	summary?: string;
-	expiredAtMs?: number;
-}
+const PERMISSION_EXPIRED_SCHEMA = z.object({
+	conversationId: z.string(),
+	requestId: z.string(),
+	toolName: z.string().optional(),
+	summary: z.string().optional(),
+	expiredAtMs: z.number().optional(),
+});
 
-interface RequestIdWire {
-	requestId: string;
-}
+const REQUEST_ID_SCHEMA = z.object({ requestId: z.string() });
 
-interface RulesStateWire {
-	rules?: ActiveRule[];
-}
+const RULES_STATE_SCHEMA = z.object({
+	rules: z.array(ACTIVE_RULE_SCHEMA).optional(),
+});
+
+type PermissionRequestWire = z.infer<typeof PERMISSION_REQUEST_SCHEMA>;
+type PermissionExpiredWire = z.infer<typeof PERMISSION_EXPIRED_SCHEMA>;
 
 interface QueueState {
 	options: UsePermissionQueueOptions;
@@ -75,7 +88,7 @@ interface QueueState {
 	rules: Ref<ActiveRule[]>;
 }
 
-type QueueHandler = (state: QueueState, event: never) => void;
+type QueueHandler = (state: QueueState, envelope: WireEnvelope) => void;
 
 /** A request as the dock reads it: an always-ask one never offers a rule. */
 function toPermissionRequest(
@@ -127,43 +140,58 @@ function expire(state: QueueState, wire: PermissionExpiredWire): void {
 	];
 }
 
-const HANDLERS: Record<string, QueueHandler> = {
-	[SERVER_EVENT_TYPES.PERMISSION_REQUEST]: enqueue,
-	[SERVER_EVENT_TYPES.PERMISSION_EXPIRED]: expire,
-	[SERVER_EVENT_TYPES.PERMISSION_RESOLVED]: (state, event: RequestIdWire) =>
-		without(state, event.requestId),
-	[SERVER_EVENT_TYPES.RULES_STATE]: (state, event: RulesStateWire) => {
-		state.rules.value = event.rules ?? [];
-	},
-};
+function folds<Event>(
+	schema: z.ZodType<Event>,
+	apply: (state: QueueState, event: Event) => void,
+): QueueHandler {
+	return (state, envelope) => {
+		const event = parseEvent(schema, envelope);
+		if (event !== null) apply(state, event);
+	};
+}
 
-function dispatch(state: QueueState, msg: unknown): void {
-	if (msg === null || typeof msg !== "object") return;
-	const event = msg as Record<string, unknown>;
-	const handler = HANDLERS[String(event.type)];
+const HANDLERS: ReadonlyMap<string, QueueHandler> = new Map([
+	[
+		SERVER_EVENT_TYPES.PERMISSION_REQUEST,
+		folds(PERMISSION_REQUEST_SCHEMA, enqueue),
+	],
+	[
+		SERVER_EVENT_TYPES.PERMISSION_EXPIRED,
+		folds(PERMISSION_EXPIRED_SCHEMA, expire),
+	],
+	[
+		SERVER_EVENT_TYPES.PERMISSION_RESOLVED,
+		folds(REQUEST_ID_SCHEMA, (state, event) => without(state, event.requestId)),
+	],
+	[
+		SERVER_EVENT_TYPES.RULES_STATE,
+		folds(RULES_STATE_SCHEMA, (state, event) => {
+			state.rules.value = event.rules ?? [];
+		}),
+	],
+]);
+
+function dispatch(state: QueueState, envelope: WireEnvelope): void {
+	const handler = HANDLERS.get(envelope.type);
 	if (handler === undefined) return;
-	const conversationId = event.conversationId;
-	if (
-		typeof conversationId === "string" &&
-		conversationId !== state.options.activeId.value
-	)
-		return;
-	handler(state, msg as never);
+	if (!isForConversation(envelope, state.options.activeId.value)) return;
+	handler(state, envelope);
 }
 
 function answerMessage(
 	req: PermissionRequestData,
 	answer: PermissionAnswer,
-): object {
-	const feedback = answer.feedback?.trim().slice(0, FEEDBACK_MAX_CHARS);
-	return {
+): PermissionResponseMessage {
+	const message: PermissionResponseMessage = {
 		type: CLIENT_MESSAGE_TYPES.PERMISSION_RESPONSE,
 		conversationId: req.conversationId,
 		requestId: req.requestId,
 		decision: answer.decision,
-		...(answer.rule === undefined ? {} : { rule: answer.rule }),
-		...(feedback ? { feedback } : {}),
 	};
+	if (answer.rule !== undefined) message.rule = answer.rule;
+	const feedback = answer.feedback?.trim().slice(0, FEEDBACK_MAX_CHARS);
+	if (feedback) message.feedback = feedback;
+	return message;
 }
 
 function respond(
@@ -209,7 +237,7 @@ export function usePermissionQueue(
 ): UsePermissionQueueResult {
 	const state: QueueState = {
 		options,
-		queue: ref<PermissionRequestData[]>([]),
+		queue: shallowRef<PermissionRequestData[]>([]),
 		expired: ref<ExpiredRequest[]>([]),
 		rules: ref<ActiveRule[]>([]),
 	};

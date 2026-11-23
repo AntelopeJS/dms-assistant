@@ -1,3 +1,4 @@
+import type { JsonValue } from "./json";
 import type {
 	PermissionKind,
 	PermissionPreview,
@@ -10,7 +11,7 @@ export interface PermissionRequestData {
 	conversationId: string;
 	callId?: string;
 	toolName: string;
-	args: unknown;
+	args?: JsonValue;
 	summary: string;
 	kind: PermissionKind;
 	alwaysAsk: boolean;
@@ -18,6 +19,12 @@ export interface PermissionRequestData {
 	ruleOptions: PermissionRule[];
 	createdAtMs: number;
 	expiresAtMs: number;
+}
+
+/** What a card lets the dock do for the request it shows. */
+export interface CardHandle {
+	allow: () => void;
+	deny: () => void;
 }
 
 /** A request the sidecar denied for want of an answer, kept until dismissed. */

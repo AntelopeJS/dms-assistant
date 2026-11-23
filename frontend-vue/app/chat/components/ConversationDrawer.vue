@@ -61,7 +61,7 @@ function time(item: ConversationSummary): string {
 	);
 }
 
-// Files still changed first; a chat whose changes were all undone says so.
+/** Files still changed first; a chat whose changes were all undone says so. */
 function changesLabel(files: number, undone: number): string {
 	if (files > 0)
 		return t("dms_assistant.panel.drawer.files", { count: files }, files);

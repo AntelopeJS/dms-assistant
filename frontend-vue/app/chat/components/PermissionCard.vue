@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
 import { FEEDBACK_MAX_CHARS } from "../constants/protocol";
 import type {
+	CardHandle,
 	PermissionAnswer,
 	PermissionRequestData,
 } from "../types/permission";
@@ -25,6 +26,8 @@ interface Props {
 interface Emits {
 	answer: [answer: PermissionAnswer];
 	focus: [];
+	/** The card's handle once it is shown, `null` once it is gone. */
+	handle: [handle: CardHandle | null];
 }
 
 const props = defineProps<Props>();
@@ -96,7 +99,8 @@ function sendSuggestion(): void {
 	emit("answer", { decision: "deny", feedback: value });
 }
 
-defineExpose({ allow, deny });
+onMounted(() => emit("handle", { allow, deny }));
+onBeforeUnmount(() => emit("handle", null));
 </script>
 
 <template>

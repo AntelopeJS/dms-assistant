@@ -48,15 +48,6 @@ interface PlanItem {
 
 export type RenderItem = SeparatorItem | MessageItem | ToolsItem | PlanItem;
 
-const KIND_BY_ROLE: Record<string, MessageItem["kind"]> = {
-	[MESSAGE_ROLES.USER]: "user",
-	[MESSAGE_ROLES.ASSISTANT]: "assistant",
-	[MESSAGE_ROLES.ERROR]: "error",
-	[MESSAGE_ROLES.NOTICE]: "notice",
-	[MESSAGE_ROLES.CHANGE_SET]: "change",
-	[MESSAGE_ROLES.QUESTION_ANSWER]: "answers",
-};
-
 function startOfDay(ms: number): number {
 	const date = new Date(ms);
 	date.setHours(0, 0, 0, 0);
@@ -90,6 +81,26 @@ function markDay(builder: Builder, message: ConversationMessage): void {
 	builder.out.push({ kind: "separator", key: `day-${day}`, dayMs: day });
 }
 
+/** The item a message is drawn as; a tool call is drawn in a cluster instead. */
+function messageItem(message: ConversationMessage): MessageItem | null {
+	switch (message.role) {
+		case MESSAGE_ROLES.USER:
+			return { kind: "user", key: message.id, message };
+		case MESSAGE_ROLES.ASSISTANT:
+			return { kind: "assistant", key: message.id, message };
+		case MESSAGE_ROLES.ERROR:
+			return { kind: "error", key: message.id, message };
+		case MESSAGE_ROLES.NOTICE:
+			return { kind: "notice", key: message.id, message };
+		case MESSAGE_ROLES.CHANGE_SET:
+			return { kind: "change", key: message.id, message };
+		case MESSAGE_ROLES.QUESTION_ANSWER:
+			return { kind: "answers", key: message.id, message };
+		default:
+			return null;
+	}
+}
+
 function place(builder: Builder, message: ConversationMessage): void {
 	if (isTodoWrite(message)) return;
 	if (message.role === MESSAGE_ROLES.TOOL && !isPlan(message)) {
@@ -101,11 +112,8 @@ function place(builder: Builder, message: ConversationMessage): void {
 		builder.out.push({ kind: "plan", key: message.id, tool: message });
 		return;
 	}
-	builder.out.push({
-		kind: KIND_BY_ROLE[message.role],
-		key: message.id,
-		message,
-	} as MessageItem);
+	const item = messageItem(message);
+	if (item !== null) builder.out.push(item);
 }
 
 /**

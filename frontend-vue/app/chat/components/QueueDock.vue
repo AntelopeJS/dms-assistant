@@ -18,7 +18,10 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { t } = useChatI18n();
 
-const MOVE_KEYS: Record<string, number> = { ArrowUp: -1, ArrowDown: 1 };
+const MOVE_KEYS: ReadonlyMap<string, number> = new Map([
+	["ArrowUp", -1],
+	["ArrowDown", 1],
+]);
 
 const editingId = ref<string | null>(null);
 const draft = ref("");
@@ -55,7 +58,7 @@ function onHandleKeydown(
 	index: number,
 	id: string,
 ): void {
-	const step = MOVE_KEYS[event.key];
+	const step = MOVE_KEYS.get(event.key);
 	if (step === undefined) return;
 	event.preventDefault();
 	const target = index + step;

@@ -12,14 +12,18 @@ import { describeTool, toolVerb } from "./tool-lexicon";
 
 const DETAIL_SEPARATOR = " · ";
 
-const KNOWN_ACTIVITIES: readonly string[] = Object.values(ACTIVITY_KINDS);
+const ACTIVITY_BY_NAME: ReadonlyMap<string, ActivityKind> = new Map(
+	Object.values(ACTIVITY_KINDS).map((kind): [string, ActivityKind] => [
+		kind,
+		kind,
+	]),
+);
 
 export { formatClock } from "./format";
 
 /** A reported activity, read as thinking when this chat does not know it. */
 export function toActivityKind(reported: string): ActivityKind {
-	if (!KNOWN_ACTIVITIES.includes(reported)) return ACTIVITY_KINDS.THINKING;
-	return reported as ActivityKind;
+	return ACTIVITY_BY_NAME.get(reported) ?? ACTIVITY_KINDS.THINKING;
 }
 
 function describeDetail(

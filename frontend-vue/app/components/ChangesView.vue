@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { z } from "zod";
 import { useDmsRoute } from "#dms/frontend-module";
 import ChangeSetPanel from "../views/ChangeSetPanel.vue";
 import UnavailableState from "../views/UnavailableState.vue";
@@ -33,11 +34,8 @@ const route = useDmsRoute();
 const scope = ref<ScopeFilter>("all");
 const search = ref("");
 
-function listQuery(offset: number): Record<string, string | number> {
-	const query: Record<string, string | number> = {
-		offset,
-		limit: CHANGES_PAGE_SIZE,
-	};
+function listQuery(offset: number) {
+	const query = { offset, limit: CHANGES_PAGE_SIZE };
 	if (scope.value === "all") return query;
 	return { ...query, scope: scope.value, filter_scope: `is:${scope.value}` };
 }
@@ -49,10 +47,12 @@ function loadedCount(pages: ChangesPage[]): number {
 	return pages.reduce((count, page) => count + page.results.length, 0);
 }
 
-// The status and the list's first page are read with the page: a server
-// render shows them, and the selected set's panel, at once. "Load more"
-// appends a page under the scope's key; the page's refreshes read every
-// page loaded again.
+/**
+ * The status and the list's first page are read with the page: a server
+ * render shows them, and the selected set's panel, at once. "Load more"
+ * appends a page under the scope's key; the page's refreshes read every
+ * page loaded again.
+ */
 const status = useAiData<AssistantStatus>(AI_ROUTES.status);
 const list = useAiPagedData<ChangesPage, number>(
 	() => `dms-assistant:changes:${scope.value}`,
@@ -73,9 +73,11 @@ const changeSets = computed(() =>
 );
 const total = computed(() => list.pages.value.at(-1)?.total ?? 0);
 
+const ROUTE_SET_ID_SCHEMA = z.string().min(1);
+
 function selectedFromRoute(): string | undefined {
-	const id = route.query[CHANGE_SET_QUERY_KEY];
-	return typeof id === "string" && id ? id : undefined;
+	const id = ROUTE_SET_ID_SCHEMA.safeParse(route.query[CHANGE_SET_QUERY_KEY]);
+	return id.success ? id.data : undefined;
 }
 
 /** The set picked here or named by the URL (`?set=`); the first one until then. */

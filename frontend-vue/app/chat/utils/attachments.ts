@@ -1,8 +1,14 @@
+import { z } from "zod";
 import {
 	INLINE_IMAGE_MIME_TYPES,
 	MAX_ATTACHMENT_BYTES,
 } from "../constants/attachments";
 import { newUuid } from "./ids";
+
+const INLINE_IMAGE_MIME_TYPE_SET: ReadonlySet<string> = new Set(
+	INLINE_IMAGE_MIME_TYPES,
+);
+const DATA_URL_SCHEMA = z.string();
 
 /**
  * A file the user has staged in the composer. `data` is the base64 payload (no
@@ -19,7 +25,7 @@ export interface PendingAttachment {
 }
 
 export function isInlineImage(mimeType: string): boolean {
-	return (INLINE_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType);
+	return INLINE_IMAGE_MIME_TYPE_SET.has(mimeType);
 }
 
 export function formatBytes(size: number): string {
@@ -47,7 +53,12 @@ export function readFileAsAttachment(file: File): Promise<PendingAttachment> {
 		const reader = new FileReader();
 		reader.onerror = () => reject(reader.error ?? new Error("read failed"));
 		reader.onload = () => {
-			const dataUrl = String(reader.result);
+			const parsed = DATA_URL_SCHEMA.safeParse(reader.result);
+			if (!parsed.success) {
+				reject(new Error("read failed"));
+				return;
+			}
+			const dataUrl = parsed.data;
 			resolve({
 				id: newUuid(),
 				name: file.name,

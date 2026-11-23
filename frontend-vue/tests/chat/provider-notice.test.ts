@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview The notice shown when the agent cannot run.
+ * @vitest-environment jsdom
+ */
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import ProviderNotice from "../../app/chat/components/ProviderNotice.vue";
@@ -14,7 +17,7 @@ function noticeText(code?: "codex_not_signed_in"): string {
 	return mount(ProviderNotice, {
 		props: { agentName: "Codex", reason: ENGLISH_REASON, code },
 		global: {
-			provide: { [CHAT_I18N_KEY as symbol]: createTestI18n(fr) },
+			plugins: [(app) => app.provide(CHAT_I18N_KEY, createTestI18n(fr))],
 			stubs: PANEL_STUBS,
 		},
 	}).text();

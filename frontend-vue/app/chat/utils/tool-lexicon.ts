@@ -1,10 +1,12 @@
 /**
- * The chat's tool lexicon: every tool the agents call (Claude built-ins, the
- * Codex items the sidecar maps onto them, dms-assistant's MCP tools and the
- * Builder's) as a translated verb, an icon and a target read from its
- * arguments, so a row reads "Add block · Top customers · TopListCard" rather
- * than a tool name and a JSON blob.
+ * @fileoverview The chat's tool lexicon: every tool the agents call (Claude
+ * built-ins, the Codex items the sidecar maps onto them, dms-assistant's MCP
+ * tools and the Builder's) as a translated verb, an icon and a target read
+ * from its arguments, so a row reads "Add block · Top customers · TopListCard"
+ * rather than a tool name and a JSON blob.
  */
+import { z } from "zod";
+import type { JsonObject, JsonValue } from "../types/json";
 
 const MCP_PREFIX = /^mcp__[^_]+(?:_[^_]+)*?__/;
 const WORD_BOUNDARY = /([a-z0-9])([A-Z])/g;
@@ -16,7 +18,7 @@ const PATH_SEPARATOR = "/";
 const DEFAULT_ICON = "i-ph-wrench";
 
 /** Where a tool's target comes from in its arguments. */
-type TargetReader = (args: Record<string, unknown>) => string;
+type TargetReader = (args: JsonObject) => string;
 
 interface ToolLexiconEntry {
 	/** Key under `dms_assistant.tools.*`. */
@@ -37,11 +39,29 @@ export interface ToolDescription {
 	isReadOnly: boolean;
 }
 
-function readString(args: Record<string, unknown>, key: string): string {
-	const value = args[key];
-	if (typeof value === "string") return value.trim();
-	if (typeof value === "number") return String(value);
-	return "";
+const ARGUMENTS_SCHEMA: z.ZodType<JsonObject> = z.record(z.string(), z.json());
+const TEXT_SCHEMA = z.string();
+const TEXT_OR_NUMBER_SCHEMA = z.union([z.string(), z.number()]);
+
+/** The arguments a call carries: an empty set when they are not an object. */
+function argumentsOf(value: JsonValue | undefined): JsonObject {
+	const parsed = ARGUMENTS_SCHEMA.safeParse(value);
+	return parsed.success ? parsed.data : {};
+}
+
+/** An argument of its own, never one the object inherits. */
+function memberOf(args: JsonObject, key: string): JsonValue | undefined {
+	return Object.hasOwn(args, key) ? args[key] : undefined;
+}
+
+function textOf(value: JsonValue | undefined): string | null {
+	const parsed = TEXT_SCHEMA.safeParse(value);
+	return parsed.success ? parsed.data : null;
+}
+
+function readString(args: JsonObject, key: string): string {
+	const parsed = TEXT_OR_NUMBER_SCHEMA.safeParse(memberOf(args, key));
+	return parsed.success ? String(parsed.data).trim() : "";
 }
 
 function firstOf(...keys: string[]): TargetReader {
@@ -89,17 +109,13 @@ function hostOf(key: string): TargetReader {
 
 function countOf(key: string): TargetReader {
 	return (args) => {
-		const value = args[key];
+		const value = memberOf(args, key);
 		return Array.isArray(value) ? String(value.length) : "";
 	};
 }
 
 function nested(key: string, inner: string): TargetReader {
-	return (args) => {
-		const value = args[key];
-		if (value === null || typeof value !== "object") return "";
-		return readString(value as Record<string, unknown>, inner);
-	};
+	return (args) => readString(argumentsOf(memberOf(args, key)), inner);
 }
 
 const none: TargetReader = () => "";
@@ -142,402 +158,239 @@ const ICONS = {
 	CATEGORY: "i-ph-folders",
 } as const;
 
-const CLAUDE_TOOLS: Record<string, ToolLexiconEntry> = {
-	Read: {
-		verb: "read_file",
-		icon: ICONS.READ,
-		target: fileOf("file_path"),
-		isReadOnly: true,
-	},
-	Write: { verb: "write_file", icon: ICONS.EDIT, target: fileOf("file_path") },
-	Edit: { verb: "edit_file", icon: ICONS.EDIT, target: fileOf("file_path") },
-	MultiEdit: {
-		verb: "edit_file",
-		icon: ICONS.EDIT,
-		target: fileOf("file_path"),
-	},
-	NotebookEdit: {
-		verb: "edit_notebook",
-		icon: ICONS.EDIT,
-		target: fileOf("notebook_path"),
-	},
-	Bash: {
-		verb: "run_command",
-		icon: ICONS.COMMAND,
-		target: firstOf("command"),
-	},
-	BashOutput: {
-		verb: "read_output",
-		icon: ICONS.COMMAND,
-		target: firstOf("bash_id"),
-		isReadOnly: true,
-	},
-	KillShell: {
-		verb: "stop_command",
-		icon: ICONS.COMMAND,
-		target: firstOf("shell_id"),
-	},
-	KillBash: {
-		verb: "stop_command",
-		icon: ICONS.COMMAND,
-		target: firstOf("shell_id"),
-	},
-	Glob: {
-		verb: "find_files",
-		icon: ICONS.SEARCH,
-		target: firstOf("pattern"),
-		isReadOnly: true,
-	},
-	Grep: {
-		verb: "search_code",
-		icon: ICONS.SEARCH,
-		target: quoted("pattern"),
-		isReadOnly: true,
-	},
-	LS: {
-		verb: "list_folder",
-		icon: ICONS.FOLDER,
-		target: firstOf("path"),
-		isReadOnly: true,
-	},
-	WebFetch: { verb: "fetch_url", icon: ICONS.WEB, target: hostOf("url") },
-	WebSearch: {
-		verb: "search_web",
-		icon: ICONS.WEB,
-		target: quoted("query"),
-		isReadOnly: true,
-	},
-	TodoWrite: {
-		verb: "update_steps",
-		icon: ICONS.STEPS,
-		target: countOf("todos"),
-		isReadOnly: true,
-	},
-	Task: {
-		verb: "delegate",
-		icon: ICONS.DELEGATE,
-		target: firstOf("description"),
-	},
-	Agent: {
-		verb: "delegate",
-		icon: ICONS.DELEGATE,
-		target: firstOf("description"),
-	},
-	ExitPlanMode: {
-		verb: "propose_plan",
-		icon: ICONS.PLAN,
-		target: none,
-		isReadOnly: true,
-	},
-	AskUserQuestion: {
-		verb: "ask_you",
-		icon: ICONS.ASK,
-		target: countOf("questions"),
-		isReadOnly: true,
-	},
-	Skill: {
-		verb: "use_skill",
-		icon: ICONS.SKILL,
-		target: firstOf("skill", "command"),
-		isReadOnly: true,
-	},
-	SlashCommand: {
-		verb: "run_slash_command",
-		icon: ICONS.SKILL,
-		target: firstOf("command"),
-	},
-	ToolSearch: {
-		verb: "search_tools",
-		icon: ICONS.SEARCH,
-		target: toolQuery,
-		isReadOnly: true,
-	},
+/** A tool that only reads: it never changes the project. */
+function readOnly(
+	verb: string,
+	icon: string,
+	target: TargetReader,
+): ToolLexiconEntry {
+	return { verb, icon, target, isReadOnly: true };
+}
+
+/** A tool that changes the project, or may. */
+function changing(
+	verb: string,
+	icon: string,
+	target: TargetReader,
+): ToolLexiconEntry {
+	return { verb, icon, target };
+}
+
+const CLAUDE_TOOLS = {
+	Read: readOnly("read_file", ICONS.READ, fileOf("file_path")),
+	Write: changing("write_file", ICONS.EDIT, fileOf("file_path")),
+	Edit: changing("edit_file", ICONS.EDIT, fileOf("file_path")),
+	MultiEdit: changing("edit_file", ICONS.EDIT, fileOf("file_path")),
+	NotebookEdit: changing("edit_notebook", ICONS.EDIT, fileOf("notebook_path")),
+	Bash: changing("run_command", ICONS.COMMAND, firstOf("command")),
+	BashOutput: readOnly("read_output", ICONS.COMMAND, firstOf("bash_id")),
+	KillShell: changing("stop_command", ICONS.COMMAND, firstOf("shell_id")),
+	KillBash: changing("stop_command", ICONS.COMMAND, firstOf("shell_id")),
+	Glob: readOnly("find_files", ICONS.SEARCH, firstOf("pattern")),
+	Grep: readOnly("search_code", ICONS.SEARCH, quoted("pattern")),
+	LS: readOnly("list_folder", ICONS.FOLDER, firstOf("path")),
+	WebFetch: changing("fetch_url", ICONS.WEB, hostOf("url")),
+	WebSearch: readOnly("search_web", ICONS.WEB, quoted("query")),
+	TodoWrite: readOnly("update_steps", ICONS.STEPS, countOf("todos")),
+	Task: changing("delegate", ICONS.DELEGATE, firstOf("description")),
+	Agent: changing("delegate", ICONS.DELEGATE, firstOf("description")),
+	ExitPlanMode: readOnly("propose_plan", ICONS.PLAN, none),
+	AskUserQuestion: readOnly("ask_you", ICONS.ASK, countOf("questions")),
+	Skill: readOnly("use_skill", ICONS.SKILL, firstOf("skill", "command")),
+	SlashCommand: changing("run_slash_command", ICONS.SKILL, firstOf("command")),
+	ToolSearch: readOnly("search_tools", ICONS.SEARCH, toolQuery),
 };
 
-const ASSISTANT_TOOLS: Record<string, ToolLexiconEntry> = {
-	get_current_page: {
-		verb: "read_current_page",
-		icon: ICONS.BROWSER,
-		target: none,
-		isReadOnly: true,
-	},
-	navigate_to_page: {
-		verb: "open_page",
-		icon: ICONS.OPEN,
-		target: firstOf("path"),
-		isReadOnly: true,
-	},
-	find_pages_using: {
-		verb: "find_pages",
-		icon: ICONS.SEARCH,
-		target: firstOf("component", "query", "name"),
-		isReadOnly: true,
-	},
-	list_pages: {
-		verb: "list_pages",
-		icon: ICONS.PAGE,
-		target: none,
-		isReadOnly: true,
-	},
-	ask_user: {
-		verb: "ask_you",
-		icon: ICONS.ASK,
-		target: countOf("questions"),
-		isReadOnly: true,
-	},
-	typecheck: {
-		verb: "typecheck",
-		icon: ICONS.CHECK,
-		target: none,
-		isReadOnly: true,
-	},
-	query_logs: {
-		verb: "read_logs",
-		icon: ICONS.LOGS,
-		target: firstOf("query", "search", "level"),
-		isReadOnly: true,
-	},
-	database_connections: {
-		verb: "list_databases",
-		icon: ICONS.DATA,
-		target: none,
-		isReadOnly: true,
-	},
-	database_relations: {
-		verb: "list_relations",
-		icon: ICONS.DATA,
-		target: firstOf("connection"),
-		isReadOnly: true,
-	},
-	database_describe: {
-		verb: "describe_relations",
-		icon: ICONS.TABLE,
-		target: countOf("relations"),
-		isReadOnly: true,
-	},
-	database_project: {
-		verb: "read_database_setup",
-		icon: ICONS.DATA,
-		target: firstOf("connection", "engine"),
-		isReadOnly: true,
-	},
-	mockup_read_spec: {
-		verb: "read_mockup",
-		icon: ICONS.PAGE,
-		target: firstOf("mockup"),
-		isReadOnly: true,
-	},
-	database_profile: {
-		verb: "profile_relation",
-		icon: ICONS.TABLE,
-		target: firstOf("relation", "connection"),
-		isReadOnly: true,
-	},
+const ASSISTANT_TOOLS = {
+	get_current_page: readOnly("read_current_page", ICONS.BROWSER, none),
+	navigate_to_page: readOnly("open_page", ICONS.OPEN, firstOf("path")),
+	find_pages_using: readOnly(
+		"find_pages",
+		ICONS.SEARCH,
+		firstOf("component", "query", "name"),
+	),
+	list_pages: readOnly("list_pages", ICONS.PAGE, none),
+	ask_user: readOnly("ask_you", ICONS.ASK, countOf("questions")),
+	typecheck: readOnly("typecheck", ICONS.CHECK, none),
+	query_logs: readOnly(
+		"read_logs",
+		ICONS.LOGS,
+		firstOf("query", "search", "level"),
+	),
+	database_connections: readOnly("list_databases", ICONS.DATA, none),
+	database_relations: readOnly(
+		"list_relations",
+		ICONS.DATA,
+		firstOf("connection"),
+	),
+	database_describe: readOnly(
+		"describe_relations",
+		ICONS.TABLE,
+		countOf("relations"),
+	),
+	database_project: readOnly(
+		"read_database_setup",
+		ICONS.DATA,
+		firstOf("connection", "engine"),
+	),
+	mockup_read_spec: readOnly("read_mockup", ICONS.PAGE, firstOf("mockup")),
+	database_profile: readOnly(
+		"profile_relation",
+		ICONS.TABLE,
+		firstOf("relation", "connection"),
+	),
 };
 
-const BUILDER_TOOLS: Record<string, ToolLexiconEntry> = {
-	builder_catalog: {
-		verb: "browse_blocks",
-		icon: ICONS.BLOCK,
-		target: none,
-		isReadOnly: true,
-	},
-	builder_list_pages: {
-		verb: "list_pages",
-		icon: ICONS.PAGE,
-		target: none,
-		isReadOnly: true,
-	},
-	builder_page_structure: {
-		verb: "read_page",
-		icon: ICONS.PAGE,
-		target: firstOf("pageRef"),
-		isReadOnly: true,
-	},
-	builder_create_page: {
-		verb: "create_page",
-		icon: ICONS.CREATE_PAGE,
-		target: firstOf("displayName", "name"),
-	},
-	builder_configure_page: {
-		verb: "configure_page",
-		icon: ICONS.PAGE,
-		target: firstOf("pageRef"),
-	},
-	builder_delete_page: {
-		verb: "delete_page",
-		icon: ICONS.DELETE,
-		target: firstOf("pageRef"),
-	},
-	builder_add_block: {
-		verb: "add_block",
-		icon: ICONS.BLOCK,
-		target: joined(firstOf("name"), firstOf("type")),
-	},
-	builder_configure_block: {
-		verb: "configure_block",
-		icon: ICONS.BLOCK,
-		target: firstOf("path"),
-	},
-	builder_compose_page: {
-		verb: "compose_page",
-		icon: ICONS.BLOCK,
-		target: firstOf("pageRef"),
-	},
-	builder_configure_table_view: {
-		verb: "configure_table_view",
-		icon: ICONS.BLOCK,
-		target: firstOf("pageRef"),
-	},
-	builder_move_block: {
-		verb: "move_block",
-		icon: ICONS.BLOCK,
-		target: firstOf("path"),
-	},
-	builder_remove_block: {
-		verb: "remove_block",
-		icon: ICONS.BLOCK,
-		target: firstOf("path"),
-	},
-	builder_create_category: {
-		verb: "create_category",
-		icon: ICONS.CATEGORY,
-		target: firstOf("displayName", "name"),
-	},
-	builder_configure_category: {
-		verb: "configure_category",
-		icon: ICONS.CATEGORY,
-		target: firstOf("ref"),
-	},
-	builder_delete_category: {
-		verb: "delete_category",
-		icon: ICONS.DELETE,
-		target: firstOf("ref"),
-	},
-	builder_refresh: {
-		verb: "refresh_builder",
-		icon: ICONS.REFRESH,
-		target: firstOf("pageRef"),
-		isReadOnly: true,
-	},
-	builder_list_resources: {
-		verb: "list_tables",
-		icon: ICONS.TABLE,
-		target: none,
-		isReadOnly: true,
-	},
-	builder_resource_structure: {
-		verb: "read_table",
-		icon: ICONS.TABLE,
-		target: firstOf("ref"),
-		isReadOnly: true,
-	},
-	builder_configure_project: {
-		verb: "configure_project",
-		icon: ICONS.DATA,
-		target: none,
-	},
-	builder_map_resources: {
-		verb: "map_tables",
-		icon: ICONS.TABLE,
-		target: firstOf("connection", "module"),
-	},
-	builder_mapping: {
-		verb: "read_mapping",
-		icon: ICONS.TABLE,
-		target: firstOf("connection", "module"),
-		isReadOnly: true,
-	},
-	builder_analyse_database: {
-		verb: "analyse_database",
-		icon: ICONS.TABLE,
-		target: firstOf("connection", "job"),
-		isReadOnly: true,
-	},
-	builder_create_resource: {
-		verb: "create_table",
-		icon: ICONS.TABLE,
-		target: firstOf("displayName", "name"),
-	},
-	builder_delete_resource: {
-		verb: "delete_table",
-		icon: ICONS.DELETE,
-		target: firstOf("ref"),
-	},
-	builder_add_field: {
-		verb: "add_field",
-		icon: ICONS.FIELD,
-		target: joined(firstOf("ref"), nested("field", "name")),
-	},
-	builder_configure_field: {
-		verb: "configure_field",
-		icon: ICONS.FIELD,
-		target: firstOf("path"),
-	},
-	builder_configure_column_groups: {
-		verb: "configure_column_groups",
-		icon: ICONS.FIELD,
-		target: firstOf("resource"),
-	},
-	mockup_apply_to_page: {
-		verb: "apply_mockup",
-		icon: ICONS.PAGE,
-		target: firstOf("mockup", "page"),
-	},
-	builder_remove_field: {
-		verb: "remove_field",
-		icon: ICONS.FIELD,
-		target: firstOf("path"),
-	},
-	builder_query_templates: {
-		verb: "browse_queries",
-		icon: ICONS.DATA,
-		target: firstOf("resourceType"),
-		isReadOnly: true,
-	},
-	builder_add_query: {
-		verb: "add_query",
-		icon: ICONS.DATA,
-		target: firstOf("name"),
-	},
-	builder_preview_query: {
-		verb: "preview_query",
-		icon: ICONS.DATA,
-		target: firstOf("name"),
-		isReadOnly: true,
-	},
-	builder_configure_query: {
-		verb: "configure_query",
-		icon: ICONS.DATA,
-		target: firstOf("path", "name"),
-	},
-	builder_remove_query: {
-		verb: "remove_query",
-		icon: ICONS.DATA,
-		target: firstOf("path", "name"),
-	},
+const BUILDER_TOOLS = {
+	builder_catalog: readOnly("browse_blocks", ICONS.BLOCK, none),
+	builder_list_pages: readOnly("list_pages", ICONS.PAGE, none),
+	builder_page_structure: readOnly("read_page", ICONS.PAGE, firstOf("pageRef")),
+	builder_create_page: changing(
+		"create_page",
+		ICONS.CREATE_PAGE,
+		firstOf("displayName", "name"),
+	),
+	builder_configure_page: changing(
+		"configure_page",
+		ICONS.PAGE,
+		firstOf("pageRef"),
+	),
+	builder_delete_page: changing(
+		"delete_page",
+		ICONS.DELETE,
+		firstOf("pageRef"),
+	),
+	builder_add_block: changing(
+		"add_block",
+		ICONS.BLOCK,
+		joined(firstOf("name"), firstOf("type")),
+	),
+	builder_configure_block: changing(
+		"configure_block",
+		ICONS.BLOCK,
+		firstOf("path"),
+	),
+	builder_compose_page: changing(
+		"compose_page",
+		ICONS.BLOCK,
+		firstOf("pageRef"),
+	),
+	builder_configure_table_view: changing(
+		"configure_table_view",
+		ICONS.BLOCK,
+		firstOf("pageRef"),
+	),
+	builder_move_block: changing("move_block", ICONS.BLOCK, firstOf("path")),
+	builder_remove_block: changing("remove_block", ICONS.BLOCK, firstOf("path")),
+	builder_create_category: changing(
+		"create_category",
+		ICONS.CATEGORY,
+		firstOf("displayName", "name"),
+	),
+	builder_configure_category: changing(
+		"configure_category",
+		ICONS.CATEGORY,
+		firstOf("ref"),
+	),
+	builder_delete_category: changing(
+		"delete_category",
+		ICONS.DELETE,
+		firstOf("ref"),
+	),
+	builder_refresh: readOnly(
+		"refresh_builder",
+		ICONS.REFRESH,
+		firstOf("pageRef"),
+	),
+	builder_list_resources: readOnly("list_tables", ICONS.TABLE, none),
+	builder_resource_structure: readOnly(
+		"read_table",
+		ICONS.TABLE,
+		firstOf("ref"),
+	),
+	builder_configure_project: changing("configure_project", ICONS.DATA, none),
+	builder_map_resources: changing(
+		"map_tables",
+		ICONS.TABLE,
+		firstOf("connection", "module"),
+	),
+	builder_mapping: readOnly(
+		"read_mapping",
+		ICONS.TABLE,
+		firstOf("connection", "module"),
+	),
+	builder_analyse_database: readOnly(
+		"analyse_database",
+		ICONS.TABLE,
+		firstOf("connection", "job"),
+	),
+	builder_create_resource: changing(
+		"create_table",
+		ICONS.TABLE,
+		firstOf("displayName", "name"),
+	),
+	builder_delete_resource: changing(
+		"delete_table",
+		ICONS.DELETE,
+		firstOf("ref"),
+	),
+	builder_add_field: changing(
+		"add_field",
+		ICONS.FIELD,
+		joined(firstOf("ref"), nested("field", "name")),
+	),
+	builder_configure_field: changing(
+		"configure_field",
+		ICONS.FIELD,
+		firstOf("path"),
+	),
+	builder_configure_column_groups: changing(
+		"configure_column_groups",
+		ICONS.FIELD,
+		firstOf("resource"),
+	),
+	mockup_apply_to_page: changing(
+		"apply_mockup",
+		ICONS.PAGE,
+		firstOf("mockup", "page"),
+	),
+	builder_remove_field: changing("remove_field", ICONS.FIELD, firstOf("path")),
+	builder_query_templates: readOnly(
+		"browse_queries",
+		ICONS.DATA,
+		firstOf("resourceType"),
+	),
+	builder_add_query: changing("add_query", ICONS.DATA, firstOf("name")),
+	builder_preview_query: readOnly("preview_query", ICONS.DATA, firstOf("name")),
+	builder_configure_query: changing(
+		"configure_query",
+		ICONS.DATA,
+		firstOf("path", "name"),
+	),
+	builder_remove_query: changing(
+		"remove_query",
+		ICONS.DATA,
+		firstOf("path", "name"),
+	),
 };
 
 /** Tools of the DMS's own development MCP server. */
-const DMS_TOOLS: Record<string, ToolLexiconEntry> = {
-	page_verify: {
-		verb: "verify_page",
-		icon: ICONS.CHECK,
-		target: firstOf("page"),
-		isReadOnly: true,
-	},
+const DMS_TOOLS = {
+	page_verify: readOnly("verify_page", ICONS.CHECK, firstOf("page")),
 };
 
-const LEXICON: Record<string, ToolLexiconEntry> = {
-	...CLAUDE_TOOLS,
-	...ASSISTANT_TOOLS,
-	...BUILDER_TOOLS,
-	...DMS_TOOLS,
-};
+const LEXICON: ReadonlyMap<string, ToolLexiconEntry> = new Map(
+	Object.entries({
+		...CLAUDE_TOOLS,
+		...ASSISTANT_TOOLS,
+		...BUILDER_TOOLS,
+		...DMS_TOOLS,
+	}),
+);
 
 /** Every verb key the lexicon uses, so the locale files can be checked. */
 export const TOOL_VERB_KEYS: readonly string[] = [
-	...new Set(Object.values(LEXICON).map((entry) => entry.verb)),
+	...new Set([...LEXICON.values()].map((entry) => entry.verb)),
 ];
 
 /** The tool's own name, without the `mcp__<server>__` an MCP tool carries. */
@@ -554,12 +407,6 @@ export function readableToolName(toolName: string): string {
 		.toLowerCase();
 	if (words === "") return toolName;
 	return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
-}
-
-function asRecord(args: unknown): Record<string, unknown> {
-	if (args === null || typeof args !== "object" || Array.isArray(args))
-		return {};
-	return args as Record<string, unknown>;
 }
 
 function shorten(value: string): string {
@@ -581,10 +428,12 @@ const GENERIC_TARGET = firstOf(
 );
 
 /** What a call does and to what, in the lexicon's words. */
-export function describeTool(toolName: string, args: unknown): ToolDescription {
-	const entry = LEXICON[bareToolName(toolName)];
-	const record = asRecord(args);
-	const target = shorten((entry?.target ?? GENERIC_TARGET)(record));
+export function describeTool(
+	toolName: string,
+	args: JsonValue | undefined,
+): ToolDescription {
+	const entry = LEXICON.get(bareToolName(toolName));
+	const target = shorten((entry?.target ?? GENERIC_TARGET)(argumentsOf(args)));
 	return {
 		verbKey: entry?.verb ?? null,
 		fallbackVerb: readableToolName(toolName),
@@ -611,18 +460,13 @@ export interface NamedArgument {
 
 const MAX_ARGUMENT_CHARS = 240;
 
-function formatArgument(value: unknown): string {
-	if (typeof value === "string") return value;
-	try {
-		return JSON.stringify(value) ?? String(value);
-	} catch {
-		return String(value);
-	}
+function formatArgument(value: JsonValue): string {
+	return textOf(value) ?? JSON.stringify(value);
 }
 
 /** The call's arguments by name, each value on one readable line. */
-export function namedArguments(args: unknown): NamedArgument[] {
-	return Object.entries(asRecord(args)).map(([name, value]) => {
+export function namedArguments(args: JsonValue | undefined): NamedArgument[] {
+	return Object.entries(argumentsOf(args)).map(([name, value]) => {
 		const text = formatArgument(value);
 		return {
 			name,

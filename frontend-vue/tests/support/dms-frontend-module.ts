@@ -5,7 +5,7 @@
  * runtime mocks `#dms/frontend-module` itself, which takes the place of this module whole.
  * @packageDocumentation
  */
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 
 /** A widget the onboarding adds to the DMS's dock, by the fields the suites read. */
 export interface RegisteredWidget {
@@ -75,7 +75,12 @@ export function useDmsRouter() {
 	return { push: async () => undefined };
 }
 
-/** The current route, which a suite has to mock to read: none is faked here. */
-export function useDmsRoute(): never {
-	throw new Error("Mock #dms/frontend-module in the suite that needs it");
+/** The dashboard's current route, whose query a suite sets before it mounts what reads it. */
+export const hostRoute = reactive<{ query: Record<string, string> }>({
+	query: {},
+});
+
+/** The current route: {@link hostRoute}. */
+export function useDmsRoute() {
+	return hostRoute;
 }

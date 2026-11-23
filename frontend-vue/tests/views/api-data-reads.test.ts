@@ -1,45 +1,52 @@
-// @vitest-environment jsdom
-import { flushPromises, shallowMount } from "@vue/test-utils";
+/**
+ * The workspace views read what they render with the DMS's `useApiData` and
+ * `useApiPagedData`, which a server render hands to the browser and the
+ * playground proves; these fakes read as the browser does, and `$authFetch` is
+ * left to the writes.
+ *
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	computed,
 	defineComponent,
 	h,
-	reactive,
 	ref,
+	shallowRef,
 	toValue,
 	watch,
 	type MaybeRefOrGetter,
 } from "vue";
+import type { JsonValue } from "../../builder/app/runtime/types";
 import ActivityDetail from "../../app/components/ActivityDetail.vue";
 import ChangesView from "../../app/components/ChangesView.vue";
 import ChangeSetPanel from "../../app/views/ChangeSetPanel.vue";
 import UnavailableState from "../../app/views/UnavailableState.vue";
 import { installApiErrorPresenter } from "../support/api-error-presenter";
+import { hostRoute } from "../support/dms-frontend-module";
 
-// The views read what they render with the DMS's `useApiData`, which a server
-// render hands to the browser (this repository has no renderer to run it:
-// the playground proves that part), and the Changes list page by page with
-// `useApiPagedData`; `$authFetch` is left to the writes. These fakes read as
-// the browser does.
-
-const route = reactive({ query: {} as Record<string, string> });
-
-vi.mock("#dms/frontend-module", () => ({
-	useDmsRoute: () => route,
-	useDmsRouter: () => ({ push: vi.fn() }),
-}));
+type Query = Record<string, string | number>;
 
 interface Read {
 	url: string;
-	query?: Record<string, unknown>;
+	query?: Query;
 }
 
-type Backend = (read: Read) => unknown;
+type Backend = (read: Read) => JsonValue | Promise<JsonValue>;
+
+interface FetchOptions {
+	method?: string;
+	body?: JsonValue;
+	query?: Query;
+}
+
+type AuthFetch = (url: string, options?: FetchOptions) => Promise<JsonValue>;
 
 let backend: Backend;
 const reads: Read[] = [];
-const authFetch = vi.fn();
+const authFetch = vi.fn<AuthFetch>();
 /** The reads the page's refreshes read again, as the DMS's `refreshPageBlocks()` does. */
 const pageReads = new Set<() => Promise<void>>();
 const refreshPageBlocks = vi.fn(async () => {
@@ -47,15 +54,16 @@ const refreshPageBlocks = vi.fn(async () => {
 });
 
 interface FakeApiDataOptions {
-	query?: MaybeRefOrGetter<Record<string, unknown>>;
+	query?: MaybeRefOrGetter<Query>;
 	refreshOnPageRefresh?: boolean;
 }
 
-function useApiData<T>(
+/** `useApiData` as the browser runs it: the page's reads answer from the backend, and a page refresh reads them again. */
+function useApiData(
 	url: MaybeRefOrGetter<string | null | undefined>,
 	options: FakeApiDataOptions = {},
 ) {
-	const data = ref<T | null>(null);
+	const data = shallowRef<JsonValue | null>(null);
 	const error = ref<unknown>(null);
 	const status = ref<"idle" | "pending" | "success" | "error">("idle");
 	const request = () => ({ url: toValue(url), query: toValue(options.query) });
@@ -66,8 +74,7 @@ function useApiData<T>(
 		reads.push(read);
 		status.value = "pending";
 		try {
-			// Each answer is a new value, as a parsed response is.
-			data.value = structuredClone(await backend(read)) as T;
+			data.value = structuredClone(await backend(read));
 			error.value = null;
 			status.value = "success";
 		} catch (failure) {
@@ -89,23 +96,26 @@ function useApiData<T>(
 	};
 }
 
-interface FakePagedOptions<TPage> {
-	nextCursor: (page: TPage, pages: TPage[]) => number | null | undefined;
+interface FakePagedOptions {
+	nextCursor: (
+		page: JsonValue,
+		pages: JsonValue[],
+	) => number | null | undefined;
 }
 
-type PagedContext = {
+interface PagedContext {
 	$authFetch: typeof authFetch;
 	cursor: number | undefined;
 	signal: AbortSignal;
-};
+}
 
 /** `useApiPagedData` as the renderer runs it: one key, the pages it loaded, all read again on a refresh. */
-function useApiPagedData<TPage>(
+function useApiPagedData(
 	key: MaybeRefOrGetter<string>,
-	handler: (context: PagedContext) => Promise<TPage>,
-	options: FakePagedOptions<TPage>,
+	handler: (context: PagedContext) => Promise<JsonValue>,
+	options: FakePagedOptions,
 ) {
-	const pages = ref<TPage[]>([]) as { value: TPage[] };
+	const pages = shallowRef<JsonValue[]>([]);
 	const next = ref<number | null>(null);
 	const error = ref<unknown>(null);
 	const status = ref<"idle" | "pending" | "success" | "error">("idle");
@@ -118,11 +128,11 @@ function useApiPagedData<TPage>(
 		});
 	async function readPages(count: number): Promise<void> {
 		status.value = "pending";
-		const loaded: TPage[] = [];
+		const loaded: JsonValue[] = [];
 		let cursor: number | undefined;
 		try {
 			for (let index = 0; index < count; index++) {
-				const page = structuredClone(await read(cursor)) as TPage;
+				const page = structuredClone(await read(cursor));
 				loaded.push(page);
 				const after = options.nextCursor(page, loaded) ?? null;
 				next.value = after;
@@ -148,7 +158,7 @@ function useApiPagedData<TPage>(
 		if (next.value === null) return;
 		loadingMore.value = true;
 		try {
-			const page = structuredClone(await read(next.value)) as TPage;
+			const page = structuredClone(await read(next.value));
 			pages.value = [...pages.value, page];
 			next.value = options.nextCursor(page, pages.value) ?? null;
 		} catch (failure) {
@@ -235,7 +245,7 @@ const summary = (id: string, number: number) => ({
 beforeEach(() => {
 	reads.length = 0;
 	authFetch.mockReset();
-	route.query = {};
+	hostRoute.query = {};
 	pageReads.clear();
 	refreshPageBlocks.mockClear();
 	vi.stubGlobal("useApiData", useApiData);
@@ -264,6 +274,45 @@ const mount = (component: Parameters<typeof shallowMount>[0], props = {}) =>
 		props,
 		global: { stubs: { ...GLOBAL_STUBS, UnavailableState: false } },
 	});
+
+function findButton(wrapper: VueWrapper, label: string) {
+	return wrapper
+		.findAllComponents({ name: "UButton" })
+		.find((button) => button.vm.$attrs.label === label);
+}
+
+function requireButton(wrapper: VueWrapper, label: string) {
+	const button = findButton(wrapper, label);
+	if (!button) throw new Error(`No button labelled ${label}`);
+	return button;
+}
+
+interface ValueItem {
+	value: string;
+}
+
+function isValueItem(item: unknown): item is ValueItem {
+	return (
+		typeof item === "object" &&
+		item !== null &&
+		"value" in item &&
+		typeof item.value === "string"
+	);
+}
+
+function isValueItems(items: unknown): items is ValueItem[] {
+	return Array.isArray(items) && items.every(isValueItem);
+}
+
+function valuesOf(items: unknown): string[] {
+	return isValueItems(items) ? items.map((item) => item.value) : [];
+}
+
+function itemValues(wrapper: VueWrapper): string[] {
+	return valuesOf(
+		wrapper.findComponent({ name: "DmsMasterDetail" }).vm.$attrs.items,
+	);
+}
 
 describe("activity detail", () => {
 	it("reads the entry its row names with the page, not with $authFetch", async () => {
@@ -296,29 +345,25 @@ describe("changes view", () => {
 	const PAGE = { results: [summary("cs-1", 1), summary("cs-2", 2)], total: 3 };
 	const NEXT_PAGE = { results: [summary("cs-3", 3)], total: 3 };
 
-	function changesBackend({ url, query }: Read): unknown {
+	function changesBackend({ url, query }: Read): JsonValue {
 		if (url === "/ai/status") return { checkpointsAvailable: true };
 		if (url === "/ai/changes") return query?.offset ? NEXT_PAGE : PAGE;
 		return { changeSet: summary("cs-1", 1), files: [] };
 	}
 
-	/** The paged list's requests, which go through the handler's `$authFetch`. */
-	function listReads(): unknown[] {
-		return authFetch.mock.calls.map(([url, options]) => [
-			url,
-			(options as { query: unknown }).query,
-		]);
+	function listReads() {
+		return authFetch.mock.calls.map(([url, options]) => [url, options?.query]);
 	}
 
 	beforeEach(() => {
-		authFetch.mockImplementation(async (url: string, options: Read) =>
-			changesBackend({ url, query: options.query }),
+		authFetch.mockImplementation(async (url, options) =>
+			changesBackend({ url, query: options?.query }),
 		);
 	});
 
 	it("reads the status and the first page with the page, and opens the set the URL names", async () => {
 		backend = changesBackend;
-		route.query = { set: "cs-2" };
+		hostRoute.query = { set: "cs-2" };
 		const wrapper = mount(ChangesView);
 		await flushPromises();
 		expect(reads).toEqual([{ url: "/ai/status" }]);
@@ -341,30 +386,16 @@ describe("changes view", () => {
 		backend = changesBackend;
 		const wrapper = mount(ChangesView);
 		await flushPromises();
-		const loadMoreButton = () =>
-			wrapper
-				.findAllComponents({ name: "UButton" })
-				.find(
-					(button) =>
-						button.vm.$attrs.label === "dms_assistant.views.common.load_more",
-				);
-		loadMoreButton()!.vm.$emit("click");
+		const loadMore = "dms_assistant.views.common.load_more";
+		requireButton(wrapper, loadMore).vm.$emit("click");
 		await flushPromises();
 		expect(listReads().at(-1)).toEqual([
 			"/ai/changes",
 			{ offset: 2, limit: 30 },
 		]);
-		const items = () =>
-			(
-				wrapper.findComponent({ name: "DmsMasterDetail" }).vm.$attrs.items as {
-					value: string;
-				}[]
-			).map((item) => item.value);
-		expect(items()).toEqual(["cs-1", "cs-2", "cs-3"]);
-		expect(loadMoreButton()).toBeUndefined();
+		expect(itemValues(wrapper)).toEqual(["cs-1", "cs-2", "cs-3"]);
+		expect(findButton(wrapper, loadMore)).toBeUndefined();
 
-		// A change set undone in the panel refreshes the page, which reads the
-		// pages loaded again rather than dropping the second one.
 		authFetch.mockClear();
 		await refreshPageBlocks();
 		await flushPromises();
@@ -372,7 +403,7 @@ describe("changes view", () => {
 			["/ai/changes", { offset: 0, limit: 30 }],
 			["/ai/changes", { offset: 2, limit: 30 }],
 		]);
-		expect(items()).toEqual(["cs-1", "cs-2", "cs-3"]);
+		expect(itemValues(wrapper)).toEqual(["cs-1", "cs-2", "cs-3"]);
 	});
 
 	it("reads the filtered first page when the scope changes", async () => {
@@ -400,13 +431,9 @@ describe("change set panel", () => {
 		const wrapper = mount(ChangeSetPanel, { changeSetId: "cs-1" });
 		await flushPromises();
 		expect(reads).toEqual([{ url: "/ai/changes/cs-1" }]);
-		const redo = wrapper
-			.findAllComponents({ name: "UButton" })
-			.find(
-				(button) =>
-					button.vm.$attrs.label === "dms_assistant.views.changes.redo",
-			);
-		redo!.vm.$emit("click");
+		requireButton(wrapper, "dms_assistant.views.changes.redo").vm.$emit(
+			"click",
+		);
 		await flushPromises();
 		expect(authFetch).toHaveBeenCalledWith("/ai/changes/cs-1/redo", {
 			method: "POST",
@@ -434,12 +461,7 @@ describe("change set actions", () => {
 		const wrapper = mount(ChangeSetPanel, { changeSetId: "cs-1" });
 		await flushPromises();
 		const redo = () =>
-			wrapper
-				.findAllComponents({ name: "UButton" })
-				.find(
-					(button) =>
-						button.vm.$attrs.label === "dms_assistant.views.changes.redo",
-				)!;
+			requireButton(wrapper, "dms_assistant.views.changes.redo");
 		redo().vm.$emit("click");
 		await flushPromises();
 		expect(refreshPageBlocks).toHaveBeenCalledTimes(1);

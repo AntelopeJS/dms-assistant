@@ -8,10 +8,10 @@ function isModalOpen(): boolean {
 	return document.querySelector(MODAL_OPEN_SELECTOR) !== null;
 }
 
+/** Shift is required too: plain ctrl/cmd + k is the DMS search palette. */
 function isToggleCombo(event: KeyboardEvent): boolean {
 	const isModifierPressed = event.metaKey || event.ctrlKey;
 	const isTargetKey = event.key.toLowerCase() === TOGGLE_SHORTCUT_KEY;
-	// Require shift too — plain ctrl/cmd + k is the DMS search palette.
 	return isModifierPressed && event.shiftKey && isTargetKey;
 }
 

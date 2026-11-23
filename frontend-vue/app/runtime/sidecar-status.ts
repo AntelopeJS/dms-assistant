@@ -21,13 +21,19 @@ interface SidecarInfo {
 }
 
 export interface SidecarStatusController {
-	// Runs the first probe. Returns false when the assistant should not be shown
-	// at all — the dms-assistant backend route is absent (probe unreachable) or spawning
-	// is disabled for this process — so the caller skips injection entirely.
+	/**
+	 * Runs the first probe. Returns false when the assistant should not be shown
+	 * at all — the dms-assistant backend route is absent (probe unreachable) or
+	 * spawning is disabled for this process — so the caller skips injection
+	 * entirely.
+	 */
 	init: () => Promise<boolean>;
 	getStatus: () => SidecarStatus;
-	// Subscribe to status changes; fires immediately with the current status so a
-	// late subscriber (the panel or launcher registered after init) reflects it right away.
+	/**
+	 * Subscribes to status changes; fires immediately with the current status so
+	 * a late subscriber (the panel or launcher registered after init) reflects it
+	 * right away.
+	 */
 	subscribe: (cb: (status: SidecarStatus) => void) => () => void;
 	/**
 	 * The host channel dropped: re-probe now, which also revives an idle-exited
@@ -77,6 +83,13 @@ function readInfo(read: SidecarInfoRead): SidecarInfo | null {
 	};
 }
 
+/**
+ * Follows the sidecar's info read: each answer, a probe's or the polling's,
+ * moves the status. An answer of `null` means the probe itself failed (backend
+ * momentarily unreachable), and a sidecar that is down but has not given up is
+ * not terminal either: the probe already asked the backend to respawn, so the
+ * controller keeps polling until the sidecar runs.
+ */
 export function createSidecarStatusController(
 	openRead: OpenSidecarInfoRead,
 ): SidecarStatusController {
@@ -103,7 +116,6 @@ export function createSidecarStatusController(
 
 	function handleInfo(info: SidecarInfo | null): void {
 		if (disposed) return;
-		// Probe itself failed (backend momentarily unreachable): keep waiting.
 		if (info === null) {
 			setStatus(SIDECAR_STATUS_REVIVING);
 			keepPolling();
@@ -120,13 +132,10 @@ export function createSidecarStatusController(
 			setStatus(SIDECAR_STATUS_CONNECTED);
 			return;
 		}
-		// Down but not terminal — the probe already asked the backend to respawn;
-		// keep polling until it reports the sidecar running.
 		setStatus(SIDECAR_STATUS_REVIVING);
 		keepPolling();
 	}
 
-	// Each answer, a probe's or the polling's, moves the status.
 	const stopFollowing = watch(
 		read.pending,
 		(isPending, wasPending) => {

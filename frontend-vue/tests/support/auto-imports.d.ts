@@ -30,7 +30,7 @@ declare global {
 				variant?: string;
 				onClick: () => void;
 			}[];
-		}) => void;
+		}) => { id: string | number };
 	};
 	const useConfirmFrom: (typeof import("#dms-ui/app/composables/confirm/useConfirmFrom"))["useConfirmFrom"];
 	const useDevReload: (typeof import("#dms-layout/app/composables/useDevReload"))["useDevReload"];

@@ -1,9 +1,13 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview The block a Builder call changes and the outline drawn on the page.
+ * @vitest-environment jsdom
+ */
 import { describe, expect, it } from "vitest";
 import type {
 	ConversationMessage,
 	ToolCallMessage,
 } from "../../app/chat/types/conversation";
+import type { JsonValue } from "../../app/chat/types/json";
 import { blockOutlineRect } from "../../app/chat/utils/block-outline";
 import {
 	blockTargetFromPath,
@@ -11,7 +15,7 @@ import {
 	changingBlock,
 } from "../../app/chat/utils/block-target";
 
-function tool(toolName: string, args: unknown): ToolCallMessage {
+function tool(toolName: string, args: JsonValue): ToolCallMessage {
 	return {
 		id: `${toolName}-${JSON.stringify(args)}`,
 		role: "tool",

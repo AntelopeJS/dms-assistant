@@ -17,6 +17,25 @@ import { permissionCardText } from "../../app/chat/utils/permission-view";
 
 const echo = (key: string): string => key;
 
+function permissionRequest(
+	overrides: Partial<PermissionRequestData> = {},
+): PermissionRequestData {
+	return {
+		requestId: "r",
+		conversationId: "c",
+		toolName: "Edit",
+		args: {},
+		summary: "Use tool: Edit",
+		kind: "edit",
+		alwaysAsk: false,
+		preview: { type: "generic", args: {} },
+		ruleOptions: [],
+		createdAtMs: 0,
+		expiresAtMs: 0,
+		...overrides,
+	};
+}
+
 function tool(overrides: Partial<ToolCallMessage> = {}): ToolCallMessage {
 	return {
 		id: "m1",
@@ -132,11 +151,11 @@ describe("a tool row is in one of eight states", () => {
 	});
 
 	it("tells running, waiting and stopped apart for an open call", () => {
-		const request = {
+		const request = permissionRequest({
 			requestId: "r1",
 			callId: "call-1",
 			toolName: "Edit",
-		} as PermissionRequestData;
+		});
 		const waiting = findWaitingRequest(tool(), [request]);
 		expect(waiting).toEqual({ index: 0, total: 1, requestId: "r1" });
 		expect(toolRowState(tool(), true, waiting)).toBe("waiting");
@@ -145,10 +164,7 @@ describe("a tool row is in one of eight states", () => {
 	});
 
 	it("matches a request without call id by its tool", () => {
-		const request = {
-			requestId: "r2",
-			toolName: "Edit",
-		} as PermissionRequestData;
+		const request = permissionRequest({ requestId: "r2", toolName: "Edit" });
 		expect(findWaitingRequest(tool(), [request])?.requestId).toBe("r2");
 		expect(
 			findWaitingRequest(tool({ toolName: "Bash" }), [request]),

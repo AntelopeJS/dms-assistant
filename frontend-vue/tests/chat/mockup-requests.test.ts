@@ -48,11 +48,8 @@ describe("how a mockup request names its mockup", () => {
 	it("names the mockup alone when it has no title of its own, as dms 0.20.x sends it (fails when an absent, blank or same title is shown)", () => {
 		const titles = [undefined, "", "  ", "shop-admin"];
 		for (const title of titles) {
-			const request: MockupRequest = {
-				kind: "build",
-				mockup: "shop-admin",
-				...(title === undefined ? {} : { title }),
-			};
+			const request: MockupRequest = { kind: "build", mockup: "shop-admin" };
+			if (title !== undefined) request.title = title;
 			expect(message("en", request)).toMatch(
 				/^Build the mockup “shop-admin” into real pages/,
 			);

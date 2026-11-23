@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview Copying assistant answers from the message list.
+ * @vitest-environment jsdom
+ */
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";

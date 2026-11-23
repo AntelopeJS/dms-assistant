@@ -9,14 +9,23 @@ import {
 	CONNECTION_STATUSES,
 	SERVER_EVENT_TYPES,
 } from "../../app/chat/constants/protocol";
+import type {
+	ClientMessage,
+	HelloMessage,
+} from "../../app/chat/types/protocol";
 import type { ChannelStatus } from "../../app/runtime/channel-client";
 import { createChatTransport } from "../../app/runtime/chat-transport";
 
 const CONVERSATION_ID = "conv-channel-1";
 
-const HELLO = {
+const HELLO: HelloMessage = {
 	type: CLIENT_MESSAGE_TYPES.HELLO,
 	role: CHAT_ROLE,
+	conversationId: CONVERSATION_ID,
+};
+
+const INTERRUPT: ClientMessage = {
+	type: CLIENT_MESSAGE_TYPES.INTERRUPT_TURN,
 	conversationId: CONVERSATION_ID,
 };
 
@@ -92,15 +101,11 @@ describe("the chat's side of the dashboard's stream", () => {
 		const stream = fakeStream(CONNECTION_STATUSES.RECONNECTING);
 		const { result } = open(stream);
 		expect(result.isConnected.value).toBe(false);
-		expect(result.send({ type: CLIENT_MESSAGE_TYPES.INTERRUPT_TURN })).toBe(
-			false,
-		);
+		expect(result.send(INTERRUPT)).toBe(false);
 		stream.status = CONNECTION_STATUSES.CONNECTED;
 		stream.hub.announceStatus(CONNECTION_STATUSES.CONNECTED);
 		expect(result.isConnected.value).toBe(true);
-		expect(result.send({ type: CLIENT_MESSAGE_TYPES.INTERRUPT_TURN })).toBe(
-			true,
-		);
+		expect(result.send(INTERRUPT)).toBe(true);
 	});
 
 	it("reconnects the dashboard's stream when the chat asks, as the stalled-run notice does", () => {
@@ -117,8 +122,6 @@ describe("the chat's side of the dashboard's stream", () => {
 		opened.stop();
 		stream.hub.deliver({ type: SERVER_EVENT_TYPES.RUN_DONE });
 		expect(received).toEqual([]);
-		expect(opened.result.send({ type: CLIENT_MESSAGE_TYPES.HELLO })).toBe(
-			false,
-		);
+		expect(opened.result.send(HELLO)).toBe(false);
 	});
 });

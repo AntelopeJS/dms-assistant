@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @fileoverview The cards of the calls the DMS holds until the person confirms them.
+ * @vitest-environment jsdom
+ */
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import PermissionCard from "../../app/chat/components/PermissionCard.vue";
@@ -63,14 +66,11 @@ const CONFIGURE_REQUEST: PermissionRequestData = {
 	},
 };
 
-function mountCard(
-	request: PermissionRequestData,
-	messages: Record<string, unknown>,
-) {
+function mountCard(request: PermissionRequestData, messages: typeof en) {
 	return mount(PermissionCard, {
 		props: { request, isFocused: true },
 		global: {
-			provide: { [CHAT_I18N_KEY as symbol]: createTestI18n(messages) },
+			plugins: [(app) => app.provide(CHAT_I18N_KEY, createTestI18n(messages))],
 			stubs: PANEL_STUBS,
 		},
 	});

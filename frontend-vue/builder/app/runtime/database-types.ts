@@ -1,8 +1,12 @@
-// A local mirror of the database shapes of `@antelopejs/interface-dms-builder`
-// and `@antelopejs/interface-database-catalog`, as the module's HTTP API
-// answers them.
-
+/**
+ * A local mirror of the database shapes of `@antelopejs/interface-dms-builder`
+ * and `@antelopejs/interface-database-catalog`, as the module's HTTP API
+ * answers them.
+ *
+ * @packageDocumentation
+ */
 import type { DatabaseEngine } from './database-engines'
+import type { JsonValue } from './types'
 
 type ProposedKind = 'fact' | 'default'
 
@@ -201,8 +205,8 @@ export interface DatabaseAccess {
 }
 
 export interface ModuleEntryInput {
-	source?: Record<string, unknown>
-	config?: Record<string, unknown>
+	source?: Record<string, JsonValue>
+	config?: Record<string, JsonValue>
 	env?: Record<string, string>
 	importOverrides?: { interface: string; source: string; id?: string }[]
 	exportPriority?: Record<string, number>

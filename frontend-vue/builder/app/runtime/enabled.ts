@@ -1,3 +1,5 @@
+import type { DmsModuleOptions } from '#dms/frontend-module'
+
 /**
  * Where the option the backend publishes lands in the module's public options.
  * The loader nests a module's manifest options under its `configKey`, so these
@@ -17,7 +19,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * registration it is served with rather than the Vite build mode. Anything
  * other than an explicit `true` means off.
  */
-export function isBuilderEnabled(options: Record<string, unknown> | undefined): boolean {
+export function isBuilderEnabled(options: DmsModuleOptions['public'] | undefined): boolean {
 	const scoped = options?.[CONFIG_KEY]
 	return isRecord(scoped) && scoped[ENABLED_OPTION] === true
 }

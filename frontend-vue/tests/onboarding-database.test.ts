@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	CONNECTABLE_ENGINES,
@@ -6,25 +9,28 @@ import {
 	engineNames,
 } from "../app/onboarding/connect-database";
 import { ENGINES } from "../builder/app/runtime/database-connect";
+import type {
+	AnalysisState,
+	OpenItem,
+	ProjectConfigResult,
+} from "../builder/app/runtime/database-types";
+import type { OpResult } from "../builder/app/runtime/types";
 import {
 	analysisWith,
+	answered,
 	fakeBuilder,
 	LISTED,
 	mountConnect,
 	PROJECT,
+	refused,
 	schemaCheck,
 	unmountConnect,
 	URL,
+	URL_WRITTEN,
 	WRITER,
 } from "./support/database-connect";
 
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string, params?: Record<string, unknown>) =>
-		params === undefined ? key : `${key} ${JSON.stringify(params)}`,
-}));
-
-const SCHEMAS_QUESTION = {
+const SCHEMAS_QUESTION: OpenItem = {
 	id: "schemas:shop",
 	kind: "schemas",
 	question: "which",
@@ -58,10 +64,10 @@ describe("the popup's connect form", () => {
 
 	it("refuses a URL without a user, with the builder's own words", () => {
 		const form = connectForm("postgres", "postgres://db.example.com/orders");
-		expect(form).toEqual({
-			kind: "invalid",
-			message: expect.stringContaining("database.connect.missing_user"),
-		});
+		if (!("kind" in form) || form.kind !== "invalid") {
+			throw new Error("the form accepted the URL");
+		}
+		expect(form.message).toContain("database.connect.missing_user");
 	});
 
 	it("refuses a host the builder's form would refuse", () => {
@@ -92,10 +98,7 @@ describe("the popup's connect form", () => {
 	});
 
 	it("points a connection an earlier visit already wrote at the new URL instead of adding its module again", async () => {
-		const setConnectionUrl = vi.fn(async () => ({
-			ok: true,
-			data: { variable: "SHOP_URL" },
-		}));
+		const setConnectionUrl = vi.fn(async () => URL_WRITTEN);
 		const fake = fakeBuilder({
 			projectModules: async () => ({
 				...PROJECT,
@@ -232,10 +235,7 @@ describe("the access written for the connection", () => {
 	});
 
 	it("offers no choice for a connection an earlier visit wrote, whose access it cannot raise", async () => {
-		const setConnectionUrl = vi.fn(async () => ({
-			ok: true,
-			data: { variable: "SHOP_URL" },
-		}));
+		const setConnectionUrl = vi.fn(async () => URL_WRITTEN);
 		const fake = fakeBuilder({
 			checkConnection: vi.fn(async () => WRITER),
 			projectModules: async () => ({
@@ -253,8 +253,7 @@ describe("the access written for the connection", () => {
 });
 
 describe("the driver a new connection adds", () => {
-	/** Fails on a popup that writes a driver range of its own instead of the one core gives the project. */
-	it("adds the driver at the package and range the project's interface-database allows", async () => {
+	it("adds the driver at the package and range the project's interface-database allows (fails on a popup that writes a driver range of its own instead of the one core gives the project)", async () => {
 		const fake = fakeBuilder();
 		const connect = mountConnect(fake.api);
 		await connect.connect("postgres", URL);
@@ -271,8 +270,7 @@ describe("the driver a new connection adds", () => {
 		});
 	});
 
-	/** Fails on a popup that writes an engine the project has no driver for, or that does not say why. */
-	it("refuses an engine the project has no driver for, says why, and writes nothing", async () => {
+	it("refuses an engine the project has no driver for, says why, and writes nothing (fails on a popup that writes an engine the project has no driver for, or that does not say why)", async () => {
 		const fake = fakeBuilder({
 			projectModules: async () => ({
 				...PROJECT,
@@ -311,10 +309,7 @@ describe("following the connection's analysis", () => {
 	it("fails the schema check with the builder's refusal of the analysis, and stops polling", async () => {
 		vi.useFakeTimers();
 		const fake = fakeBuilder({
-			analyseDatabase: vi.fn(async () => ({
-				ok: false,
-				error: { code: "unsupported", detail: "analysis refused" },
-			})),
+			analyseDatabase: vi.fn(async () => refused("analysis refused")),
 		});
 		const connect = mountConnect(fake.api);
 		void connect.connect("postgres", URL);
@@ -337,7 +332,8 @@ describe("following the connection's analysis", () => {
 		const connect = mountConnect(fake.api);
 		const outcome = connect.connect("postgres", URL).then(
 			() => "resolved",
-			(error: Error) => `rejected: ${error.message}`,
+			(error: unknown) =>
+				`rejected: ${error instanceof Error ? error.message : String(error)}`,
 		);
 		await vi.advanceTimersByTimeAsync(5_000);
 		expect(await outcome).toBe("resolved");
@@ -352,9 +348,7 @@ describe("following the connection's analysis", () => {
 		let refuse = true;
 		const fake = fakeBuilder({
 			analyseDatabase: vi.fn(async () =>
-				refuse
-					? { ok: false, error: { detail: "analysis refused" } }
-					: { ok: true, data: {} },
+				refuse ? refused("analysis refused") : answered(analysisWith([])),
 			),
 		});
 		const connect = mountConnect(fake.api);
@@ -433,16 +427,10 @@ function deferred<T>() {
 describe("an attempt the owner replaced", () => {
 	it("writes the new URL of a database already connected under the same name", async () => {
 		vi.useFakeTimers();
-		const setConnectionUrl = vi.fn(async () => ({
-			ok: true,
-			data: { variable: "SHOP_URL" },
-		}));
+		const setConnectionUrl = vi.fn(async () => URL_WRITTEN);
 		const fake = fakeBuilder({
 			setConnectionUrl,
-			analyseDatabase: vi.fn(async () => ({
-				ok: false,
-				error: { detail: "analysis refused" },
-			})),
+			analyseDatabase: vi.fn(async () => refused("analysis refused")),
 		});
 		const connect = mountConnect(fake.api);
 		void connect.connect("postgres", URL);
@@ -460,7 +448,7 @@ describe("an attempt the owner replaced", () => {
 	});
 
 	it("shows no refusal of a write the owner moved on from", async () => {
-		const write = deferred<{ ok: false; error: { detail: string } }>();
+		const write = deferred<OpResult<ProjectConfigResult>>();
 		const fake = fakeBuilder({
 			checkConnection: vi.fn(async () => WRITER),
 			configureProject: vi.fn(() => write.promise),
@@ -473,14 +461,14 @@ describe("an attempt the owner replaced", () => {
 			"postgres",
 			"postgres://app:secret@db.example.com/orders",
 		);
-		write.resolve({ ok: false, error: { detail: "refusal of shop" } });
+		write.resolve(refused("refusal of shop"));
 		await chosen;
 		expect(connect.refusal.value).toBeNull();
 		expect(connect.phase.value).toEqual({ kind: "choosing" });
 	});
 
 	it("starts no analysis once the step is gone", async () => {
-		const answer = deferred<{ ok: false }>();
+		const answer = deferred<OpResult<AnalysisState>>();
 		let reads = 0;
 		const fake = fakeBuilder({
 			latestAnalysis: () => {
@@ -492,30 +480,30 @@ describe("an attempt the owner replaced", () => {
 		const run = connect.connect("postgres", URL);
 		await vi.waitFor(() => expect(reads).toBe(1));
 		unmountConnect();
-		answer.resolve({ ok: false });
+		answer.resolve(refused("none"));
 		await run;
 		expect(fake.analyseDatabase).not.toHaveBeenCalled();
 	});
 
 	it("leaves the next attempt's steps alone when the replaced one's build answer comes late", async () => {
-		const answer = deferred<{ ok: false }>();
+		const answer = deferred<OpResult<AnalysisState>>();
 		let reads = 0;
 		const fake = fakeBuilder({
 			latestAnalysis: () => {
 				reads += 1;
-				return reads === 1 ? answer.promise : Promise.resolve({ ok: false });
+				return reads === 1 ? answer.promise : Promise.resolve(refused("none"));
 			},
 		});
 		const connect = mountConnect(fake.api);
 		const first = connect.connect("postgres", URL);
 		await vi.waitFor(() => expect(reads).toBe(1));
 		connect.reset();
-		fake.api.checkConnection.mockImplementation(async () => WRITER);
+		fake.checkConnection.mockImplementation(async () => WRITER);
 		await connect.connect(
 			"postgres",
 			"postgres://app:secret@db.example.com/orders",
 		);
-		answer.resolve({ ok: false });
+		answer.resolve(refused("none"));
 		await first;
 		expect(fake.analyseDatabase).not.toHaveBeenCalled();
 		expect(schemaCheck(connect)?.status).toBe("pending");

@@ -1,10 +1,14 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import {
 	installAssistantPromptListener,
 	MOCKUP_ASSISTANT_PROMPT_EVENT,
+	type MockupAssistantPrompt,
 } from "../app/runtime/assistant-prompt";
 import { intentOfPrompt } from "../app/runtime/panel-intents";
 import { STORAGE_CONVERSATION_ID_KEY } from "../app/chat/constants/conversation";
@@ -24,7 +28,16 @@ const BLOCK = {
 	type: "ChartCard",
 };
 
-function dispatch(detail: unknown): CustomEvent {
+interface PromptDetail {
+	prompt: string;
+	source: string;
+	title?: string;
+	page?: string;
+	block?: Partial<typeof BLOCK>;
+	target?: { pageRef?: string };
+}
+
+function dispatch(detail: PromptDetail): CustomEvent {
 	const event = new CustomEvent(MOCKUP_ASSISTANT_PROMPT_EVENT, {
 		detail,
 		cancelable: true,
@@ -44,7 +57,7 @@ afterEach(() => {
 
 describe("the mockup editor's prompt event", () => {
 	it("takes a valid prompt and cancels the event (fails when the editor's copy fallback would still open)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const event = dispatch({
 			prompt: "Connect this chart to payments",
@@ -61,7 +74,7 @@ describe("the mockup editor's prompt event", () => {
 	});
 
 	it("takes a build with the mockup's name and no block (fails when build is refused or read as a block prompt)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const event = dispatch({ prompt: "bikes", source: "build" });
 		stop();
@@ -70,7 +83,7 @@ describe("the mockup editor's prompt event", () => {
 	});
 
 	it("leaves a malformed detail to the editor (fails when it is cancelled or taken)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const unknownSource = dispatch({ prompt: "x", source: "deploy" });
 		const blockWithoutPath = dispatch({
@@ -106,7 +119,7 @@ describe("a prompt handed to the panel", () => {
 			block: BLOCK,
 		});
 		await flushPromises();
-		const textarea = panel.find("textarea").element as HTMLTextAreaElement;
+		const textarea = panel.find<HTMLTextAreaElement>("textarea").element;
 		expect(textarea.value).toBe("Connect this chart to payments");
 		expect(panel.find(".att.is-block").text()).toContain(
 			"ChartCard · grid.revenue",
@@ -133,7 +146,7 @@ describe("a prompt handed to the panel", () => {
 
 describe("building into an existing page", () => {
 	it("takes the page to build into from the event (fails when the target is dropped or a bad one is accepted)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const event = dispatch({
 			prompt: "bikes",
@@ -215,8 +228,9 @@ describe("a block handed to one conversation", () => {
 
 function lastSentConversation(harness: Harness): string {
 	const sent = sentOfType(harness, "user_message").at(-1);
-	if (sent === undefined || typeof sent.conversationId !== "string")
+	if (sent?.conversationId === undefined) {
 		throw new Error("no user message sent");
+	}
 	return sent.conversationId;
 }
 
@@ -254,7 +268,7 @@ describe("building a mockup", () => {
 
 describe("resolving the comments of a mockup", () => {
 	it("takes the mockup and the optional page from the event (fails when the source is refused, the page dropped or read as a block prompt)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const whole = dispatch({ prompt: "bikes", source: "resolve-comments" });
 		const onePage = dispatch({
@@ -278,7 +292,9 @@ describe("resolving the comments of a mockup", () => {
 			[{ prompt: "bikes", source: "resolve-comments", page: "home" }],
 		]);
 	});
+});
 
+describe("resolving the comments of a mockup, in the chat", () => {
 	it("sends the request in a new chat without a click, naming the mockup and the tools (fails when it only fills the composer)", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
@@ -298,9 +314,7 @@ describe("resolving the comments of a mockup", () => {
 				"4. Reply briefly: what changed, and what is still open with its question.",
 			].join("\n"),
 		);
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
-			"",
-		);
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe("");
 	});
 
 	it("limits the request, and the listing, to the page when one is given (fails when the page is dropped)", async () => {
@@ -323,7 +337,7 @@ describe("resolving the comments of a mockup", () => {
 	});
 
 	it("carries the mockup's title from a build or a resolve detail, and still takes one without (fails when the title is dropped or required)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const events = [
 			dispatch({
@@ -384,7 +398,7 @@ describe("the + New mockup card", () => {
 	const STARTER = "Draft a mockup of ";
 
 	it("takes the starter sentence and cancels the event, and refuses an empty one (fails when the source is left to the copy fallback)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const event = dispatch({ prompt: STARTER, source: "new-mockup" });
 		const empty = dispatch({ prompt: "", source: "new-mockup" });
@@ -399,7 +413,7 @@ describe("the + New mockup card", () => {
 	});
 
 	it("still takes the connect-data source that dms 0.20.x sends (fails when older dms lose their assistant handoff)", () => {
-		const onPrompt = vi.fn();
+		const onPrompt = vi.fn<(prompt: MockupAssistantPrompt) => void>();
 		const stop = installAssistantPromptListener(onPrompt);
 		const event = dispatch({
 			prompt: "Connect this chart",
@@ -429,7 +443,7 @@ describe("the + New mockup card", () => {
 			intentOfPrompt({ prompt: STARTER, source: "new-mockup" }),
 		);
 		await flushPromises();
-		const textarea = panel.find("textarea").element as HTMLTextAreaElement;
+		const textarea = panel.find<HTMLTextAreaElement>("textarea").element;
 		expect(textarea.value).toBe(STARTER);
 		expect(document.activeElement).toBe(textarea);
 		expect([textarea.selectionStart, textarea.selectionEnd]).toEqual([

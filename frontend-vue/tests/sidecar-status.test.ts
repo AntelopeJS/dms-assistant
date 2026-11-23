@@ -45,7 +45,13 @@ function fakeRead(answers: Answer[]) {
 		};
 		return opened;
 	};
-	return { open, read: () => opened! };
+	return {
+		open,
+		read: (): FakeRead => {
+			if (opened === undefined) throw new Error("the controller never read");
+			return opened;
+		},
+	};
 }
 
 describe("sidecar status", () => {

@@ -1,13 +1,17 @@
 import { defineComponent, h, type PropType } from "vue";
 
+interface TabItem {
+	value: string;
+	label: string;
+}
+
+const tabItems: PropType<TabItem[]> = Array;
+
 export const UTabs = defineComponent({
 	name: "UTabs",
 	props: {
 		modelValue: { type: String, default: "" },
-		items: {
-			type: Array as PropType<{ value: string; label: string }[]>,
-			default: () => [],
-		},
+		items: { type: tabItems, default: () => [] },
 	},
 	emits: ["update:modelValue"],
 	setup:

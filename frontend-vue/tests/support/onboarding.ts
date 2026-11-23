@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { type Mock, vi } from "vitest";
 import { shallowRef } from "vue";
 import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
 import type { OnboardingApi } from "../../app/onboarding/api";
@@ -21,6 +21,7 @@ import type {
 	PreferenceStore,
 } from "../../app/onboarding/preferences";
 import { ONBOARDING_CONTROLLER_KEY } from "../../app/onboarding/runtime";
+import type { AssistantSession } from "../../app/runtime/assistant-session";
 import views from "../../i18n/locales/dms-assistant-views-en-GB.json";
 import { createTestI18n } from "./i18n";
 import { OnboardingModal } from "./stand-ins/OnboardingModal";
@@ -97,15 +98,22 @@ export interface OnboardingHarness {
 		>;
 	};
 	assistant: {
-		startConversation: ReturnType<typeof vi.fn>;
-		openConversation: ReturnType<typeof vi.fn>;
-		navigate: ReturnType<typeof vi.fn>;
+		startConversation: Mock<AssistantSession["startConversation"]>;
+		openConversation: Mock<AssistantSession["openConversation"]>;
+		navigate: Mock<AssistantSession["navigate"]>;
 	};
-	openTab: ReturnType<typeof vi.fn>;
+	openTab: Mock<(url: string) => void>;
 	/** Changes what the project holds, as the next read of its content answers. */
 	setContent: (next: ProjectContent) => void;
 	/** What a mounted view injects: the controller and the views' English strings. */
-	provide: Record<symbol, unknown>;
+	provide: ReturnType<typeof provided>;
+}
+
+function provided(controller: OnboardingController) {
+	return {
+		[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
+		[CHAT_I18N_KEY]: createTestI18n(views),
+	};
 }
 
 export interface HarnessOptions {
@@ -136,11 +144,11 @@ export function createOnboardingHarness(
 		),
 	};
 	const assistant = {
-		startConversation: vi.fn(),
-		openConversation: vi.fn(),
-		navigate: vi.fn(),
+		startConversation: vi.fn<AssistantSession["startConversation"]>(),
+		openConversation: vi.fn<AssistantSession["openConversation"]>(),
+		navigate: vi.fn<AssistantSession["navigate"]>(),
 	};
-	const openTab = vi.fn();
+	const openTab = vi.fn<(url: string) => void>();
 	let content = options.content ?? NO_CONTENT;
 	const controller = createOnboarding({
 		api,
@@ -159,10 +167,7 @@ export function createOnboardingHarness(
 		setContent: (next) => {
 			content = next;
 		},
-		provide: {
-			[ONBOARDING_CONTROLLER_KEY]: shallowRef(controller),
-			[CHAT_I18N_KEY]: createTestI18n(views),
-		},
+		provide: provided(controller),
 	};
 }
 

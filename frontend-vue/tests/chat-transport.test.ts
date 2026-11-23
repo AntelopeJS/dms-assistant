@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { createChatTransport } from "../app/runtime/chat-transport";
-import { createFrameRouter } from "../app/runtime/frame-router";
+import {
+	createFrameRouter,
+	type FrameRoutes,
+} from "../app/runtime/frame-router";
 
 function hub() {
 	const actions = {
@@ -65,8 +68,8 @@ describe("chat transport", () => {
 
 describe("frame routing on the tab's one stream", () => {
 	it("hands host commands to the dashboard and everything else to the chat, parsed once", () => {
-		const host = vi.fn();
-		const chat = vi.fn();
+		const host = vi.fn<FrameRoutes["host"]>();
+		const chat = vi.fn<FrameRoutes["chat"]>();
 		const route = createFrameRouter({ host, chat });
 		route('{"type":"host_command_navigate","path":"/x"}');
 		route(
@@ -83,8 +86,8 @@ describe("frame routing on the tab's one stream", () => {
 	});
 
 	it("drops what is not a typed message", () => {
-		const host = vi.fn();
-		const chat = vi.fn();
+		const host = vi.fn<FrameRoutes["host"]>();
+		const chat = vi.fn<FrameRoutes["chat"]>();
 		const route = createFrameRouter({ host, chat });
 		for (const raw of ["not json", "42", "null", '{"type":7}', "[]"])
 			route(raw);

@@ -1,31 +1,18 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import OnboardingDatabase from "../app/views/onboarding/OnboardingDatabase.vue";
 import views from "../i18n/locales/dms-assistant-views-en-GB.json";
+import { builderServer } from "./support/builder-server";
 import {
 	createOnboardingHarness,
 	ONBOARDING_STUBS,
 } from "./support/onboarding";
 
-const builder = vi.hoisted(() => ({
-	projectModules: vi.fn<() => Promise<unknown>>(),
-	checkConnection: vi.fn<(engine: string, url: string) => Promise<unknown>>(),
-}));
-
-vi.mock("../builder/app/runtime/i18n", async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	t: (key: string, params?: Record<string, unknown>) =>
-		params === undefined ? key : `${key} ${JSON.stringify(params)}`,
-}));
-
-vi.mock("../builder/app/runtime/api", () => ({
-	useBuilderApi: () => ({
-		projectModules: builder.projectModules,
-		checkConnection: builder.checkConnection,
-		failure: (error: unknown) => ({ detail: String(error) }),
-	}),
-}));
+const builder = builderServer();
 
 const WITHOUT_MYSQL_DRIVER = {
 	modules: ["dms", "mongodb"],
@@ -67,17 +54,17 @@ function connectButton(picker: VueWrapper): HTMLButtonElement {
 	return button(picker, views.dms_assistant.views.onboarding.database.connect);
 }
 
+beforeEach(builder.serve);
+
 afterEach(() => {
 	wrapper?.unmount();
 	wrapper = undefined;
-	builder.projectModules.mockReset();
-	builder.checkConnection.mockReset();
+	builder.reset();
 });
 
 describe("the engine picker", () => {
-	/** Fails on a picker that offers an engine the project cannot install a driver for, turns off one it can, or hides why. */
-	it("turns off an engine the project has no driver for, and says why", async () => {
-		builder.projectModules.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
+	it("turns off an engine the project has no driver for, and says why (fails on a picker that offers an engine the project cannot install a driver for, turns off one it can, or hides why)", async () => {
+		builder.project.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
 		const picker = await openPicker();
 		expect(
 			picker.findAll('[role="radio"]').map((option) => option.text()),
@@ -93,9 +80,8 @@ describe("the engine picker", () => {
 		]);
 	});
 
-	/** Fails on a popup that lets a URL of an engine without a driver reach the live check. */
-	it("keeps Connect off for a URL of an engine without a driver", async () => {
-		builder.projectModules.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
+	it("keeps Connect off for a URL of an engine without a driver (fails on a popup that lets a URL of an engine without a driver reach the live check)", async () => {
+		builder.project.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
 		const picker = await openPicker();
 		await picker.find("input").setValue("mysql://app@db.example.com/shop");
 		expect(button(picker, "MySQL / MariaDB").getAttribute("aria-checked")).toBe(
@@ -106,10 +92,9 @@ describe("the engine picker", () => {
 		expect(connectButton(picker).disabled).toBe(false);
 	});
 
-	/** Fails on an Enter in the URL field that runs the live check of a URL whose engine has no driver, which the turned-off Connect button never runs. */
-	it("ignores Enter on a URL of an engine without a driver, as Connect does", async () => {
-		builder.projectModules.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
-		builder.checkConnection.mockResolvedValue({
+	it("ignores Enter on a URL of an engine without a driver, as Connect does (fails on an Enter in the URL field that runs the live check of a URL whose engine has no driver, which the turned-off Connect button never runs)", async () => {
+		builder.project.mockResolvedValue(WITHOUT_MYSQL_DRIVER);
+		builder.check.mockResolvedValue({
 			reachable: false,
 			canRead: false,
 			canWrite: false,
@@ -120,19 +105,18 @@ describe("the engine picker", () => {
 		await input.setValue("mysql://app@db.example.com/shop");
 		await input.trigger("keydown", { key: "Enter" });
 		await flushPromises();
-		expect(builder.checkConnection).not.toHaveBeenCalled();
+		expect(builder.check).not.toHaveBeenCalled();
 		await input.setValue("postgres://app@db.example.com/shop");
 		await input.trigger("keydown", { key: "Enter" });
 		await flushPromises();
-		expect(builder.checkConnection).toHaveBeenCalledWith(
+		expect(builder.check).toHaveBeenCalledWith(
 			"postgres",
 			"postgres://app@db.example.com/shop",
 		);
 	});
 
-	/** Fails on a picker that turns every engine off when the project cannot be read. */
-	it("offers every engine while it cannot read the project", async () => {
-		builder.projectModules.mockRejectedValue(new Error("refused"));
+	it("offers every engine while it cannot read the project (fails on a picker that turns every engine off when the project cannot be read)", async () => {
+		builder.project.mockRejectedValue(new Error("refused"));
 		const picker = await openPicker();
 		for (const label of ENGINE_LABELS) {
 			expect(button(picker, label).disabled).toBe(false);

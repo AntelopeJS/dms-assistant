@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import {
@@ -30,12 +33,15 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-describe("the approvals dock", () => {
+/** The countdown reads the clock: frozen at the request's creation, it shows the full grace period however slow the run is. */
+function freezeClockAt(createdAtMs: number): void {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(createdAtMs);
+}
+
+describe("the approvals dock, from the request to the answer", () => {
 	it("previews a diff with line numbers and allows a scope with ↵", async () => {
-		// The countdown reads the clock: frozen at the request's creation, it
-		// shows the full grace period however slow the run is.
-		vi.useFakeTimers({ toFake: ["Date"] });
-		vi.setSystemTime(DIFF_REQUEST.createdAtMs);
+		freezeClockAt(DIFF_REQUEST.createdAtMs);
 		const harness = createHarness();
 		const panel = await openPanel(harness);
 		deliver(harness, DIFF_REQUEST);
@@ -117,7 +123,9 @@ describe("the approvals dock", () => {
 			feedback: "Use the Builder's validation instead",
 		});
 	});
+});
 
+describe("the approvals dock, held calls and the rules of the chat", () => {
 	it("shows a held configuration change with the DMS's preview in full, in a box that scrolls (fails a card that cuts the preview or reads like a removal)", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

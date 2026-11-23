@@ -10,10 +10,10 @@ export const UTextarea = defineComponent({
 			h("textarea", {
 				class: "u-textarea",
 				value: props.modelValue,
-				onInput: (event: Event) =>
-					emit(
-						"update:modelValue",
-						(event.target as HTMLTextAreaElement).value,
-					),
+				onInput: (event: Event) => {
+					if (event.target instanceof HTMLTextAreaElement) {
+						emit("update:modelValue", event.target.value);
+					}
+				},
 			}),
 });

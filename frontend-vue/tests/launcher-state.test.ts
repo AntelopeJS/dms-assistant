@@ -21,7 +21,7 @@ function launcher() {
 	return { isConnected, working, waiting, isPanelOpen, ...handle };
 }
 
-async function settled<T>(change: () => T): Promise<void> {
+async function settled(change: () => void): Promise<void> {
 	change();
 	await nextTick();
 }
@@ -54,7 +54,7 @@ describe("the launcher's priorities", () => {
 	});
 });
 
-describe("the launcher's state over a turn", () => {
+describe("the launcher's state over a turn, with a panel and a question", () => {
 	it("latches finished when a turn ends with the panel closed, and keeps it until the panel opens", async () => {
 		const sources = launcher();
 		expect(sources.state.value).toBe("connected");
@@ -121,7 +121,9 @@ describe("the launcher's state over a turn", () => {
 		expect(sources.state.value).toBe("connected");
 		sources.stop();
 	});
+});
 
+describe("the launcher's state over a turn, across a disconnect and the hold", () => {
 	it("shows disconnected over a running turn and a question, then follows them again (fails if a disconnect is not an override)", async () => {
 		const sources = launcher();
 		await settled(() => (sources.working.value = 1));

@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { shallowRef } from "vue";
@@ -25,7 +28,7 @@ describe("the assistant actions another module's layer injects", () => {
 		expect(actions.isAvailable).toBe(true);
 		actions.startConversation(PROMPT);
 		await flushPromises();
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe(
 			PROMPT,
 		);
 		expect(sentOfType(harness, "user_message")).toEqual([]);
@@ -42,7 +45,7 @@ describe("the assistant actions another module's layer injects", () => {
 		expect(sentOfType(harness, "set_conversation_mode")).toEqual([
 			expect.objectContaining({ conversationId: started, mode: "plan" }),
 		]);
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe(
 			PROMPT,
 		);
 	});
@@ -79,9 +82,7 @@ describe("the assistant actions another module's layer injects", () => {
 		expect(sentOfType(harness, "user_message")).toEqual([
 			expect.objectContaining({ content: PROMPT }),
 		]);
-		expect((panel.find("textarea").element as HTMLTextAreaElement).value).toBe(
-			"",
-		);
+		expect(panel.find<HTMLTextAreaElement>("textarea").element.value).toBe("");
 	});
 
 	it("send the prompt once the stream is up, when the panel opens before it", async () => {

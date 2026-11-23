@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { nextTick, ref } from "vue";
@@ -13,6 +16,7 @@ import {
 	createHarness,
 	type Harness,
 	providedSession,
+	type SidecarEvent,
 	sentOfType,
 } from "./support/panel-harness";
 import { createTestI18n } from "./support/i18n";
@@ -41,10 +45,7 @@ function paletteConversation(harness: Harness): string {
 	return String(hello?.conversationId);
 }
 
-function deliverToPalette(
-	harness: Harness,
-	event: Record<string, unknown>,
-): void {
+function deliverToPalette(harness: Harness, event: SidecarEvent): void {
 	harness.hub.deliver({
 		conversationId: paletteConversation(harness),
 		...event,

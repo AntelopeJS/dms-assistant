@@ -1,8 +1,13 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, ref, type Ref } from "vue";
 import GuardRails from "../app/components/GuardRails.vue";
+import type { GuardRailValues } from "../app/views/guard-rails";
+import type { AssistantStatus } from "../app/views/types";
 import pages from "../i18n/locales/dms-assistant-pages-en-GB.json";
 import views from "../i18n/locales/dms-assistant-views-en-GB.json";
 import { installApiErrorPresenter } from "./support/api-error-presenter";
@@ -16,7 +21,9 @@ const SETTINGS_URL = "/ai/settings";
 const STATUS_URL = "/ai/status";
 const NOT_SAVED = views.dms_assistant.views.guard_rails.not_saved;
 
-const SETTINGS = {
+type StatusRead = Pick<AssistantStatus, "disabled">;
+
+const SETTINGS: GuardRailValues = {
 	defaultModeClaude: "auto",
 	defaultModeCodex: "normal",
 	safeMode: true,
@@ -27,11 +34,12 @@ const SETTINGS = {
 	builderAvailable: true,
 };
 
-const authFetch = vi.fn();
+const authFetch =
+	vi.fn<(url: string, request: { method: string }) => Promise<void>>();
 const reads: string[] = [];
-const readData: Ref<Record<string, unknown> | null>[] = [];
-let answer: Record<string, unknown> | Error;
-let status: Record<string, unknown>;
+const readData: Ref<GuardRailValues | StatusRead | null>[] = [];
+let answer: GuardRailValues | Error;
+let status: StatusRead;
 let add: ReturnType<typeof installApiErrorPresenter>["add"];
 
 const UnavailableStateStub = defineComponent({
@@ -42,7 +50,7 @@ const UnavailableStateStub = defineComponent({
 
 function useApiData(url: string) {
 	reads.push(url);
-	const data = ref<Record<string, unknown> | null>(null);
+	const data = ref<GuardRailValues | StatusRead | null>(null);
 	const error = ref<unknown>(null);
 	if (url === STATUS_URL) data.value = structuredClone(status);
 	else if (answer instanceof Error) error.value = answer;
@@ -60,9 +68,9 @@ beforeEach(() => {
 	reads.length = 0;
 	readData.length = 0;
 	answer = SETTINGS;
-	status = { status: "ready", disabled: false };
+	status = { disabled: false };
 	authFetch.mockReset();
-	authFetch.mockResolvedValue({});
+	authFetch.mockResolvedValue(undefined);
 	({ add } = installApiErrorPresenter({
 		"dms_assistant.views.guard_rails.not_saved": NOT_SAVED,
 	}));
@@ -127,13 +135,11 @@ const DEPENDENCIES = "Adding or removing dependencies";
 
 /** A save the test answers when it chooses. */
 function heldSave() {
-	let accept: (value: unknown) => void = () => undefined;
-	let refuse: (reason: unknown) => void = () => undefined;
-	const answered = new Promise((resolve, reject) => {
+	let accept: () => void = () => undefined;
+	const answered = new Promise<void>((resolve) => {
 		accept = resolve;
-		refuse = reject;
 	});
-	return { answered, accept, refuse };
+	return { answered, accept };
 }
 
 const REFUSED = Object.assign(new Error("Forbidden"), {
@@ -141,7 +147,7 @@ const REFUSED = Object.assign(new Error("Forbidden"), {
 	data: { code: "forbidden", message: "Send the header." },
 });
 
-describe("the Guard rails card", () => {
+describe("saving a guard rail from the Guard rails card", () => {
 	it.each([
 		["Safe mode", SAFE_MODE, { safeMode: false }],
 		[
@@ -183,7 +189,10 @@ describe("the Guard rails card", () => {
 			expect(authFetch).toHaveBeenCalledExactlyOnceWith(SETTINGS_URL, {
 				method: "PUT",
 				body: JSON.stringify(body),
-				headers: expect.objectContaining({ "x-dms-ui-assistant": "1" }),
+				headers: {
+					"content-type": "application/json",
+					"x-dms-ui-assistant": "1",
+				},
 			});
 		},
 	);
@@ -238,7 +247,9 @@ describe("the Guard rails card", () => {
 			expect.objectContaining({ title: NOT_SAVED }),
 		);
 	});
+});
 
+describe("what the Guard rails card shows", () => {
 	it("shows what each default mode does, Codex's Accept edits in its own words", async () => {
 		const card = await mountCard();
 		const modes = pages.dms_assistant.settings.mode;
@@ -305,7 +316,9 @@ describe("the Guard rails card", () => {
 		expect(card.text()).not.toContain("dms_assistant.");
 		expect(card.text()).toContain(views.dms_assistant.views.guard_rails.title);
 	});
+});
 
+describe("a save in flight, and a sidecar that does not answer", () => {
 	it("keeps an accepted value when a read answered before the save lands while it is in flight", async () => {
 		const save = heldSave();
 		authFetch.mockReturnValueOnce(save.answered);
@@ -315,7 +328,7 @@ describe("the Guard rails card", () => {
 		readData[0].value = structuredClone(SETTINGS);
 		await flushPromises();
 		expect(control.attributes("aria-checked")).toBe("true");
-		save.accept({});
+		save.accept();
 		await flushPromises();
 		expect(control.attributes("aria-checked")).toBe("true");
 	});
@@ -333,7 +346,7 @@ describe("the Guard rails card", () => {
 		expect(switchOf(card, LOCAL_SKILLS).attributes("aria-checked")).toBe(
 			"true",
 		);
-		held.accept({});
+		held.accept();
 		await flushPromises();
 		expect(switchOf(card, LOCAL_SKILLS).attributes("aria-checked")).toBe(
 			"true",
@@ -351,7 +364,7 @@ describe("the Guard rails card", () => {
 	});
 
 	it("shows nothing while the module's configuration turns the sidecar off, the page's offline banner saying so alone", async () => {
-		status = { status: "offline", disabled: true };
+		status = { disabled: true };
 		answer = Object.assign(new Error("Service Unavailable"), {
 			statusCode: 503,
 		});

@@ -11,12 +11,12 @@ export interface ApprovalKeyInput {
 	isTextTarget: boolean;
 }
 
-const ACTION_BY_KEY: Record<string, ApprovalKeyAction> = {
-	enter: "allow",
-	n: "deny",
-	j: "next",
-	k: "previous",
-};
+const ACTION_BY_KEY: ReadonlyMap<string, ApprovalKeyAction> = new Map([
+	["enter", "allow"],
+	["n", "deny"],
+	["j", "next"],
+	["k", "previous"],
+]);
 
 /** ↵ allows, N denies, J and K move between requests; anything else is not ours. */
 export function approvalKeyAction(
@@ -25,7 +25,7 @@ export function approvalKeyAction(
 	if (input.isTextTarget) return null;
 	if (input.metaKey || input.ctrlKey || input.altKey || input.shiftKey)
 		return null;
-	return ACTION_BY_KEY[input.key.toLowerCase()] ?? null;
+	return ACTION_BY_KEY.get(input.key.toLowerCase()) ?? null;
 }
 
 const TEXT_TARGET_SELECTOR =

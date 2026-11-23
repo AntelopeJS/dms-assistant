@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { PLAN_ARG_KEY } from "../constants/conversation";
 import { useChatI18n } from "../composables/useChatI18n";
 import type { ToolCallMessage } from "../types/conversation";
+import { ownMember, toJsonObject, toText } from "../utils/json";
 import MarkdownContent from "./MarkdownContent.vue";
 
 interface Props {
@@ -22,12 +23,9 @@ const { t } = useChatI18n();
 
 const LIST_ITEM = /^\s*(?:\d+[.)]|[-*+])\s+/;
 
-const plan = computed<string>(() => {
-	const args = props.tool.args;
-	if (args === null || typeof args !== "object") return "";
-	const value = Reflect.get(args, PLAN_ARG_KEY);
-	return typeof value === "string" ? value : "";
-});
+const plan = computed<string>(
+	() => toText(ownMember(toJsonObject(props.tool.args), PLAN_ARG_KEY)) ?? "",
+);
 
 const stepCount = computed(
 	() => plan.value.split("\n").filter((line) => LIST_ITEM.test(line)).length,

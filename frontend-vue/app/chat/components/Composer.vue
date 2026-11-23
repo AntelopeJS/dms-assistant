@@ -195,7 +195,8 @@ function onPaste(event: ClipboardEvent): void {
 }
 
 function onFileChange(event: Event): void {
-	const input = event.target as HTMLInputElement;
+	const input = event.target;
+	if (!(input instanceof HTMLInputElement)) return;
 	if (input.files !== null) void files.add(input.files);
 	input.value = "";
 }

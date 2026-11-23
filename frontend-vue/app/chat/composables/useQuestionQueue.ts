@@ -1,19 +1,30 @@
 import { type Ref, ref } from "vue";
+import { z } from "zod";
 import {
 	CLIENT_MESSAGE_TYPES,
 	SERVER_EVENT_TYPES,
 } from "../constants/protocol";
-import type { QuestionAnswerRecord } from "../types/protocol";
+import type {
+	ClientMessage,
+	QuestionAnswerRecord,
+	QuestionResponseMessage,
+} from "../types/protocol";
 import type {
 	QuestionData,
 	QuestionReply,
 	QuestionRequestData,
 } from "../types/question";
+import {
+	isForConversation,
+	parseEvent,
+	type WireEnvelope,
+} from "../utils/wire-envelope";
+import { QUESTION_SCHEMA } from "../utils/wire-schemas";
 
 export interface UseQuestionQueueOptions {
 	activeId: Ref<string>;
-	send: (msg: object) => boolean;
-	onMessage: (handler: (msg: unknown) => void) => () => void;
+	send: (msg: ClientMessage) => boolean;
+	onMessage: (handler: (msg: WireEnvelope) => void) => () => void;
 }
 
 export interface UseQuestionQueueResult {
@@ -29,22 +40,26 @@ export interface UseQuestionQueueResult {
 	clear: () => void;
 }
 
-interface AskQuestionWire {
-	conversationId: string;
-	requestId: string;
-	questions: QuestionData[];
-	createdAtMs: number;
-	expiresAtMs: number;
-}
+const ASK_QUESTION_SCHEMA = z.object({
+	conversationId: z.string().optional(),
+	requestId: z.string(),
+	questions: z.array(QUESTION_SCHEMA),
+	createdAtMs: z.number().default(0),
+	expiresAtMs: z.number().default(0),
+});
 
-interface RequestIdWire {
-	requestId: string;
-}
+const REQUEST_ID_SCHEMA = z.object({ requestId: z.string() });
 
-function toRequest(wire: AskQuestionWire): QuestionRequestData {
+type AskQuestionWire = z.infer<typeof ASK_QUESTION_SCHEMA>;
+
+/** A question that names no chat is the active chat's. */
+function toRequest(
+	wire: AskQuestionWire,
+	activeId: string,
+): QuestionRequestData {
 	return {
 		requestId: wire.requestId,
-		conversationId: wire.conversationId,
+		conversationId: wire.conversationId ?? activeId,
 		questions: wire.questions,
 		createdAtMs: wire.createdAtMs,
 		expiresAtMs: wire.expiresAtMs,
@@ -72,24 +87,20 @@ function toAnswerRecords(
 function responseMessage(
 	req: QuestionRequestData,
 	replies: readonly QuestionReply[],
-): object {
+): QuestionResponseMessage {
 	const skipped = req.questions.map(
 		(_, index) => replies[index]?.skipped ?? true,
 	);
-	return {
+	const message: QuestionResponseMessage = {
 		type: CLIENT_MESSAGE_TYPES.QUESTION_RESPONSE,
 		conversationId: req.conversationId,
 		requestId: req.requestId,
 		answers: req.questions.map((_, index) =>
 			skipped[index] ? "" : (replies[index]?.answer ?? ""),
 		),
-		...(skipped.some(Boolean) ? { skipped } : {}),
 	};
-}
-
-function isForActive(msg: Record<string, unknown>, activeId: string): boolean {
-	const id = msg.conversationId;
-	return typeof id !== "string" || id === activeId;
+	if (skipped.some(Boolean)) message.skipped = skipped;
+	return message;
 }
 
 /**
@@ -105,16 +116,18 @@ export function useQuestionQueue(
 		queue.value = queue.value.filter((req) => req.requestId !== requestId);
 	};
 
-	options.onMessage((msg) => {
-		if (msg === null || typeof msg !== "object") return;
-		const event = msg as Record<string, unknown>;
-		if (!isForActive(event, options.activeId.value)) return;
-		if (event.type === SERVER_EVENT_TYPES.QUESTION_EXPIRED)
-			drop((msg as RequestIdWire).requestId);
-		if (event.type !== SERVER_EVENT_TYPES.ASK_QUESTION) return;
-		const wire = msg as AskQuestionWire;
+	options.onMessage((envelope) => {
+		if (!isForConversation(envelope, options.activeId.value)) return;
+		if (envelope.type === SERVER_EVENT_TYPES.QUESTION_EXPIRED) {
+			const expired = parseEvent(REQUEST_ID_SCHEMA, envelope);
+			if (expired !== null) drop(expired.requestId);
+			return;
+		}
+		if (envelope.type !== SERVER_EVENT_TYPES.ASK_QUESTION) return;
+		const wire = parseEvent(ASK_QUESTION_SCHEMA, envelope);
+		if (wire === null) return;
 		if (queue.value.some((req) => req.requestId === wire.requestId)) return;
-		queue.value = [...queue.value, toRequest(wire)];
+		queue.value = [...queue.value, toRequest(wire, options.activeId.value)];
 	});
 
 	const respond = (

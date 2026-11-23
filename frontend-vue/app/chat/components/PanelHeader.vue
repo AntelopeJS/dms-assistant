@@ -6,11 +6,9 @@ import { ruleIcon } from "../utils/permission-view";
 import { shortcutLabel } from "../utils/platform";
 import type { StatusKind } from "../utils/status-label";
 
-export type PanelStatusKind = StatusKind;
-
 interface Props {
 	title: string;
-	status: PanelStatusKind;
+	status: StatusKind;
 	/** "Working · 0:14 · Claude Code". */
 	statusLabel: string;
 	rules: ActiveRule[];

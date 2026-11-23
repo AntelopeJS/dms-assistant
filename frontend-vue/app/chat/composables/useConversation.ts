@@ -1,4 +1,4 @@
-import { type Ref, ref } from "vue";
+import { type Ref, ref, shallowRef } from "vue";
 import { LOCAL_ERROR_KEYS, MESSAGE_ROLES } from "../constants/conversation";
 import { CLIENT_MESSAGE_TYPES } from "../constants/protocol";
 import type {
@@ -10,8 +10,12 @@ import type {
 } from "../types/conversation";
 import type {
 	ChangeSetSummary,
+	ClientMessage,
 	ConversationModeState,
 	QuestionAnswerRecord,
+	QueuedItemRequest,
+	UserTurnExtras,
+	UserTurnMessage,
 	WireAttachment,
 } from "../types/protocol";
 import type { PendingAttachment } from "../utils/attachments";
@@ -23,13 +27,14 @@ import {
 } from "../utils/conversation-messages";
 import { newUuid } from "../utils/ids";
 import type { TokenTally } from "../utils/token-tally";
+import type { WireEnvelope } from "../utils/wire-envelope";
 import { dispatchConversationEvent } from "./conversation-events";
 
 export interface UseConversationOptions {
 	activeId: Ref<string>;
 	/** Returns false when the message could not leave the chat. */
-	send: (msg: object) => boolean;
-	onMessage: (handler: (msg: unknown) => void) => () => void;
+	send: (msg: ClientMessage) => boolean;
+	onMessage: (handler: (msg: WireEnvelope) => void) => () => void;
 	/** The page the dashboard shows, stamped on the messages sent from it. */
 	getPagePath?: () => string | undefined;
 }
@@ -55,7 +60,7 @@ export interface UseConversationResult {
 	sendUserMessage: (
 		content: string,
 		attachments?: PendingAttachment[],
-		extra?: Record<string, unknown>,
+		extra?: UserTurnExtras,
 	) => void;
 	/**
 	 * Runs the last turn again: the sidecar re-runs a stored message, the chat
@@ -141,21 +146,18 @@ function toLocalAttachments(
 	}));
 }
 
-function withWire(attachments: PendingAttachment[]): Record<string, unknown> {
-	const wire = toWireAttachments(attachments);
-	return wire.length > 0 ? { attachments: wire } : {};
-}
-
 function queueFollowUp(
 	state: ConversationState,
 	content: string,
 	attachments: PendingAttachment[],
-	extra: Record<string, unknown>,
+	extra: UserTurnExtras,
 ): void {
+	const item: QueuedItemRequest = { id: newUuid(), content, ...extra };
+	if (attachments.length > 0) item.attachments = toWireAttachments(attachments);
 	const isQueued = state.options.send({
 		type: CLIENT_MESSAGE_TYPES.QUEUE_ENQUEUE,
 		conversationId: state.options.activeId.value,
-		item: { id: newUuid(), content, ...withWire(attachments), ...extra },
+		item,
 	});
 	if (!isQueued) appendLocalError(state, LOCAL_ERROR_KEYS.NOT_SENT);
 }
@@ -164,15 +166,16 @@ function startTurn(
 	state: ConversationState,
 	content: string,
 	attachments: PendingAttachment[],
-	extra: Record<string, unknown>,
+	extra: UserTurnExtras,
 ): void {
-	const isSent = state.options.send({
+	const turn: UserTurnMessage = {
 		type: CLIENT_MESSAGE_TYPES.USER_MESSAGE,
 		conversationId: state.options.activeId.value,
 		content,
-		...withWire(attachments),
 		...extra,
-	});
+	};
+	if (attachments.length > 0) turn.attachments = toWireAttachments(attachments);
+	const isSent = state.options.send(turn);
 	state.messages.value = settleOpenTools(state.messages.value);
 	const message = buildUserMessage(
 		content,
@@ -192,7 +195,7 @@ function sendUserMessage(
 	state: ConversationState,
 	content: string,
 	attachments: PendingAttachment[],
-	extra: Record<string, unknown>,
+	extra: UserTurnExtras,
 ): void {
 	const trimmed = content.trim();
 	if (trimmed.length === 0 && attachments.length === 0) return;
@@ -299,7 +302,7 @@ function createConversationState(
 ): ConversationState {
 	return {
 		options,
-		messages: ref<ConversationMessage[]>([]),
+		messages: shallowRef<ConversationMessage[]>([]),
 		isRunning: ref(false),
 		queued: ref<QueuedMessage[]>([]),
 		progress: ref<RunProgress | null>(null),

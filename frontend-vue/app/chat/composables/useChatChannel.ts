@@ -7,6 +7,8 @@ import {
 	CONNECTION_STATUSES,
 	type ConnectionStatus,
 } from "../constants/protocol";
+import type { ClientMessage, HelloMessage } from "../types/protocol";
+import { readEnvelope, type WireEnvelope } from "../utils/wire-envelope";
 
 export interface UseChatChannelOptions {
 	transport: ChatTransport;
@@ -19,11 +21,11 @@ export interface UseChatChannelOptions {
 	isFollowing?: boolean;
 }
 
-type ChannelMessageHandler = (msg: unknown) => void;
+type ChannelMessageHandler = (msg: WireEnvelope) => void;
 
 export interface UseChatChannelResult {
 	/** False when the message was dropped: the stream is not connected. */
-	send: (msg: object) => boolean;
+	send: (msg: ClientMessage) => boolean;
 	onMessage: (handler: ChannelMessageHandler) => () => void;
 	reconnect: () => void;
 	reidentify: () => void;
@@ -33,36 +35,37 @@ export interface UseChatChannelResult {
 
 interface ChannelState {
 	options: UseChatChannelOptions;
-	dispatch: ChannelMessageHandler;
+	emit: ChannelMessageHandler;
 	isConnected: Ref<boolean>;
 	connectionStatus: Ref<ConnectionStatus>;
 	isAttached: boolean;
 	detachers: Array<() => void>;
 }
 
-const KNOWN_STATUSES = new Set<string>(Object.values(CONNECTION_STATUSES));
-
-function setStatus(state: ChannelState, status: string): void {
-	if (!KNOWN_STATUSES.has(status)) return;
-	state.connectionStatus.value = status as ConnectionStatus;
+function setStatus(state: ChannelState, status: ConnectionStatus): void {
+	state.connectionStatus.value = status;
 	state.isConnected.value = status === CONNECTION_STATUSES.CONNECTED;
 }
 
 function sendHello(state: ChannelState): void {
 	const { transport, getConversationId, isFollowing } = state.options;
-	transport.send({
+	const hello: HelloMessage = {
 		type: CLIENT_MESSAGE_TYPES.HELLO,
 		role: CHAT_ROLE,
 		conversationId: getConversationId(),
-		...(isFollowing === true ? { follow: true } : {}),
-	});
+	};
+	if (isFollowing === true) hello.follow = true;
+	transport.send(hello);
 }
 
 function attach(state: ChannelState): void {
 	const { transport } = state.options;
 	state.isAttached = true;
 	state.detachers = [
-		transport.onMessage(state.dispatch),
+		transport.onMessage((message) => {
+			const envelope = readEnvelope(message);
+			if (envelope !== null) state.emit(envelope);
+		}),
 		transport.onReady(() => sendHello(state)),
 		transport.onStatus((status) => setStatus(state, status)),
 	];
@@ -86,10 +89,10 @@ export interface ChatChannel {
 
 /** The chat's channel without the component lifecycle, which `useChatChannel` adds. */
 export function createChatChannel(options: UseChatChannelOptions): ChatChannel {
-	const subscribers = createListeners<unknown>();
+	const subscribers = createListeners<WireEnvelope>();
 	const state: ChannelState = {
 		options,
-		dispatch: subscribers.emit,
+		emit: subscribers.emit,
 		isConnected: ref(false),
 		connectionStatus: ref<ConnectionStatus>(CONNECTION_STATUSES.CONNECTING),
 		isAttached: false,

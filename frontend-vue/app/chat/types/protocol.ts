@@ -1,8 +1,12 @@
 /**
- * The sidecar's wire shapes the chat reads, mirrored by hand like the message
- * types (sidecar/src/protocol). Every field the redesign added is optional
- * here: the chat must keep working against a sidecar that does not send it yet.
+ * @fileoverview The sidecar's wire shapes the chat reads, mirrored by hand like
+ * the message types (sidecar/src/protocol). Every field the redesign added is
+ * optional here: the chat must keep working against a sidecar that does not
+ * send it yet.
  */
+import type { MockupBlock } from "../../runtime/assistant-prompt";
+import type { CHAT_ROLE, CLIENT_MESSAGE_TYPES } from "../constants/protocol";
+import type { JsonObject, JsonValue } from "./json";
 
 export type ProviderName = "claude" | "codex";
 export type ApprovalMode = "normal" | "auto" | "acceptEdits" | "plan";
@@ -93,7 +97,7 @@ export interface WebPreview {
 
 interface GenericPreview {
 	type: "generic";
-	args: Record<string, unknown>;
+	args: JsonObject;
 }
 
 /**
@@ -103,7 +107,7 @@ interface GenericPreview {
 export interface HeldPreview {
 	type: "held";
 	operation: string;
-	details: unknown;
+	details: JsonValue;
 }
 
 /**
@@ -113,7 +117,7 @@ export interface HeldPreview {
 export interface HeldToolPreview {
 	type: "held_tool";
 	operation: string;
-	args: Record<string, unknown>;
+	args: JsonObject;
 }
 
 export type PermissionPreview =
@@ -254,3 +258,121 @@ export interface QueuedItemWire {
 	content: string;
 	attachments?: WireAttachment[];
 }
+
+/** The turn's page chip and mockup block: what rides along with a message. */
+export interface UserTurnExtras {
+	includePageContext?: boolean;
+	focusBlock?: MockupBlock;
+}
+
+/** A message the chat sends for one conversation. */
+export interface ConversationRequest<Type extends string> {
+	type: Type;
+	conversationId: string;
+}
+
+export interface HelloMessage {
+	type: typeof CLIENT_MESSAGE_TYPES.HELLO;
+	role: typeof CHAT_ROLE;
+	conversationId: string;
+	/** Follows the conversation next to the one the tab's stream shows. */
+	follow?: true;
+}
+
+export interface UserTurnMessage
+	extends
+		ConversationRequest<typeof CLIENT_MESSAGE_TYPES.USER_MESSAGE>,
+		UserTurnExtras {
+	content: string;
+	attachments?: WireAttachment[];
+}
+
+export interface QueuedItemRequest extends UserTurnExtras {
+	id: string;
+	content: string;
+	attachments?: WireAttachment[];
+}
+
+export interface QueueEnqueueMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.QUEUE_ENQUEUE
+> {
+	item: QueuedItemRequest;
+}
+
+export interface QueueCancelMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.QUEUE_CANCEL
+> {
+	id: string;
+}
+
+export interface QueueUpdateMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.QUEUE_UPDATE
+> {
+	id: string;
+	content: string;
+}
+
+export interface QueueMoveMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.QUEUE_MOVE
+> {
+	id: string;
+	toIndex: number;
+}
+
+export interface PermissionResponseMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.PERMISSION_RESPONSE
+> {
+	requestId: string;
+	decision: "allow_once" | "allow_rule" | "deny" | "deny_all";
+	rule?: PermissionRule;
+	feedback?: string;
+}
+
+export interface QuestionResponseMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.QUESTION_RESPONSE
+> {
+	requestId: string;
+	answers: string[];
+	skipped?: boolean[];
+}
+
+export interface SetConversationModeMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.SET_CONVERSATION_MODE
+> {
+	mode?: ApprovalMode;
+	generationMode?: Scope;
+}
+
+export interface RevokeRuleMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.REVOKE_RULE
+> {
+	ruleId: string;
+}
+
+export interface ChangeSetActionMessage extends ConversationRequest<
+	typeof CLIENT_MESSAGE_TYPES.CHANGE_SET_ACTION
+> {
+	changeSetId: string;
+	action: "undo" | "redo";
+	includeLater?: true;
+}
+
+/** Every message the chat sends to the sidecar. */
+export type ClientMessage =
+	| HelloMessage
+	| UserTurnMessage
+	| QueueEnqueueMessage
+	| QueueCancelMessage
+	| QueueUpdateMessage
+	| QueueMoveMessage
+	| ConversationRequest<typeof CLIENT_MESSAGE_TYPES.QUEUE_CLEAR>
+	| PermissionResponseMessage
+	| QuestionResponseMessage
+	| SetConversationModeMessage
+	| RevokeRuleMessage
+	| ChangeSetActionMessage
+	| ConversationRequest<typeof CLIENT_MESSAGE_TYPES.RETRY_TURN>
+	| ConversationRequest<typeof CLIENT_MESSAGE_TYPES.INTERRUPT_TURN>
+	| ConversationRequest<typeof CLIENT_MESSAGE_TYPES.STOP_AUTOFIX>
+	| ConversationRequest<typeof CLIENT_MESSAGE_TYPES.DELETE_CONVERSATION>
+	| { type: typeof CLIENT_MESSAGE_TYPES.LIST_CONVERSATIONS };

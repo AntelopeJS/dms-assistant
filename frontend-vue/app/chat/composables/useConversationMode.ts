@@ -3,6 +3,7 @@ import { modeFor } from "../constants/modes";
 import { CLIENT_MESSAGE_TYPES } from "../constants/protocol";
 import type {
 	ApprovalMode,
+	ClientMessage,
 	ConversationModeState,
 	Scope,
 } from "../types/protocol";
@@ -13,7 +14,7 @@ export interface UseConversationModeOptions {
 	/** What the sidecar last said of this chat's mode; null before it did. */
 	mode: Ref<ConversationModeState | null>;
 	settings: Ref<AppSettings>;
-	send: (msg: object) => boolean;
+	send: (msg: ClientMessage) => boolean;
 }
 
 export interface UseConversationModeResult {

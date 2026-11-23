@@ -10,6 +10,11 @@ function scrollToBottom(el: HTMLElement): void {
 	el.scrollTop = el.scrollHeight;
 }
 
+export interface UseFollowScrollResult {
+	/** Jumps to the bottom and follows from there. */
+	follow: () => void;
+}
+
 /**
  * Keeps a scrolling container on its newest content while it follows. The
  * view follows from the start. An upward scroll that leaves it more than a few
@@ -21,10 +26,9 @@ function scrollToBottom(el: HTMLElement): void {
  * it re-pins the bottom, so growth that changes no reactive data (docks,
  * images, wrapping, cards that open) is followed too.
  */
-export function useFollowScroll(scrollEl: Ref<HTMLElement | null>): {
-	/** Jumps to the bottom and follows from there. */
-	follow: () => void;
-} {
+export function useFollowScroll(
+	scrollEl: Ref<HTMLElement | null>,
+): UseFollowScrollResult {
 	let following = true;
 
 	function follow(): void {

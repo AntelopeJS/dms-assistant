@@ -31,7 +31,6 @@ export function useMockupIntents(deps: MockupIntentsDeps) {
 		void nextTick(() => deps.setDraft(intent.prompt));
 	}
 
-	/** The block of the message being sent, as its extra fields; the chip goes with it. */
 	function takeFocusBlock(): { focusBlock?: MockupBlock } {
 		const block = focusBlock.value;
 		focusBlock.value = null;

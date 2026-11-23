@@ -7,6 +7,7 @@ import {
 	ref,
 	watch,
 } from "vue";
+import { z } from "zod";
 import type { ChatTransport } from "../../runtime/chat-transport";
 import type { MockupRuns } from "../../runtime/mockup-runs";
 import type {
@@ -45,6 +46,7 @@ import {
 } from "../constants/protocol";
 import type { ConversationSummary, CurrentPage } from "../types/conversation";
 import type { ExpiredRequest } from "../types/permission";
+import type { UserTurnExtras } from "../types/protocol";
 import type { QuestionReply } from "../types/question";
 import type { PendingAttachment } from "../utils/attachments";
 import { changingBlock } from "../utils/block-target";
@@ -55,9 +57,10 @@ import {
 	mockupRequestMessage,
 } from "../utils/mockup-requests";
 import { isRunStalled, runElapsedMs } from "../utils/run-status";
-import { describeStatus } from "../utils/status-label";
+import { describeStatus, type StatusKind } from "../utils/status-label";
 import { bareToolName } from "../utils/tool-lexicon";
 import { latestTodos } from "../utils/todos";
+import { parseEvent, type WireEnvelope } from "../utils/wire-envelope";
 import ApprovalDock from "./ApprovalDock.vue";
 import BlockOutline from "./BlockOutline.vue";
 import ChatEmpty from "./ChatEmpty.vue";
@@ -65,7 +68,7 @@ import Composer from "./Composer.vue";
 import ConnectionBanner from "./ConnectionBanner.vue";
 import ConversationDrawer from "./ConversationDrawer.vue";
 import MessageList from "./MessageList.vue";
-import PanelHeader, { type PanelStatusKind } from "./PanelHeader.vue";
+import PanelHeader from "./PanelHeader.vue";
 import QuestionDock from "./QuestionDock.vue";
 import QueueDock from "./QueueDock.vue";
 import ProviderNotice from "./ProviderNotice.vue";
@@ -104,11 +107,13 @@ const { t } = useChatI18n();
 
 const HISTORY_KEY = "j";
 const ESCAPE_KEY = "Escape";
-const NAVIGATION_TARGETS: Record<string, string> = {
+const NAVIGATION_TARGETS = {
 	changes: CHANGES_PAGE_PATH,
 	activity: ACTIVITY_PAGE_PATH,
 	settings: SETTINGS_PAGE_PATH,
-};
+} as const;
+
+const CONVERSATION_CLOSED_SCHEMA = z.object({ message: z.string().optional() });
 
 const activeId = ref(resolveConversationId());
 const channel = useChatChannel({
@@ -194,7 +199,7 @@ const title = computed(
 			?.title || t("dms_assistant.panel.new_conversation"),
 );
 
-const status = computed<PanelStatusKind>(() => {
+const status = computed<StatusKind>(() => {
 	if (!isConnected.value)
 		return channel.connectionStatus.value === "disconnected"
 			? "offline"
@@ -304,10 +309,9 @@ function submit(
 	attachments: PendingAttachment[],
 	includePage: boolean,
 ): void {
-	sendUserMessage(content, attachments, {
-		...(includePage ? {} : { includePageContext: false }),
-		...mockup.takeFocusBlock(),
-	});
+	const extras: UserTurnExtras = { ...mockup.takeFocusBlock() };
+	if (!includePage) extras.includePageContext = false;
+	sendUserMessage(content, attachments, extras);
 }
 
 function answerQuestions(requestId: string, replies: QuestionReply[]): void {
@@ -456,30 +460,32 @@ function onPanelKeydown(event: KeyboardEvent): void {
 	if (isRunning.value) stopTurn();
 }
 
-function refreshListAfterTurn(msg: unknown): void {
-	if (!isDrawerOpen.value || msg === null || typeof msg !== "object") return;
-	if (Reflect.get(msg, "type") === SERVER_EVENT_TYPES.RUN_DONE) list.refresh();
+function refreshListAfterTurn(envelope: WireEnvelope): void {
+	if (!isDrawerOpen.value) return;
+	if (envelope.type === SERVER_EVENT_TYPES.RUN_DONE) list.refresh();
 }
 
 channel.onMessage(refreshListAfterTurn);
 
-function leaveClosedConversation(msg: unknown): void {
-	if (msg === null || typeof msg !== "object") return;
-	if (Reflect.get(msg, "type") !== SERVER_EVENT_TYPES.CONVERSATION_CLOSED)
-		return;
-	if (Reflect.get(msg, "conversationId") !== activeId.value) return;
+function leaveClosedConversation(envelope: WireEnvelope): void {
+	if (envelope.type !== SERVER_EVENT_TYPES.CONVERSATION_CLOSED) return;
+	if (envelope.conversationId !== activeId.value) return;
 	newConversation();
-	const message: unknown = Reflect.get(msg, "message");
-	closedNotice.value = typeof message === "string" ? message : null;
+	closedNotice.value =
+		parseEvent(CONVERSATION_CLOSED_SCHEMA, envelope)?.message ?? null;
 }
 
 channel.onMessage(leaveClosedConversation);
 
-// The DMS mounts the panel open on a reload, often before the tab's stream
-// is up: the list (and the chat's title) is asked for again once it is.
-watch(isConnected, (connected) => {
+/**
+ * The DMS mounts the panel open on a reload, often before the tab's stream
+ * is up: the list (and the chat's title) is asked for again once it is.
+ */
+function refreshListOnConnect(connected: boolean): void {
 	if (connected) list.refresh();
-});
+}
+
+watch(isConnected, refreshListOnConnect);
 
 onMounted(() => {
 	document.addEventListener("keydown", onDocumentKeydown);

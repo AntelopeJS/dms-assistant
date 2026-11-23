@@ -90,7 +90,7 @@ export const URL_WRITTEN = answered({ variable: "SHOP_URL" });
 /** What a Web Lock's holder receives: the lock granted, or none when another tab holds it. */
 export interface LockGrant {
 	name: string;
-	mode: LockMode;
+	mode: "exclusive";
 }
 
 export type LockHolder = (lock: LockGrant | null) => Promise<void> | undefined;

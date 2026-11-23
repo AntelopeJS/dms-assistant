@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	CONNECT_MEMORY_KEY,
@@ -26,7 +29,14 @@ function tabOf(owner: string | null) {
 	);
 }
 
-function storedWith(written: unknown): string {
+interface StoredWrite {
+	engine: string;
+	connection: string;
+	access: Partial<WrittenConnection["access"]>;
+	writtenAt?: number;
+}
+
+function storedWith(written: StoredWrite): string {
 	return JSON.stringify({ owner: "owner-1", attempt: "a", written });
 }
 

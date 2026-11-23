@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import {
@@ -23,33 +26,33 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-describe("questions, queue and modes", () => {
-	const QUESTIONS = {
-		type: "ask_question",
-		requestId: "q1",
-		questions: [
-			{
-				question: "Where should the page live?",
-				header: "Placement",
-				options: [
-					{
-						label: "Finance › Overdue invoices",
-						description: "Next to Invoices",
-					},
-					{ label: "A tab on Invoices", description: "" },
-				],
-			},
-			{
-				question: "Default sort?",
-				header: "Sort",
-				options: [
-					{ label: "Days overdue", description: "" },
-					{ label: "Amount", description: "" },
-				],
-			},
-		],
-	};
+const QUESTIONS = {
+	type: "ask_question",
+	requestId: "q1",
+	questions: [
+		{
+			question: "Where should the page live?",
+			header: "Placement",
+			options: [
+				{
+					label: "Finance › Overdue invoices",
+					description: "Next to Invoices",
+				},
+				{ label: "A tab on Invoices", description: "" },
+			],
+		},
+		{
+			question: "Default sort?",
+			header: "Sort",
+			options: [
+				{ label: "Days overdue", description: "" },
+				{ label: "Amount", description: "" },
+			],
+		},
+	],
+};
 
+describe("questions, queue and modes", () => {
 	it("pages through questions with numbers, Other… and Skip, then keeps the answers", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

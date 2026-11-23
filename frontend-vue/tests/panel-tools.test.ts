@@ -1,4 +1,7 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ * @packageDocumentation
+ */
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -24,7 +27,7 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-describe("tool rows and change sets", () => {
+describe("tool rows", () => {
 	it("draws each call with the lexicon's words and its state", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
@@ -126,7 +129,9 @@ describe("tool rows and change sets", () => {
 		await nextTick();
 		expect(panel.find(".cb-tools").attributes("data-tone")).toBe("denied");
 	});
+});
 
+describe("a tool call's raw JSON", () => {
 	it("shows the raw JSON of a call on demand", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);
@@ -150,7 +155,9 @@ describe("tool rows and change sets", () => {
 		await buttonWithText(panel, "Raw JSON").trigger("click");
 		expect(panel.find(".cb-raw").text()).toContain('"type": "TopListCard"');
 	});
+});
 
+describe("the change set a turn ends with", () => {
 	it("ends a turn with its change set: undo, review, then redo", async () => {
 		const harness = createHarness();
 		const panel = await openPanel(harness);

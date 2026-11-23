@@ -337,7 +337,11 @@ export class World {
 
 	private locksOf(tab: Tab) {
 		return {
-			request: (name: string, _options: LockOptions, callback: LockHolder) => {
+			request: (
+				name: string,
+				_options: { ifAvailable: boolean },
+				callback: LockHolder,
+			) => {
 				const taken = this.held.has(name);
 				if (!taken) this.held.set(name, tab);
 				return this.later(tab, `lock ${name} answered`, () => {

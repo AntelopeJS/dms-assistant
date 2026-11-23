@@ -33,7 +33,7 @@ function sharedLocks(grantMs = 0) {
 	return {
 		request: async (
 			name: string,
-			_options: LockOptions,
+			_options: { ifAvailable: boolean },
 			callback: LockHolder,
 		) => {
 			if (held.has(name)) return callback(null);

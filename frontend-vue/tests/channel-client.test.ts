@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, type Mock, vi } from "vitest";
 import {
 	type ChannelStatus,
 	createChannelClient,
@@ -15,7 +15,7 @@ interface Harness {
 	streams: FakeStream[];
 	posts: Array<{ path: string; body: unknown }>;
 	statuses: ChannelStatus[];
-	ready: ReturnType<typeof vi.fn>;
+	ready: Mock<() => void>;
 	frames: string[];
 }
 
@@ -45,12 +45,14 @@ function openFakeStream(
 	return Promise.resolve(new Response(body, { status: 200 }));
 }
 
-function startClient(post = vi.fn(async () => undefined)) {
+type PostMessage = Parameters<typeof createChannelClient>[0]["post"];
+
+function startClient(post = vi.fn<PostMessage>(async () => undefined)) {
 	const harness: Harness = {
 		streams: [],
 		posts: [],
 		statuses: [],
-		ready: vi.fn(),
+		ready: vi.fn<() => void>(),
 		frames: [],
 	};
 	const client = createChannelClient({

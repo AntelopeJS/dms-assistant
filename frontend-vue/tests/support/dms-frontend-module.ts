@@ -1,3 +1,10 @@
+/**
+ * The renderer's runtime (`#dms/frontend-module`), which only the generated application provides:
+ * `vitest.config.ts` aliases the import to this module, so a suite that mounts code reading the
+ * renderer runs on this stand-in without mocking the module. A suite that needs more of the
+ * runtime mocks `#dms/frontend-module` itself, which takes the place of this module whole.
+ * @packageDocumentation
+ */
 import { ref } from "vue";
 
 /** A widget the onboarding adds to the DMS's dock, by the fields the suites read. */
@@ -23,11 +30,7 @@ type MessageParams = Record<string, number | string | boolean>;
 let states = freshStates();
 const requested = new Set<keyof DmsStates>();
 
-/**
- * The renderer's runtime (`#dms/frontend-module`), which only the generated application provides:
- * `vitest.config.ts` aliases the import to this module, so a suite that mounts code reading the
- * renderer runs on this stand-in without mocking the module.
- */
+/** The state the dashboard keeps under `key`, each one starting as the default the onboarding passes the real `useDmsState`. */
 export function useDmsState<Key extends keyof DmsStates>(
 	key: Key,
 ): DmsStates[Key] {
@@ -48,6 +51,7 @@ export function resetDmsState(): void {
 	requested.clear();
 }
 
+/** Hands the plugin back, as the renderer does before it runs it. */
 export function defineDmsPlugin<Plugin>(definition: Plugin): Plugin {
 	return definition;
 }
@@ -66,10 +70,12 @@ export function useDmsApp() {
 	};
 }
 
+/** A router that goes nowhere. */
 export function useDmsRouter() {
 	return { push: async () => undefined };
 }
 
+/** The current route, which a suite has to mock to read: none is faked here. */
 export function useDmsRoute(): never {
 	throw new Error("Mock #dms/frontend-module in the suite that needs it");
 }

@@ -1,13 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { nextTick, ref, type Ref } from "vue";
+import { createApp, nextTick, ref, type Ref } from "vue";
 import { assistantPlugin } from "../app/plugins/ai.client";
 
 const plugin = assistantPlugin({ builderEnabled: false });
-
-vi.mock("#dms/frontend-module", () => ({
-	defineDmsPlugin: (definition: unknown) => definition,
-	useDmsRouter: () => ({ push: vi.fn() }),
-}));
 
 interface PluginHarness {
 	useAuthFetch: ReturnType<typeof vi.fn>;
@@ -15,8 +10,7 @@ interface PluginHarness {
 	run: () => void | Promise<void>;
 }
 
-// A first probe reporting a disabled sidecar stops the startup right after the
-// authenticated fetch, which is all these tests need to observe.
+/** A first probe reporting a disabled sidecar stops the startup right after the authenticated fetch, which is all these tests need to observe. */
 function disabledSidecarRead() {
 	return {
 		data: ref({ disabled: true }),
@@ -41,10 +35,11 @@ function loadPlugin(loggedIn: Ref<boolean>): PluginHarness {
 		unregisterSidePanel,
 		run: () =>
 			plugin({
-				vueApp: { onUnmount: vi.fn(), provide: vi.fn() },
+				provide: vi.fn(),
+				vueApp: createApp({}),
 				$i18n: { t: (key: string) => key, locale: ref("en-GB") },
 				hook: vi.fn(),
-				runWithContext: (callback: () => unknown) => callback(),
+				runWithContext: <T>(callback: () => T) => callback(),
 			}),
 	};
 }

@@ -19,22 +19,20 @@ const BLOCK_STATES = ["loading", "ok", "empty", "error"] as const;
 type BlockState = (typeof BLOCK_STATES)[number];
 type ReportedState = Exclude<BlockState, "ok">;
 
-export interface BlockFact {
+export type BlockFact = {
 	path?: string;
 	type: string;
 	state: BlockState;
-}
+};
 
-export interface ReportedBlock extends BlockFact {
-	state: ReportedState;
-}
+export type ReportedBlock = BlockFact & { state: ReportedState };
 
-export interface PageBlocks {
+export type PageBlocks = {
 	status: "settled" | "timeout" | "superseded";
 	checked: number;
 	/** The blocks showing no data: empty, failed, or still loading. */
 	blocks: ReportedBlock[];
-}
+};
 
 const KNOWN_STATES: ReadonlySet<string | null> = new Set<string | null>(
 	BLOCK_STATES,

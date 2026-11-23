@@ -168,8 +168,9 @@ function restart(state: ClientState): void {
 async function drain(state: ClientState): Promise<void> {
 	if (state.isDraining) return;
 	state.isDraining = true;
-	while (state.queue.length > 0 && state.connectionId !== null) {
+	while (state.connectionId !== null) {
 		const next = state.queue.shift();
+		if (next === undefined) break;
 		try {
 			await state.options.post(channelMessagesPath(state.connectionId), next);
 		} catch {

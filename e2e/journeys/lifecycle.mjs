@@ -304,6 +304,7 @@ export const covers = [
   "src/types/status.ts",
   "sidecar/src/index.ts",
   "sidecar/src/server/idle-shutdown.ts",
+  "sidecar/src/server/message-gate.ts",
   "sidecar/src/server/routing.ts",
   "sidecar/src/server/services.ts",
   "sidecar/src/state/sidecar-version.ts",

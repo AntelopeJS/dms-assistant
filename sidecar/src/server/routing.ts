@@ -1,6 +1,6 @@
 import type { WebSocket } from "ws";
 import { WS_LOG_PREFIX } from "../constants/ws.js";
-import { type AnyServerEventType, EVENT_TYPES } from "../protocol/events.js";
+import { EVENT_TYPES } from "../protocol/events.js";
 import {
   AnyClientMessage,
   type AnyClientMessageType,
@@ -10,10 +10,7 @@ import {
   type ServerEchoReplyMsgType,
   type SettingsPatchType,
 } from "../protocol/messages.js";
-import {
-  CLOSED_CONVERSATION_MESSAGES,
-  isVisibleTo,
-} from "../state/conversations.js";
+import { CLOSED_CONVERSATION_MESSAGES } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import type { AgentRunner } from "../agent/runner.js";
@@ -28,6 +25,14 @@ import {
 } from "./chat-events.js";
 import type { ChatSocketRegistry } from "./chat-socket-registry.js";
 import { handleChangeSetAction } from "./change-set-actions.js";
+import {
+  type ClientMessageHandler,
+  on,
+  onConversation,
+  refusalOf,
+  send,
+  viewerOf,
+} from "./message-gate.js";
 import { interruptConversation } from "./permission-events.js";
 import type {
   ConnectionContext,
@@ -47,41 +52,6 @@ import {
 } from "./conversation-runs.js";
 
 export type { ConnectionContext, RoutingConfig } from "./services.js";
-
-type ClientMessageHandler = (
-  socket: WebSocket,
-  msg: AnyClientMessageType,
-  ctx: ConnectionContext,
-) => void | Promise<void>;
-
-type MessageOf<T extends AnyClientMessageType["type"]> = Extract<
-  AnyClientMessageType,
-  { type: T }
->;
-
-function isMessageOf<T extends AnyClientMessageType["type"]>(
-  msg: AnyClientMessageType,
-  type: T,
-): msg is MessageOf<T> {
-  return msg.type === type;
-}
-
-/** A handler bound to one message type: others never reach it. */
-function on<T extends AnyClientMessageType["type"]>(
-  type: T,
-  handle: (
-    socket: WebSocket,
-    msg: MessageOf<T>,
-    ctx: ConnectionContext,
-  ) => void | Promise<void>,
-): ClientMessageHandler {
-  return (socket, msg, ctx) =>
-    isMessageOf(msg, type) ? handle(socket, msg, ctx) : undefined;
-}
-
-function send(socket: WebSocket, event: AnyServerEventType): void {
-  socket.send(JSON.stringify(event));
-}
 
 function replayLiveTurn(
   socket: WebSocket,
@@ -128,41 +98,6 @@ function sendConversationState(
   )) {
     send(socket, buildAskQuestionEvent(question));
   }
-}
-
-/** The `userId` the connection's actor frame named; null until there is one. */
-function viewerOf(ctx: ConnectionContext): string | null {
-  return ctx.actor?.userId ?? null;
-}
-
-const FOREIGN_CONVERSATION_ERROR = "This conversation belongs to someone else.";
-/**
- * Why the connection may not use the conversation: closed (set aside when the
- * store was read, or deleted), or not visible to the connection's actor. Null
- * when it may.
- */
-function refusalOf(
-  ctx: ConnectionContext,
-  conversationId: string,
-): string | null {
-  const closure = ctx.conversationStore.closure(conversationId);
-  if (closure !== null) return CLOSED_CONVERSATION_MESSAGES[closure];
-  const stored = ctx.conversationStore.get(conversationId);
-  return stored !== null && !isVisibleTo(stored, viewerOf(ctx))
-    ? FOREIGN_CONVERSATION_ERROR
-    : null;
-}
-
-/** Refuses a request on a conversation the connection may not use; true when it may go on. */
-function admit(
-  socket: WebSocket,
-  ctx: ConnectionContext,
-  conversationId: string,
-): boolean {
-  const error = refusalOf(ctx, conversationId);
-  if (error === null) return true;
-  send(socket, { type: EVENT_TYPES.RUN_ERROR, conversationId, error });
-  return false;
 }
 
 function sendSnapshotIfKnown(
@@ -259,10 +194,9 @@ function noteAsker(ctx: ConnectionContext, conversationId: string): void {
  * so the one active drain runs it — preserving ordering and the single-writer
  * invariant.
  */
-const runUserMessage = on(
+const runUserMessage = onConversation(
   MESSAGE_TYPES.USER_MESSAGE,
-  async (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
+  async (_s, msg, ctx) => {
     noteAsker(ctx, msg.conversationId);
     if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) {
       enqueueUserMessage(ctx, msg);
@@ -280,10 +214,9 @@ const runUserMessage = on(
  * Re-runs the last request as it was typed; its attachments are not kept, so
  * a retry carries the text alone.
  */
-const handleRetryTurn = on(
+const handleRetryTurn = onConversation(
   MESSAGE_TYPES.RETRY_TURN,
-  async (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
+  async (_s, msg, ctx) => {
     const last = lastUserMessage(ctx, msg.conversationId);
     if (last === undefined) return;
     if (!ctx.pendingQueue.tryStartDrain(msg.conversationId)) return;
@@ -294,10 +227,9 @@ const handleRetryTurn = on(
   },
 );
 
-const handleQueueEnqueue = on(
+const handleQueueEnqueue = onConversation(
   MESSAGE_TYPES.QUEUE_ENQUEUE,
-  (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
+  (_s, msg, ctx) => {
     noteAsker(ctx, msg.conversationId);
     ctx.pendingQueue.enqueue(msg.conversationId, msg.item);
     broadcastQueueState(ctx, msg.conversationId);
@@ -305,51 +237,41 @@ const handleQueueEnqueue = on(
   },
 );
 
-const handleQueueCancel = on(MESSAGE_TYPES.QUEUE_CANCEL, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  ctx.pendingQueue.cancel(msg.conversationId, msg.id);
-  broadcastQueueState(ctx, msg.conversationId);
-});
+const handleQueueCancel = onConversation(
+  MESSAGE_TYPES.QUEUE_CANCEL,
+  (_s, msg, ctx) => {
+    ctx.pendingQueue.cancel(msg.conversationId, msg.id);
+    broadcastQueueState(ctx, msg.conversationId);
+  },
+);
 
-const handleQueueUpdate = on(MESSAGE_TYPES.QUEUE_UPDATE, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  ctx.pendingQueue.update(msg.conversationId, msg.id, msg.content);
-  broadcastQueueState(ctx, msg.conversationId);
-});
+const handleQueueUpdate = onConversation(
+  MESSAGE_TYPES.QUEUE_UPDATE,
+  (_s, msg, ctx) => {
+    ctx.pendingQueue.update(msg.conversationId, msg.id, msg.content);
+    broadcastQueueState(ctx, msg.conversationId);
+  },
+);
 
-const handleQueueMove = on(MESSAGE_TYPES.QUEUE_MOVE, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  ctx.pendingQueue.move(msg.conversationId, msg.id, msg.toIndex);
-  broadcastQueueState(ctx, msg.conversationId);
-});
+const handleQueueMove = onConversation(
+  MESSAGE_TYPES.QUEUE_MOVE,
+  (_s, msg, ctx) => {
+    ctx.pendingQueue.move(msg.conversationId, msg.id, msg.toIndex);
+    broadcastQueueState(ctx, msg.conversationId);
+  },
+);
 
-const handleQueueClear = on(MESSAGE_TYPES.QUEUE_CLEAR, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  ctx.pendingQueue.clear(msg.conversationId);
-  broadcastQueueState(ctx, msg.conversationId);
-});
+const handleQueueClear = onConversation(
+  MESSAGE_TYPES.QUEUE_CLEAR,
+  (_s, msg, ctx) => {
+    ctx.pendingQueue.clear(msg.conversationId);
+    broadcastQueueState(ctx, msg.conversationId);
+  },
+);
 
-/**
- * Whether the connection may answer the request: the ownership check runs on
- * the conversation the pending request belongs to, never on the one the
- * message names. A refused answer gets no reply, like an unknown request, so
- * the sender cannot tell another person's request from no request. An
- * unknown request goes on, for its bus to log and drop.
- */
-function mayAnswer(
-  ctx: ConnectionContext,
-  conversationId: string | undefined,
-): boolean {
-  return (
-    conversationId === undefined || refusalOf(ctx, conversationId) === null
-  );
-}
-
-const handlePermissionResponse = on(
+const handlePermissionResponse = onConversation(
   MESSAGE_TYPES.PERMISSION_RESPONSE,
   (_s, msg, ctx) => {
-    const owner = ctx.permissionBus.conversationOf(msg.requestId);
-    if (!mayAnswer(ctx, owner)) return;
     ctx.permissionBus.resolvePermission({
       requestId: msg.requestId,
       decision: msg.decision,
@@ -361,17 +283,17 @@ const handlePermissionResponse = on(
 );
 
 /** An unknown rule id means the chat's list is stale, so the real one is sent. */
-const handleRevokeRule = on(MESSAGE_TYPES.REVOKE_RULE, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  if (ctx.permissionBus.revokeRule(msg.conversationId, msg.ruleId)) return;
-  sendRulesState(ctx, msg.conversationId);
-});
+const handleRevokeRule = onConversation(
+  MESSAGE_TYPES.REVOKE_RULE,
+  (_s, msg, ctx) => {
+    if (ctx.permissionBus.revokeRule(msg.conversationId, msg.ruleId)) return;
+    sendRulesState(ctx, msg.conversationId);
+  },
+);
 
-const handleQuestionResponse = on(
+const handleQuestionResponse = onConversation(
   MESSAGE_TYPES.QUESTION_RESPONSE,
   (_s, msg, ctx) => {
-    const owner = ctx.questionBus.conversationOf(msg.requestId);
-    if (!mayAnswer(ctx, owner)) return;
     ctx.questionBus.resolveQuestion(msg.requestId, {
       answers: msg.answers,
       skipped: msg.skipped ?? [],
@@ -384,25 +306,25 @@ const handleQuestionResponse = on(
  * then signal the provider to wind the turn down; both are needed so the run
  * can settle.
  */
-const handleInterruptTurn = on(
+const handleInterruptTurn = onConversation(
   MESSAGE_TYPES.INTERRUPT_TURN,
-  (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
+  (_s, msg, ctx) => {
     interruptConversation(ctx, msg.conversationId);
   },
 );
 
-const handleStopAutoFix = on(MESSAGE_TYPES.STOP_AUTOFIX, (socket, msg, ctx) => {
-  if (!admit(socket, ctx, msg.conversationId)) return;
-  ctx.turns.stopAutoFix(msg.conversationId);
-  if (ctx.turns.get(msg.conversationId)?.isAutoFix !== true) return;
-  interruptConversation(ctx, msg.conversationId);
-});
+const handleStopAutoFix = onConversation(
+  MESSAGE_TYPES.STOP_AUTOFIX,
+  (_s, msg, ctx) => {
+    ctx.turns.stopAutoFix(msg.conversationId);
+    if (ctx.turns.get(msg.conversationId)?.isAutoFix !== true) return;
+    interruptConversation(ctx, msg.conversationId);
+  },
+);
 
-const handleSetConversationMode = on(
+const handleSetConversationMode = onConversation(
   MESSAGE_TYPES.SET_CONVERSATION_MODE,
-  (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
+  (_s, msg, ctx) => {
     ctx.conversationModes.update(msg.conversationId, {
       mode: msg.mode,
       generationMode: msg.generationMode,
@@ -462,10 +384,9 @@ function forgetConversation(ctx: SidecarServices, conversationId: string) {
   ctx.pendingQueue.clear(conversationId);
 }
 
-const handleDeleteConversation = on(
+const handleDeleteConversation = onConversation(
   MESSAGE_TYPES.DELETE_CONVERSATION,
   (socket, msg, ctx) => {
-    if (!admit(socket, ctx, msg.conversationId)) return;
     forgetConversation(ctx, msg.conversationId);
     send(socket, buildConversationListEvent(ctx, viewerOf(ctx)));
     broadcastConversationList(ctx);

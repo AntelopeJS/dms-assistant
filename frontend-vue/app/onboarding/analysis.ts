@@ -5,6 +5,7 @@ import {
 	settledInput,
 } from "../../builder/app/runtime/database";
 import type {
+	MappedResource,
 	MappingProposal,
 	MapResourcesInput,
 } from "../../builder/app/runtime/database-types";
@@ -72,20 +73,37 @@ export function tablesOf(proposal: MappingProposal): AnalysedTable[] {
 	}));
 }
 
+/** A resource with `tabs` left out, which the builder tabs as it proposes for a new relation. */
+function builderTabs({
+	tabs: _tabs,
+	...resource
+}: MappedResource): MappedResource {
+	return resource;
+}
+
 /**
  * "Build directly": the builder's `MapResources` call that gives every ticked screen a page, as
- * the analysis proposed it otherwise, and maps the relations kept from a page for stats.
+ * the analysis proposed it otherwise, and maps the relations kept from a page for stats. A page
+ * the analysis proposed for stats only came with no tabs, so the builder picks them.
  */
 export function mappingInput(
 	proposal: MappingProposal,
 	ticked: ReadonlySet<string>,
 ): MapResourcesInput {
 	const kept = statsOnly(proposal);
+	const promoted = new Set<string>();
 	const draft = draftFromProposal(proposal);
 	for (const resource of draft.resources) {
 		if (kept.has(resource.relation)) continue;
 		includeResource(draft, resource.relation, ticked.has(resource.relation));
+		if (!resource.tableView) promoted.add(resource.relation);
 		resource.tableView = true;
 	}
-	return settledInput(proposal, draft);
+	const input = settledInput(proposal, draft);
+	return {
+		...input,
+		resources: input.resources.map((resource) =>
+			promoted.has(resource.relation) ? builderTabs(resource) : resource,
+		),
+	};
 }

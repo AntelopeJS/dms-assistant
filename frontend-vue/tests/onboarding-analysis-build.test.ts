@@ -92,6 +92,17 @@ describe("Build directly on the shop sample", () => {
 		).toBe(true);
 	});
 
+	it("leaves the tabs of a page made from a stats-only proposal to the builder, which tabs a new relation by its status (fails when such a page is sent with tabs null, which writes none)", () => {
+		const input = mappingInput(SHOP, ticked(SHOP));
+		const tabs = (relation: string) =>
+			"tabs" in
+			(input.resources.find((resource) => resource.relation === relation) ??
+				{});
+
+		expect(tabs("public.payments")).toBe(false);
+		expect(tabs("public.orders")).toBe(true);
+	});
+
 	it("lists no screen for a relation the catalog keeps from a page, and still maps it for stats (fails when a link table or a keyless relation is offered as a screen, or dropped from the mapping)", () => {
 		const relations = screensOf(SHOP).map((screen) => screen.relation);
 		const input = mappingInput(SHOP, ticked(SHOP));

@@ -148,15 +148,11 @@ export const SCOPES: Record<
   host_navigation_complete: {
     kind: "send",
     world: "paused",
-    defect:
-      "the navigation completer is keyed by path alone, so another person's host landing on the path resolves the owner's pending navigation",
     frames: () => [{ type: "host_navigation_complete", path: CAMILLE_PAGE }],
   },
   host_page_blocks: {
     kind: "send",
     world: "paused",
-    defect:
-      "the block report is keyed by path alone, so another person's host report resolves the owner's pending report",
     frames: () => [
       {
         type: "host_page_blocks",
@@ -257,8 +253,6 @@ export const SCOPES: Record<
   change_set_action: {
     kind: "send",
     world: "settled",
-    defect:
-      "the handler never checks the change set's conversation, so another person can undo and redo the owner's change sets",
     frames: (world) => [
       {
         type: "change_set_action",

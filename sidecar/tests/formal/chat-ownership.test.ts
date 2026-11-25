@@ -219,16 +219,16 @@ interface Waiters {
 function watchNavigation(services: SidecarServices, waiters: Waiters): void {
   const { navigationCompleter } = services;
   void navigationCompleter
-    .waitFor(CAMILLE_PAGE, WAIT_MS * 3)
+    .waitFor(CAMILLE.userId, CAMILLE_PAGE, WAIT_MS * 3)
     .then((landing) => {
       waiters.landed = landing !== null;
     });
   void navigationCompleter
-    .waitFor(CAMILLE_REPORT_PAGE, WAIT_MS * 3)
+    .waitFor(CAMILLE.userId, CAMILLE_REPORT_PAGE, WAIT_MS * 3)
     .then(async (landing) => {
       waiters.reported = (await landing?.blocks) != null;
     });
-  navigationCompleter.complete(CAMILLE_REPORT_PAGE, {
+  navigationCompleter.complete(CAMILLE.userId, CAMILLE_REPORT_PAGE, {
     blocksWithinMs: WAIT_MS,
   });
 }
@@ -343,6 +343,32 @@ describe("a chat request from another person (formal target: chat requests honou
       .sort();
     expect(classified).toEqual(defined);
   });
+
+  it(
+    "lets the owner undo her own change set (fails a change_set_action check that refuses everyone)",
+    async () => {
+      const room = await openRoom("settled");
+      const world = await buildSettled(room);
+      const undone = room.camille.frames.next(
+        (msg) =>
+          msg.type === "change_set" &&
+          JSON.stringify(msg.changeSet).includes('"state":"undone"'),
+      );
+      transmit(room.camille.socket, {
+        type: "change_set_action",
+        changeSetId: world.changeSetId,
+        action: "undo",
+        conversationId: CONVERSATION,
+      });
+      await undone;
+      expect(
+        room.services.checkpoints
+          .forConversation(CONVERSATION)
+          .map((set) => set.state),
+      ).toEqual(["undone"]);
+    },
+    TEST_TIMEOUT_MS,
+  );
 
   const sent = Object.entries(SCOPES).flatMap(([type, scope]) =>
     scope.kind === "send" ? [[type, scope] as const] : [],

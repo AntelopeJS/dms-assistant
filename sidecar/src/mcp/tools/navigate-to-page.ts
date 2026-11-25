@@ -21,7 +21,7 @@ import type { RegistryClient } from "../../pages/registry-client.js";
 import { isKnownRoute } from "../../pages/route-match.js";
 import { type AnyServerEventType, EVENT_TYPES } from "../../protocol/events.js";
 import type {
-  NavigationCompleter,
+  LandingWait,
   NavigationLanding,
 } from "../../server/navigation-completer.js";
 import type { CurrentPage } from "../../state/host-state.js";
@@ -29,7 +29,7 @@ import { defineTool, type McpToolResult } from "../define-tool.js";
 
 export interface NavigateToPageDeps {
   sendToHost: (event: AnyServerEventType) => void;
-  navigationCompleter: NavigationCompleter;
+  waitForLanding: LandingWait;
   registry: RegistryClient;
   getCurrentPage: () => CurrentPage;
 }
@@ -141,10 +141,7 @@ export function buildNavigateToPageTool(deps: NavigateToPageDeps) {
       if (knownRoutes.length > 0 && !isKnownRoute(targetPath, knownRoutes)) {
         return buildUnknownRouteContent(targetPath, knownRoutes);
       }
-      const waitPromise = deps.navigationCompleter.waitFor(
-        targetPath,
-        NAVIGATE_TIMEOUT_MS,
-      );
+      const waitPromise = deps.waitForLanding(targetPath, NAVIGATE_TIMEOUT_MS);
       deps.sendToHost(buildNavigationEvent(targetPath));
       const landing = await waitPromise;
       const blocks = await awaitBlockHealth(landing);

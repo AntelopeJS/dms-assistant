@@ -4,6 +4,7 @@ import { EVENT_TYPES } from "../protocol/events.js";
 import {
   AnyClientMessage,
   type AnyClientMessageType,
+  type ChangeSetActionMsgType,
   type ClientHelloMsgType,
   MESSAGE_TYPES,
   ROLE,
@@ -343,6 +344,7 @@ const handleHostNavigationComplete = on(
   MESSAGE_TYPES.HOST_NAVIGATION_COMPLETE,
   (_s, msg, ctx) => {
     ctx.navigationCompleter.complete(
+      viewerOf(ctx),
       msg.path,
       msg.blocksWithinMs === undefined
         ? {}
@@ -354,7 +356,7 @@ const handleHostNavigationComplete = on(
 const handleHostPageBlocks = on(
   MESSAGE_TYPES.HOST_PAGE_BLOCKS,
   (_s, msg, ctx) => {
-    ctx.navigationCompleter.completeBlocks(msg.path, {
+    ctx.navigationCompleter.completeBlocks(viewerOf(ctx), msg.path, {
       status: msg.status,
       checked: msg.checked,
       blocks: msg.blocks,
@@ -435,9 +437,37 @@ const handleReloadHoldApplied = on(
   },
 );
 
+/**
+ * Why the connection may not act on the change set: the conversation the
+ * message names, or the one the change set belongs to, is refused to it (see
+ * `refusalOf`). Null when it may.
+ */
+function changeSetRefusalOf(
+  ctx: ConnectionContext,
+  msg: ChangeSetActionMsgType,
+): string | null {
+  const named =
+    msg.conversationId === undefined
+      ? null
+      : refusalOf(ctx, msg.conversationId);
+  const recordedOn = ctx.checkpoints.get(msg.changeSetId)?.conversationId;
+  return (
+    named ?? (recordedOn === undefined ? null : refusalOf(ctx, recordedOn))
+  );
+}
+
 const handleChangeSet = on(
   MESSAGE_TYPES.CHANGE_SET_ACTION,
   async (socket, msg, ctx) => {
+    const refusal = changeSetRefusalOf(ctx, msg);
+    if (refusal !== null) {
+      send(socket, {
+        type: EVENT_TYPES.RUN_ERROR,
+        conversationId: msg.conversationId ?? "",
+        error: refusal,
+      });
+      return;
+    }
     await handleChangeSetAction(ctx, msg, ctx.actor?.name).catch(
       (err: unknown) => {
         logFailure(

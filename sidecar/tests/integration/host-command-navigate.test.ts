@@ -62,7 +62,6 @@ async function startTestServer(): Promise<ServerHandle> {
       invalidate: () => {},
     },
     hostProjectRoot: TEST_HOST_ROOT,
-    navigationCompleter,
   };
   const ws = attachWsServer(server, {
     providerRuntime: {
@@ -130,7 +129,8 @@ function registerReportCases(getHandle: () => ServerHandle): void {
     const handle = getHandle();
     const toolDef = buildNavigateToPageTool({
       sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
-      navigationCompleter: handle.navigationCompleter,
+      waitForLanding: (path, timeoutMs) =>
+        handle.navigationCompleter.waitFor(null, path, timeoutMs),
       registry: {
         getRegistry: async () => [],
         getStaleSinceMs: () => null,
@@ -140,7 +140,7 @@ function registerReportCases(getHandle: () => ServerHandle): void {
     });
     const handlerPromise = toolDef.handler({ path: "/x" });
     await settle();
-    handle.navigationCompleter.complete("/x");
+    handle.navigationCompleter.complete(null, "/x");
     const result = await handlerPromise;
     expect(result.content[0]?.text).toContain("/x");
   });
@@ -156,7 +156,8 @@ function registerReportCases(getHandle: () => ServerHandle): void {
     const incoming = waitForMessage(client);
     const toolDef = buildNavigateToPageTool({
       sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
-      navigationCompleter: handle.navigationCompleter,
+      waitForLanding: (path, timeoutMs) =>
+        handle.navigationCompleter.waitFor(null, path, timeoutMs),
       registry: {
         getRegistry: async () => [],
         getStaleSinceMs: () => null,
@@ -209,7 +210,8 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     const incoming = waitForMessage(client);
     const toolDef = buildNavigateToPageTool({
       sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
-      navigationCompleter: handle.navigationCompleter,
+      waitForLanding: (path, timeoutMs) =>
+        handle.navigationCompleter.waitFor(null, path, timeoutMs),
       registry: {
         getRegistry: async () => [],
         getStaleSinceMs: () => null,
@@ -219,7 +221,7 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     });
     const handlerPromise = toolDef.handler({ path: NAVIGATE_TARGET });
     const received = await incoming;
-    handle.navigationCompleter.complete(NAVIGATE_TARGET);
+    handle.navigationCompleter.complete(null, NAVIGATE_TARGET);
     await handlerPromise;
     client.close();
     expect(received).toEqual({
@@ -248,7 +250,8 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     await settle();
     const toolDef = buildNavigateToPageTool({
       sendToHost: (event) => handle.hostSocketRegistry.send(event, () => true),
-      navigationCompleter: handle.navigationCompleter,
+      waitForLanding: (path, timeoutMs) =>
+        handle.navigationCompleter.waitFor(null, path, timeoutMs),
       registry: {
         getRegistry: async () => [],
         getStaleSinceMs: () => null,
@@ -258,7 +261,7 @@ describe("navigate_to_page → host_command_navigate over host WS", () => {
     });
     const handlerPromise = toolDef.handler({ path: NAVIGATE_TARGET });
     await settle();
-    handle.navigationCompleter.complete(NAVIGATE_TARGET);
+    handle.navigationCompleter.complete(null, NAVIGATE_TARGET);
     await handlerPromise;
     client.close();
     expect(received).toEqual(

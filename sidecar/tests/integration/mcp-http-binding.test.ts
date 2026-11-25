@@ -18,7 +18,6 @@ import type { AiMcpServerDeps } from "../../src/mcp/types.js";
 import type { ImportsScanner } from "../../src/pages/imports-scanner.js";
 import type { RegistryClient } from "../../src/pages/registry-client.js";
 import { createHttpServer } from "../../src/server/http.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 
 const CONVERSATION_A = "conv-mcp-a";
 const CONVERSATION_B = "conv-mcp-b";
@@ -53,7 +52,7 @@ function buildDeps(
     scanner,
     hostProjectRoot: TEST_HOST_ROOT,
     sendToHost: () => {},
-    navigationCompleter: createNavigationCompleter(),
+    waitForLanding: async () => null,
     conversationId,
     requestQuestion: async (req: QuestionRequest) => {
       asked.push({ conversationId: req.conversationId });

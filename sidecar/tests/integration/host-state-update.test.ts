@@ -65,7 +65,6 @@ async function startTestServer(): Promise<ServerHandle> {
     },
     hostProjectRoot: TEST_HOST_ROOT,
     sendToHost: hostSocketRegistry.send,
-    navigationCompleter,
   };
   const ws = attachWsServer(server, {
     providerRuntime: {

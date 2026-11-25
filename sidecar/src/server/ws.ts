@@ -69,7 +69,7 @@ import {
   createHostCommandRouter,
   type HostCommandSender,
 } from "./host-command-router.js";
-import { pageOf } from "./host-page.js";
+import { ownerOf, pageOf } from "./host-page.js";
 import type {
   HostSocketRegistry,
   SocketSender,
@@ -238,6 +238,12 @@ function buildMcpDepsFactory(
     conversationId,
     getCurrentPage: () => pageOf(services(holder), conversationId),
     sendToHost: hostCommandsOf(conversationId),
+    waitForLanding: (path, timeoutMs) =>
+      services(holder).navigationCompleter.waitFor(
+        ownerOf(services(holder), conversationId),
+        path,
+        timeoutMs,
+      ),
     requestQuestion: (req) => askUser(services(holder), req),
   });
 }

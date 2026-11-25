@@ -22,7 +22,7 @@ export function buildToolDefinitions(
     }),
     buildNavigateToPageTool({
       sendToHost: deps.sendToHost,
-      navigationCompleter: deps.navigationCompleter,
+      waitForLanding: deps.waitForLanding,
       registry: deps.registry,
       getCurrentPage: deps.getCurrentPage,
     }),

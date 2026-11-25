@@ -53,7 +53,6 @@ function buildContext(directory: string) {
       invalidate: () => {},
     },
     hostProjectRoot: directory,
-    navigationCompleter,
   };
   return {
     clientToken: CLIENT_TOKEN,

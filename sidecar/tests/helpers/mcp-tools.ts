@@ -7,7 +7,6 @@ import { buildMcpServer } from "../../src/mcp/http-binding.js";
 import { createAiMcpServer } from "../../src/mcp/sdk-binding.js";
 import { buildToolDefinitions } from "../../src/mcp/tool-definitions.js";
 import type { AiMcpServerDeps } from "../../src/mcp/types.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 
 /** Deps for the chat's own MCP server that answer nothing. */
 export function buildDeps(): AiMcpServerDeps {
@@ -24,7 +23,7 @@ export function buildDeps(): AiMcpServerDeps {
     },
     hostProjectRoot: "/tmp/host",
     sendToHost: () => {},
-    navigationCompleter: createNavigationCompleter(),
+    waitForLanding: async () => null,
     conversationId: "conv-tools",
     requestQuestion: async () => null,
   };

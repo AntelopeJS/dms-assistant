@@ -7,7 +7,7 @@ import type { MCP_SERVER_TYPE_SDK } from "../constants/mcp.js";
 import type { ImportsScanner } from "../pages/imports-scanner.js";
 import type { RegistryClient } from "../pages/registry-client.js";
 import type { AnyServerEventType } from "../protocol/events.js";
-import type { NavigationCompleter } from "../server/navigation-completer.js";
+import type { LandingWait } from "../server/navigation-completer.js";
 import type { CurrentPage } from "../state/host-state.js";
 
 /** Deps shared by every conversation's MCP server. Assembled once at startup. */
@@ -15,7 +15,6 @@ export interface AiMcpServerStaticDeps {
   registry: RegistryClient;
   scanner: ImportsScanner;
   hostProjectRoot: string;
-  navigationCompleter: NavigationCompleter;
 }
 
 /**
@@ -28,6 +27,8 @@ export interface AiMcpServerDeps extends AiMcpServerStaticDeps {
   /** The page the conversation owner's dashboard shows. */
   getCurrentPage: () => CurrentPage;
   sendToHost: (event: AnyServerEventType) => void;
+  /** Waits for the conversation owner's host to land on a page. */
+  waitForLanding: LandingWait;
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
 }
 

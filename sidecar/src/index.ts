@@ -383,7 +383,6 @@ function buildWsStack({
       registry,
       scanner,
       hostProjectRoot: args.root,
-      navigationCompleter,
     },
     logsClient,
     hostState,

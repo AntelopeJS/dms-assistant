@@ -8,7 +8,6 @@ import type {
 } from "../../src/mcp/types.js";
 import { createClaudeProvider } from "../../src/providers/claude/provider.js";
 import { createCodexProvider } from "../../src/providers/codex/provider.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
 import type { AppSettings } from "../../src/state/settings-types.js";
 import type { ProviderName } from "../../src/state/types.js";
@@ -22,7 +21,6 @@ const UNREACHABLE_HOST_ROOT = "/tmp";
 
 /** The MCP dependencies of a host that is not there: every client answers empty. */
 export function buildInertStaticMcpDeps(
-  navigationCompleter: AiMcpServerStaticDeps["navigationCompleter"],
   hostProjectRoot: string,
 ): AiMcpServerStaticDeps {
   return {
@@ -36,20 +34,17 @@ export function buildInertStaticMcpDeps(
       invalidate: () => {},
     },
     hostProjectRoot,
-    navigationCompleter,
   };
 }
 
 /** Per-conversation MCP dependencies for a provider whose tools are never called. */
 export function buildInertMcpDeps(conversationId: string): AiMcpServerDeps {
   return {
-    ...buildInertStaticMcpDeps(
-      createNavigationCompleter(),
-      UNREACHABLE_HOST_ROOT,
-    ),
+    ...buildInertStaticMcpDeps(UNREACHABLE_HOST_ROOT),
     conversationId,
     getCurrentPage: () => ({ path: UNKNOWN_PAGE_PATH }),
     sendToHost: () => {},
+    waitForLanding: async () => null,
     requestQuestion: () =>
       Promise.reject(new Error("no question is expected in this test")),
   };

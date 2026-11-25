@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createApp, nextTick, ref, type Ref } from "vue";
-import type { DmsI18n } from "#dms/frontend-module";
+import { computed, createApp, nextTick, ref, type Ref } from "vue";
+import { createI18n } from "vue-i18n";
 import { assistantPlugin } from "../app/plugins/ai.client";
 
 const plugin = assistantPlugin({ builderEnabled: false });
@@ -38,11 +38,10 @@ function loadPlugin(loggedIn: Ref<boolean>): PluginHarness {
 			plugin({
 				provide: vi.fn(),
 				vueApp: createApp({}),
-				// SAFETY: the plugin reads only `t` and `locale` of the i18n composer.
-				$i18n: {
-					t: (key: string) => key,
-					locale: ref("en-GB"),
-				} as DmsI18n,
+				$i18n: Object.assign(
+					createI18n({ legacy: false, locale: "en-GB", messages: {} }).global,
+					{ locales: computed(() => []), setLocale: async () => {} },
+				),
 				hook: vi.fn(),
 				runWithContext: <T>(callback: () => T) => callback(),
 			}),

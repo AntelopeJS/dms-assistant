@@ -61,6 +61,7 @@ function proposalOf(resource: ProposedResource): MappingProposal {
 		resources: [resource],
 		excluded: [],
 		open: [],
+		mapped: [],
 	}
 }
 

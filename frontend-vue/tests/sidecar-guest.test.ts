@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createApp, nextTick, ref, type Ref } from "vue";
+import { computed, createApp, nextTick, ref, type Ref } from "vue";
+import { createI18n } from "vue-i18n";
 import { assistantPlugin } from "../app/plugins/ai.client";
 import type { SidecarInfoRead } from "../app/runtime/sidecar-status";
 
@@ -63,7 +64,10 @@ function loadPlugin(
 			plugin({
 				provide: vi.fn(),
 				vueApp: createApp({}),
-				$i18n: { t: (key: string) => key, locale: ref("en-GB") },
+				$i18n: Object.assign(
+					createI18n({ legacy: false, locale: "en-GB", messages: {} }).global,
+					{ locales: computed(() => []), setLocale: async () => {} },
+				),
 				hook: vi.fn(),
 				runWithContext: <T>(callback: () => T) => callback(),
 			}),

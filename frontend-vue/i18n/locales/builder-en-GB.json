@@ -50,7 +50,8 @@
 			"engines": {
 				"not_url": "not a {engine} URL",
 				"unavailable": "{engine}: no driver works with interface-database {version} yet.",
-				"unresolved": "{engine}: this project resolves no interface-database, so no driver can be picked."
+				"unresolved": "{engine}: this project resolves no interface-database, so no driver can be picked.",
+				"one_connection": "A {engine} connection already exists: a project holds one connection, so {requested} cannot be connected."
 			},
 			"server": {
 				"schemas": "The database has {count} tables, more than one analysis reads at once, so none were read yet. Pick the schemas to analyse.",

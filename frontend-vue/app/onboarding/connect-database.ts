@@ -21,10 +21,12 @@ import {
 	missingField,
 	parseConnectionUrl,
 	refusalText,
+	engineOfScheme,
 	unavailableReason,
 } from "../../builder/app/runtime/database-connect";
 import type {
 	DatabaseAccess,
+	DatabaseConnection,
 	DriverPackage,
 	ProjectModules,
 } from "../../builder/app/runtime/database-types";
@@ -381,6 +383,24 @@ function supersede(c: Connector): Generation {
 	return { loop: c.generation, attempt };
 }
 
+/** The engine of a connection the project already has when it is not `engine`: a project holds one. */
+async function otherEngineConnection(
+	c: Connector,
+	engine: DatabaseEngine,
+): Promise<DatabaseEngine | undefined> {
+	let connections: DatabaseConnection[];
+	try {
+		connections = await c.api.databaseConnections();
+	} catch {
+		return undefined;
+	}
+	for (const { engine: listed } of connections) {
+		const existing = listed === undefined ? undefined : engineOfScheme(listed);
+		if (existing !== undefined && existing !== engine) return existing;
+	}
+	return undefined;
+}
+
 async function connect(
 	c: Connector,
 	engine: DatabaseEngine,
@@ -390,6 +410,16 @@ async function connect(
 	if ("kind" in form) return form;
 	const { loop, attempt } = supersede(c);
 	c.phase.value = { kind: "checking" };
+	const other = await otherEngineConnection(c, engine);
+	if (!isCurrent(c, loop)) return null;
+	if (other !== undefined) {
+		c.refusal.value = t("database.engines.one_connection", {
+			engine: ENGINES[other].label,
+			requested: ENGINES[engine].label,
+		});
+		c.phase.value = { kind: "form" };
+		return null;
+	}
 	const answer = await checkAccess(c, engine, url);
 	if (!isCurrent(c, loop)) return null;
 	c.access.value = answer;

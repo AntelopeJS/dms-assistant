@@ -272,6 +272,7 @@ describe("the driver a new connection adds", () => {
 
 	it("refuses an engine the project has no driver for, says why, and writes nothing (fails on a popup that writes an engine the project has no driver for, or that does not say why)", async () => {
 		const fake = fakeBuilder({
+			databaseConnections: async () => [],
 			projectModules: async () => ({
 				...PROJECT,
 				interfaceDatabase: "0.4.0",

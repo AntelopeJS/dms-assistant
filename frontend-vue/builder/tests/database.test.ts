@@ -50,6 +50,7 @@ const PROPOSAL: MappingProposal = {
 		resource('erp.customers', [field('code'), field('name')], 'name'),
 		resource('erp.orders', [field('id'), field('customer_code', 'erp.customers')], 'id'),
 	],
+	mapped: [],
 	excluded: [{ relation: 'erp.schema_migrations', reason: 'a migration tool', rule: 'R4' }],
 	open: [
 		{

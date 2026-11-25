@@ -2,6 +2,28 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.3
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.2...v0.3.3)
+
+### 🩹 Fixes
+
+- **sidecar:** Route every conversation request through one ownership gate ([#145](https://github.com/AntelopeJS/dms-assistant/pull/145))
+- **deps:** Update claude code and agent sdk ([#141](https://github.com/AntelopeJS/dms-assistant/pull/141))
+
+### 🏡 Chore
+
+- **deps:** Update dependency oxlint-tsgolint to v7.0.2008 ([#147](https://github.com/AntelopeJS/dms-assistant/pull/147))
+- **deps:** Update pnpm/action-setup action to v6.1.1 ([#146](https://github.com/AntelopeJS/dms-assistant/pull/146))
+
+### ✅ Tests
+
+- **sidecar:** Wait for change set actions before checking chat ownership ([#148](https://github.com/AntelopeJS/dms-assistant/pull/148))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.2
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.1...v0.3.2)

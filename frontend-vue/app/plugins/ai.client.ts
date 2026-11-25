@@ -20,6 +20,7 @@ import {
 	createAssistantActivity,
 } from "../runtime/assistant-activity";
 import {
+	launcherAction,
 	paletteAssistant,
 	paletteSource,
 	registerLauncher,
@@ -43,6 +44,8 @@ import {
 import { createSession, jsonPost } from "../runtime/assistant-session-factory";
 import {
 	CHANGES_PATH,
+	COMMAND_PALETTE_ASSISTANT_ID,
+	COMMAND_PALETTE_SOURCE_ID,
 	RESTART_PATH,
 	SIDECAR_INFO_PATH,
 	SIDECAR_STATUS_CONNECTED,
@@ -149,7 +152,15 @@ function registerDashboardEntries(
 	registerCommandPaletteAssistant(
 		paletteAssistant(i18n.t, session.currentPage),
 	);
-	return stopWatchingLauncher;
+	return () => {
+		stopWatchingLauncher();
+		registerHeaderAction({
+			...launcherAction(i18n.t, session.launcherState.value),
+			isVisible: () => false,
+		});
+		unregisterCommandPaletteSource(COMMAND_PALETTE_SOURCE_ID);
+		unregisterCommandPaletteAssistant(COMMAND_PALETTE_ASSISTANT_ID);
+	};
 }
 
 /** The message that asks the sidecar to undo a change set. */
@@ -218,7 +229,7 @@ function registerOnceMounted(
 	});
 	return () => {
 		isActive = false;
-		stop?.();
+		context.runWithContext(() => stop?.());
 	};
 }
 

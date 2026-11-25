@@ -64,7 +64,7 @@ import {
 	installMockupRunAnswers,
 	routePrompt,
 } from "../runtime/mockup-runs";
-import { runWhenLoggedIn } from "../runtime/session-gate";
+import { runWhileLoggedIn } from "../runtime/session-gate";
 import { installToggleShortcut } from "../runtime/shortcuts";
 import {
 	createSidecarStatusController,
@@ -362,13 +362,16 @@ function wireAssistant(
 
 /**
  * Takes what it needs from the DMS before its first await, reads the sidecar
- * once the gate opens, then polls it while the sidecar comes back.
+ * once the gate opens, then polls it while the sidecar comes back, until
+ * `signal` aborts: the session ended, so every read and stream of the run
+ * stops, the first probe included when it is still out.
  */
 async function startAssistant(
 	context: DmsAppContext,
 	appMounted: Promise<void>,
 	provided: ProvidedAssistant,
 	features: AssistantFeatures,
+	signal: AbortSignal,
 ): Promise<void> {
 	const deps: DashboardDeps = {
 		$authFetch: useAuthFetch().$authFetch,
@@ -383,7 +386,12 @@ async function startAssistant(
 			refreshOnPageRefresh: false,
 		}),
 	);
-	if (!(await controller.init())) {
+	const isShown = await controller.init();
+	if (signal.aborted) {
+		controller.dispose();
+		return;
+	}
+	if (!isShown) {
 		context.runWithContext(() => unregisterSidePanel(SIDE_PANEL_ID));
 		return;
 	}
@@ -400,8 +408,7 @@ async function startAssistant(
 			createRuntime(deps, controller),
 		),
 	);
-	context.vueApp.onUnmount(teardown);
-	import.meta.hot?.dispose(teardown);
+	signal.addEventListener("abort", teardown, { once: true });
 }
 
 /**
@@ -440,13 +447,17 @@ export function assistantPlugin(features: AssistantFeatures) {
 			context.hook("app:mounted", resolve),
 		);
 		const { loggedIn } = useDmsUserSession();
-		const stopGate = runWhenLoggedIn(
+		const stopGate = runWhileLoggedIn(
 			() => loggedIn.value,
-			() =>
+			() => {
+				const run = new AbortController();
 				void context.runWithContext(() =>
-					startAssistant(context, appMounted, provided, features),
-				),
+					startAssistant(context, appMounted, provided, features, run.signal),
+				);
+				return () => run.abort();
+			},
 		);
 		context.vueApp.onUnmount(stopGate);
+		import.meta.hot?.dispose(stopGate);
 	});
 }

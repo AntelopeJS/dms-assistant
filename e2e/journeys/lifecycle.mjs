@@ -4,6 +4,7 @@ import { connect } from "node:net";
 import { guarded } from "../guard.mjs";
 import { byRunner } from "../runner.mjs";
 import { AI, ai, alive, check, freshSidecar, list, pageHas, parseJson, pause, pick, raw, recordRaw, same, sidecarLock, sidecarPath, statusIs, stopBackend, text, until, withEnv } from "../ai.mjs";
+import { logoutJourneys } from "./lifecycle/logout.mjs";
 import { mcpJsonJourneys } from "./lifecycle/mcp-json.mjs";
 import { settingsWithoutSidecar } from "./lifecycle/settings-page.mjs";
 
@@ -285,6 +286,7 @@ export const { journeys, integrationJourneys } = byRunner(
     },
   },
   ...mcpJsonJourneys,
+  ...logoutJourneys,
   ]),
 );
 

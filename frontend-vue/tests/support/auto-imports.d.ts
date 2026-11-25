@@ -12,6 +12,8 @@ declare global {
 	const registerCommandPaletteSource: (typeof import("#dms-layout/app/composables/useCommandPaletteSources"))["registerCommandPaletteSource"];
 	const registerHeaderAction: (typeof import("#dms-layout/app/composables/useHeaderActions"))["registerHeaderAction"];
 	const registerSidePanel: (typeof import("#dms-ui/app/composables/useAppSidePanels"))["registerSidePanel"];
+	const unregisterCommandPaletteAssistant: (typeof import("#dms-layout/app/composables/useCommandPaletteAssistant"))["unregisterCommandPaletteAssistant"];
+	const unregisterCommandPaletteSource: (typeof import("#dms-layout/app/composables/useCommandPaletteSources"))["unregisterCommandPaletteSource"];
 	const unregisterSidePanel: (typeof import("#dms-ui/app/composables/useAppSidePanels"))["unregisterSidePanel"];
 	const useApiData: (typeof import("#dms-core/app/composables/auth/useApiData"))["useApiData"];
 	const useApiPagedData: (typeof import("#dms-core/app/composables/auth/useApiData"))["useApiPagedData"];

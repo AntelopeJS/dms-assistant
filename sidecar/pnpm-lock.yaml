@@ -6,8 +6,8 @@ settings:
 
 overrides:
   '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
-  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.16.0 <0.17.0'
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.2 <0.7.0'
+  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.17.0 <0.18.0'
+  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.3 <0.7.0'
 
 importers:
 
@@ -30,8 +30,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.6.2 <0.7.0'
-        version: 0.6.2(@antelopejs/interface-core@0.5.1)
+        specifier: '>=0.6.3 <0.7.0'
+        version: 0.6.3(@antelopejs/interface-core@0.5.1)
       '@antelopejs/tooling-configs':
         specifier: '>=0.10.0 <0.11.0'
         version: 0.10.0(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
@@ -65,8 +65,8 @@ packages:
   '@antelopejs/interface-core@0.5.1':
     resolution: {integrity: sha512-ON/7TYA1yyT8UznzKi6vnwyjRU3byNE0OcFXBmf8dE/dqp8hKjeWHVyA2EUPOngmEimCLw4idZqOS5DJqMJx3g==}
 
-  '@antelopejs/interface-dms-builder@0.6.2':
-    resolution: {integrity: sha512-djC0Ib+RiAPMLXvVfTm6+MbKVi2j7IlS+1SFw5jASresUNMXdtDnEyp8qqh4jHHFDLF6r7883xrBcExLC5sy+Q==}
+  '@antelopejs/interface-dms-builder@0.6.3':
+    resolution: {integrity: sha512-cBAYefCGv1wSbBLSaQzznesgREdgfbAm/nn01fPYMxXzIl6efnXVUgTjuPm/C0llSDZiVU3llCLoj76POSbMtQ==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
@@ -2233,7 +2233,7 @@ snapshots:
     dependencies:
       reflect-metadata: 0.2.2
 
-  '@antelopejs/interface-dms-builder@0.6.2(@antelopejs/interface-core@0.5.1)':
+  '@antelopejs/interface-dms-builder@0.6.3(@antelopejs/interface-core@0.5.1)':
     dependencies:
       '@antelopejs/interface-core': 0.5.1
 

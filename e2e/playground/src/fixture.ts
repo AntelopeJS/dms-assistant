@@ -3,11 +3,10 @@ import { Controller, Get, JSONBody, Post } from "@antelopejs/interface-api";
 import { GetModel, Model } from "@antelopejs/interface-database-decorators";
 import { UserModel } from "@antelopejs/interface-dms/auth/db";
 import { DEFAULT_TENANT_ID } from "@antelopejs/interface-dms/constants";
-import { RoleModel, UserInviteModel } from "@antelopejs/interface-dms/db";
+import { RoleModel } from "@antelopejs/interface-dms/db";
+import { createUserInviteToken } from "@antelopejs/interface-dms/invites";
 import { z } from "zod";
 import { constructs } from "./constructs";
-
-const INVITE_LIFETIME_MS = 3_600_000;
 
 const memberSchema = z.object({
   name: z.string(),
@@ -39,16 +38,16 @@ export class VerifyAiFixtureController extends Controller("/verify-ai") {
       name: `${name} ${randomUUID()}`,
       permissions: withAncestors(permissions),
     });
-    const token = randomUUID();
     const email = `${name.toLowerCase()}-${randomUUID()}@verify.local`;
-    await GetModel(UserInviteModel, DEFAULT_TENANT_ID).insert({
+    const { token } = await createUserInviteToken({
+      tenantId: DEFAULT_TENANT_ID,
       email,
-      roles_ids: roleId === undefined ? [] : [roleId],
       language: "en",
-      token,
+      roleIds: roleId === undefined ? [] : [roleId],
       asTenantOwner: false,
-      expiresAt: new Date(Date.now() + INVITE_LIFETIME_MS),
     });
+    if (token === undefined)
+      throw new Error(`the invitation of ${email} was minted by another call`);
     return { email, token, roleId };
   }
 

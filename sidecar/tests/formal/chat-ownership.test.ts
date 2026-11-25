@@ -64,9 +64,19 @@ function transmit(socket: WebSocket, frame: Frame): void {
   socket.send(JSON.stringify(frame));
 }
 
-async function settle(client: Client): Promise<void> {
+/**
+ * Waits until the sidecar has handled every frame the client sent: the echo
+ * answers once the earlier frames are dispatched, an undo or redo they started
+ * holds the checkpoint lock until it is done, and the pause covers the socket
+ * delivery of what they broadcast.
+ */
+async function settle(
+  client: Client,
+  services: SidecarServices,
+): Promise<void> {
   transmit(client.socket, { type: "echo", payload: "settled" });
   await client.frames.next((msg) => msg.type === "echo_reply");
+  await services.checkpoints.flush();
   await new Promise((done) => setTimeout(done, SETTLE_MS));
 }
 
@@ -86,7 +96,7 @@ async function connect(
       currentPage: { path: actor === CAMILLE ? CAMILLE_PAGE : DANA_PAGE },
     });
   }
-  await settle(client);
+  await settle(client, requireValue(running.bridge.services));
   return client;
 }
 
@@ -285,7 +295,7 @@ async function checkRequest(
     type: "host_state_update",
     currentPage: { path: CAMILLE_PAGE },
   });
-  await settle(room.camilleHost);
+  await settle(room.camilleHost, room.services);
   for (const frame of framesOf(world)) {
     const before = await observe(room, waiter);
     const seen = {
@@ -294,7 +304,7 @@ async function checkRequest(
       camilleHost: room.camilleHost.frames.events.length,
     };
     transmit(room.dana.socket, frame);
-    await settle(room.dana);
+    await settle(room.dana, room.services);
     const toDana = room.dana.frames.events
       .slice(seen.dana)
       .filter((msg) => msg.type !== "echo_reply");

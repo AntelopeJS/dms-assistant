@@ -50,7 +50,8 @@
 			"engines": {
 				"not_url": "ce n’est pas une URL {engine}",
 				"unavailable": "{engine} : aucun pilote ne fonctionne encore avec interface-database {version}.",
-				"unresolved": "{engine} : ce projet ne résout aucune version d’interface-database, aucun pilote ne peut donc être choisi."
+				"unresolved": "{engine} : ce projet ne résout aucune version d’interface-database, aucun pilote ne peut donc être choisi.",
+				"one_connection": "Ce projet a déjà une connexion {engine} : un projet n’a qu’une connexion, {requested} ne peut donc pas être connecté."
 			},
 			"server": {
 				"schemas": "La base de données compte {count} tables, plus que ce qu’une analyse lit d’un coup : aucune n’a encore été lue. Choisissez les schémas à analyser.",

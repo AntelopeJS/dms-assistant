@@ -33,10 +33,7 @@ Bounds: two people, one conversation, one frame at a time, two worlds, 21 messag
 
 ## Findings at the sync commit
 
-Each finding is a case marked `defect` in `SCOPES`: it runs as `it.fails`, so the check passes while the defect exists and turns red the day it is fixed. Remove the `defect` field then.
-
-- **`change_set_action` ignores the conversation.** Dana sends `change_set_action` with Camille's change set id, with or without `conversationId`. The handler never calls `admit` or checks `changeSet.conversationId`, so the undo runs, Camille's file reverts, her chat receives the `change_set` and conversation list events, and the record reads `stateChangedBy: "Dana"`.
-- **`host_navigation_complete` and `host_page_blocks` resolve any waiter.** `NavigationCompleter` is keyed by path alone. A host of Dana's that reports landing on `/orders` completes the navigation that Camille's agent waits for, and a block report for the path completes Camille's pending report.
+None since #150. A finding is a case marked `defect` in `SCOPES`: it runs as `it.fails`, so the check passes while the defect exists and turns red the day it is fixed. Remove the `defect` field then.
 
 ## Before the fixes
 
@@ -47,6 +44,7 @@ The check fails on the code before each fix (`git worktree add` the parent commi
 | before #57 (`f295038^`) | `permission_response`, `question_response`, `host_state_update`, `interrupt_turn`, `queue_cancel`, `queue_update`, `queue_move`, `queue_clear`, `revoke_rule`, `set_conversation_mode`, `stop_autofix` |
 | before #59 (`8da2039^`) | `permission_response`, `question_response`, `host_state_update` |
 | before #61 (`1baa062^`) | `host_state_update` |
+| before #150 (`229c83c`) | `change_set_action`, `host_navigation_complete`, `host_page_blocks` |
 
 ## Real bug or modeling error
 
@@ -70,4 +68,4 @@ Move the sync commit forward only after you confirm the check describes the code
 | every conversation request | `admit`, `refusalOf` and the handlers in `sidecar/src/server/routing.ts` |
 | answers by request id | `mayAnswer`, `permissionBus.conversationOf`, `questionBus.conversationOf` |
 | host messages | `handleHostStateUpdate`, `handleHostNavigationComplete`, `handleHostPageBlocks`, `createHostState`, `createNavigationCompleter` |
-| change sets | `handleChangeSet`, `handleChangeSetAction` |
+| change sets | `handleChangeSet`, `changeSetRefusalOf`, `handleChangeSetAction` |

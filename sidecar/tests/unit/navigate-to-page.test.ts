@@ -29,6 +29,7 @@ interface SpyDeps {
 }
 
 const STUB_CURRENT_PAGE = { path: "/stub-current" };
+const VIEWER = "u-owner";
 
 const NavigatedAnswer = z.object({
   ok: z.literal(true),
@@ -89,7 +90,8 @@ function buildSpyDeps(routes: string[] = []): SpyDeps {
 function buildTool(deps: SpyDeps) {
   return buildNavigateToPageTool({
     sendToHost: deps.sendToHost,
-    navigationCompleter: deps.navigationCompleter,
+    waitForLanding: (path, timeoutMs) =>
+      deps.navigationCompleter.waitFor(VIEWER, path, timeoutMs),
     registry: deps.registry,
     getCurrentPage: deps.getCurrentPage,
   });
@@ -118,7 +120,7 @@ function registerBlockHealthReplyCases(): void {
     const deps = buildSpyDeps();
     const promise = buildTool(deps).handler({ path: "/sales" });
     await tick();
-    deps.navigationCompleter.complete("/sales");
+    deps.navigationCompleter.complete(VIEWER, "/sales");
     const payload = payloadOf(await promise);
     expect(payload.data).not.toHaveProperty("blocks");
   });
@@ -127,11 +129,11 @@ function registerBlockHealthReplyCases(): void {
     const deps = buildSpyDeps();
     const promise = buildTool(deps).handler({ path: "/sales" });
     await tick();
-    deps.navigationCompleter.complete("/sales", {
+    deps.navigationCompleter.complete(VIEWER, "/sales", {
       blocksWithinMs: BLOCKS_WITHIN_MS,
     });
     await tick();
-    deps.navigationCompleter.completeBlocks("/sales", {
+    deps.navigationCompleter.completeBlocks(VIEWER, "/sales", {
       status: "timeout",
       checked: 3,
       blocks: [{ path: "slowChart", type: "Chart", state: "loading" }],
@@ -150,11 +152,11 @@ function registerBlockHealthReplyCases(): void {
     const deps = buildSpyDeps();
     const promise = buildTool(deps).handler({ path: "/sales" });
     await tick();
-    deps.navigationCompleter.complete("/sales", {
+    deps.navigationCompleter.complete(VIEWER, "/sales", {
       blocksWithinMs: BLOCKS_WITHIN_MS,
     });
     await tick();
-    deps.navigationCompleter.completeBlocks("/sales", {
+    deps.navigationCompleter.completeBlocks(VIEWER, "/sales", {
       status: "settled",
       checked: 4,
       blocks: [],
@@ -170,11 +172,11 @@ function registerBlockHealthReplyCases(): void {
     const deps = buildSpyDeps();
     const promise = buildTool(deps).handler({ path: "/sales" });
     await tick();
-    deps.navigationCompleter.complete("/sales", {
+    deps.navigationCompleter.complete(VIEWER, "/sales", {
       blocksWithinMs: BLOCKS_WITHIN_MS,
     });
     await tick();
-    deps.navigationCompleter.completeBlocks("/sales", {
+    deps.navigationCompleter.completeBlocks(VIEWER, "/sales", {
       status: "settled",
       checked: 2,
       blocks: [
@@ -194,11 +196,11 @@ function registerBlockHealthReportCases(): void {
     const deps = buildSpyDeps();
     const promise = buildTool(deps).handler({ path: "/sales" });
     await tick();
-    deps.navigationCompleter.complete("/sales", {
+    deps.navigationCompleter.complete(VIEWER, "/sales", {
       blocksWithinMs: BLOCKS_WITHIN_MS,
     });
     await tick();
-    deps.navigationCompleter.completeBlocks("/sales", REPORT);
+    deps.navigationCompleter.completeBlocks(VIEWER, "/sales", REPORT);
     const payload = payloadOf(await promise);
     expect(payload.data).toMatchObject({
       blocks: {
@@ -226,12 +228,12 @@ function registerBlockHealthReportCases(): void {
           return result;
         });
       await vi.advanceTimersByTimeAsync(1);
-      deps.navigationCompleter.complete("/sales", {
+      deps.navigationCompleter.complete(VIEWER, "/sales", {
         blocksWithinMs: BLOCKS_WITHIN_MS,
       });
       await vi.advanceTimersByTimeAsync(BLOCKS_WITHIN_MS);
       expect(settled).toBe(false);
-      deps.navigationCompleter.completeBlocks("/sales", REPORT);
+      deps.navigationCompleter.completeBlocks(VIEWER, "/sales", REPORT);
       await promise;
       expect(settled).toBe(true);
     } finally {
@@ -245,7 +247,7 @@ function registerBlockHealthReportCases(): void {
       const deps = buildSpyDeps();
       const promise = buildTool(deps).handler({ path: "/sales" });
       await vi.advanceTimersByTimeAsync(1);
-      deps.navigationCompleter.complete("/sales", {
+      deps.navigationCompleter.complete(VIEWER, "/sales", {
         blocksWithinMs: BLOCKS_WITHIN_MS,
       });
       await vi.advanceTimersByTimeAsync(BLOCKS_WITHIN_MS + 5_000);
@@ -278,7 +280,7 @@ describe("buildNavigateToPageTool", () => {
     const toolDef = buildTool(deps);
     const promise = toolDef.handler({ path: "/dashboard/settings" });
     await tick();
-    deps.navigationCompleter.complete("/dashboard/settings");
+    deps.navigationCompleter.complete(VIEWER, "/dashboard/settings");
     await promise;
     expect(deps.calls).toHaveLength(1);
     expect(deps.calls[0]).toEqual({
@@ -292,7 +294,7 @@ describe("buildNavigateToPageTool", () => {
     const toolDef = buildTool(deps);
     const promise = toolDef.handler({ path: "/about" });
     await tick();
-    deps.navigationCompleter.complete("/about");
+    deps.navigationCompleter.complete(VIEWER, "/about");
     const result = await promise;
     const payload = NavigatedAnswer.parse(JSON.parse(textOf(result)));
     expect(payload.ok).toBe(true);
@@ -340,7 +342,7 @@ describe("buildNavigateToPageTool", () => {
     const toolDef = buildTool(deps);
     const promise = toolDef.handler({ path: "/form/form-simple/" });
     await tick();
-    deps.navigationCompleter.complete("/form/form-simple/");
+    deps.navigationCompleter.complete(VIEWER, "/form/form-simple/");
     await promise;
     expect(deps.calls).toHaveLength(1);
     expect(deps.calls[0]).toEqual({

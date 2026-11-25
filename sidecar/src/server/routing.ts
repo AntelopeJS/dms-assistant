@@ -4,6 +4,7 @@ import { EVENT_TYPES } from "../protocol/events.js";
 import {
   AnyClientMessage,
   type AnyClientMessageType,
+  type ChangeSetActionMsgType,
   type ClientHelloMsgType,
   MESSAGE_TYPES,
   ROLE,
@@ -14,6 +15,7 @@ import { CLOSED_CONVERSATION_MESSAGES } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import type { AgentRunner } from "../agent/runner.js";
+import { UNKNOWN_CHANGE_SET_MESSAGE } from "../checkpoints/checkpoints.js";
 import {
   broadcastConversationList,
   buildAskQuestionEvent,
@@ -343,6 +345,7 @@ const handleHostNavigationComplete = on(
   MESSAGE_TYPES.HOST_NAVIGATION_COMPLETE,
   (_s, msg, ctx) => {
     ctx.navigationCompleter.complete(
+      viewerOf(ctx),
       msg.path,
       msg.blocksWithinMs === undefined
         ? {}
@@ -354,7 +357,7 @@ const handleHostNavigationComplete = on(
 const handleHostPageBlocks = on(
   MESSAGE_TYPES.HOST_PAGE_BLOCKS,
   (_s, msg, ctx) => {
-    ctx.navigationCompleter.completeBlocks(msg.path, {
+    ctx.navigationCompleter.completeBlocks(viewerOf(ctx), msg.path, {
       status: msg.status,
       checked: msg.checked,
       blocks: msg.blocks,
@@ -435,9 +438,39 @@ const handleReloadHoldApplied = on(
   },
 );
 
+/**
+ * Why the connection may not act on the change set, or null when it may: the
+ * refusal of the conversation the message names (see `refusalOf`), else, when
+ * the set was recorded on a conversation refused to it, the answer to an
+ * unknown set, so the sender cannot tell another conversation's set from none.
+ */
+function changeSetRefusalOf(
+  ctx: ConnectionContext,
+  msg: ChangeSetActionMsgType,
+): string | null {
+  const named =
+    msg.conversationId === undefined
+      ? null
+      : refusalOf(ctx, msg.conversationId);
+  if (named !== null) return named;
+  const recordedOn = ctx.checkpoints.get(msg.changeSetId)?.conversationId;
+  return recordedOn !== undefined && refusalOf(ctx, recordedOn) !== null
+    ? UNKNOWN_CHANGE_SET_MESSAGE
+    : null;
+}
+
 const handleChangeSet = on(
   MESSAGE_TYPES.CHANGE_SET_ACTION,
   async (socket, msg, ctx) => {
+    const refusal = changeSetRefusalOf(ctx, msg);
+    if (refusal !== null) {
+      send(socket, {
+        type: EVENT_TYPES.RUN_ERROR,
+        conversationId: msg.conversationId ?? "",
+        error: refusal,
+      });
+      return;
+    }
     await handleChangeSetAction(ctx, msg, ctx.actor?.name).catch(
       (err: unknown) => {
         logFailure(

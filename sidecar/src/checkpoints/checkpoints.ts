@@ -65,6 +65,9 @@ export const CHANGE_SET_ERRORS = {
 export type ChangeSetErrorCode =
   (typeof CHANGE_SET_ERRORS)[keyof typeof CHANGE_SET_ERRORS];
 
+/** What an action on a change set that does not exist answers. */
+export const UNKNOWN_CHANGE_SET_MESSAGE = "Unknown change set.";
+
 export class ChangeSetActionError extends Error {
   constructor(
     readonly code: ChangeSetErrorCode,
@@ -222,7 +225,7 @@ function requireRecord(state: CheckpointsState, id: string): ChangeSetRecord {
   if (record === null) {
     throw new ChangeSetActionError(
       CHANGE_SET_ERRORS.NOT_FOUND,
-      "Unknown change set.",
+      UNKNOWN_CHANGE_SET_MESSAGE,
     );
   }
   return record;

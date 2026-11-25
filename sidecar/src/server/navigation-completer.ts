@@ -22,13 +22,34 @@ export interface PageBlocksReport {
   blocks: PageBlockType[];
 }
 
+/** Waits for a host to land on `path`; resolves null at the deadline. */
+export type LandingWait = (
+  path: string,
+  timeoutMs: number,
+) => Promise<NavigationLanding | null>;
+
+/**
+ * Pairs the agent's wait for a page with what a host reports about it. Every
+ * call names the person (`viewerId`, the `userId` of the host's actor, null
+ * without one) whose host lands or reports: a wait resolves only from that
+ * person's hosts, never from another person's host on the same path.
+ */
 export interface NavigationCompleter {
   waitFor: (
+    viewerId: string | null,
     path: string,
     timeoutMs: number,
   ) => Promise<NavigationLanding | null>;
-  complete: (path: string, announcement?: NavigationAnnouncement) => void;
-  completeBlocks: (path: string, report: PageBlocksReport) => void;
+  complete: (
+    viewerId: string | null,
+    path: string,
+    announcement?: NavigationAnnouncement,
+  ) => void;
+  completeBlocks: (
+    viewerId: string | null,
+    path: string,
+    report: PageBlocksReport,
+  ) => void;
 }
 
 interface PendingEntry<T> {
@@ -36,41 +57,41 @@ interface PendingEntry<T> {
   timer: ReturnType<typeof setTimeout>;
 }
 
-/** Waiters per path, each resolved once with a value or, at its deadline, `null`. */
+/** Waiters per key, each resolved once with a value or, at its deadline, `null`. */
 interface Rendezvous<T> {
-  wait: (path: string, timeoutMs: number) => Promise<T | null>;
-  /** Resolves the oldest waiter of `path` with `make()`, called only if there is one. */
-  deliver: (path: string, make: () => T) => void;
+  wait: (key: string, timeoutMs: number) => Promise<T | null>;
+  /** Resolves the oldest waiter of `key` with `make()`, called only if there is one. */
+  deliver: (key: string, make: () => T) => void;
 }
 
 function createRendezvous<T>(): Rendezvous<T> {
   const pending = new Map<string, PendingEntry<T>[]>();
 
-  const popEntry = (path: string): PendingEntry<T> | undefined => {
-    const entries = pending.get(path);
+  const popEntry = (key: string): PendingEntry<T> | undefined => {
+    const entries = pending.get(key);
     const entry = entries?.shift();
-    if (entries?.length === 0) pending.delete(path);
+    if (entries?.length === 0) pending.delete(key);
     return entry;
   };
 
   return {
-    wait: (path, timeoutMs) =>
+    wait: (key, timeoutMs) =>
       new Promise<T | null>((resolve) => {
         const entry: PendingEntry<T> = {
           resolve,
           timer: setTimeout(() => {
-            const entries = pending.get(path);
+            const entries = pending.get(key);
             const index = entries?.indexOf(entry) ?? -1;
             if (entries === undefined || index < 0) return;
             entries.splice(index, 1);
-            if (entries.length === 0) pending.delete(path);
+            if (entries.length === 0) pending.delete(key);
             resolve(null);
           }, timeoutMs),
         };
-        pending.set(path, [...(pending.get(path) ?? []), entry]);
+        pending.set(key, [...(pending.get(key) ?? []), entry]);
       }),
-    deliver: (path, make) => {
-      const entry = popEntry(path);
+    deliver: (key, make) => {
+      const entry = popEntry(key);
       if (entry === undefined) return;
       clearTimeout(entry.timer);
       entry.resolve(make());
@@ -92,14 +113,19 @@ export function normalizeNavigationPath(path: string): string {
   return `${pathname === "" ? "/" : pathname}${url.search}`;
 }
 
+/** One person's host on one page, as the waiters are keyed. */
+function waiterKey(viewerId: string | null, path: string): string {
+  return JSON.stringify([viewerId, normalizeNavigationPath(path)]);
+}
+
 export function createNavigationCompleter(): NavigationCompleter {
   const landings = createRendezvous<NavigationLanding>();
   const reports = createRendezvous<PageBlocksReport>();
   return {
-    waitFor: (path, timeoutMs) =>
-      landings.wait(normalizeNavigationPath(path), timeoutMs),
-    complete: (path, { blocksWithinMs } = {}) => {
-      const key = normalizeNavigationPath(path);
+    waitFor: (viewerId, path, timeoutMs) =>
+      landings.wait(waiterKey(viewerId, path), timeoutMs),
+    complete: (viewerId, path, { blocksWithinMs } = {}) => {
+      const key = waiterKey(viewerId, path);
       landings.deliver(key, () =>
         blocksWithinMs === undefined
           ? {}
@@ -111,7 +137,7 @@ export function createNavigationCompleter(): NavigationCompleter {
             },
       );
     },
-    completeBlocks: (path, report) =>
-      reports.deliver(normalizeNavigationPath(path), () => report),
+    completeBlocks: (viewerId, path, report) =>
+      reports.deliver(waiterKey(viewerId, path), () => report),
   };
 }

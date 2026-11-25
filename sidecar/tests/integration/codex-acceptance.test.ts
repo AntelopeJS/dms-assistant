@@ -24,7 +24,6 @@ import { readAccountStatus } from "../../src/providers/codex/chatgpt/credentials
 import { createCodexProvider } from "../../src/providers/codex/provider.js";
 import { resolveCodexInstallation } from "../../src/providers/codex/resolve-binary.js";
 import { createHttpServer } from "../../src/server/http.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 import type { TurnSettings } from "../../src/state/settings-types.js";
 import { readRecordedPids } from "../helpers/codex-pids.js";
 
@@ -63,7 +62,7 @@ function buildMcpDeps(conversationId: string): AiMcpServerDeps {
     },
     hostProjectRoot: "/tmp",
     sendToHost: () => {},
-    navigationCompleter: createNavigationCompleter(),
+    waitForLanding: async () => null,
     conversationId,
     requestQuestion: async () => null,
   };

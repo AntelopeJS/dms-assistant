@@ -15,7 +15,6 @@ import { FIND_PAGES_TOOL_NAME } from "../../src/constants/pages.js";
 import { createAiMcpServer } from "../../src/mcp/sdk-binding.js";
 import type { ImportsScanner } from "../../src/pages/imports-scanner.js";
 import type { RegistryClient } from "../../src/pages/registry-client.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 
 function buildStubRegistry(): RegistryClient {
   return {
@@ -39,7 +38,7 @@ function buildDeps() {
     scanner: buildStubScanner(),
     hostProjectRoot: "/tmp/host",
     sendToHost: () => {},
-    navigationCompleter: createNavigationCompleter(),
+    waitForLanding: async () => null,
     conversationId: "conv-test",
     requestQuestion: async () => null,
   };

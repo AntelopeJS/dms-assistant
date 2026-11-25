@@ -14,7 +14,6 @@ import {
 import type { AiMcpServerDeps } from "../../src/mcp/types.js";
 import { createCodexProvider } from "../../src/providers/codex/provider.js";
 import { createHttpServer } from "../../src/server/http.js";
-import { createNavigationCompleter } from "../../src/server/navigation-completer.js";
 import { CODEX_FIXTURE, codexScript } from "../helpers/provider-fixtures.js";
 
 const CONVERSATION_A = "conv-iso-a";
@@ -39,7 +38,7 @@ function buildDeps(conversationId: string): AiMcpServerDeps {
     },
     hostProjectRoot: "/tmp",
     sendToHost: () => {},
-    navigationCompleter: createNavigationCompleter(),
+    waitForLanding: async () => null,
     conversationId,
     requestQuestion: async () => null,
   };

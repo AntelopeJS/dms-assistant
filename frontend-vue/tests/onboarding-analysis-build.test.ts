@@ -48,6 +48,7 @@ const SHOP: MappingProposal = {
 		statsOnly("public.audit_log", "R2", "fact"),
 	],
 	excluded: [],
+	mapped: [],
 	open: [
 		{
 			id: "purpose:public.order_items",
@@ -124,7 +125,7 @@ describe("Build directly on the shop sample", () => {
 		expect(input.resources.map((resource) => resource.relation)).not.toContain(
 			"public.payments",
 		);
-		expect(input.excluded.map((entry) => entry.relation)).toContain(
+		expect((input.excluded ?? []).map((entry) => entry.relation)).toContain(
 			"public.payments",
 		);
 	});

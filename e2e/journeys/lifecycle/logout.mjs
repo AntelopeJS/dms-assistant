@@ -1,4 +1,5 @@
-import { bodyText, check, freshSidecar, until } from "../../ai.mjs";
+import { bodyText, check, freshSidecar, statusIs, text, until } from "../../ai.mjs";
+import { warmUp, withoutPopup } from "../../dev-dashboard.mjs";
 
 /** @typedef {import("../../ai.mjs").Ctx} Ctx */
 
@@ -6,6 +7,7 @@ const ASSISTANT_PAGES = ["/modules/ai/settings", "/modules/ai/changes", "/module
 const CHANNEL_PATH = "/ai/channel/events";
 const ADMIN_MENU = "Verify Admin";
 const AFTER_LOGOUT_MS = 5000;
+const STREAM_TIMEOUT_MS = 60_000;
 const TOAST = /An unexpected error occurred|Restoring your session/;
 
 /**
@@ -42,9 +44,11 @@ async function logoutFrom(ctx, path) {
     const pathname = aiPath(response.url());
     if (pathname !== null && sentAfterClick.has(response.request()) && response.status() === 401) refused.push(pathname);
   });
+  await withoutPopup(tab);
   await tab.signIn("admin");
+  await warmUp(ctx, tab, path);
   await tab.goto(path);
-  const streaming = await until(() => requests.includes(`in GET ${CHANNEL_PATH}`));
+  const streaming = await until(() => requests.includes(`in GET ${CHANNEL_PATH}`), { timeoutMs: STREAM_TIMEOUT_MS });
   await tab.click({ role: "button", name: ADMIN_MENU });
   phase = "clicked";
   await tab.click({ role: "menuitem", name: "Logout" });
@@ -64,10 +68,12 @@ async function logoutFrom(ctx, path) {
 export const logoutJourneys = [
   {
     id: "logout-stops-the-assistant",
+    frontend: "dev",
     title: "logging out from each Assistant page lands on the login page with no toast, and the tab sends no further /ai/* request",
     entryPoint: "the user menu's Logout on /modules/ai/settings, /modules/ai/changes and /modules/ai/activity",
     async run(/** @type {Ctx} */ ctx) {
       await freshSidecar(ctx);
+      await statusIs(ctx, (status) => text(status, "status") === "ready", 90_000);
       for (const path of ASSISTANT_PAGES) await ctx.verify(`logout from ${path}`, await logoutFrom(ctx, path));
     },
   },

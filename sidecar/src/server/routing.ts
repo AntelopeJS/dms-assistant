@@ -15,6 +15,7 @@ import { CLOSED_CONVERSATION_MESSAGES } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import type { AgentRunner } from "../agent/runner.js";
+import { UNKNOWN_CHANGE_SET_MESSAGE } from "../checkpoints/checkpoints.js";
 import {
   broadcastConversationList,
   buildAskQuestionEvent,
@@ -438,9 +439,10 @@ const handleReloadHoldApplied = on(
 );
 
 /**
- * Why the connection may not act on the change set: the conversation the
- * message names, or the one the change set belongs to, is refused to it (see
- * `refusalOf`). Null when it may.
+ * Why the connection may not act on the change set, or null when it may: the
+ * refusal of the conversation the message names (see `refusalOf`), else, when
+ * the set was recorded on a conversation refused to it, the answer to an
+ * unknown set, so the sender cannot tell another conversation's set from none.
  */
 function changeSetRefusalOf(
   ctx: ConnectionContext,
@@ -450,10 +452,11 @@ function changeSetRefusalOf(
     msg.conversationId === undefined
       ? null
       : refusalOf(ctx, msg.conversationId);
+  if (named !== null) return named;
   const recordedOn = ctx.checkpoints.get(msg.changeSetId)?.conversationId;
-  return (
-    named ?? (recordedOn === undefined ? null : refusalOf(ctx, recordedOn))
-  );
+  return recordedOn !== undefined && refusalOf(ctx, recordedOn) !== null
+    ? UNKNOWN_CHANGE_SET_MESSAGE
+    : null;
 }
 
 const handleChangeSet = on(

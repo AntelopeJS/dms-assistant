@@ -265,6 +265,12 @@ export const SCOPES: Record<
         changeSetId: world.changeSetId,
         action: "undo",
       },
+      {
+        type: "change_set_action",
+        changeSetId: world.changeSetId,
+        action: "undo",
+        conversationId: "conv-dana",
+      },
     ],
   },
 };

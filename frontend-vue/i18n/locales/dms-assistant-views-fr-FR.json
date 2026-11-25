@@ -299,7 +299,6 @@
 					"kind_table": "table",
 					"kind_status": "table + statut",
 					"kind_tabs": "table + onglets",
-					"kind_stats": "statistiques",
 					"loading": "Lecture de l’analyse…",
 					"build": "Construire directement",
 					"mockup": "Générer une première maquette"

@@ -31,7 +31,6 @@ const KINDS: Record<ScreenKind, string> = {
 	table: "dms_assistant.views.onboarding.analysis.kind_table",
 	status: "dms_assistant.views.onboarding.analysis.kind_status",
 	tabs: "dms_assistant.views.onboarding.analysis.kind_tabs",
-	stats: "dms_assistant.views.onboarding.analysis.kind_stats",
 };
 
 const onboarding = useOnboarding();

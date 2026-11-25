@@ -299,7 +299,6 @@
 					"kind_table": "table",
 					"kind_status": "table + status",
 					"kind_tabs": "table + tabs",
-					"kind_stats": "statistics",
 					"loading": "Reading the analysis…",
 					"build": "Build directly",
 					"mockup": "Generate a first mockup"

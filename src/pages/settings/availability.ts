@@ -89,7 +89,10 @@ function lockField(
 
 function locksFor(capabilities: SidecarCapabilities): OptionLock[] {
   const locks: OptionLock[] = [];
-  const codex = capabilities.providers?.[CODEX_PROVIDER];
+  const providers = capabilities.providers ?? {};
+  const codex = Object.hasOwn(providers, CODEX_PROVIDER)
+    ? providers[CODEX_PROVIDER]
+    : undefined;
   if (codex !== undefined && !codex.available) {
     locks.push({
       fieldId: "provider",
@@ -114,7 +117,7 @@ function offerDefault(
   field: FormFieldSerialized,
   defaults: SettingsBody,
 ): FormFieldSerialized {
-  if (!(field.id in defaults)) return field;
+  if (!Object.hasOwn(defaults, field.id)) return field;
   const parsed = DEFAULT_VALUE.safeParse(defaults[field.id]);
   if (!parsed.success) return field;
   return { ...field, defaultValue: parsed.data, offersDefault: true };

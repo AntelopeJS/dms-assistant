@@ -1,4 +1,6 @@
 import { HTTPResult } from "@antelopejs/interface-api";
+import { I18N_SECTIONS } from "../constants/i18n";
+import { i18nKey } from "../vocabulary";
 
 /**
  * The header only the assistant's own dashboard client sends on a request that hands the module a
@@ -19,6 +21,7 @@ export function outsideOwnerUi(
   if (marker === OWNER_UI_VALUE) return undefined;
   return new HTTPResult(HTTP_FORBIDDEN, {
     code: "forbidden",
-    message: `This route answers the assistant's own UI only: send the ${OWNER_UI_HEADER} header.`,
+    message: i18nKey(I18N_SECTIONS.ERRORS, "outside_owner_ui"),
+    params: { header: OWNER_UI_HEADER },
   });
 }

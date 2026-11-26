@@ -185,12 +185,12 @@ const malformedChangeSet = fc.oneof(
   notAnObject,
 );
 
-/** A file's entries: valid and malformed ones in any mix and order. */
 /** What a file holds of a generated value: JSON has no `-0`, so the value is read back from its text. */
 function asStored(value: JsonValue): JsonValue {
   return JsonValueSchema.parse(JSON.parse(JSON.stringify(value)));
 }
 
+/** A file's entries: valid and malformed ones in any mix and order. */
 function mixed(
   valid: fc.Arbitrary<JsonValue>,
   malformed: fc.Arbitrary<JsonValue>,

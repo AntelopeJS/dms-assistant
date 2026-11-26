@@ -5,8 +5,8 @@ const { test } = require("node:test");
 const { Component } = require("@antelopejs/interface-dms/component");
 const { interceptRequire } = require("./helpers/intercept-require.cjs");
 const {
-  LocaleSchema,
   PAGE_LOCALES,
+  isTranslated,
   readLocale,
 } = require("./helpers/page-locales.cjs");
 
@@ -16,36 +16,12 @@ const {
  * @typedef {import("@antelopejs/interface-dms/component").Component} PageComponent
  * @typedef {import("@antelopejs/interface-dms/component").ComponentInfo} ComponentInfo
  * @typedef {import("@antelopejs/interface-dms/component").ComponentMetadata} ComponentMetadata
- * @typedef {import("./helpers/page-locales.cjs").LocaleNode} LocaleNode
  */
 
 const I18N_KEY = /\$dms_assistant\.[A-Za-z0-9_.-]+/g;
 const MODULE_PAGES = ["settings", "changes", "activity"];
 
-/**
- * @param {{ [key: string]: LocaleNode }} locale - A page locale.
- * @param {string} key - A `$`-prefixed dotted key.
- * @returns {LocaleNode | undefined} The node the key leads to, if the locale holds one.
- */
-function translate(locale, key) {
-  /** @type {LocaleNode | undefined} */
-  let node = locale;
-  for (const part of key.slice(1).split(".")) {
-    const group = LocaleSchema.safeParse(node);
-    node = group.success ? group.data[part] : undefined;
-  }
-  return node;
-}
-
 const TextSchema = z.string();
-
-/**
- * @param {{ [key: string]: LocaleNode }} locale - A page locale.
- * @param {string} key - A `$`-prefixed dotted key.
- */
-function isTranslated(locale, key) {
-  return TextSchema.safeParse(translate(locale, key)).success;
-}
 
 /**
  * @param {string} id - Id of the page.

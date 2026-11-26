@@ -276,15 +276,15 @@ export function ruleLabelKey(rule: PermissionRule): string {
 	return RULE_LABEL_KEYS[rule.kind];
 }
 
-const RULE_ICONS: Record<RuleKind, string> = {
-	file: "i-ph-pencil-simple-line",
-	directory: "i-ph-folder-simple",
-	command: "i-ph-terminal-window",
-	domain: "i-ph-globe",
-};
+const RULE_ICONS: ReadonlyMap<RuleKind, string> = new Map([
+	["file", "i-ph-pencil-simple-line"],
+	["directory", "i-ph-folder-simple"],
+	["command", "i-ph-terminal-window"],
+	["domain", "i-ph-globe"],
+]);
 
 export function ruleIcon(kind: RuleKind): string {
-	return RULE_ICONS[kind] ?? "i-ph-key";
+	return RULE_ICONS.get(kind) ?? "i-ph-key";
 }
 
 const KIND_ICONS: Record<PermissionKind, string> = {

@@ -33,4 +33,27 @@ function readLocale(file) {
   );
 }
 
-module.exports = { LocaleSchema, PAGE_LOCALES, readLocale };
+/**
+ * @param {{ [key: string]: LocaleNode }} locale - A page locale.
+ * @param {string} key - A `$`-prefixed dotted key.
+ * @returns {LocaleNode | undefined} The node the key leads to, if the locale holds one.
+ */
+function translate(locale, key) {
+  /** @type {LocaleNode | undefined} */
+  let node = locale;
+  for (const part of key.slice(1).split(".")) {
+    const group = LocaleSchema.safeParse(node);
+    node = group.success ? group.data[part] : undefined;
+  }
+  return node;
+}
+
+/**
+ * @param {{ [key: string]: LocaleNode }} locale - A page locale.
+ * @param {string} key - A `$`-prefixed dotted key.
+ */
+function isTranslated(locale, key) {
+  return z.string().safeParse(translate(locale, key)).success;
+}
+
+module.exports = { LocaleSchema, PAGE_LOCALES, isTranslated, readLocale };

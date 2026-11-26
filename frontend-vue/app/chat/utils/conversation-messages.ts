@@ -21,14 +21,18 @@ import { JSON_VALUE_SCHEMA } from "./json";
 
 const STOPPED_OUTCOME: ToolOutcome = "stopped";
 
-const STATUS_BY_OUTCOME: Record<ToolOutcome, ToolStatus> = {
-	done: TOOL_STATUS.SUCCESS,
-	failed: TOOL_STATUS.ERROR,
-	denied: TOOL_STATUS.ERROR,
-	blocked: TOOL_STATUS.ERROR,
-	stopped: TOOL_STATUS.ERROR,
-	held: TOOL_STATUS.SUCCESS,
-};
+function statusOfOutcome(outcome: ToolOutcome): ToolStatus {
+	switch (outcome) {
+		case "done":
+		case "held":
+			return TOOL_STATUS.SUCCESS;
+		case "failed":
+		case "denied":
+		case "blocked":
+		case "stopped":
+			return TOOL_STATUS.ERROR;
+	}
+}
 
 export function buildUserMessage(
 	content: string,
@@ -95,7 +99,7 @@ export function closedStatus(
 	outcome: ToolOutcome | undefined,
 	status: string | undefined,
 ): ToolStatus {
-	if (outcome !== undefined) return STATUS_BY_OUTCOME[outcome];
+	if (outcome !== undefined) return statusOfOutcome(outcome);
 	const normalized = normalizeToolStatus(status);
 	return normalized === TOOL_STATUS.PENDING ? TOOL_STATUS.SUCCESS : normalized;
 }

@@ -1,10 +1,4 @@
 /**
- * Limits and classification for user-attached files (images/PDF inlined as
- * content blocks, other files written to disk and referenced by path). Shared by
- * the wire schema, the WS payload cap, and the turn-content builder.
- */
-
-/**
  * Max size of a single attachment, measured on the raw (pre-base64) bytes.
  */
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;

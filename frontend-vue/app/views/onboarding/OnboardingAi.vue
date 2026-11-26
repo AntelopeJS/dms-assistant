@@ -5,7 +5,7 @@ import { PROVIDERS, type ProviderName } from "../../onboarding/contract";
 import type { OnboardingView } from "../../onboarding/flow";
 import { useOnboarding } from "../../onboarding/runtime";
 import OnboardingFrame from "./OnboardingFrame.vue";
-import { PROVIDER_NAMES } from "./login-text";
+import { providerName } from "./login-text";
 import ProviderMark from "./ProviderMark.vue";
 
 /** Which AI the assistant runs on: a login that works is used as it is, any other is set up next. */
@@ -128,7 +128,7 @@ async function proceed(): Promise<void> {
 				<span class="flex items-center gap-2.5">
 					<ProviderMark :provider="provider" />
 					<span class="text-highlighted text-[15px] font-semibold">
-						{{ PROVIDER_NAMES[provider] }}
+						{{ providerName(provider) }}
 					</span>
 				</span>
 				<span class="text-toned text-[13px]">

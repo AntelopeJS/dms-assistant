@@ -1,4 +1,4 @@
-import { MODES_BY_PROVIDER } from "../chat/constants/modes";
+import { modesFor } from "../chat/constants/modes";
 import type { ProviderName } from "../chat/types/protocol";
 import type { ApprovalMode } from "./types";
 
@@ -31,13 +31,13 @@ export interface ModeRow {
 export const MODE_ROWS: readonly ModeRow[] = [
 	{
 		field: "defaultModeClaude",
-		modes: MODES_BY_PROVIDER.claude,
+		modes: modesFor("claude"),
 		text: "default_mode_claude",
 		provider: "claude",
 	},
 	{
 		field: "defaultModeCodex",
-		modes: MODES_BY_PROVIDER.codex,
+		modes: modesFor("codex"),
 		text: "default_mode_codex",
 		provider: "codex",
 	},

@@ -3,3 +3,7 @@ packages:
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@antelopejs/*"
+overrides:
+  "@antelopejs/interface-core": ">=0.5.2 <0.6.0"
+  "@antelopejs/dms>@antelopejs/interface-dms": ">=0.17.0 <0.18.0"
+  "@antelopejs/dms>@antelopejs/interface-dms-builder": ">=0.6.3 <0.7.0"

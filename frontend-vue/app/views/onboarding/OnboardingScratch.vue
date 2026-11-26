@@ -4,7 +4,7 @@ import { useChatI18n } from "../../chat/composables/useChatI18n";
 import { mockupPrompt } from "../../onboarding/prompts";
 import { useOnboarding } from "../../onboarding/runtime";
 import OnboardingFrame from "./OnboardingFrame.vue";
-import { PROVIDER_NAMES } from "./login-text";
+import { providerName } from "./login-text";
 
 /** "Start from scratch": a description, sent to the chat as a new conversation's first message. */
 const onboarding = useOnboarding();
@@ -55,7 +55,7 @@ function start(): void {
 					variant="soft"
 					size="sm"
 					icon="i-ph-sparkle"
-					:label="PROVIDER_NAMES[provider]"
+					:label="providerName(provider)"
 				/>
 				<span class="flex-1" />
 				<UKbd value="meta" />

@@ -76,12 +76,12 @@ export interface ActivitySources {
   hostProjectRoot: string;
 }
 
-const RESULT_BY_ALLOWED: Partial<Record<AllowedBy, ActivityResult>> = {
-  denied: "denied",
-  auto_denied: "denied",
-  blocked: "blocked",
-  expired: "expired",
-};
+const RESULT_BY_ALLOWED: ReadonlyMap<AllowedBy, ActivityResult> = new Map([
+  ["denied", "denied"],
+  ["auto_denied", "denied"],
+  ["blocked", "blocked"],
+  ["expired", "expired"],
+]);
 
 const DETAIL_BY_RESULT: Partial<Record<ActivityResult, string>> = {
   blocked: "Blocked by safe mode",
@@ -134,7 +134,7 @@ function resultOf(
   isRunning: boolean,
 ): ActivityResult {
   if (result?.outcome === "held") return "held";
-  const decided = RESULT_BY_ALLOWED[allowedBy];
+  const decided = RESULT_BY_ALLOWED.get(allowedBy);
   if (decided !== undefined && result?.outcome !== "stopped") return decided;
   if (result === undefined) return isRunning ? "pending" : "stopped";
   if (result.outcome !== undefined) return result.outcome;
@@ -250,7 +250,7 @@ function permissionOnlyRecord(input: RowInput, permission: StoredMessage) {
     ),
     agent: entry.conversation.provider ?? DEFAULT_PROVIDER_NAME,
     allowedBy,
-    result: RESULT_BY_ALLOWED[allowedBy] ?? "done",
+    result: RESULT_BY_ALLOWED.get(allowedBy) ?? "done",
     resultDetail: permission.feedback,
     conversationId: entry.id,
     conversationTitle: entry.title,

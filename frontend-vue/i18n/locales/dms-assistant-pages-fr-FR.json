@@ -402,6 +402,9 @@
 					"description": "Ouvrez l'assistant pour répondre : le bouton de l'en-tête, ou ⌘⇧K."
 				}
 			}
+		},
+		"errors": {
+			"outside_owner_ui": "Cette route ne répond qu'à l'interface de l'assistant : envoyez l'en-tête {header}."
 		}
 	}
 }

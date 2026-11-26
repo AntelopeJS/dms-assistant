@@ -9,6 +9,11 @@ const {
   sidecar,
   useRouteHarness,
 } = require("./helpers/route-harness.cjs");
+const {
+  PAGE_LOCALES,
+  isTranslated,
+  readLocale,
+} = require("./helpers/page-locales.cjs");
 
 const harness = useRouteHarness();
 const {
@@ -49,6 +54,20 @@ void test("refuses each form of a guard-rail write without the assistant UI's he
       assert.equal(bodyOf(z.json(), result).code, "forbidden", label);
       assert.deepEqual(sidecar.requests, [], label);
     }
+  }
+});
+
+void test("refuses a guard-rail write with a key both locales translate, naming the header to send", async () => {
+  reset();
+  const result = await putSettings({ safeMode: false }, undefined);
+  assert.ok(result instanceof HTTPResult);
+  const body = bodyOf(
+    z.object({ message: z.string(), params: z.object({ header: z.string() }) }),
+    result,
+  );
+  assert.equal(body.params.header, "x-dms-ui-assistant");
+  for (const file of PAGE_LOCALES) {
+    assert.ok(isTranslated(readLocale(file), body.message), file);
   }
 });
 

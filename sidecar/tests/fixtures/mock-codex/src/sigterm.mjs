@@ -16,8 +16,7 @@ import {
  * can be observed. The directory is recreated on every write, the way a logger
  * does, so a home removed too early comes back. A write that races the removal
  * itself is swallowed: the next tick writes again.
- */
-/**
+ *
  * @param {string} home
  * @param {number} index
  */

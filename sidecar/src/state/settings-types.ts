@@ -34,8 +34,16 @@ export function modeForProvider(
   provider: ProviderName,
   mode: ChatMode,
 ): ChatMode {
-  const modes: readonly ChatMode[] = PROVIDER_CHAT_MODES[provider];
-  return modes.includes(mode) ? mode : "normal";
+  return providerChatModes(provider).includes(mode) ? mode : "normal";
+}
+
+function providerChatModes(provider: ProviderName): readonly ChatMode[] {
+  switch (provider) {
+    case "claude":
+      return PROVIDER_CHAT_MODES.claude;
+    case "codex":
+      return PROVIDER_CHAT_MODES.codex;
+  }
 }
 
 export type DefaultModes = {

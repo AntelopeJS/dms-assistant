@@ -4,7 +4,7 @@ import {
 	NEWLINE_HOTKEY_MODIFIER,
 	SEND_HOTKEY,
 } from "../constants/conversation";
-import { MODES_BY_PROVIDER } from "../constants/modes";
+import { modesFor } from "../constants/modes";
 import { useChatI18n } from "../composables/useChatI18n";
 import { useComposerAttachments } from "../composables/useComposerAttachments";
 import type { CurrentPage } from "../types/conversation";
@@ -148,7 +148,7 @@ const modeItems = computed(() => [
 			label: t("dms_assistant.panel.composer.mode_menu"),
 		},
 	],
-	MODES_BY_PROVIDER[props.provider].map((mode) => ({
+	modesFor(props.provider).map((mode) => ({
 		label: t(MODE_LOOKS[mode].labelKey),
 		description: t(modeDescriptionKey(MODE_LOOKS[mode])),
 		icon: MODE_LOOKS[mode].icon,

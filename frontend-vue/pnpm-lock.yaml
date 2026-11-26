@@ -43,7 +43,7 @@ importers:
         version: 0.24.0(@antelopejs/core@1.24.7)(bare-buffer@3.7.1)(typescript@5.9.3)
       '@antelopejs/dms-frontend':
         specifier: '>=0.11.8 <0.12.0'
-        version: 0.11.8(@antelopejs/core@1.24.7)
+        version: 0.11.11(@antelopejs/core@1.24.7)
       '@antelopejs/interface-api':
         specifier: '>=0.3.4 <0.4.0'
         version: 0.3.5(@antelopejs/interface-core@0.5.2)
@@ -118,8 +118,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  '@antelopejs/dms-frontend@0.11.8':
-    resolution: {integrity: sha512-owMawDaP66LA0j7OlBTJ4gebBC0TFpn8xveEpsv9kUyy8ltkPn1DPoJHyJ+7QNxq5iO56m1V49+sW0j2M/LpvQ==}
+  '@antelopejs/dms-frontend@0.11.11':
+    resolution: {integrity: sha512-DNqMpvOTdfZc19WG9Uh9iW1MWDItxDHSEHos3gEXtxn7/paKH5F7SH6wyQI7mJEGK3xp7YqEz4j5qWk9Rr6HfQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -609,16 +609,8 @@ packages:
     resolution: {integrity: sha512-zuWkolaeK8ej5z7L9Ss7FLIBHgE8ZF+XcwV1o/vQ7IKagiDg/IosA7fOa2HUFVMW5yT2ugph9rshevHGzcowBQ==}
     engines: {node: '>= 22'}
 
-  '@intlify/message-compiler@11.4.18':
-    resolution: {integrity: sha512-9v2s0+mIuJaFOyWBfZBHrV/g9VLFH/4osx/zaQ52BgT6FQkjvTWHWyNriCMRqWs3PEuBKysmwTUwmNpg9iPjJw==}
-    engines: {node: '>= 22'}
-
   '@intlify/message-compiler@11.4.23':
     resolution: {integrity: sha512-HgmnQV/lBBX8KgxoNwngzzq8DLw/jECJgz9eBfQGdkEYte7Bw1RSqhIskcWp0DEWrSg2wijUi6dJjpq1WUD+zg==}
-    engines: {node: '>= 22'}
-
-  '@intlify/shared@11.4.18':
-    resolution: {integrity: sha512-8q7UR/eAFP0xOZndaClKYeh/lWkcIPOZkWsU85CMR9BYLjTeaENpAFWfFBvuUI8fFz0BDtZvR/fgbwiiQaqcDg==}
     engines: {node: '>= 22'}
 
   '@intlify/shared@11.4.23':
@@ -647,6 +639,9 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
+
+  '@jridgewell/sourcemap-codec@1.6.0':
+    resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
@@ -1327,6 +1322,11 @@ packages:
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.19.0:
+    resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -2688,11 +2688,6 @@ packages:
     resolution: {integrity: sha512-3A6sD0WYP7+QrjbfNA2FN3FsOaGGFoekCVgTyypy53gPxhbkCIjtO6YWgdrfM+n/8sI8JeXZOIxsHjMTNxQ4nQ==}
     engines: {node: ^14.0.0 || >=16.0.0}
 
-  semver@7.7.4:
-    resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
-    engines: {node: '>=10'}
-    hasBin: true
-
   semver@7.8.6:
     resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
@@ -3186,10 +3181,10 @@ snapshots:
       typescript: 5.9.3
       yaml: 2.9.1
 
-  '@antelopejs/dms-frontend@0.11.8(@antelopejs/core@1.24.7)':
+  '@antelopejs/dms-frontend@0.11.11(@antelopejs/core@1.24.7)':
     dependencies:
       '@antelopejs/core': 1.24.7
-      '@intlify/message-compiler': 11.4.18
+      '@intlify/message-compiler': 11.4.23
       chokidar: 4.0.3
       commander: 13.1.0
       ignore: 7.0.5
@@ -3629,17 +3624,10 @@ snapshots:
       '@intlify/core-base': 11.4.23
       '@intlify/shared': 11.4.23
 
-  '@intlify/message-compiler@11.4.18':
-    dependencies:
-      '@intlify/shared': 11.4.18
-      source-map-js: 1.2.1
-
   '@intlify/message-compiler@11.4.23':
     dependencies:
       '@intlify/shared': 11.4.23
       source-map-js: 1.2.1
-
-  '@intlify/shared@11.4.18': {}
 
   '@intlify/shared@11.4.23': {}
 
@@ -3659,7 +3647,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
       '@jridgewell/trace-mapping': 0.3.31
     optional: true
 
@@ -3672,6 +3660,9 @@ snapshots:
     optional: true
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
+
+  '@jridgewell/sourcemap-codec@1.6.0':
+    optional: true
 
   '@jridgewell/trace-mapping@0.3.31':
     dependencies:
@@ -3957,7 +3948,7 @@ snapshots:
       '@typescript-eslint/visitor-keys': 8.72.2
       debug: 4.4.3(supports-color@8.1.1)
       minimatch: 10.2.5
-      semver: 7.7.4
+      semver: 7.8.6
       tinyglobby: 0.2.16
       ts-api-utils: 2.5.0(typescript@5.9.3)
       typescript: 5.9.3
@@ -4263,6 +4254,9 @@ snapshots:
       acorn: 8.16.0
 
   acorn@8.16.0: {}
+
+  acorn@8.19.0:
+    optional: true
 
   ajv@6.15.0:
     dependencies:
@@ -4611,7 +4605,7 @@ snapshots:
       '@one-ini/wasm': 0.2.1
       commander: 14.0.3
       minimatch: 10.2.5
-      semver: 7.7.4
+      semver: 7.8.6
 
   electron-to-chromium@1.5.485: {}
 
@@ -4706,7 +4700,7 @@ snapshots:
       eslint-import-context: 0.1.9(unrs-resolver@1.13.0)
       is-glob: 4.0.3
       minimatch: 10.2.5
-      semver: 7.7.4
+      semver: 7.8.6
       stable-hash-x: 0.2.0
       unrs-resolver: 1.13.0
     optionalDependencies:
@@ -5651,8 +5645,6 @@ snapshots:
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
 
-  semver@7.7.4: {}
-
   semver@7.8.6: {}
 
   serialize-javascript@7.1.4: {}
@@ -5795,7 +5787,7 @@ snapshots:
   terser@5.46.2:
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.16.0
+      acorn: 8.19.0
       commander: 2.20.3
       source-map-support: 0.5.21
     optional: true
@@ -5990,7 +5982,7 @@ snapshots:
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
       esquery: 1.7.0
-      semver: 7.7.4
+      semver: 7.8.6
     transitivePeerDependencies:
       - supports-color
 

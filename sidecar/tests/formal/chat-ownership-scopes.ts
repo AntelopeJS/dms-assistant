@@ -11,6 +11,7 @@ export const TEST_TIMEOUT_MS = WAIT_MS * 4;
 export const CAMILLE = { userId: "u-camille", name: "Camille" };
 export const DANA = { userId: "u-dana", name: "Dana" };
 export const CONVERSATION = "conv-camille";
+export const DANA_CONVERSATION = "conv-dana";
 export const CAMILLE_PAGE = "/camille-orders";
 export const CAMILLE_REPORT_PAGE = "/camille-reports";
 export const DANA_PAGE = "/dana-customers";
@@ -269,7 +270,7 @@ export const SCOPES: Record<
         type: "change_set_action",
         changeSetId: world.changeSetId,
         action: "undo",
-        conversationId: "conv-dana",
+        conversationId: DANA_CONVERSATION,
       },
     ],
   },

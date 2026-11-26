@@ -19,14 +19,36 @@ const SPECIFIER =
   /(?<![\w"'$.])(?:from|import|require\s*\(|import\s*\()\s*["']([@\w][\w@./+-]*)["']/g;
 
 /**
- * Runs `command` in `cwd` and throws with its output when it fails.
+ * The environment without the `npm_config_*` and `pnpm_config_*` settings a
+ * `pnpm run` of this repository exports, such as its `minimumReleaseAge`
+ * without its `minimumReleaseAgeExclude`. The module cache installs from the
+ * host's environment, which holds none of them.
+ *
+ * @returns {NodeJS.ProcessEnv}
+ */
+function hostEnv() {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([name]) => !/^p?npm_config_/i.test(name),
+    ),
+  );
+}
+
+/**
+ * Runs `command` in `cwd` with the host's environment and throws with its
+ * output when it fails.
  *
  * @param {string} command
  * @param {string} cwd
  * @returns {string}
  */
 function run(command, cwd) {
-  const result = spawnSync(command, { cwd, shell: true, encoding: "utf8" });
+  const result = spawnSync(command, {
+    cwd,
+    shell: true,
+    encoding: "utf8",
+    env: hostEnv(),
+  });
   if (result.status === 0) return result.stdout;
   throw new Error(
     `${command} failed in ${cwd} (${result.status}):\n${result.stdout}\n${result.stderr}`,

@@ -109,13 +109,20 @@ export function assistantSidePanel(): AssistantSidePanel {
 }
 
 /** What each state adds to the launcher's label; a connected assistant adds nothing. */
-const LAUNCHER_STATE_LABEL_KEYS: Record<LauncherState, string | null> = {
-	disconnected: "dms_assistant.panel.launcher_state.disconnected",
-	connected: null,
-	working: "dms_assistant.panel.launcher_state.working",
-	finished: "dms_assistant.panel.launcher_state.finished",
-	question: "dms_assistant.panel.launcher_state.question",
-};
+function launcherStateLabelKey(state: LauncherState): string | null {
+	switch (state) {
+		case "disconnected":
+			return "dms_assistant.panel.launcher_state.disconnected";
+		case "connected":
+			return null;
+		case "working":
+			return "dms_assistant.panel.launcher_state.working";
+		case "finished":
+			return "dms_assistant.panel.launcher_state.finished";
+		case "question":
+			return "dms_assistant.panel.launcher_state.question";
+	}
+}
 
 /**
  * "Assistant · Working (⌘⇧K)": the launcher's label with the assistant's state
@@ -127,7 +134,7 @@ export function launcherAction(
 	t: Translate,
 	state: LauncherState,
 ): LauncherAction {
-	const stateKey = LAUNCHER_STATE_LABEL_KEYS[state];
+	const stateKey = launcherStateLabelKey(state);
 	const name =
 		stateKey === null
 			? t(LAUNCHER_LABEL_KEY)

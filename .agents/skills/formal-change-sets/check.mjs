@@ -31,8 +31,11 @@ const TLC_SHA256 = "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e05
 const DOCKER_IMAGE = "eclipse-temurin:21-jre";
 const EXIT = { changed: 1, tool: 2 };
 
-/** Rules today's code breaks, per config, with the states in TLC's shortest counterexample. */
-/** @type {Check[]} */
+/**
+ * Rules today's code breaks, per config, with the states in TLC's shortest counterexample.
+ *
+ * @type {Check[]}
+ */
 const CHECKS = [
   {
     config: "Sequential",

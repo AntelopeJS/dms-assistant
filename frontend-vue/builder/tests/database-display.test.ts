@@ -7,8 +7,6 @@ import type {
 	ProposedResource,
 } from '../app/runtime/database-types'
 
-/** A column's display and a relation's tabs travel from the proposal to the call Apply sends. */
-
 const STATUS: ColumnDisplay = {
 	kind: 'badge',
 	items: [

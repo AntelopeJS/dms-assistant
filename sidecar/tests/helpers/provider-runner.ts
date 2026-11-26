@@ -68,38 +68,47 @@ function buildClaude(options: RunnerOptions): AgentProvider {
   });
 }
 
-type ProviderBuilder = (options: RunnerOptions) => {
+interface BuiltProvider {
   provider: AgentProvider;
   dispose: () => Promise<void>;
-};
+}
 
-const BUILDERS: Record<ProviderName, ProviderBuilder> = {
-  claude: (options) => ({
-    provider: buildClaude(options),
-    dispose: () => Promise.resolve(),
-  }),
-  codex: (options) => {
-    const registry = createMcpHttpRegistry();
-    return {
-      provider: createCodexProvider({
-        timeoutMs: options.timeoutMs,
-        settings: options.settings,
-        stateDir: options.stateDir,
-        mcpHttpRegistry: registry,
-        createMcpDeps: buildInertMcpDeps,
-        getMcpUrl: () => UNREACHABLE_MCP_URL,
-      }),
-      dispose: () => registry.dispose(),
-    };
-  },
-};
+function buildCodex(options: RunnerOptions): BuiltProvider {
+  const registry = createMcpHttpRegistry();
+  return {
+    provider: createCodexProvider({
+      timeoutMs: options.timeoutMs,
+      settings: options.settings,
+      stateDir: options.stateDir,
+      mcpHttpRegistry: registry,
+      createMcpDeps: buildInertMcpDeps,
+      getMcpUrl: () => UNREACHABLE_MCP_URL,
+    }),
+    dispose: () => registry.dispose(),
+  };
+}
+
+function buildProvider(
+  name: ProviderName,
+  options: RunnerOptions,
+): BuiltProvider {
+  switch (name) {
+    case "claude":
+      return {
+        provider: buildClaude(options),
+        dispose: () => Promise.resolve(),
+      };
+    case "codex":
+      return buildCodex(options);
+  }
+}
 
 /** One runner on the named provider, with its mock already selected by the caller. */
 export function buildRunner(
   name: ProviderName,
   options: RunnerOptions,
 ): RunnerHandle {
-  const built = BUILDERS[name](options);
+  const built = buildProvider(name, options);
   const runner = createAgentRunner(built.provider, {
     settings: options.settings ?? DEFAULT_SETTINGS,
   });

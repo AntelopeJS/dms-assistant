@@ -35,7 +35,7 @@ function choose(forms: string[], count: number): string {
 
 function interpolate(text: string, params: TranslateParams = {}): string {
 	return text.replace(/\{(\w+)\}/g, (match, name: string) =>
-		name in params ? String(params[name]) : match,
+		Object.hasOwn(params, name) ? String(params[name]) : match,
 	);
 }
 

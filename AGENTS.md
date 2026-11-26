@@ -31,7 +31,7 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 - The Vitest suites, which run in their own CI job: `pnpm --dir sidecar test` and `pnpm --dir frontend-vue test` (the assistant and builder unit suites).
 - `pnpm test:sidecar-smoke`, which builds the sidecar and checks its output.
-- `pnpm test:installed`, which packs the module, installs the tarball as the AntelopeJS module cache does, starts the installed sidecar and checks that every package its built files import resolves. CI runs it in the `installed-module` job, which `ubuntu` needs, and the release runs it before it starts.
+- `pnpm test:installed`, which packs the module, installs the tarball as the AntelopeJS module cache does, starts the installed sidecar and checks that every package its built files import resolves. CI runs it in the `installed-module` job, which `verdict` needs, and the release runs it before it starts.
 - The Codex acceptance suite: `CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance`.
 - The journeys that open no tab: `pnpm test:integration` runs `tests/integration/*.journeys.test.mjs`, the journeys a feature marks `integration: true`, on one run per journeys suite through `@antelopejs/dms/e2e/run`. CI runs it in the `integration` job in the merge queue, on a manual run and nightly. `pnpm e2e:build` builds what every run needs (the module, the sidecar and both playgrounds); with `DMS_E2E_PREBUILT=1` a run skips that build.
 - The browser journeys: `pnpm e2e` (and `pnpm e2e:builder`, `pnpm e2e:dev`) prepares and starts a run of its suite's playground, runs every journey of the suite on it and stops it; `--grep @smoke` narrows it to the smoke set. CI runs the smoke set in the `e2e` job on a pull request, and every journey in shards in the merge queue, on a manual run and nightly, whose shards `e2e-report` merges into one report. `tests/journey-coverage.test.cjs` checks that the `covers` globs the journeys modules of both suites export cover every user-facing file.
@@ -39,7 +39,7 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 ## CI
 
-Branch protection requires the `ci / checks` and `ubuntu` checks. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`, and `ubuntu` fails when `ci`, the `vitest` matrix, `frontend-verify`, `installed-module` or `e2e` fails, so keep both names.
+The org rulesets require `ci / checks` and `verdict`. In `.github/workflows/ci.yml`, `ci` calls the shared `ci-node.yml`, whose `checks` job reports `ci / checks`. `ci / checks` cannot see the jobs `ci.yml` declares, so `verdict` needs all of them and fails when `ci`, the `vitest` matrix, `frontend-verify`, `installed-module`, `e2e` or `integration` failed or was cancelled. Keep both names.
 
 ## Releases
 

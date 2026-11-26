@@ -402,6 +402,9 @@
 					"description": "Open the assistant to answer: the button in the header, or ⌘⇧K."
 				}
 			}
+		},
+		"errors": {
+			"outside_owner_ui": "This route answers the assistant's own UI only: send the {header} header."
 		}
 	}
 }

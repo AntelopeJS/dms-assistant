@@ -28,6 +28,7 @@ const SUITES = {
       "frontend-vue/eslint.config.mjs",
       "frontend-vue/vitest.config.ts",
       "frontend-vue/pnpm-lock.yaml",
+      "frontend-vue/pnpm-workspace.yaml",
       "frontend-vue/tsconfig.chat.json",
       "frontend-vue/tsconfig.tests.json",
       "frontend-vue/tsconfig.json",

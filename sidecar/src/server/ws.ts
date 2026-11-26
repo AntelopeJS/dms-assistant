@@ -47,7 +47,7 @@ import type {
   AiMcpServerDeps,
   AiMcpServerStaticDeps,
 } from "../mcp/types.js";
-import { PROVIDER_MODULES } from "../providers/registry.js";
+import { providerModule } from "../providers/registry.js";
 import type {
   ProviderHostRuntime,
   ProviderRuntime,
@@ -171,7 +171,7 @@ function buildRunnerFactories(
     (name: ProviderName): ProviderRunnerFactory =>
     (settings: AppSettings) =>
       createAgentRunner(
-        PROVIDER_MODULES[name].create(
+        providerModule(name).create(
           buildBaseOptions(options, settings),
           runtime,
         ),

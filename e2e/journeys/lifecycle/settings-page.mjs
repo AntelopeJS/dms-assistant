@@ -25,7 +25,7 @@ export async function settingsWithoutSidecar(ctx) {
   await tab.page.evaluate((mark) => Object.assign(window, { [mark]: true }), NAVIGATION_MARK);
   await tab.click({ role: "link", name: "Settings", exact: true });
   const banner = await pageHas(tab, "says it is turned off", /Its sidecar is turned off in this module's configuration\./);
-  const inBrowser = await tab.page.evaluate((mark) => mark in window, NAVIGATION_MARK);
+  const inBrowser = await tab.page.evaluate((mark) => Object.hasOwn(window, mark), NAVIGATION_MARK);
   const toast = await until(async () => ERROR_TOAST.test(await bodyText(tab)), { timeoutMs: TOAST_WATCH_MS, everyMs: 250 });
   return [
     changes,

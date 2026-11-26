@@ -194,26 +194,30 @@ export function codexDumpEnvInto(file: string): void {
   process.env.MOCK_CODEX_ENV_DUMP_FILE = file;
 }
 
-const TRACE_ARMERS: Record<ProviderName, (file: string) => void> = {
-  claude: (file) => {
-    process.env.MOCK_CLAUDE_TRACE = file;
-  },
-  codex: traceCodexInto,
-};
-
-const TRACE_READERS: Record<ProviderName, (file: string) => unknown[]> = {
-  claude: (file) => readClaudeTrace(file),
-  codex: (file) => readCodexTrace(file),
-};
-
 /** Arms the trace of one provider only: the other's would outlive its fixture. */
 export function traceInto(provider: ProviderName, file: string): void {
-  TRACE_ARMERS[provider](file);
+  switch (provider) {
+    case "claude":
+      process.env.MOCK_CLAUDE_TRACE = file;
+      return;
+    case "codex":
+      traceCodexInto(file);
+      return;
+  }
+}
+
+function readEntries(provider: ProviderName, file: string): unknown[] {
+  switch (provider) {
+    case "claude":
+      return readClaudeTrace(file);
+    case "codex":
+      return readCodexTrace(file);
+  }
 }
 
 /** What that provider's backend was asked to do, as raw JSON. */
 export function readTrace(provider: ProviderName, file: string): string {
-  return JSON.stringify(TRACE_READERS[provider](file));
+  return JSON.stringify(readEntries(provider, file));
 }
 
 const TRACED_CLAUDE_ENTRY = z.object({

@@ -1,11 +1,5 @@
 import type { AllowedBy, ToolSource } from "../constants/audit.js";
 
-/**
- * Payload shapes consumed by the DMS dashboard components (KpiCard, ChartCard,
- * TopList) — kept structurally identical to what those components expect so the
- * DMS backend can proxy sidecar responses through unchanged.
- */
-
 export interface SeriesPoint {
   x: string;
   y: number;

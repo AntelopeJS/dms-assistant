@@ -57,15 +57,24 @@ function undoTimestamps(sources: MetricSources): number[] {
   );
 }
 
-const KPI_SOURCES: Record<KpiMetric, TimestampSource> = {
-  actions: timestampsOf(() => true),
-  "change-sets": (sources) => sources.changeSets.map((c) => c.createdAtMs),
-  approved: timestampsOf((r) => r.isAsked && r.allowedBy === "approved"),
-  denied: timestampsOf((r) => r.allowedBy === "denied"),
-  undone: undoTimestamps,
-  errors: timestampsOf((r) => r.result === "failed"),
-  proposed: timestampsOf((r) => r.isAsked),
-};
+function kpiSource(metric: KpiMetric): TimestampSource {
+  switch (metric) {
+    case "actions":
+      return timestampsOf(() => true);
+    case "change-sets":
+      return (sources) => sources.changeSets.map((c) => c.createdAtMs);
+    case "approved":
+      return timestampsOf((r) => r.isAsked && r.allowedBy === "approved");
+    case "denied":
+      return timestampsOf((r) => r.allowedBy === "denied");
+    case "undone":
+      return undoTimestamps;
+    case "errors":
+      return timestampsOf((r) => r.result === "failed");
+    case "proposed":
+      return timestampsOf((r) => r.isAsked);
+  }
+}
 
 function inRange(ts: number, fromMs: number, toMs: number): boolean {
   return ts >= fromMs && ts <= toMs;
@@ -184,34 +193,32 @@ function approvalBreakdown(sources: MetricSources, window: MetricWindow) {
 }
 
 function changeSetTotal(sources: MetricSources, window: MetricWindow) {
-  const created = KPI_SOURCES["change-sets"](sources);
+  const created = kpiSource("change-sets")(sources);
   return { total: countIn(created, window.fromMs, window.toMs) };
 }
 
 /** The totals a KPI's caption is built from, for the metrics that have one. */
-const KPI_TOTALS: Partial<
-  Record<
-    KpiMetric,
-    (sources: MetricSources, window: MetricWindow) => Partial<KpiCardPayload>
-  >
-> = {
-  approved: approvalBreakdown,
-  undone: changeSetTotal,
-};
+const KPI_TOTALS: ReadonlyMap<
+  KpiMetric,
+  (sources: MetricSources, window: MetricWindow) => Partial<KpiCardPayload>
+> = new Map([
+  ["approved", approvalBreakdown],
+  ["undone", changeSetTotal],
+]);
 
 export function buildKpi(
   sources: MetricSources,
   metric: KpiMetric,
   window: MetricWindow,
 ): KpiCardPayload {
-  const timestamps = KPI_SOURCES[metric](sources);
+  const timestamps = kpiSource(metric)(sources);
   const value = countIn(timestamps, window.fromMs, window.toMs);
   const payload: KpiCardPayload = {
     value,
     ...compare(timestamps, value, window),
     sparkline: dailyCounts(timestamps, window.fromMs, window.toMs),
   };
-  return { ...payload, ...KPI_TOTALS[metric]?.(sources, window) };
+  return { ...payload, ...KPI_TOTALS.get(metric)?.(sources, window) };
 }
 
 function seriesFrom(
@@ -231,7 +238,7 @@ export function buildSeries(
   sources: MetricSources,
   window: MetricWindow,
 ): ChartCardPayload {
-  const timestamps = KPI_SOURCES.actions(sources);
+  const timestamps = kpiSource("actions")(sources);
   const keys = dayBuckets(window.fromMs, window.toMs);
   const counts = dailyCounts(timestamps, window.fromMs, window.toMs);
   const value = total(counts);

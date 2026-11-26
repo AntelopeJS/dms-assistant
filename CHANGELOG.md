@@ -2,6 +2,26 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.4
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.3...v0.3.4)
+
+### 🩹 Fixes
+
+- Restore the integration member signup and move to dms 0.24 ([#151](https://github.com/AntelopeJS/dms-assistant/pull/151))
+- **sidecar:** Honour the conversation owner in change set actions and host reports ([#150](https://github.com/AntelopeJS/dms-assistant/pull/150))
+- **frontend:** Stop the assistant when the session ends ([#153](https://github.com/AntelopeJS/dms-assistant/pull/153))
+- **onboarding:** Give every ticked screen a page in Build directly ([#154](https://github.com/AntelopeJS/dms-assistant/pull/154))
+- **onboarding:** Refuse a second connection of another engine ([#155](https://github.com/AntelopeJS/dms-assistant/pull/155))
+
+### 🤖 CI
+
+- **frontend-vue:** Typecheck the frontend and builder tests ([#152](https://github.com/AntelopeJS/dms-assistant/pull/152))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.3
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.2...v0.3.3)

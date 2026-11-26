@@ -373,9 +373,12 @@ jobs:
           path: e2e/builder/playwright-report
           retention-days: 14
 
-  # A job the tier skipped does not fail it. A draft pull request fails it, so
-  # merge-when-green cannot merge on the draft run.
-  ubuntu:
+  # The repo-level verdict: it fails when the `ci` call or a job declared here
+  # failed or was cancelled, `integration` included, so a red merge queue run
+  # keeps the pull request out of main. A job the tier skipped does not fail
+  # it. A draft pull request fails it, so merge-when-green cannot merge on the
+  # draft run.
+  verdict:
     if: always()
     needs:
       - select

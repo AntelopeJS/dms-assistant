@@ -28,6 +28,7 @@ import {
   CAMILLE_TEXT,
   CONVERSATION,
   DANA,
+  DANA_CONVERSATION,
   DANA_PAGE,
   EDITED_FILE,
   type Frame,
@@ -160,36 +161,75 @@ async function buildPaused(room: Room): Promise<World> {
   };
 }
 
-async function buildSettled(room: Room): Promise<World> {
+async function prepareEditedFile(room: Room): Promise<void> {
   useScript("edit");
-  const { camille, running } = room;
-  const file = join(running.projectRoot, EDITED_FILE);
-  await mkdir(join(running.projectRoot, "src", "pages"), { recursive: true });
-  await writeFile(file, "<p>Hello</p>\n");
-  transmit(camille.socket, {
-    type: "hello",
-    role: "chat",
-    conversationId: CONVERSATION,
-  });
-  transmit(camille.socket, {
+  const { projectRoot } = room.running;
+  await mkdir(join(projectRoot, "src", "pages"), { recursive: true });
+  await writeFile(join(projectRoot, EDITED_FILE), "<p>Hello</p>\n");
+}
+
+/** What one turn that edited `EDITED_FILE` left: its permission prompt and its change set's id. */
+interface RecordedEdit {
+  prompt: WireMessage;
+  changeSetId: string;
+}
+
+/**
+ * One turn of `client` on `conversationId`: what it asks, what its edit writes
+ * to `EDITED_FILE`, and whether its permission prompt is allowed with a
+ * standing rule, which spares the conversation's later turns their prompt.
+ */
+interface EditTurn {
+  client: Client;
+  conversationId: string;
+  request: string;
+  content: string;
+  keepsRule: boolean;
+}
+
+/** Runs the turn, writing its edit while the turn waits on its permission prompt. */
+async function recordEdit(
+  room: Room,
+  { client, conversationId, request, content, keepsRule }: EditTurn,
+): Promise<RecordedEdit> {
+  const earlier = new Set(client.frames.events);
+  const next = (type: string) =>
+    client.frames.next((msg) => msg.type === type && !earlier.has(msg));
+  transmit(client.socket, { type: "hello", role: "chat", conversationId });
+  transmit(client.socket, {
     type: "user_message",
-    conversationId: CONVERSATION,
-    content: CAMILLE_TEXT,
+    conversationId,
+    content: request,
   });
-  const prompt = await camille.frames.next(
-    (msg) => msg.type === "permission_request",
-  );
-  await writeFile(file, "<p>Hello world</p>\n");
-  answerPermission(
-    camille.socket,
+  const prompt = await next("permission_request");
+  await writeFile(join(room.running.projectRoot, EDITED_FILE), content);
+  if (keepsRule) {
+    answerPermission(
+      client.socket,
+      prompt,
+      "allow_rule",
+      requireValue(prompt.ruleOptions?.[0]),
+    );
+  } else {
+    answerPermission(client.socket, prompt, "allow_once");
+  }
+  const changeSet = await next("change_set");
+  await next("run_done");
+  return {
     prompt,
-    "allow_rule",
-    requireValue(prompt.ruleOptions?.[0]),
-  );
-  const changeSet = await camille.frames.next(
-    (msg) => msg.type === "change_set",
-  );
-  await camille.frames.next((msg) => msg.type === "run_done");
+    changeSetId: String(requireValue(changeSet.changeSet).id),
+  };
+}
+
+async function buildSettled(room: Room): Promise<World> {
+  await prepareEditedFile(room);
+  const { prompt, changeSetId } = await recordEdit(room, {
+    client: room.camille,
+    conversationId: CONVERSATION,
+    request: CAMILLE_TEXT,
+    content: "<p>Hello world</p>\n",
+    keepsRule: true,
+  });
   return {
     kind: "settled",
     requestId: "none",
@@ -197,8 +237,14 @@ async function buildSettled(room: Room): Promise<World> {
     ruleId: requireValue(room.services.permissionBus.listRules(CONVERSATION)[0])
       .id,
     questionId: "none",
-    changeSetId: String(requireValue(changeSet.changeSet).id),
+    changeSetId,
   };
+}
+
+function changeSetStates(room: Room, conversationId: string): string[] {
+  return room.services.checkpoints
+    .forConversation(conversationId)
+    .map((set) => set.state);
 }
 
 /**
@@ -361,13 +407,52 @@ describe("a chat request from another person (formal target: chat requests honou
         conversationId: CONVERSATION,
       });
       await undone;
-      expect(
-        room.services.checkpoints
-          .forConversation(CONVERSATION)
-          .map((set) => set.state),
-      ).toEqual(["undone"]);
+      expect(changeSetStates(room, CONVERSATION)).toEqual(["undone"]);
     },
     TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "undoes with the later change sets only those of Dana's conversation (fails an undo that takes every later set, or none)",
+    async () => {
+      const room = await openRoom("settled");
+      await prepareEditedFile(room);
+      const danaTurn = {
+        client: room.dana,
+        conversationId: DANA_CONVERSATION,
+        request: "dana's request",
+        keepsRule: false,
+      };
+      const first = await recordEdit(room, {
+        ...danaTurn,
+        content: "<p>Hello Dana</p>\n",
+      });
+      await recordEdit(room, {
+        client: room.camille,
+        conversationId: CONVERSATION,
+        request: CAMILLE_TEXT,
+        content: "<p>Hello Dana and Camille</p>\n",
+        keepsRule: false,
+      });
+      await recordEdit(room, {
+        ...danaTurn,
+        content: "<p>Hello again Dana and Camille</p>\n",
+      });
+      transmit(room.dana.socket, {
+        type: "change_set_action",
+        changeSetId: first.changeSetId,
+        action: "undo",
+        includeLater: true,
+        conversationId: DANA_CONVERSATION,
+      });
+      await settle(room.dana, room.services);
+      expect(changeSetStates(room, DANA_CONVERSATION)).toEqual([
+        "undone",
+        "undone",
+      ]);
+      expect(changeSetStates(room, CONVERSATION)).toEqual(["applied"]);
+    },
+    TEST_TIMEOUT_MS * 2,
   );
 
   const sent = Object.entries(SCOPES).flatMap(([type, scope]) =>

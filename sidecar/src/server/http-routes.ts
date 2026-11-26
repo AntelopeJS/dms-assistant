@@ -330,7 +330,7 @@ function changeActionRoute(
           action,
           includeLater: body.includeLater === true,
         },
-        body.actor,
+        { name: body.actor, mayUse: () => true },
       );
       sendJson(res, HTTP_STATUS.OK, { [resultKey]: ids });
     } catch (err) {

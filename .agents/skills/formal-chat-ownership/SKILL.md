@@ -27,6 +27,8 @@ For each message type, in a world where Camille's conversation has a turn paused
 
 Answers by request id (`permission_response`, `question_response`) count as conversation requests: the owner is looked up from the request. Types with no conversation and no request id (`echo`, `actor`, `set_settings`) are classified `none` with the reason.
 
+A request on the sender's own conversation can still reach the owner's state. An undo with the later change sets (`includeLater`) takes the later sets that touch the same files, and those can belong to another person's conversation. A case of its own checks it: Dana records a change set, Camille one on the same file, then Dana another; Dana undoes her first with the later sets, and both of hers end undone while Camille's stays applied. It fails an undo that takes every later set (the code before this case) and one that takes none.
+
 ## What it covers
 
 Bounds: two people, one conversation, one frame at a time, two worlds, 21 message type cases. Not covered: two requests racing, a request sent while the owner's turn ends, the `hello` of a socket whose conversation does not exist yet (`conversation-answers-and-delete.test.ts` pins it), host commands that a turn sends (`per-owner-page.test.ts`, `host-command-router.test.ts`), and the HTTP routes (`access.md` sweeps them).
@@ -45,6 +47,7 @@ The check fails on the code before each fix (`git worktree add` the parent commi
 | before #59 (`8da2039^`) | `permission_response`, `question_response`, `host_state_update` |
 | before #61 (`1baa062^`) | `host_state_update` |
 | before #150 (`229c83c`) | `change_set_action`, `host_navigation_complete`, `host_page_blocks` |
+| before Wa4f5503c-81 (`3ad6035`) | the undo with the later change sets |
 
 ## Real bug or modeling error
 
@@ -69,3 +72,4 @@ Move the sync commit forward only after you confirm the check describes the code
 | answers by request id | `mayAnswer`, `permissionBus.conversationOf`, `questionBus.conversationOf` |
 | host messages | `handleHostStateUpdate`, `handleHostNavigationComplete`, `handleHostPageBlocks`, `createHostState`, `createNavigationCompleter` |
 | change sets | `handleChangeSet`, `changeSetRefusalOf`, `handleChangeSetAction` |
+| undo with the later sets | the `mayUse` that `handleChangeSet` passes to `handleChangeSetAction`, `undo` in `sidecar/src/checkpoints/checkpoints.ts` |

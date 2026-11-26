@@ -46,13 +46,13 @@ export interface SidecarStatusController {
 	dispose: () => void;
 }
 
+/** The backend's sidecar info, as far as the tab reads it. */
+export type SidecarInfoPayload = Partial<SidecarInfo>;
+
 /**
  * The read of the sidecar's info the controller follows: `useApiData` in the
  * dashboard, opened with `immediate: false` and polled every `interval`.
  */
-/** The backend's sidecar info, as far as the tab reads it. */
-export type SidecarInfoPayload = Partial<SidecarInfo>;
-
 export interface SidecarInfoRead {
 	data: Readonly<Ref<SidecarInfoPayload | null>>;
 	error: Readonly<Ref<unknown>>;

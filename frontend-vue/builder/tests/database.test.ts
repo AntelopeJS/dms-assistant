@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { draftFromProposal, includeResource, settledInput } from '../app/runtime/database'
 import type { MappingProposal, ProposedField, ProposedResource } from '../app/runtime/database-types'
 
-/**
- * The builder's decision code over a mapping proposal: the draft the
- * integrator edits, and the one `MapResources` call Apply sends.
- */
-
 function proposed<T>(value: T, rule = 'R6') {
 	return { value, rule, kind: 'default' as const }
 }

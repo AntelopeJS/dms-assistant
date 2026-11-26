@@ -471,19 +471,20 @@ const handleChangeSet = on(
       });
       return;
     }
-    await handleChangeSetAction(ctx, msg, ctx.actor?.name).catch(
-      (err: unknown) => {
-        logFailure(
-          "change set action failed",
-          err instanceof Error ? err.message : String(err),
-        );
-        send(socket, {
-          type: EVENT_TYPES.RUN_ERROR,
-          conversationId: msg.conversationId ?? "",
-          error: err instanceof Error ? err.message : String(err),
-        });
-      },
-    );
+    await handleChangeSetAction(ctx, msg, {
+      name: ctx.actor?.name,
+      mayUse: (conversationId) => refusalOf(ctx, conversationId) === null,
+    }).catch((err: unknown) => {
+      logFailure(
+        "change set action failed",
+        err instanceof Error ? err.message : String(err),
+      );
+      send(socket, {
+        type: EVENT_TYPES.RUN_ERROR,
+        conversationId: msg.conversationId ?? "",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   },
 );
 

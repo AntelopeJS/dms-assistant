@@ -87,9 +87,13 @@ export interface Checkpoints {
   forConversation(conversationId: string): ChangeSetSummary[];
   fileDetails(id: string): Promise<ChangeSetFileDetail[]>;
   undoPreview(id: string): UndoPreview;
+  /**
+   * Undoes the change set, after the later applied sets on its files that
+   * `takesLater` accepts, newest first.
+   */
   undo(
     id: string,
-    includeLater: boolean,
+    takesLater: (later: ChangeSetRecord) => boolean,
     actor?: string,
   ): Promise<ChangeSetRecord[]>;
   redo(id: string, actor?: string): Promise<ChangeSetRecord[]>;
@@ -304,15 +308,13 @@ function assertAvailable(state: CheckpointsState): void {
 async function undo(
   state: CheckpointsState,
   id: string,
-  includeLater: boolean,
+  takesLater: (later: ChangeSetRecord) => boolean,
   actor: string | undefined,
 ): Promise<ChangeSetRecord[]> {
   assertAvailable(state);
   const record = requireRecord(state, id);
   requireState(record, "applied");
-  const targets = includeLater
-    ? [...laterConflicts(state, record), record]
-    : [record];
+  const targets = [...laterConflicts(state, record).filter(takesLater), record];
   return serialize(state, async () => {
     const undone: ChangeSetRecord[] = [];
     for (const target of targets) {
@@ -408,7 +410,7 @@ export function createCheckpoints(deps: CheckpointsDeps): Checkpoints {
         .map(toSummary),
     fileDetails: (id) => fileDetails(state, id),
     undoPreview: (id) => undoPreview(state, id),
-    undo: (id, includeLater, actor) => undo(state, id, includeLater, actor),
+    undo: (id, takesLater, actor) => undo(state, id, takesLater, actor),
     redo: (id, actor) => redo(state, id, actor),
     flush: async () => {
       await state.lock;

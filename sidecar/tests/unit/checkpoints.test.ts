@@ -195,16 +195,16 @@ describe("checkpoints", () => {
       await writeFile(join(root, "b.ts"), "new\n");
     });
     const id = idOf(record);
-    const [undone] = await project.checkpoints.undo(id, false, "Camille");
+    const [undone] = await project.checkpoints.undo(id, () => false, "Camille");
     expect(undone).toMatchObject({
       state: "undone",
       stateChangedBy: "Camille",
     });
     expect(await read(root, "a.ts")).toBe("one\ntwo\nthree\n");
     expect(existsSync(join(root, "b.ts"))).toBe(false);
-    await expect(project.checkpoints.undo(id, false)).rejects.toBeInstanceOf(
-      ChangeSetActionError,
-    );
+    await expect(
+      project.checkpoints.undo(id, () => false),
+    ).rejects.toBeInstanceOf(ChangeSetActionError);
     await project.checkpoints.redo(id, "Camille");
     expect(await read(root, "a.ts")).toBe("changed\n");
     expect(await read(root, "b.ts")).toBe("new\n");
@@ -228,7 +228,7 @@ describe("checkpoints", () => {
     expect(preview.conflicts).toEqual([
       { changeSetId: second?.id, number: 2, title: "Second", files: ["a.ts"] },
     ]);
-    const undone = await project.checkpoints.undo(idOf(first), true);
+    const undone = await project.checkpoints.undo(idOf(first), () => true);
     expect(undone.map((c) => c.number)).toEqual([2, 1]);
     expect(await read(root, "a.ts")).toBe("one\ntwo\nthree\n");
     expect(await read(root, "c.ts")).toBe("c\n");

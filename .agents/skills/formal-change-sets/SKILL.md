@@ -34,7 +34,7 @@ Run it when a change touches any file in the coverage record below. A changed ru
 | `Sequential.cfg` | 3 turns, 2 files, 2 tasks queued | One turn at a time, and the owner clicks only when nothing waits on the lock. Only the logic of Undo and Redo is left. |
 | `ChangeSets.cfg` | 2 turns, 2 files, 2 tasks queued | What the code allows: two chats run turns at once, and Undo or Redo may land while a turn runs or while other tasks wait. |
 
-A pass covers these bounds, not every project. Edits only add lines; the model has no edit that removes another set's line, no failed snapshot, no retention prune, and no Builder operation.
+A pass covers these bounds, not every project. Edits only add lines; the model has no edit that removes another set's line, no failed snapshot, no retention prune, and no Builder operation. The model has one person, who may use every conversation, as on the Changes page (`POST /ai/changes/:id/undo`). An undo over the chat socket takes only the later sets of conversations its sender may use; `formal-chat-ownership` checks that.
 
 ## The rules
 

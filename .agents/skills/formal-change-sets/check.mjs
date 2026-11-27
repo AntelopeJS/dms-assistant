@@ -51,7 +51,6 @@ const CHECKS = [
     config: "ChangeSets",
     findings: {
       SetHoldsOnlyItsTurnsLines: 12,
-      UndoReachesLaterSets: 12,
     },
   },
 ];

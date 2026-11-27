@@ -6,14 +6,14 @@ export const PROVIDER_UNAVAILABLE_REASONS = {
   CLAUDE_SDK_MISSING:
     "The Claude agent SDK is not installed alongside the sidecar.",
   CODEX_CLI_MISSING:
-    "Install @openai/codex, at the exact version dms-assistant pins, to enable this provider.",
+    "Install @openai/codex, at the version range dms-assistant declares, to enable this provider.",
   /**
    * Codex versions the app-server protocol by binary and ships about ten
    * releases a month, so the mismatch is the expected state after any upgrade.
    * Saying which version to pin back to is what makes it actionable.
    */
   CODEX_VERSION_MISMATCH:
-    "The installed codex binary (%installed%) does not match the protocol types the sidecar ships (%pinned%). Install @openai/codex@%pinned%.",
+    "The installed codex binary (%installed%) is older than, or on another major than, the protocol types the sidecar ships (%pinned%). Install @openai/codex@%pinned% or a later 0.x release.",
   CODEX_NOT_SIGNED_IN:
     "Sign in with ChatGPT in Assistant › Settings to run Codex on your ChatGPT plan.",
 } as const;

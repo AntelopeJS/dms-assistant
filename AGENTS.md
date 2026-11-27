@@ -19,7 +19,7 @@ The root `package.json` is the published CommonJS package, so it has no `"type":
 
 ## Versioning
 
-- The Codex CLI must match the exact `@openai/codex` pin in `package.json`: the sidecar ships that version's app-server protocol types, generated into `sidecar/src/providers/codex/protocol` by `pnpm --dir sidecar generate:codex-types`.
+- The Codex CLI must be the `@openai/codex` version the sidecar's pin in `sidecar/package.json` names, or a later 0.x release: the sidecar ships the pinned version's app-server protocol types, generated into `sidecar/src/providers/codex/protocol` by `pnpm --dir sidecar generate:codex-types`.
 - `frontend-vue/package.json` pins the supported `@antelopejs/dms-frontend` minor in `engines`.
 - See `sidecar/src/constants/providers.ts` for provider availability. An unavailable provider reports an error rather than falling back to another provider.
 

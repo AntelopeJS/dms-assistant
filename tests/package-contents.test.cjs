@@ -92,11 +92,14 @@ void test("the package leaves out the tests, docs sources, playgrounds and agent
   );
 });
 
-void test("the manifest declares the dashboard layer, the skills, an exact Codex pin and only the root export (fails a range on the Codex peer or a new subpath export)", () => {
+void test("the manifest declares the dashboard layer, the skills, a bounded Codex peer range and only the root export (fails an open-ended range on the Codex peer or a new subpath export)", () => {
   const declared = readManifest();
   assert.equal(declared.dmsFrontend, "dist/frontend-module.js");
   assert.deepEqual(declared.antelopeJs.skills, ["./skills"]);
-  assert.match(declared.peerDependencies["@openai/codex"], /^\d+\.\d+\.\d+$/);
+  assert.match(
+    declared.peerDependencies["@openai/codex"],
+    /^>=\d+\.\d+\.\d+ <\d+\.0\.0$/,
+  );
   assert.deepEqual(Object.keys(declared.exports), [".", "./package.json"]);
 });
 

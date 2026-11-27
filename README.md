@@ -103,7 +103,7 @@ dms: {
 | `backendUrl`              | `http://localhost:5010`     | The origin the sidecar reaches the backend on. Point it at the origin the `api` module reserved. |
 | `builder.api.enabled`     | `true` in development only  | Turns the database connect routes on or off, whatever the mode.                                |
 
-Claude Code runs with its own credentials, either its login or `ANTHROPIC_API_KEY` in the backend's environment. Codex runs on your ChatGPT plan and uses no OpenAI API key. To use Codex, install `@openai/codex` at the version that `peerDependencies` pins, then press **Sign in with ChatGPT** in **Assistant** › **Settings**. On a DMS that runs on another machine, finish the sign-in with **Paste the return address**.
+Claude Code runs with its own credentials, either its login or `ANTHROPIC_API_KEY` in the backend's environment. Codex runs on your ChatGPT plan and uses no OpenAI API key. To use Codex, install `@openai/codex` at a version `peerDependencies` accepts, then press **Sign in with ChatGPT** in **Assistant** › **Settings**. On a DMS that runs on another machine, finish the sign-in with **Paste the return address**.
 
 Start the backend with `ajs project dev -w`, then the frontend with `ajs dms dev`. Sign in as an owner. Press `Ctrl` `Shift` `K` (`⌘` `⇧` `K` on macOS) for the assistant. To start the backend without the sidecar, set `DMS_ASSISTANT=0`.
 

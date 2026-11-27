@@ -80,19 +80,19 @@ Replay the counterexample against the code, one action per step, with the covera
 
 ## Coverage record
 
-Sync commit: `935867f`. The covered files last changed in the fix of Wa4f5503c-162, which filters the Undo preview outside the model. To see whether the model needs another look:
+Sync commit: `b122d6a2`. The covered files last changed in `b122d6a2`. To see whether the model needs another look:
 
 ```sh
-git diff --stat 935867f -- sidecar/src/checkpoints sidecar/src/server/change-set-actions.ts sidecar/src/server/turns.ts
+git diff --stat b122d6a2 -- sidecar/src/checkpoints sidecar/src/server/change-set-actions.ts sidecar/src/server/turns.ts
 ```
 
 | Model action | Code |
 | --- | --- |
-| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:197-229), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
+| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:197-226), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
 | `Edit` | a mutating tool after `TurnCheckpoint.ready()` |
 | `Finish`, `TakeAfter` | `finish`, `recordTurn`, `buildRecord` (checkpoints.ts:154-195, 216), `changedFiles` (sidecar/src/checkpoints/shadow-git.ts:157) |
 | `TakeBefore` | the `before` snapshot in `beginTurn`, `snapshot` (shadow-git.ts:123) |
 | `RunLock`, `queue` | `serialize` (checkpoints.ts:130) |
-| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:318-323), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
-| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:323-338), `markState` (checkpoints.ts:292), `restore` (shadow-git.ts:221) |
+| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:318-325), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
+| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:325-339), `markState` (checkpoints.ts:292), `restore` (shadow-git.ts:221) |
 | `RequestRedo`, `RunRedo`, `Refuse` | `redo` (checkpoints.ts:341-353) |

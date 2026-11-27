@@ -65,6 +65,7 @@ async function logoutFrom(ctx, path) {
   return [
     check(`${path} opens the assistant's stream`, Boolean(streaming), requests),
     { ...login, name: `logout from ${path} lands on the login page` },
+    check(`logout from ${path} ends the session with DELETE ${SESSION_PATH}`, isSessionEnded, requests),
     check(`no toast within ${AFTER_LOGOUT_MS} ms of the logout from ${path}`, !toast, toast ? "toast shown" : "none"),
     check(`no /ai/* request answers 401 after the logout from ${path}`, refused.length === 0, refused),
     check(`no /ai/* request once the login page shows after the logout from ${path}`, after.length === 0, after),

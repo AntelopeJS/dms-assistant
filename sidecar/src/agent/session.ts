@@ -256,7 +256,7 @@ async function* readTurn(
     } catch (err) {
       yield (
         state.abortOutcome ??
-          errorOutcome(err instanceof Error ? err.message : String(err))
+        errorOutcome(err instanceof Error ? err.message : String(err))
       );
       void disposeSession(state);
       return;

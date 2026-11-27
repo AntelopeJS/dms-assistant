@@ -49,7 +49,7 @@ importers:
         version: 0.4.3
       '@antelopejs/rethinkdb':
         specifier: ~1.10.6
-        version: 1.10.6
+        version: 1.10.8
       zod:
         specifier: ^4
         version: 4.6.7
@@ -181,8 +181,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
-  '@antelopejs/interface-rethinkdb@0.1.1':
-    resolution: {integrity: sha512-CpjagfTaldFE4wNQy/rRzR9eEx52HzGw90Eo/s918ZYOCqi1Lu+y9zXn3lEtjsDjlGTjuLroST+OLthjLbuXQA==}
+  '@antelopejs/interface-rethinkdb@0.1.2':
+    resolution: {integrity: sha512-zRfrsGLL2zOexmbCZ5+ciMo3yMjWAgobKukkDMoPsVdBE/zIBMQ5CZTCCFGHa9rdNOYfZAvjagkTABxDaF/aqg==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
@@ -197,8 +197,8 @@ packages:
     resolution: {integrity: sha512-nRMEXySfMPNPuoQmWn+qdXWFPanzZOVKxhvhy0xyCmcGFmwpAZmgDLY3woHFzK20SlTJyZsOm59S7Q07Wc64yQ==}
     engines: {node: '>=22'}
 
-  '@antelopejs/rethinkdb@1.10.6':
-    resolution: {integrity: sha512-DabBDYhXCv1wlTSJJvJ48wp7sbhDVztSAulKmd09xhgpDJOrD8AkyqDmhkoCDJcqUibhuV76HLcy4QyZTDgAjw==}
+  '@antelopejs/rethinkdb@1.10.8':
+    resolution: {integrity: sha512-OM6lnbtxkMyIwFT//GCG0HGW9Lkp5J5Pub2Kx8tKs6WW4JtGHNR9nFxrB+5wmpwNuYwCFAmZaLth1sCVT+O4uQ==}
 
   '@asamuzakjp/css-color@5.1.11':
     resolution: {integrity: sha512-KVw6qIiCTUQhByfTd78h2yD1/00waTmm9uy/R7Ck/ctUyAPj+AEDLkQIdJW0T8+qGgj3j5bpNKK7Q3G+LedJWg==}
@@ -1630,7 +1630,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@antelopejs/interface-rethinkdb@0.1.1(@antelopejs/interface-core@0.5.2)':
+  '@antelopejs/interface-rethinkdb@0.1.2(@antelopejs/interface-core@0.5.2)':
     dependencies:
       '@antelopejs/interface-core': 0.5.2
       rethinkdb-ts: 2.7.0
@@ -1677,7 +1677,7 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@antelopejs/rethinkdb@1.10.6':
+  '@antelopejs/rethinkdb@1.10.8':
     dependencies:
       '@antelopejs/interface-core': 0.5.2
       '@antelopejs/interface-database': 0.4.4(@antelopejs/interface-core@0.5.2)
@@ -1686,7 +1686,7 @@ snapshots:
       reflect-metadata: 0.2.2
       rethinkdb-ts: 2.7.0
     optionalDependencies:
-      '@antelopejs/interface-rethinkdb': 0.1.1(@antelopejs/interface-core@0.5.2)
+      '@antelopejs/interface-rethinkdb': 0.1.2(@antelopejs/interface-core@0.5.2)
 
   '@asamuzakjp/css-color@5.1.11':
     dependencies:

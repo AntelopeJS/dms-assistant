@@ -5,6 +5,7 @@ import { warmUp, withoutPopup } from "../../dev-dashboard.mjs";
 
 const ASSISTANT_PAGES = ["/modules/ai/settings", "/modules/ai/changes", "/modules/ai/activity"];
 const CHANNEL_PATH = "/ai/channel/events";
+const SESSION_PATH = "/api/_auth/session";
 const ADMIN_MENU = "Verify Admin";
 const AFTER_LOGOUT_MS = 5000;
 const STREAM_TIMEOUT_MS = 60_000;
@@ -14,7 +15,9 @@ const TOAST = /An unexpected error occurred|Restoring your session/;
  * Signs the owner in on `path`, waits for the assistant's stream, logs out
  * through the user menu and watches the login page: it records every /ai/*
  * request the tab sends once the login page shows, every /ai/* request sent
- * after the click that answers 401, and whether a toast shows.
+ * after the session's DELETE answered that answers 401, and whether a toast
+ * shows. A request sent while that DELETE is out races it on the server, so
+ * its 401 says nothing about the tab.
  *
  * @param {Ctx} ctx The journey
  * @param {string} path The Assistant page
@@ -27,9 +30,10 @@ async function logoutFrom(ctx, path) {
   /** @type {string[]} */
   const refused = [];
   /** @type {WeakSet<import("@playwright/test").Request>} */
-  const sentAfterClick = new WeakSet();
+  const sentAfterLogout = new WeakSet();
   /** @type {"in" | "clicked" | "out"} */
   let phase = "in";
+  let isSessionEnded = false;
   const aiPath = (/** @type {string} */ url) => {
     const { pathname } = new URL(url);
     return pathname.startsWith("/ai/") ? pathname : null;
@@ -38,11 +42,13 @@ async function logoutFrom(ctx, path) {
     const pathname = aiPath(request.url());
     if (pathname === null) return;
     requests.push(`${phase} ${request.method()} ${pathname}`);
-    if (phase !== "in") sentAfterClick.add(request);
+    if (isSessionEnded) sentAfterLogout.add(request);
   });
   tab.page.on("response", (response) => {
+    const request = response.request();
+    if (request.method() === "DELETE" && new URL(response.url()).pathname === SESSION_PATH) isSessionEnded = true;
     const pathname = aiPath(response.url());
-    if (pathname !== null && sentAfterClick.has(response.request()) && response.status() === 401) refused.push(pathname);
+    if (pathname !== null && sentAfterLogout.has(request) && response.status() === 401) refused.push(pathname);
   });
   await withoutPopup(tab);
   await tab.signIn("admin");
@@ -59,6 +65,7 @@ async function logoutFrom(ctx, path) {
   return [
     check(`${path} opens the assistant's stream`, Boolean(streaming), requests),
     { ...login, name: `logout from ${path} lands on the login page` },
+    check(`logout from ${path} ends the session with DELETE ${SESSION_PATH}`, isSessionEnded, requests),
     check(`no toast within ${AFTER_LOGOUT_MS} ms of the logout from ${path}`, !toast, toast ? "toast shown" : "none"),
     check(`no /ai/* request answers 401 after the logout from ${path}`, refused.length === 0, refused),
     check(`no /ai/* request once the login page shows after the logout from ${path}`, after.length === 0, after),

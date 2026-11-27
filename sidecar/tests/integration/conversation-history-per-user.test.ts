@@ -13,6 +13,7 @@ import {
   type WireCollector,
   type WireMessage,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -41,7 +42,6 @@ interface Client {
 
 let harness: WsHarness | undefined;
 let clients: Client[] = [];
-let syncCount = 0;
 
 async function start(): Promise<WsHarness> {
   CLAUDE_FIXTURE.use("plain");
@@ -60,12 +60,7 @@ async function connect(actor?: typeof CAMILLE): Promise<Client> {
 
 /** Resolves once the server has handled every frame the client sent before. */
 async function settle(client: Client): Promise<void> {
-  syncCount += 1;
-  const payload = `sync-${syncCount}`;
-  sendWire(client.socket, { type: "echo", payload });
-  await client.frames.next(
-    (msg) => msg.type === "echo_reply" && msg.payload === payload,
-  );
+  await waitForHandled(client.socket, client.frames);
 }
 
 async function ask(

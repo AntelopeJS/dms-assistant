@@ -9,6 +9,7 @@ import {
   type WireCollector,
   type WireMessage,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -26,7 +27,6 @@ interface Client {
 describe("the conversation list a tab's socket receives", () => {
   let harness: WsHarness | undefined;
   let clients: Client[] = [];
-  let syncCount = 0;
 
   afterEach(async () => {
     for (const client of clients) client.socket.close();
@@ -50,12 +50,7 @@ describe("the conversation list a tab's socket receives", () => {
   }
 
   async function framesSoFar(client: Client): Promise<WireMessage[]> {
-    syncCount += 1;
-    const payload = `sync-${syncCount}`;
-    sendWire(client.socket, { type: "echo", payload });
-    await client.frames.next(
-      (msg) => msg.type === "echo_reply" && msg.payload === payload,
-    );
+    await waitForHandled(client.socket, client.frames);
     return client.frames.events;
   }
 

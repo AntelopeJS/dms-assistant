@@ -16,6 +16,7 @@ import {
   startWsHarness,
   type WireCollector,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -45,8 +46,7 @@ async function tabOn(
   const client = { socket, frames: createCollector(socket, WAIT_MS) };
   sendWire(socket, { type: "actor", ...actor });
   sendWire(socket, { type: "host_state_update", currentPage: { path } });
-  sendWire(socket, { type: "echo", payload: path });
-  await client.frames.next((msg) => msg.type === "echo_reply");
+  await waitForHandled(socket, client.frames);
   return client;
 }
 
@@ -152,6 +152,5 @@ async function navigateAs(
 /** The tab's host reports landing on `path`, and the sidecar has handled it. */
 async function reportLanding(client: Client, path: string): Promise<void> {
   sendWire(client.socket, { type: "host_navigation_complete", path });
-  sendWire(client.socket, { type: "echo", payload: path });
-  await client.frames.next((msg) => msg.type === "echo_reply");
+  await waitForHandled(client.socket, client.frames);
 }

@@ -12,6 +12,7 @@ import {
   startWsHarness,
   type WireCollector,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -50,8 +51,7 @@ async function deletedConversation(): Promise<WsHarness> {
     type: "delete_conversation",
     conversationId: CONVERSATION,
   });
-  sendWire(camille.socket, { type: "echo", payload: "deleted" });
-  await camille.frames.next((msg) => msg.type === "echo_reply");
+  await waitForHandled(camille.socket, camille.frames);
   return running;
 }
 

@@ -414,6 +414,25 @@ export function createCollector(
   return { events, next };
 }
 
+let echoes = 0;
+
+/**
+ * Resolves once the sidecar has dispatched every frame `socket` sent before.
+ * The echo carries a payload no other echo used, so `next` cannot answer with
+ * the reply to an earlier echo that `frames` already holds.
+ */
+export async function waitForHandled(
+  socket: WebSocket,
+  frames: WireCollector,
+): Promise<void> {
+  echoes += 1;
+  const payload = `handled-${echoes}`;
+  sendWire(socket, { type: "echo", payload });
+  await frames.next(
+    (msg) => msg.type === "echo_reply" && msg.payload === payload,
+  );
+}
+
 /**
  * Any frame `JSON.stringify` writes faithfully, not only a client message:
  * several cases send a frame the protocol should reject.

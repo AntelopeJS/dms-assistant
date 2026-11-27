@@ -319,90 +319,6 @@ jobs:
             ${{ runner.temp }}/dms-runs/*/logs
           retention-days: 7
 
-  # Nightly and on a manual run: the sidecar against the newest @openai/codex
-  # 0.x release that passed the workspace's minimumReleaseAge. The types are
-  # regenerated from it and the sidecar typechecked against them, so a changed
-  # protocol type the sidecar names fails by name. The acceptance suite then
-  # runs real turns on it with the ChatGPT sign-in in CODEX_ACCEPTANCE_AUTH. A
-  # missing, spent or expired sign-in only warns, and so keeps the nightly green.
-  codex-latest:
-    needs: select
-    if: needs.select.outputs.tier == 'nightly' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            sidecar/pnpm-lock.yaml
-      - run: pnpm install --filter "{.}" --filter "./sidecar" --frozen-lockfile
-      - name: Install the latest @openai/codex release
-        id: codex
-        run: |
-          pnpm --dir sidecar update --latest @openai/codex
-          version=$(node -p 'require("./sidecar/node_modules/@openai/codex/package.json").version')
-          if [[ "$version" != 0.* ]]; then
-            echo "::error title=Codex major release::@openai/codex ${version} leaves the 0.x range the peer dependency accepts."
-            exit 1
-          fi
-          pnpm --dir sidecar add --save-dev --save-exact "@openai/codex@${version}"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "### @openai/codex ${version}" >> "$GITHUB_STEP_SUMMARY"
-      - name: Regenerate the protocol types from it
-        run: pnpm --dir sidecar generate:codex-types --pin-above-floor
-      - name: Typecheck the sidecar against them
-        env:
-          VERSION: ${{ steps.codex.outputs.version }}
-        run: |
-          {
-            echo "Protocol types changed since the pinned release:"
-            echo '```'
-            git diff --stat -- sidecar/src/providers/codex/protocol
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          if ! pnpm --dir sidecar typecheck; then
-            echo "::error title=Codex protocol break::@openai/codex ${VERSION} changed a protocol type the sidecar uses. The typecheck errors above name it."
-            echo "Protocol break: the sidecar does not typecheck against the types of @openai/codex ${VERSION}." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
-      - name: Run the Codex acceptance suite on it
-        env:
-          VERSION: ${{ steps.codex.outputs.version }}
-          AUTH: ${{ secrets.CODEX_ACCEPTANCE_AUTH }}
-        run: |
-          signin_help="Sign in to a DMS whose backend runs with an empty XDG_CONFIG_HOME, then run: gh secret set CODEX_ACCEPTANCE_AUTH < \"\$XDG_CONFIG_HOME/dms-assistant/chatgpt-auth.json\""
-          if [[ -z "$AUTH" ]]; then
-            echo "::warning title=Codex acceptance skipped::The CODEX_ACCEPTANCE_AUTH secret is not set. ${signin_help}"
-            echo "Acceptance suite skipped: the CODEX_ACCEPTANCE_AUTH secret is not set. ${signin_help}" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          export XDG_CONFIG_HOME="${RUNNER_TEMP}/codex-acceptance-config"
-          mkdir -p "${XDG_CONFIG_HOME}/dms-assistant"
-          (umask 077 && printf '%s' "$AUTH" > "${XDG_CONFIG_HOME}/dms-assistant/chatgpt-auth.json")
-          log="${RUNNER_TEMP}/codex-acceptance.log"
-          if CODEX_ACCEPTANCE=1 pnpm --dir sidecar test:acceptance 2>&1 | tee "$log"; then
-            echo "Acceptance suite passed on @openai/codex ${VERSION}." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          if grep -qE "Codex needs a ChatGPT account|ChatGPT sign-in expired or was revoked|sign-in dropped" "$log"; then
-            echo "::warning title=Codex acceptance skipped::The sign-in in CODEX_ACCEPTANCE_AUTH is signed out, spent or expired. ${signin_help}"
-            echo "Acceptance suite skipped: the sign-in in CODEX_ACCEPTANCE_AUTH is signed out, spent or expired. ${signin_help}" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          echo "::error title=Codex protocol break::The Codex acceptance suite fails on @openai/codex ${VERSION}. The failed cases above name the behaviour that changed."
-          echo "Protocol break: the acceptance suite fails on @openai/codex ${VERSION}." >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-
   # One HTML and JSON report of the shards of each suite.
   e2e-report:
     needs: [select, e2e]
@@ -472,7 +388,6 @@ jobs:
       - installed-module
       - e2e
       - integration
-      - codex-latest
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

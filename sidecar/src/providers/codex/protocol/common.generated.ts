@@ -2,8 +2,8 @@
 // Pruned to the transitive closure of PROTOCOL_ROOTS and flattened by
 // sidecar/scripts/generate-codex-types.mjs. Run `pnpm generate:codex-types`.
 
-import type { JsonValue } from "./serde_json.js";
-import type { WebSearchAction } from "./v2.js";
+import type { JsonValue } from "./serde_json.generated.js";
+import type { WebSearchAction } from "./v2.generated.js";
 
 /**
  * A path that is guaranteed to be absolute and normalized (though it is not

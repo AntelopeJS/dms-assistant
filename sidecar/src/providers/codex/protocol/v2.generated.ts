@@ -2,8 +2,8 @@
 // Pruned to the transitive closure of PROTOCOL_ROOTS and flattened by
 // sidecar/scripts/generate-codex-types.mjs. Run `pnpm generate:codex-types`.
 
-import type { AbsolutePathBuf, FunctionCallOutputBody, ImageDetail, ImageGenerationItem, LegacyAppPathString, MessagePhase, ReasoningEffort, SleepItem, SubAgentSource, WebSearchItem } from "./common.js";
-import type { JsonValue } from "./serde_json.js";
+import type { AbsolutePathBuf, FunctionCallOutputBody, ImageDetail, ImageGenerationItem, LegacyAppPathString, MessagePhase, ReasoningEffort, SleepItem, SubAgentSource, WebSearchItem } from "./common.generated.js";
+import type { JsonValue } from "./serde_json.generated.js";
 
 export type AgentMessageDelivery = "async";
 

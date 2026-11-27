@@ -6,7 +6,7 @@ import {
   JSONRPC_LINE_SEPARATOR,
   JSONRPC_VERSION,
 } from "../../constants/codex.js";
-import type { JsonValue } from "./protocol/serde_json.js";
+import type { JsonValue } from "./protocol/serde_json.generated.js";
 
 interface JsonRpcError {
   code: number;

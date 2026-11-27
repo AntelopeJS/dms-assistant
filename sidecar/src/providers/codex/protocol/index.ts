@@ -21,5 +21,5 @@ export type {
 	SubAgentSource,
 	ThreadId,
 	WebSearchItem,
-} from "./common.js";
-export * as v2 from "./v2.js";
+} from "./common.generated.js";
+export * as v2 from "./v2.generated.js";

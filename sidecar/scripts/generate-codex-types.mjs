@@ -48,16 +48,16 @@ const PROTOCOL_ROOTS = [
 
 /**
  * Namespace directory, as `generate-ts` lays it out, to the module it is
- * flattened into. The root namespace lands in `common.ts` rather than in
+ * flattened into. The root namespace lands in `common.generated.ts` rather than in
  * `index.ts` so the barrel the package's `exports` map points at holds only
  * re-exports, which keeps the public shape identical to the generated tree.
  *
  * @type {Record<string, string>}
  */
 const MODULE_BY_NAMESPACE = {
-  ".": "common",
-  v2: "v2",
-  serde_json: "serde_json",
+  ".": "common.generated",
+  v2: "v2.generated",
+  serde_json: "serde_json.generated",
 };
 
 /**

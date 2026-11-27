@@ -14,6 +14,7 @@ const {
   isZombie,
   readLockFile,
   readPidFile,
+  readSidecarLog,
 } = require("./helpers/process-state.cjs");
 const { processGroupTest } = require("./helpers/platform-tests.cjs");
 
@@ -32,6 +33,10 @@ process.chdir(root);
 const lockPath = path.join(
   root,
   "node_modules/.cache/dms-assistant/sidecar.lock",
+);
+const logPath = path.join(
+  root,
+  "node_modules/.cache/dms-assistant/sidecar.log",
 );
 const stopPath = path.join(root, "stop-sidecars");
 /** @type {Set<number>} */
@@ -202,6 +207,7 @@ afterEach(async () => {
   delete globalThis[SIDECAR_OWNER_KEY];
   build.id = INITIAL_BUILD_ID;
   fs.rmSync(lockPath, { force: true });
+  fs.rmSync(logPath, { force: true });
 });
 
 after(() => {
@@ -221,7 +227,11 @@ void test("a hot reload with a rebuilt sidecar replaces it", async () => {
   const first = await startSidecar();
   build.id = REBUILT_BUILD_ID;
   const second = await startSidecar();
-  assert.notEqual(second.lock.pid, first.lock.pid);
+  assert.notEqual(
+    second.lock.pid,
+    first.lock.pid,
+    `the rebuilt sidecar did not claim the lock; sidecar log:\n${readSidecarLog(logPath)}`,
+  );
   assert.equal(second.lock.buildId, REBUILT_BUILD_ID);
   assert.equal(isRunning(first.lock.pid), false);
   assert.equal(second.launcher.getSidecarPort(), second.lock.port);

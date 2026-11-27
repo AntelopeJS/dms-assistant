@@ -17,9 +17,9 @@ import {
   openChat,
   requireValue,
   sendHello,
-  sendWire,
   startWsHarness,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -49,9 +49,7 @@ interface Running {
 
 /** Resolves once the sidecar has processed everything the socket sent before. */
 async function settled(socket: WebSocket): Promise<void> {
-  const frames = createCollector(socket, WAIT_MS);
-  sendWire(socket, { type: "echo", payload: "settled" });
-  await frames.next((msg) => msg.type === "echo_reply");
+  await waitForHandled(socket, createCollector(socket, WAIT_MS));
 }
 
 async function start(): Promise<Running> {

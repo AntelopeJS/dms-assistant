@@ -13,6 +13,7 @@ import {
   type WireCollector,
   type WireMessage,
   type WsHarness,
+  waitForHandled,
 } from "../helpers/ws-harness.js";
 
 const WAIT_MS = 5_000;
@@ -84,8 +85,7 @@ async function repliesTo(
 ): Promise<WireMessage[]> {
   const before = client.frames.events.length;
   act();
-  sendWire(client.socket, { type: "echo", payload: "settled" });
-  await client.frames.next((msg) => msg.type === "echo_reply");
+  await waitForHandled(client.socket, client.frames);
   return client.frames.events
     .slice(before)
     .filter((msg) => msg.type !== "echo_reply");
@@ -211,8 +211,7 @@ function registerEarlySocketCase(): void {
       harness = running;
       const dana = await connect(running, DANA);
       sendHello(dana.socket, CAMILLE_CONVERSATION);
-      sendWire(dana.socket, { type: "echo", payload: "hello handled" });
-      await dana.frames.next((msg) => msg.type === "echo_reply");
+      await waitForHandled(dana.socket, dana.frames);
       const before = dana.frames.events.length;
       const camille = await connect(running, CAMILLE);
       sendHello(camille.socket, CAMILLE_CONVERSATION);

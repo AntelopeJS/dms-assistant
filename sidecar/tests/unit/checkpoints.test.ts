@@ -137,6 +137,45 @@ function registerIsolationCases(getProject: () => Project): void {
   });
 }
 
+function registerConcurrentActionCases(getProject: () => Project): void {
+  it("answers that a later set is already undone when its undo arrives right after an undo that took it along", async () => {
+    const project = getProject();
+    const { root } = project;
+    const first = await turn(project, "First", async () => {
+      await writeFile(join(root, "a.ts"), "one\ntwo\nthree\nA\n");
+    });
+    const second = await turn(project, "Second", async () => {
+      await writeFile(join(root, "a.ts"), "one\ntwo\nthree\nA\nB\n");
+    });
+    const withLater = project.checkpoints.undo(idOf(first), () => true);
+    const alone = project.checkpoints.undo(idOf(second), () => false);
+    expect((await withLater).map((c) => c.number)).toEqual([2, 1]);
+    await expect(alone).rejects.toThrow("Change set #2 is already undone.");
+    expect(await read(root, "a.ts")).toBe("one\ntwo\nthree\n");
+    expect(
+      project.checkpoints.get(idOf(second))?.stateLog?.map((c) => c.state),
+    ).toEqual(["undone"]);
+  });
+
+  it("answers that a set is already applied when a second redo of it arrives at once", async () => {
+    const project = getProject();
+    const { root } = project;
+    const record = await turn(project, "Edit", async () => {
+      await writeFile(join(root, "a.ts"), "changed\n");
+    });
+    const id = idOf(record);
+    await project.checkpoints.undo(id, () => false);
+    const once = project.checkpoints.redo(id);
+    const twice = project.checkpoints.redo(id);
+    expect(await once).toHaveLength(1);
+    await expect(twice).rejects.toThrow("Change set #1 is already applied.");
+    expect(project.checkpoints.get(id)?.stateLog?.map((c) => c.state)).toEqual([
+      "undone",
+      "applied",
+    ]);
+  });
+}
+
 describe("checkpoints", () => {
   let root: string;
   let project: Project;
@@ -235,4 +274,5 @@ describe("checkpoints", () => {
   });
 
   registerIsolationCases(() => project);
+  registerConcurrentActionCases(() => project);
 });

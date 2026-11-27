@@ -106,21 +106,20 @@ Desc(S) == IF S = {} THEN <<>>
            ELSE LET m == CHOOSE y \in S : \A z \in S : num[z] <= num[y]
                 IN <<m>> \o Desc(S \ {m})
 
-(* undo(): requireState and the targets run before the lock; the restores *)
-(* and markState run on it. includeLater is the dialog's checkbox.        *)
+(* undo(): queued on the lock; requireState, the targets, the restores   *)
+(* and markState all run on it. The owner clicks Undo on a set the page   *)
+(* shows Applied. includeLater is the dialog's checkbox.                  *)
 RequestUndo(x, later) ==
     /\ st[x] = "applied"
     /\ OwnerWaits => queue = <<>>
     /\ UndoDuringTurn \/ running = {}
     /\ Len(queue) < MaxQueue
-    /\ queue' = Append(queue, [k |-> "undo", x |-> x, later |-> later,
-                               targets |-> IF later THEN Desc(Later(x)) \o <<x>>
-                                           ELSE <<x>>])
+    /\ queue' = Append(queue, [k |-> "undo", x |-> x, later |-> later])
     /\ last' = Quiet("ask")
     /\ UNCHANGED <<content, phase, bTree, aTree, edited, overlapped, running,
                    met, st, num, files, nextNum>>
 
-(* redo(): requireState before the lock, the restore on it.               *)
+(* redo(): queued on the lock; requireState and the restore run on it.   *)
 RequestRedo(x) ==
     /\ st[x] = "undone"
     /\ OwnerWaits => queue = <<>>
@@ -175,9 +174,20 @@ TakeAfter(t) ==
     /\ last' = Quiet("after")
     /\ UNCHANGED <<content, bTree, edited, overlapped, met>>
 
+(* requireState on the lock: a set no longer in the expected state is    *)
+(* refused (ChangeSetActionError) and nothing changes.                    *)
+Refuse ==
+    /\ last' = Quiet("refused")
+    /\ UNCHANGED <<content, phase, bTree, aTree, edited, overlapped, running,
+                   met, st, num, files, nextNum>>
+
 RunUndo(task) ==
-    LET ts == {task.targets[i] : i \in 1..Len(task.targets)}
-        c2 == UndoAll(content, task.targets)
+    IF st[task.x] # "applied" THEN Refuse
+    ELSE
+    LET targets == IF task.later THEN Desc(Later(task.x)) \o <<task.x>>
+                   ELSE <<task.x>>
+        ts == {targets[i] : i \in 1..Len(targets)}
+        c2 == UndoAll(content, targets)
         st2 == [y \in Turns |-> IF y \in ts THEN "undone" ELSE st[y]]
     IN /\ content' = c2
        /\ st' = st2
@@ -187,6 +197,8 @@ RunUndo(task) ==
                       num, files, nextNum>>
 
 RunRedo(x) ==
+    IF st[x] # "undone" THEN Refuse
+    ELSE
     LET c2 == Restore(content, aTree[x], files[x])
         st2 == [st EXCEPT ![x] = "applied"]
     IN /\ content' = c2

@@ -3,7 +3,7 @@
 // sidecar/scripts/generate-codex-types.mjs. Run `pnpm generate:codex-types`.
 
 /** Codex version these types were generated from. */
-export const CODEX_PROTOCOL_VERSION = "0.166.0";
+export const CODEX_PROTOCOL_VERSION = "0.172.0";
 
 export type {
 	AbsolutePathBuf,
@@ -21,5 +21,5 @@ export type {
 	SubAgentSource,
 	ThreadId,
 	WebSearchItem,
-} from "./common.js";
-export * as v2 from "./v2.js";
+} from "./common.generated.js";
+export * as v2 from "./v2.generated.js";

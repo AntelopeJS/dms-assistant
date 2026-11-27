@@ -12,7 +12,10 @@ import type {
 } from "../../src/agent/permission-bus.js";
 import type { ProviderSession } from "../../src/agent/provider.js";
 import type { RunnerEvent } from "../../src/agent/runner-events.js";
-import { XDG_CONFIG_HOME_ENV } from "../../src/constants/chatgpt.js";
+import {
+  CHATGPT_NOT_SIGNED_IN_MESSAGE,
+  XDG_CONFIG_HOME_ENV,
+} from "../../src/constants/chatgpt.js";
 import { UNKNOWN_PAGE_PATH } from "../../src/constants/host-state.js";
 import { TURN_SETTINGS } from "../helpers/turn-settings.js";
 import {
@@ -30,15 +33,16 @@ import { readRecordedPids } from "../helpers/codex-pids.js";
 /**
  * Real model turns spend the ChatGPT plan's usage, so this suite is opt-in and
  * kept out of `pnpm test`: sign in from Assistant › Settings once, then run it
- * with `CODEX_ACCEPTANCE=1 pnpm test:acceptance`. Read at import, before the
- * test setup swaps the config home for a temporary one. A `beforeAll` puts it
- * back, because these turns hit OpenAI with the real sign-in.
+ * with `CODEX_ACCEPTANCE=1 pnpm test:acceptance`. Once opted in, a missing
+ * sign-in or Codex binary fails the suite instead of skipping it. Read at
+ * import, before the test setup swaps the config home for a temporary one. A
+ * `beforeAll` puts it back, because these turns hit OpenAI with the real
+ * sign-in.
  */
 const REAL_CONFIG_HOME = process.env[XDG_CONFIG_HOME_ENV];
-const ENABLED =
-  process.env.CODEX_ACCEPTANCE === "1" &&
-  readAccountStatus().isSignedIn &&
-  resolveCodexInstallation() !== undefined;
+const ENABLED = process.env.CODEX_ACCEPTANCE === "1";
+const IS_SIGNED_IN = readAccountStatus().isSignedIn;
+const IS_CODEX_INSTALLED = resolveCodexInstallation() !== undefined;
 
 const TMP_PREFIX = "dms-assistant-acceptance-";
 const CONVERSATION = "conv-acceptance";
@@ -228,6 +232,10 @@ describe.skipIf(!ENABLED)("Codex acceptance", () => {
   beforeAll(() => {
     if (REAL_CONFIG_HOME === undefined) delete process.env[XDG_CONFIG_HOME_ENV];
     else process.env[XDG_CONFIG_HOME_ENV] = REAL_CONFIG_HOME;
+    if (!IS_SIGNED_IN) throw new Error(CHATGPT_NOT_SIGNED_IN_MESSAGE);
+    if (!IS_CODEX_INSTALLED) {
+      throw new Error("CODEX_ACCEPTANCE=1 needs @openai/codex installed");
+    }
   });
 
   beforeEach(() => setBuilderAvailable(true));

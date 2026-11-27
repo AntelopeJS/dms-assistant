@@ -86,7 +86,11 @@ export interface Checkpoints {
   get(id: string): ChangeSetRecord | null;
   forConversation(conversationId: string): ChangeSetSummary[];
   fileDetails(id: string): Promise<ChangeSetFileDetail[]>;
-  undoPreview(id: string): UndoPreview;
+  /** The change set's files, and the later applied sets on them that `shows` accepts. */
+  undoPreview(
+    id: string,
+    shows: (later: ChangeSetRecord) => boolean,
+  ): UndoPreview;
   /**
    * Undoes the change set, after the later applied sets on its files that
    * `takesLater` accepts, newest first.
@@ -264,18 +268,24 @@ function laterConflicts(
     .sort((a, b) => b.number - a.number);
 }
 
-function undoPreview(state: CheckpointsState, id: string): UndoPreview {
+function undoPreview(
+  state: CheckpointsState,
+  id: string,
+  shows: (later: ChangeSetRecord) => boolean,
+): UndoPreview {
   const record = requireRecord(state, id);
   const files = new Set(pathsOf(record));
   return {
     changeSetId: id,
     files: pathsOf(record),
-    conflicts: laterConflicts(state, record).map((other) => ({
-      changeSetId: other.id,
-      number: other.number,
-      title: other.title,
-      files: pathsOf(other).filter((file) => files.has(file)),
-    })),
+    conflicts: laterConflicts(state, record)
+      .filter(shows)
+      .map((other) => ({
+        changeSetId: other.id,
+        number: other.number,
+        title: other.title,
+        files: pathsOf(other).filter((file) => files.has(file)),
+      })),
   };
 }
 
@@ -412,7 +422,7 @@ export function createCheckpoints(deps: CheckpointsDeps): Checkpoints {
         .filter((c) => c.conversationId === conversationId)
         .map(toSummary),
     fileDetails: (id) => fileDetails(state, id),
-    undoPreview: (id) => undoPreview(state, id),
+    undoPreview: (id, shows) => undoPreview(state, id, shows),
     undo: (id, takesLater, actor) => undo(state, id, takesLater, actor),
     redo: (id, actor) => redo(state, id, actor),
     flush: async () => {

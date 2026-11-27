@@ -298,6 +298,18 @@ void test("stamps Undo and Redo with the signed-in user", async () => {
   assert.deepEqual(sidecar.requests[1].body, { actor: "c@acme.test" });
 });
 
+void test("asks the chat's Undo preview for the signed-in user (fails a preview that names no viewer)", async () => {
+  reset();
+  const preview = { changeSetId: "set-1", files: ["a.ts"], conflicts: [] };
+  answer("GET", "/changes/set-1/undo-preview", 200, preview);
+  const answered = await new harness.routes.AIChangesController().undoPreview(
+    "set-1",
+    OWNER,
+  );
+  assert.deepEqual(answered, preview);
+  assert.deepEqual(sidecar.requests[0].query, { viewer: OWNER._id });
+});
+
 void test("forwards a change set as the sidecar wrote it, an own __proto__ key included", async () => {
   reset();
   answer(

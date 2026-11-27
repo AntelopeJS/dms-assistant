@@ -88,11 +88,11 @@ git diff --stat b122d6a2 -- sidecar/src/checkpoints sidecar/src/server/change-se
 
 | Model action | Code |
 | --- | --- |
-| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:193-222), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
+| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:197-226), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
 | `Edit` | a mutating tool after `TurnCheckpoint.ready()` |
-| `Finish`, `TakeAfter` | `finish`, `recordTurn`, `buildRecord` (checkpoints.ts:150-191, 212), `changedFiles` (sidecar/src/checkpoints/shadow-git.ts:157) |
+| `Finish`, `TakeAfter` | `finish`, `recordTurn`, `buildRecord` (checkpoints.ts:154-195, 216), `changedFiles` (sidecar/src/checkpoints/shadow-git.ts:157) |
 | `TakeBefore` | the `before` snapshot in `beginTurn`, `snapshot` (shadow-git.ts:123) |
-| `RunLock`, `queue` | `serialize` (checkpoints.ts:126) |
-| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:308-315), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
-| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:315-329), `markState` (checkpoints.ts:282), `restore` (shadow-git.ts:221) |
-| `RequestRedo`, `RunRedo`, `Refuse` | `redo` (checkpoints.ts:332-342) |
+| `RunLock`, `queue` | `serialize` (checkpoints.ts:130) |
+| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:318-325), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
+| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:325-339), `markState` (checkpoints.ts:292), `restore` (shadow-git.ts:221) |
+| `RequestRedo`, `RunRedo`, `Refuse` | `redo` (checkpoints.ts:341-353) |

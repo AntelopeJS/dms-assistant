@@ -263,7 +263,7 @@ describe("checkpoints", () => {
     await turn(project, "Unrelated", async () => {
       await writeFile(join(root, "c.ts"), "c\n");
     });
-    const preview = project.checkpoints.undoPreview(idOf(first));
+    const preview = project.checkpoints.undoPreview(idOf(first), () => true);
     expect(preview.conflicts).toEqual([
       { changeSetId: second?.id, number: 2, title: "Second", files: ["a.ts"] },
     ]);

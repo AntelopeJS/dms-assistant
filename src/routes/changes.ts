@@ -99,11 +99,18 @@ export class AIChangesController extends Controller(ROUTE_PREFIX) {
     return relay(changeSetPath(id), ANY_ANSWER, asIs);
   }
 
+  /** The chat's Undo preview: only later sets of conversations the signed-in user may use, the ones its undo takes along. */
   @Get(`${CHANGES_PATH}/:id/undo-preview`)
   undoPreview(
     @Parameter("id", "param") id: string,
+    @AuthRawUser() user: User,
   ): Promise<JsonBody | HTTPResult | undefined> {
-    return relay(changeSetPath(id, "undo-preview"), ANY_ANSWER, asIs);
+    const query = buildQuery({ viewer: user._id });
+    return relay(
+      `${changeSetPath(id, "undo-preview")}${query}`,
+      ANY_ANSWER,
+      asIs,
+    );
   }
 
   @Get(`${CHANGES_PATH}/:id/undo-confirm`)

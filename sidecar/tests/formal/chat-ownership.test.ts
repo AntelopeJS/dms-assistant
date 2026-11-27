@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type WebSocket from "ws";
+import { z } from "zod";
 import {
   MESSAGE_TYPES,
   PermissionRuleSchema,
@@ -12,6 +13,7 @@ import type { ConversationStore } from "../../src/state/conversations.js";
 import { CLAUDE_FIXTURE } from "../helpers/provider-fixtures.js";
 import {
   answerPermission,
+  callApi,
   createCollector,
   openChat,
   requireValue,
@@ -43,6 +45,10 @@ import {
   type World,
   type WorldKind,
 } from "./chat-ownership-scopes.js";
+
+const UndoPreviewSchema = z.object({
+  conflicts: z.array(z.object({ changeSetId: z.string() })),
+});
 
 interface Client {
   socket: WebSocket;
@@ -418,7 +424,7 @@ describe("a chat request from another person (formal target: chat requests honou
   );
 
   it(
-    "undoes with the later change sets only those of Dana's conversation (fails an undo that takes every later set, or none)",
+    "previews and undoes with the later change sets only those of Dana's conversation (fails a preview or an undo that takes every later set, or none)",
     async () => {
       const room = await openRoom("settled");
       await prepareEditedFile(room);
@@ -439,10 +445,17 @@ describe("a chat request from another person (formal target: chat requests honou
         content: "<p>Hello Dana and Camille</p>\n",
         keepsRule: false,
       });
-      await recordEdit(room, {
+      const third = await recordEdit(room, {
         ...danaTurn,
         content: "<p>Hello again Dana and Camille</p>\n",
       });
+      const preview = await callApi(
+        room.running.port,
+        `/changes/${first.changeSetId}/undo-preview?viewer=${DANA.userId}`,
+      );
+      expect(UndoPreviewSchema.parse(await preview.json()).conflicts).toEqual([
+        expect.objectContaining({ changeSetId: third.changeSetId }),
+      ]);
       transmit(room.dana.socket, {
         type: "change_set_action",
         changeSetId: first.changeSetId,

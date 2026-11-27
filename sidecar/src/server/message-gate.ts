@@ -6,6 +6,7 @@ import {
 } from "../protocol/messages.js";
 import {
   CLOSED_CONVERSATION_MESSAGES,
+  type ConversationStore,
   isVisibleTo,
 } from "../state/conversations.js";
 import type { ConnectionContext } from "./services.js";
@@ -65,20 +66,33 @@ export function viewerOf(ctx: ConnectionContext): string | null {
 
 const FOREIGN_CONVERSATION_ERROR = "This conversation belongs to someone else.";
 /**
- * Why the connection may not use the conversation: closed (set aside when the
- * store was read, or deleted), or not visible to the connection's actor. Null
- * when it may.
+ * Why the viewer may not use the conversation: closed (set aside when the
+ * store was read, or deleted), or not visible to the viewer. Null when they
+ * may.
  */
+export function conversationRefusal(
+  store: Pick<ConversationStore, "closure" | "get">,
+  viewerId: string | null,
+  conversationId: string,
+): string | null {
+  const closure = store.closure(conversationId);
+  if (closure !== null) return CLOSED_CONVERSATION_MESSAGES[closure];
+  const stored = store.get(conversationId);
+  return stored !== null && !isVisibleTo(stored, viewerId)
+    ? FOREIGN_CONVERSATION_ERROR
+    : null;
+}
+
+/** Why the connection's actor may not use the conversation (see `conversationRefusal`). */
 export function refusalOf(
   ctx: ConnectionContext,
   conversationId: string,
 ): string | null {
-  const closure = ctx.conversationStore.closure(conversationId);
-  if (closure !== null) return CLOSED_CONVERSATION_MESSAGES[closure];
-  const stored = ctx.conversationStore.get(conversationId);
-  return stored !== null && !isVisibleTo(stored, viewerOf(ctx))
-    ? FOREIGN_CONVERSATION_ERROR
-    : null;
+  return conversationRefusal(
+    ctx.conversationStore,
+    viewerOf(ctx),
+    conversationId,
+  );
 }
 
 /** Refuses a request on a conversation the connection may not use; true when it may go on. */

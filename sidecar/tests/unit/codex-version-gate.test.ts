@@ -51,6 +51,18 @@ describe("codex binary version gate", () => {
     expect(isCodexInstallationUsable(installation())).toBe(false);
   });
 
+  it("accepts a later release of the same major, so a newer binary needs no waiver", () => {
+    CODEX_FIXTURE.use("plain");
+    process.env[MOCK_CODEX_VERSION_ENV] = "9999.1.0";
+    expect(isCodexInstallationUsable(installation())).toBe(true);
+  });
+
+  it("refuses a release older than the types", () => {
+    CODEX_FIXTURE.use("plain");
+    process.env[MOCK_CODEX_VERSION_ENV] = "9998.9.9";
+    expect(isCodexInstallationUsable(installation())).toBe(false);
+  });
+
   it("names both versions in the reason the provider is unavailable", () => {
     CODEX_FIXTURE.use("plain");
     process.env[MOCK_CODEX_VERSION_ENV] = DRIFTED_VERSION;

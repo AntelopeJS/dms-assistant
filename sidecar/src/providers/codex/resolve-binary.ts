@@ -138,16 +138,51 @@ export function isVersionGateWaived(): boolean {
   return process.env[CODEX_VERSION_WAIVER_ENV] === CODEX_VERSION_WAIVER_ENABLED;
 }
 
+function parseVersion(version: string): [number, number, number] | undefined {
+  const parts = version.split(".").map(Number);
+  const [major, minor, patch] = parts;
+  if (
+    parts.length !== 3 ||
+    major === undefined ||
+    minor === undefined ||
+    patch === undefined ||
+    parts.some((part) => !Number.isInteger(part))
+  ) {
+    return undefined;
+  }
+  return [major, minor, patch];
+}
+
 /**
- * Whether the installed binary speaks the protocol the shipped types describe.
- * Codex versions the app-server protocol by binary, so a mismatch is refused at
+ * Whether a binary version stays within the range the shipped types cover:
+ * the major of the pinned version, from the pinned version upward.
+ */
+export function isVersionInSupportedRange(
+  installed: string | undefined,
+  pinned: string,
+): boolean {
+  if (installed === undefined) return false;
+  const have = parseVersion(installed);
+  const floor = parseVersion(pinned);
+  if (have === undefined || floor === undefined) return false;
+  if (have[0] !== floor[0]) return false;
+  return have[1] > floor[1] || (have[1] === floor[1] && have[2] >= floor[2]);
+}
+
+/**
+ * Whether the installed binary speaks the protocol the shipped types describe:
+ * the pinned release or a later one of the same major. Codex versions the
+ * app-server protocol by binary, so a binary outside that range is refused at
  * spawn instead of degrading silently.
  */
 export function isCodexInstallationUsable(
   installation: CodexInstallation,
 ): boolean {
   if (isVersionGateWaived()) return true;
-  return readCodexBinaryVersion(installation) === installation.pinnedVersion;
+  return isVersionInSupportedRange(
+    readCodexBinaryVersion(installation),
+    installation.pinnedVersion,
+  );
 }
 
 /** Which versions disagree, and what to install to make them agree. */

@@ -5,6 +5,7 @@ import type {
   Options,
   PermissionMode,
   PermissionResult,
+  SDKControlSetPermissionModeResponse,
   SDKMessage,
 } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
@@ -321,7 +322,7 @@ export function switchPermissionMode(
   permissions: PermissionState,
   modelState: ModelState,
   mode: PermissionMode,
-): Promise<void> {
+): Promise<SDKControlSetPermissionModeResponse> {
   if (mode === MOCK_BYPASS_MODE && !permissions.isBypassAvailable) {
     return Promise.reject(new Error(MOCK_BYPASS_UNAVAILABLE_ERROR));
   }
@@ -330,7 +331,7 @@ export function switchPermissionMode(
   }
   permissions.mode = mode;
   appendTrace({ kind: "permission_mode", permissionMode: mode });
-  return Promise.resolve();
+  return Promise.resolve({ mode });
 }
 
 /**

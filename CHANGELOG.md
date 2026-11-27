@@ -2,6 +2,43 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.3.5
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.4...v0.3.5)
+
+### 🩹 Fixes
+
+- **sidecar:** Undo with the later change sets takes only the sender's own ([#157](https://github.com/AntelopeJS/dms-assistant/pull/157))
+- **sidecar:** Check the state and choose the targets of undo and redo under the checkpoint lock ([#166](https://github.com/AntelopeJS/dms-assistant/pull/166))
+- **sidecar:** Accept codex releases from 0.166.0 up to the next major ([#170](https://github.com/AntelopeJS/dms-assistant/pull/170))
+- **sidecar:** List in the chat's Undo preview only later sets of conversations the person may use ([#168](https://github.com/AntelopeJS/dms-assistant/pull/168))
+- **sidecar:** Generate the Codex types from 0.172.0 and test the latest release nightly ([#171](https://github.com/AntelopeJS/dms-assistant/pull/171))
+
+### 📖 Documentation
+
+- **formal:** Sync the change sets model to a commit of this repository ([#167](https://github.com/AntelopeJS/dms-assistant/pull/167))
+
+### 🏡 Chore
+
+- **deps:** Update dependency @antelopejs/mongodb to v1.8.15 ([#161](https://github.com/AntelopeJS/dms-assistant/pull/161))
+- **deps:** Update dependency @antelopejs/rethinkdb to v1.10.8 ([#162](https://github.com/AntelopeJS/dms-assistant/pull/162))
+- **deps:** Land the tooling configs and Claude Code / agent SDK updates ([#169](https://github.com/AntelopeJS/dms-assistant/pull/169))
+- **deps:** Update dependency rimraf to v6.1.4 ([#158](https://github.com/AntelopeJS/dms-assistant/pull/158))
+
+### ✅ Tests
+
+- **installed:** Install the tarball without the repo's pnpm run settings ([#160](https://github.com/AntelopeJS/dms-assistant/pull/160))
+- **e2e:** Count only /ai/* requests sent after the logout answered in the logout journey ([#164](https://github.com/AntelopeJS/dms-assistant/pull/164))
+- **sidecar:** Settle the chat ownership checks on the reply to their own echo ([#165](https://github.com/AntelopeJS/dms-assistant/pull/165))
+
+### 🤖 CI
+
+- Gate the merge queue on integration through a verdict job ([#156](https://github.com/AntelopeJS/dms-assistant/pull/156))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.4
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.3...v0.3.4)

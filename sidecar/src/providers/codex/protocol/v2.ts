@@ -8,6 +8,17 @@ import type { JsonValue } from "./serde_json.js";
 export type AgentMessageDelivery = "async";
 
 /**
+ * How Chat should present a recovered answer.
+ */
+export type AgentMessageDisplay = { "mode": "show", version: 1, annotation?: AnswerAnnotation, trustedContacts: TrustedContacts, } | { "mode": "hide", version: 1, replacement: AnswerReplacement, } | { "mode": "block", version: 1, reason: BlockReason, };
+
+export type AgentMessageModeration = { moderated: boolean, display: AgentMessageDisplay | null, };
+
+export type AnswerAnnotation = { "kind": "wellbeingHelpline", subject: HelplineSubject, };
+
+export type AnswerReplacement = { "kind": "wellbeingPromptHelpline", };
+
+/**
  * Configures who approval requests are routed to for review. Examples
  * include sandbox escapes, blocked network access, MCP approval prompts, and
  * ARC escalations. Defaults to `user`. `auto_review` uses a carefully
@@ -20,6 +31,12 @@ export type AskForApproval = "untrusted" | "on-request" | { "granular": { sandbo
 
 export type AsyncUserInputQuestion = { title: string, options: Array<string> | null, };
 
+export type BlockReason = { "kind": "protection",
+/**
+ * Identifies the same moderation row that Chat writes on the live path.
+ */
+protectionType: string, } | { "kind": "cyber", trustedAccess?: boolean, };
+
 export type ByteRange = { start: number, end: number, };
 
 /**
@@ -28,7 +45,7 @@ export type ByteRange = { start: number, end: number, };
  * When an upstream HTTP status is available (for example, from the Responses API or a provider),
  * it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.
  */
-export type CodexErrorInfo = "contextWindowExceeded" | "sessionBudgetExceeded" | "usageLimitExceeded" | "rateLimitExceeded" | "flexUnavailable" | "serverOverloaded" | "modelNotFound" | "policyCapacityUnavailable" | "cyberPolicy" | "misalignmentPolicyViolation" | "tooManyDenials" | { "httpConnectionFailed": { httpStatusCode: number | null, } } | { "responseStreamConnectionFailed": { httpStatusCode: number | null, } } | "internalServerError" | "unauthorized" | "badRequest" | "threadRollbackFailed" | "sandboxError" | { "responseStreamDisconnected": { httpStatusCode: number | null, } } | { "responseTooManyFailedAttempts": { httpStatusCode: number | null, } } | { "activeTurnNotSteerable": { turnKind: NonSteerableTurnKind, } } | "other" | string | { [key: string]: unknown };
+export type CodexErrorInfo = "contextWindowExceeded" | "sessionBudgetExceeded" | "usageLimitExceeded" | "apiKeySpendLimitExceeded" | "projectSpendLimitExceeded" | "organizationSpendLimitExceeded" | "rateLimitExceeded" | "flexUnavailable" | "serverOverloaded" | "modelNotFound" | "policyCapacityUnavailable" | "inferenceHookDenied" | "cyberPolicy" | "bioPolicy" | "misalignmentPolicyViolation" | "tooManyDenials" | { "httpConnectionFailed": { httpStatusCode: number | null, } } | { "responseStreamConnectionFailed": { httpStatusCode: number | null, } } | "internalServerError" | "unauthorized" | "badRequest" | "threadRollbackFailed" | "sandboxError" | { "responseStreamDisconnected": { httpStatusCode: number | null, } } | { "responseTooManyFailedAttempts": { httpStatusCode: number | null, } } | { "activeTurnNotSteerable": { turnKind: NonSteerableTurnKind, } } | "other" | string | { [key: string]: unknown };
 
 export type CollabAgentState = { status: CollabAgentStatus, message: string | null, };
 
@@ -51,6 +68,8 @@ export type DynamicToolCallStatus = "inProgress" | "completed" | "failed";
 export type FileUpdateChange = { path: string, kind: PatchChangeKind, diff: string, };
 
 export type GitInfo = { sha: string | null, branch: string | null, originUrl: string | null, };
+
+export type HelplineSubject = "answer" | "prompt";
 
 export type HookPromptFragment = { text: string, hookRunId: string, };
 
@@ -266,7 +285,7 @@ startedAtMs?: number | null,
 /**
  * Unix timestamp in milliseconds when the item completed, if recorded.
  */
-completedAtMs?: number | null, } & ({ "type": "userMessage", id: string, clientId: string | null, content: Array<UserInput>, } | { "type": "hookPrompt", id: string, fragments: Array<HookPromptFragment>, } | { "type": "agentMessage", id: string, text: string, phase: MessagePhase | null, memoryCitation: MemoryCitation | null, delivery: AgentMessageDelivery | null, questions: Array<AsyncUserInputQuestion> | null, } | { "type": "functionCallOutput", id: string, name: string, namespace: string | null, output: FunctionCallOutputBody, } | { "type": "plan", id: string, text: string, } | { "type": "reasoning", id: string, summary: Array<string>, content: Array<string>, } | { "type": "commandExecution", id: string,
+completedAtMs?: number | null, } & ({ "type": "userMessage", id: string, clientId: string | null, content: Array<UserInput>, } | { "type": "hookPrompt", id: string, fragments: Array<HookPromptFragment>, } | { "type": "agentMessage", moderation: AgentMessageModeration | null, id: string, text: string, phase: MessagePhase | null, memoryCitation: MemoryCitation | null, delivery: AgentMessageDelivery | null, questions: Array<AsyncUserInputQuestion> | null, } | { "type": "functionCallOutput", id: string, name: string, namespace: string | null, output: FunctionCallOutputBody, } | { "type": "plan", id: string, text: string, } | { "type": "reasoning", id: string, summary: Array<string>, content: Array<string>, } | { "type": "commandExecution", id: string,
 /**
  * Trusted first-party plugin id when this command resolves to one plugin script.
  */
@@ -304,7 +323,11 @@ exitCode: number | null,
 /**
  * The duration of the command execution in milliseconds.
  */
-durationMs: number | null, } | { "type": "fileChange", id: string, changes: Array<FileUpdateChange>, status: PatchApplyStatus, } | { "type": "mcpToolCall", id: string, server: string, tool: string, status: McpToolCallStatus, arguments: JsonValue, appContext: McpToolCallAppContext | null,
+durationMs: number | null, } | { "type": "fileChange", id: string, changes: Array<FileUpdateChange>, status: PatchApplyStatus, } | { "type": "mcpToolCall", id: string, server: string,
+/**
+ * Registration scope, not necessarily the server's execution environment.
+ */
+environmentId: string | null, tool: string, status: McpToolCallStatus, arguments: JsonValue, appContext: McpToolCallAppContext | null,
 /**
  * Legacy compatibility field; prefer `mcpAppUi.resourceUri` when available.
  */
@@ -408,6 +431,8 @@ sandbox: SandboxPolicy, reasoningEffort: ReasoningEffort | null};
 
 export type ThreadStatus = { "type": "notLoaded" } | { "type": "idle" } | { "type": "systemError" } | { "type": "active", activeFlags: Array<ThreadActiveFlag>, };
 
+export type TrustedContacts = "check" | "skip";
+
 export type Turn = {
 /**
  * Identifier for this turn. Codex-generated turn IDs are UUIDv7.
@@ -458,6 +483,6 @@ export type UserInput = { "type": "text", text: string,
 /**
  * UI-defined spans within `text` used to render or persist special elements.
  */
-text_elements: Array<TextElement>, } | { "type": "image", detail?: ImageDetail, } & ({ url: string, } | { fileId: string, }) | { "type": "localImage", detail?: ImageDetail, path: string, } | { "type": "audio", url: string, } | { "type": "localAudio", path: string, } | { "type": "skill", name: string, path: string, } | { "type": "mention", name: string, path: string, };
+text_elements: Array<TextElement>, } | { "type": "image", detail?: ImageDetail, } & ({ url: string, } | { fileId: string, }) | { "type": "localImage", detail?: ImageDetail, path: string, } | { "type": "audio", } & ({ url: string, } | { fileId: string, }) | { "type": "localAudio", path: string, } | { "type": "skill", name: string, path: string, } | { "type": "mention", name: string, path: string, };
 
 export type WebSearchAction = { "type": "search", query: string | null, queries: Array<string> | null, } | { "type": "openPage", url: string | null, } | { "type": "findInPage", url: string | null, pattern: string | null, } | { "type": "other" };

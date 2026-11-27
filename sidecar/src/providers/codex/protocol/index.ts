@@ -3,7 +3,7 @@
 // sidecar/scripts/generate-codex-types.mjs. Run `pnpm generate:codex-types`.
 
 /** Codex version these types were generated from. */
-export const CODEX_PROTOCOL_VERSION = "0.166.0";
+export const CODEX_PROTOCOL_VERSION = "0.172.0";
 
 export type {
 	AbsolutePathBuf,

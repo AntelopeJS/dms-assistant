@@ -24,7 +24,7 @@ export type FunctionCallOutputBody = string | Array<FunctionCallOutputContentIte
  * Responses API compatible content items that can be returned by a tool call.
  * This is a subset of ContentItem with the types we support as function call outputs.
  */
-export type FunctionCallOutputContentItem = { "type": "input_text", text: string, } | { "type": "input_image", detail?: ImageDetail, } & ({ image_url: string, } | { file_id: string, }) | { "type": "input_audio", audio_url: string, } | { "type": "encrypted_content", encrypted_content: string, };
+export type FunctionCallOutputContentItem = { "type": "input_text", text: string, } | { "type": "input_image", detail?: ImageDetail, } & ({ image_url: string, } | { file_id: string, }) | { "type": "input_audio", } & ({ audio_url: string, } | { file_id: string, }) | { "type": "encrypted_content", encrypted_content: string, };
 
 export type ImageDetail = "auto" | "low" | "high" | "original";
 

@@ -72,9 +72,17 @@ const GENERATED_HEADER = [
   "// sidecar/scripts/generate-codex-types.mjs. Run `pnpm generate:codex-types`.",
 ].join("\n");
 
-const ManifestSchema = z.object({
-  peerDependencies: z.record(z.string(), z.string()).optional(),
+const SidecarManifestSchema = z.object({
+  devDependencies: z.object({ "@openai/codex": z.string() }),
 });
+
+const RootManifestSchema = z.object({
+  peerDependencies: z.object({ "@openai/codex": z.string() }),
+});
+
+const EXACT_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const PEER_RANGE_PATTERN = /^>=(\d+\.\d+\.\d+) <\d+\.0\.0$/;
+const PIN_ABOVE_FLOOR_FLAG = "--pin-above-floor";
 
 /**
  * @typedef {object} ParsedFile
@@ -106,21 +114,44 @@ const TARGET_TRIPLE_BY_HOST = {
 };
 
 /**
- * The version consumers are told to install. It lives in the root manifest's
- * optional peer dependency — the one declaration a consumer's package manager
- * sees — and is stamped into the generated barrel, so the spawn-time gate has a
- * single source of truth to compare the installed binary against.
+ * @param {string} file
+ * @returns {unknown}
+ */
+function readJson(file) {
+  return JSON.parse(readFileSync(file, "utf8"));
+}
+
+/**
+ * The version the types are generated from: the sidecar's exact
+ * `@openai/codex` devDependency. It is stamped into the generated barrel as the
+ * floor of the spawn-time gate, so the floor of the root manifest's peer range,
+ * the one declaration a consumer's package manager sees, has to name it too.
+ * `allowPinAboveFloor` lets the nightly generate from a later release.
  *
+ * @param {{ allowPinAboveFloor: boolean }} options
  * @returns {string}
  */
-function readPinnedVersion() {
-  const manifest = ManifestSchema.parse(
-    JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")),
-  );
-  const pinned = manifest.peerDependencies?.["@openai/codex"];
-  if (!pinned || !/^\d+\.\d+\.\d+$/.test(pinned)) {
+function readPinnedVersion({ allowPinAboveFloor }) {
+  const pinned = SidecarManifestSchema.parse(
+    readJson(path.join(SIDECAR_ROOT, "package.json")),
+  ).devDependencies["@openai/codex"];
+  if (!EXACT_VERSION_PATTERN.test(pinned)) {
     throw new Error(
-      `@openai/codex must be pinned to an exact version in the root manifest, found "${pinned}"`,
+      `@openai/codex must be pinned to an exact version in sidecar/package.json, found "${pinned}"`,
+    );
+  }
+  const range = RootManifestSchema.parse(
+    readJson(path.join(REPO_ROOT, "package.json")),
+  ).peerDependencies["@openai/codex"];
+  const floor = range.match(PEER_RANGE_PATTERN)?.[1];
+  if (floor === undefined) {
+    throw new Error(
+      `The root manifest's @openai/codex peer range must read ">=<x.y.z> <<major>.0.0", found "${range}"`,
+    );
+  }
+  if (floor !== pinned && !allowPinAboveFloor) {
+    throw new Error(
+      `The root manifest's @openai/codex peer range starts at ${floor}, but sidecar/package.json pins ${pinned}`,
     );
   }
   return pinned;
@@ -429,7 +460,9 @@ function pruneAndFlatten(pinnedVersion) {
 }
 
 function main() {
-  const pinnedVersion = readPinnedVersion();
+  const pinnedVersion = readPinnedVersion({
+    allowPinAboveFloor: process.argv.includes(PIN_ABOVE_FLOOR_FLAG),
+  });
   const binary = resolveCodexBinary();
   const reported = assertBinaryMatchesPin(binary, pinnedVersion);
 

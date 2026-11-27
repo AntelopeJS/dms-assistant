@@ -330,6 +330,9 @@ jobs:
     if: needs.select.outputs.tier == 'nightly' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -346,8 +349,12 @@ jobs:
       - name: Install the latest @openai/codex release
         id: codex
         run: |
-          pnpm --dir sidecar add --save-dev "@openai/codex@<1.0.0"
+          pnpm --dir sidecar update --latest @openai/codex
           version=$(node -p 'require("./sidecar/node_modules/@openai/codex/package.json").version')
+          if [[ "$version" != 0.* ]]; then
+            echo "::error title=Codex major release::@openai/codex ${version} leaves the 0.x range the peer dependency accepts."
+            exit 1
+          fi
           pnpm --dir sidecar add --save-dev --save-exact "@openai/codex@${version}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "### @openai/codex ${version}" >> "$GITHUB_STEP_SUMMARY"

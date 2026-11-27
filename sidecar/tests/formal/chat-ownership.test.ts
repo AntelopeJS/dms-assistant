@@ -145,12 +145,17 @@ async function buildPaused(room: Room): Promise<World> {
     content: CAMILLE_TEXT,
   });
   const request = await prompted;
+  const item = { id: "item-1", content: "then this" };
   transmit(camille.socket, {
     type: "queue_enqueue",
     conversationId: CONVERSATION,
-    item: { id: "item-1", content: "then this" },
+    item,
   });
-  await camille.frames.next((msg) => msg.type === "queue_state");
+  await camille.frames.next(
+    (msg) =>
+      msg.type === "queue_state" &&
+      (msg.items ?? []).some((queued) => queued.id === item.id),
+  );
   void services.questionBus.requestQuestion({
     conversationId: CONVERSATION,
     questions: [QUESTION],

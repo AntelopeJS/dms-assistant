@@ -37,7 +37,7 @@ importers:
         version: 0.17.0(8fed5171a6917eaff37cb1dc99b86429)
       '@antelopejs/mongodb':
         specifier: ~1.8.11
-        version: 1.8.11
+        version: 1.8.15
       '@antelopejs/mysql':
         specifier: '>=0.2.7 <0.3.0'
         version: 0.2.7(@types/node@22.20.5)
@@ -183,8 +183,8 @@ packages:
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
-  '@antelopejs/mongodb@1.8.11':
-    resolution: {integrity: sha512-JnymonWA9jw/AoplJ13UtzP+zYlbh4rzCI3qjC30N88YYXjhsGvYGzIQW4NUZnmhWVYPZgOq6xAi0ZBmwLh9UA==}
+  '@antelopejs/mongodb@1.8.15':
+    resolution: {integrity: sha512-0k9LiAmjz/hVMbtO3AyGNXmKKNB71nNr5lVjvgQA4637myyqR+FaQKDNWoIA0tLrM/ouWgk/a07fkI0a7D+UUg==}
 
   '@antelopejs/mysql@0.2.7':
     resolution: {integrity: sha512-llrgE55IMr5seiJCJFw/xLmP4xAKBrsnuBjf6j1alc1gUXyAi8QCmVpd1wWkEiEGe/KyVte5pfWCUqvNWzVctQ==}
@@ -291,8 +291,8 @@ packages:
   '@isaacs/nonrecursive-glob-match@1.0.3':
     resolution: {integrity: sha512-SI7kyKHq4XXDRozw+r9GlRZkia1ZkFrpLW98r2IC2Bpr8YkFGE3fvjzmxCG0x78A++69HmDNrDvSMYBZmHGpKA==}
 
-  '@mongodb-js/saslprep@1.6.1':
-    resolution: {integrity: sha512-D4CQtk9IwjCLAvCf1xvHEod3960q8XMUzfmdRU9qjUNlHnesGuTOvJcOTaPm9koZ1caUKA2aTbszZiAkcmSgmg==}
+  '@mongodb-js/saslprep@1.6.3':
+    resolution: {integrity: sha512-aHGFvT95c82CoQ7hb6qXpz8Hcc5PJb3ZtQ+P01QDBbyQday0mjcrJPeNJOHCgWe0pGX0zKmKP+1mWi/I/BCX9Q==}
 
   '@oxc-parser/binding-darwin-arm64@0.95.0':
     resolution: {integrity: sha512-zun9+V33kyCtNec9oUSWwb0qi3fB8pXwum1yGFECPEr55g/CrWju6/Jv4hwwNBeW2tK9Ch/PRstEtYmOLMhHpg==}
@@ -311,12 +311,14 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-linux-x64-gnu@0.95.0':
     resolution: {integrity: sha512-8huzHlK/N98wrnYKxIcYsK8ZGBWomQchu/Mzi6m+CtbhjWOv9DmK0jQ2fUWImtluQVpTwS0uZT06d3g7XIkJrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-parser/binding-win32-x64-msvc@0.95.0':
     resolution: {integrity: sha512-BQpgl7rDjFvCIHudmUR0dCwc4ylBYZl4CPVinlD3NhkMif4WD5dADckoo5ES/KOpFyvwcbKZX+grP63cjHi26g==}
@@ -1631,7 +1633,7 @@ snapshots:
       rethinkdb-ts: 2.7.0
     optional: true
 
-  '@antelopejs/mongodb@1.8.11':
+  '@antelopejs/mongodb@1.8.15':
     dependencies:
       '@antelopejs/interface-core': 0.5.2
       '@antelopejs/interface-database': 0.4.4(@antelopejs/interface-core@0.5.2)
@@ -1768,7 +1770,7 @@ snapshots:
 
   '@isaacs/nonrecursive-glob-match@1.0.3': {}
 
-  '@mongodb-js/saslprep@1.6.1':
+  '@mongodb-js/saslprep@1.6.3':
     dependencies:
       sparse-bitfield: 3.0.3
 
@@ -2428,7 +2430,7 @@ snapshots:
 
   mongodb@6.22.0:
     dependencies:
-      '@mongodb-js/saslprep': 1.6.1
+      '@mongodb-js/saslprep': 1.6.3
       bson: 6.10.4
       mongodb-connection-string-url: 3.0.2
 

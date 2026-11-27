@@ -60,23 +60,29 @@ interface Room {
 
 let harness: WsHarness | undefined;
 let sockets: WebSocket[] = [];
+let settles = 0;
 
 function transmit(socket: WebSocket, frame: Frame): void {
   socket.send(JSON.stringify(frame));
 }
 
 /**
- * Waits until the sidecar has handled every frame the client sent: the echo
- * answers once the earlier frames are dispatched, an undo or redo they started
- * holds the checkpoint lock until it is done, and the pause covers the socket
- * delivery of what they broadcast.
+ * Waits until the sidecar has handled every frame the client sent: the reply
+ * to this echo, told apart from earlier ones by its payload, answers once the
+ * earlier frames are dispatched, an undo or redo they started holds the
+ * checkpoint lock until it is done, and the pause covers the socket delivery
+ * of what they broadcast.
  */
 async function settle(
   client: Client,
   services: SidecarServices,
 ): Promise<void> {
-  transmit(client.socket, { type: "echo", payload: "settled" });
-  await client.frames.next((msg) => msg.type === "echo_reply");
+  settles += 1;
+  const payload = `settled-${settles}`;
+  transmit(client.socket, { type: "echo", payload });
+  await client.frames.next(
+    (msg) => msg.type === "echo_reply" && msg.payload === payload,
+  );
   await services.checkpoints.flush();
   await new Promise((done) => setTimeout(done, SETTLE_MS));
 }

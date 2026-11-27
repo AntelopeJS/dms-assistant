@@ -46,11 +46,13 @@ import {
   parseLimit,
   parseWindow,
 } from "./http-params.js";
+import { conversationRefusal } from "./message-gate.js";
 import type { SidecarServices } from "./services.js";
 
 const DEFAULT_TOP_LIMIT = 5;
 const DEFAULT_USAGE_DAYS = 14;
 const MS_PER_DAY = 86_400_000;
+const VIEWER_PARAM = "viewer";
 
 export interface ApiDeps {
   conversationStore: ConversationStore;
@@ -277,6 +279,25 @@ async function changeDetailRoute(
   });
 }
 
+/**
+ * Which later change sets the preview lists: every one, or with a `viewer`
+ * (the chat's), only those on conversations the viewer may use, the ones an
+ * undo over their chat takes along.
+ */
+function previewedBy(
+  deps: ApiDeps,
+  match: RouteMatch,
+): (later: ChangeSetRecord) => boolean {
+  const viewer = optionalParam(match.query, VIEWER_PARAM);
+  if (viewer === undefined) return () => true;
+  return (later) =>
+    conversationRefusal(
+      deps.conversationStore,
+      viewer,
+      later.conversationId,
+    ) === null;
+}
+
 function undoPreviewRoute(
   res: ServerResponse,
   deps: ApiDeps,
@@ -293,7 +314,7 @@ function undoPreviewRoute(
     sendJson(
       res,
       HTTP_STATUS.OK,
-      checkpoints.undoPreview(match.params[0] ?? ""),
+      checkpoints.undoPreview(match.params[0] ?? "", previewedBy(deps, match)),
     );
   } catch (err) {
     if (!(err instanceof ChangeSetActionError)) throw err;

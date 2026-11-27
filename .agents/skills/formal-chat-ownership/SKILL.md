@@ -27,7 +27,7 @@ For each message type, in a world where Camille's conversation has a turn paused
 
 Answers by request id (`permission_response`, `question_response`) count as conversation requests: the owner is looked up from the request. Types with no conversation and no request id (`echo`, `actor`, `set_settings`) are classified `none` with the reason.
 
-A request on the sender's own conversation can still reach the owner's state. An undo with the later change sets (`includeLater`) takes the later sets that touch the same files, and those can belong to another person's conversation. A case of its own checks it: Dana records a change set, Camille one on the same file, then Dana another; Dana undoes her first with the later sets, and both of hers end undone while Camille's stays applied. It fails an undo that takes every later set (the code before this case) and one that takes none.
+A request on the sender's own conversation can still reach the owner's state. An undo with the later change sets (`includeLater`) takes the later sets that touch the same files, and those can belong to another person's conversation. A case of its own checks it: Dana records a change set, Camille one on the same file, then Dana another; Dana's Undo preview (`GET /changes/:id/undo-preview?viewer=<her id>`, what the chat's dialog lists) names only her later set, then Dana undoes her first with the later sets, and both of hers end undone while Camille's stays applied. It fails a preview or an undo that takes every later set (the code before this case) and one that takes none.
 
 ## What it covers
 
@@ -48,6 +48,7 @@ The check fails on the code before each fix (`git worktree add` the parent commi
 | before #61 (`1baa062^`) | `host_state_update` |
 | before #150 (`229c83c`) | `change_set_action`, `host_navigation_complete`, `host_page_blocks` |
 | before Wa4f5503c-81 (`3ad6035`) | the undo with the later change sets |
+| before Wa4f5503c-162 (`b122d6a`) | the preview of the later change sets |
 
 ## Real bug or modeling error
 
@@ -73,3 +74,4 @@ Move the sync commit forward only after you confirm the check describes the code
 | host messages | `handleHostStateUpdate`, `handleHostNavigationComplete`, `handleHostPageBlocks`, `createHostState`, `createNavigationCompleter` |
 | change sets | `handleChangeSet`, `changeSetRefusalOf`, `handleChangeSetAction` |
 | undo with the later sets | the `mayUse` that `handleChangeSet` passes to `handleChangeSetAction`, `undo` in `sidecar/src/checkpoints/checkpoints.ts` |
+| preview of the later sets | `previewedBy` in `sidecar/src/server/http-routes.ts`, `conversationRefusal` in `sidecar/src/server/message-gate.ts`, `undoPreview` in `sidecar/src/checkpoints/checkpoints.ts` |

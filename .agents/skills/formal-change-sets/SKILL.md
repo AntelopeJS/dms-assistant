@@ -80,7 +80,7 @@ Replay the counterexample against the code, one action per step, with the covera
 
 ## Coverage record
 
-Sync commit: `935867f`. The covered files last changed in `5bd4c09`. To see whether the model needs another look:
+Sync commit: `935867f`. The covered files last changed in the fix of Wa4f5503c-162, which filters the Undo preview outside the model. To see whether the model needs another look:
 
 ```sh
 git diff --stat 935867f -- sidecar/src/checkpoints sidecar/src/server/change-set-actions.ts sidecar/src/server/turns.ts
@@ -88,11 +88,11 @@ git diff --stat 935867f -- sidecar/src/checkpoints sidecar/src/server/change-set
 
 | Model action | Code |
 | --- | --- |
-| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:193-225), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
+| `BeginTurn` | `beginTurn`, `markOverlaps` (sidecar/src/checkpoints/checkpoints.ts:197-229), called from `beginTurn` in sidecar/src/server/turns.ts:281 |
 | `Edit` | a mutating tool after `TurnCheckpoint.ready()` |
-| `Finish`, `TakeAfter` | `finish`, `recordTurn`, `buildRecord` (checkpoints.ts:150-191, 212), `changedFiles` (sidecar/src/checkpoints/shadow-git.ts:157) |
+| `Finish`, `TakeAfter` | `finish`, `recordTurn`, `buildRecord` (checkpoints.ts:154-195, 216), `changedFiles` (sidecar/src/checkpoints/shadow-git.ts:157) |
 | `TakeBefore` | the `before` snapshot in `beginTurn`, `snapshot` (shadow-git.ts:123) |
-| `RunLock`, `queue` | `serialize` (checkpoints.ts:126) |
-| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:308-313), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
-| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:313-328), `markState` (checkpoints.ts:282), `restore` (shadow-git.ts:221) |
-| `RequestRedo`, `RunRedo`, `Refuse` | `redo` (checkpoints.ts:331-343) |
+| `RunLock`, `queue` | `serialize` (checkpoints.ts:130) |
+| `RequestUndo` | `undo` up to `serialize` (checkpoints.ts:318-323), `handleChangeSetAction` (sidecar/src/server/change-set-actions.ts) |
+| `RunUndo`, `Refuse`, `Later`, `Desc`, `Restore`, `UndoAll` | `undo`'s serialized task: `requireRecord`, `requireState`, `laterConflicts`, the restore loop (checkpoints.ts:323-338), `markState` (checkpoints.ts:292), `restore` (shadow-git.ts:221) |
+| `RequestRedo`, `RunRedo`, `Refuse` | `redo` (checkpoints.ts:341-353) |

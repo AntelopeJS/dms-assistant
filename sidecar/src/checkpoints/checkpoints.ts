@@ -312,10 +312,13 @@ async function undo(
   actor: string | undefined,
 ): Promise<ChangeSetRecord[]> {
   assertAvailable(state);
-  const record = requireRecord(state, id);
-  requireState(record, "applied");
-  const targets = [...laterConflicts(state, record).filter(takesLater), record];
   return serialize(state, async () => {
+    const record = requireRecord(state, id);
+    requireState(record, "applied");
+    const targets = [
+      ...laterConflicts(state, record).filter(takesLater),
+      record,
+    ];
     const undone: ChangeSetRecord[] = [];
     for (const target of targets) {
       await state.git.restore(target.beforeTree, pathsOf(target));
@@ -331,9 +334,9 @@ async function redo(
   actor: string | undefined,
 ): Promise<ChangeSetRecord[]> {
   assertAvailable(state);
-  const record = requireRecord(state, id);
-  requireState(record, "undone");
   return serialize(state, async () => {
+    const record = requireRecord(state, id);
+    requireState(record, "undone");
     await state.git.restore(record.afterTree, pathsOf(record));
     return [markState(state, record, "applied", actor)];
   });

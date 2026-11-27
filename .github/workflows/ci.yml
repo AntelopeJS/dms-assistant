@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: "17 2 * * *"
   workflow_dispatch:
+    inputs:
+      nightly:
+        description: Run the nightly tier, with the Windows jobs and Stress
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,6 +35,16 @@ jobs:
       renovate-sync: false
       test-job: true
       single-job: false
+      nightly: ${{ inputs.nightly == true }}
+      formal-checks: |
+        [
+          {"skill": "formal-agent-file-access"},
+          {"skill": "formal-change-sets"},
+          {"skill": "formal-chat-ownership"},
+          {"skill": "formal-connection-analysis"},
+          {"skill": "formal-conversation-deletion", "paths": ["sidecar/src/server/routing.ts", "sidecar/src/server/turns.ts", "sidecar/src/state/conversations.ts", "sidecar/src/state/store.ts"]},
+          {"skill": "formal-stored-state-load"}
+        ]
 
   # ci-node.yml exposes no outputs, so this takes the shared tier rule and
   # derives the jobs declared here from it: a draft and the next to main pull
@@ -38,7 +53,7 @@ jobs:
   # tests, the fast tier's included, and every journey in shards in the merge
   # queue, on a manual run and nightly.
   select:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 5
     outputs:
       tier: ${{ steps.tier.outputs.tier }}
@@ -128,7 +143,7 @@ jobs:
   frontend-verify:
     needs: select
     if: needs.select.outputs.tests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -150,7 +165,7 @@ jobs:
   installed-module:
     needs: select
     if: needs.select.outputs.tests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -176,7 +191,7 @@ jobs:
   e2e:
     needs: select
     if: needs.select.outputs.e2e != 'none'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -275,7 +290,7 @@ jobs:
   integration:
     needs: select
     if: needs.select.outputs.e2e == 'all'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -323,7 +338,7 @@ jobs:
   e2e-report:
     needs: [select, e2e]
     if: always() && needs.select.outputs.e2e == 'all'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -379,16 +394,18 @@ jobs:
   # it. A draft pull request fails it, so merge-when-green cannot merge on the
   # draft run.
   verdict:
-    if: always()
+    if: ${{ !cancelled() }}
     needs:
-      - select
       - ci
+      - select
       - vitest
       - frontend-verify
       - installed-module
       - e2e
       - integration
-    runs-on: ubuntu-latest
+      - e2e-report
+      - renovate-sync
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 5
     steps:
       - if: >-

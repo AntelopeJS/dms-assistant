@@ -58,7 +58,7 @@ jobs:
     outputs:
       tier: ${{ steps.tier.outputs.tier }}
       tests: ${{ steps.tier.outputs.tests }}
-      os: ${{ steps.tier.outputs.os }}
+      windows: ${{ steps.tier.outputs.windows }}
       e2e: ${{ steps.tier.outputs.e2e }}
       shards: ${{ steps.tier.outputs.shards }}
     steps:
@@ -79,9 +79,9 @@ jobs:
             tests=false
           fi
 
-          os='["ubuntu-latest"]'
+          windows=false
           if [[ "$tier" == nightly ]]; then
-            os='["ubuntu-latest","windows-latest"]'
+            windows=true
           fi
 
           e2e=smoke
@@ -96,11 +96,11 @@ jobs:
           {
             echo "tier=${tier}"
             echo "tests=${tests}"
-            echo "os=${os}"
+            echo "windows=${windows}"
             echo "e2e=${e2e}"
             echo "shards=${shards}"
           } >> "$GITHUB_OUTPUT"
-          echo "Tier \`${tier}\`: tests ${tests} on ${os}, browser journeys ${e2e}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tier \`${tier}\`: tests ${tests}, Windows ${windows}, browser journeys ${e2e}" >> "$GITHUB_STEP_SUMMARY"
 
   vitest:
     needs: select
@@ -110,8 +110,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(needs.select.outputs.os) }}
+        os: [blacksmith-4vcpu-ubuntu-2404, blacksmith-4vcpu-windows-2025]
         package: [sidecar, frontend-vue]
+        exclude:
+          - os: ${{ needs.select.outputs.windows == 'true' && 'none' || 'blacksmith-4vcpu-windows-2025' }}
     defaults:
       run:
         shell: bash

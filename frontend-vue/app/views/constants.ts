@@ -7,6 +7,7 @@ export const AI_ROUTES = {
 	changeUndoConfirm: "/ai/changes/{{row.id}}/undo-confirm",
 	activity: "/ai/activity",
 	artifacts: "/ai/artifacts",
+	artifactDeleteConfirm: "/ai/artifacts/{{row.id}}/delete-confirm",
 	settings: "/ai/settings",
 } as const;
 
@@ -18,6 +19,7 @@ export const AI_PAGES = {
 export const CHANGE_SET_QUERY_KEY = "set";
 /** The query parameter of the Artifacts page that opens an artifact, as `create_artifact` answers it. */
 export const ARTIFACT_QUERY_KEY = "artifact";
+export const ARTIFACTS_PAGE_SIZE = 30;
 export const CHANGES_PAGE_SIZE = 30;
 export const HTTP_SERVICE_UNAVAILABLE = 503;
 

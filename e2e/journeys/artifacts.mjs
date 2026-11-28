@@ -1,6 +1,6 @@
 import { guarded } from "../guard.mjs";
 import { byRunner } from "../runner.mjs";
-import { ai, pageHas, pick, same, text, withEnv } from "../ai.mjs";
+import { ai, list, pageHas, pick, same, text, withEnv } from "../ai.mjs";
 import { seedStore } from "../seed.mjs";
 
 /** @typedef {import("../ai.mjs").Ctx} Ctx */
@@ -104,12 +104,66 @@ export const { journeys, integrationJourneys } = byRunner(
       ]);
     },
   },
+  {
+    id: "the-library-lists-searches-filters-and-deletes",
+    title: "the Artifacts page lists the owner's artifacts newest first with kind, time and author, searches titles, filters by kind, opens one beside the list, and deletes it from a dialog that names it; another owner's artifact cannot be deleted",
+    entryPoint: "/modules/ai/artifacts, GET /ai/artifacts?search=&filter_kind=, GET /ai/artifacts/:id/delete-confirm, DELETE /ai/artifacts/:id",
+    async run(/** @type {Ctx} */ ctx) {
+      const admin = ctx.state.accounts?.admin?.userId ?? "";
+      const table = { ...ARTIFACT, id: "art-table", kind: "table", createdAtMs: ARTIFACT.createdAtMs + 60_000, spec: { title: "Top customers", blocks: [{ type: "table", columns: [{ label: "Customer" }], rows: [["Acme"]] }] } };
+      await seedStore(ctx, { artifacts: [{ ...ARTIFACT, ownerId: admin, spec: { ...ARTIFACT.spec, title: "Refunds Q3" } }, { ...table, ownerId: admin }, { ...ARTIFACT, id: "art-foreign", ownerId: "someone-else" }] });
+      const all = await ai(ctx, "all", "GET", "/artifacts");
+      const searched = await ai(ctx, "search", "GET", "/artifacts?search=refund");
+      const tables = await ai(ctx, "tables", "GET", "/artifacts?filter_kind=is:table");
+      const dialog = await ai(ctx, "the delete dialog", "GET", "/artifacts/art-table/delete-confirm");
+      const foreignDialog = await ai(ctx, "a foreign delete dialog", "GET", "/artifacts/art-foreign/delete-confirm");
+      const foreignDelete = await ai(ctx, "a foreign delete", "DELETE", "/artifacts/art-foreign");
+      const titles = (/** @type {import("../ai.mjs").Answer} */ answer) => list(answer.body, "results").map((row) => text(row, "title"));
+      await ctx.verify("the API", [
+        same("the owner's two, newest first", titles(all), ["Top customers", "Refunds Q3"]),
+        same("the search over titles", titles(searched), ["Refunds Q3"]),
+        same("the kind filter", titles(tables), ["Top customers"]),
+        same("the dialog names the artifact", [dialog.status, pick(dialog.body, "params", "title"), pick(dialog.body, "color")], [200, "Top customers", "error"]),
+        same("another owner's artifact has no dialog and is not deleted", [foreignDialog.status, foreignDelete.status], [404, 404]),
+      ]);
+      const tab = await ctx.tab();
+      await tab.signIn("admin");
+      await tab.goto("/modules/ai/artifacts");
+      await ctx.verify("the list", [
+        pageHas(tab, "its count", /Artifacts · 2/i),
+        pageHas(tab, "the newest first, with kind, time and author", /Top customers\s*Table · [^\n]*· Verify Admin[\s\S]*Refunds Q3\s*Report · [^\n]*· Verify Admin/),
+        pageHas(tab, "the newest is open", /Customer\s*Acme/),
+        tab.visible({ role: "textbox", name: "Search artifacts" }),
+        pageHas(tab, "the kind filter", /All\s*Report\s*Table\s*Chart/),
+      ]);
+      await tab.page.getByRole("button", { name: /Refunds Q3/ }).first().click();
+      await ctx.verify("the older artifact", [pageHas(tab, "opens beside the list", /Refunds by month\./), pageHas(tab, "its kpi", /Refunds\s*36/)]);
+      await tab.click({ role: "radio", name: "Table" });
+      await ctx.verify("the Table kind", [pageHas(tab, "keeps the table", /Top customers/), pageHas(tab, "drops the report", /Refunds Q3/, false)]);
+      await tab.click({ role: "radio", name: "All" });
+      await tab.fill({ role: "textbox", name: "Search artifacts" }, "zzzz");
+      await ctx.verify("a search that matches nothing", [pageHas(tab, "says so", /No artifact matches/)]);
+      await tab.fill({ role: "textbox", name: "Search artifacts" }, "");
+      await tab.goto("/modules/ai/artifacts?artifact=art-table");
+      await tab.click({ role: "button", name: "Delete artifact" });
+      await ctx.verify("the dialog", [pageHas(tab, "names the artifact", /Delete this artifact\?[\s\S]*Top customers/)]);
+      await tab.click({ role: "button", name: "Delete", exact: true });
+      await ctx.verify("after the delete", [
+        pageHas(tab, "the toast", /Artifact deleted/),
+        pageHas(tab, "one artifact left", /Artifacts · 1/i),
+        pageHas(tab, "the table is gone", /Top customers/, false),
+      ]);
+      const left = await ai(ctx, "what is left", "GET", "/artifacts");
+      await ctx.verify("the store", [same("the report alone", titles(left), ["Refunds Q3"])]);
+    },
+  },
   ]),
 );
 
 /** The user-facing files these journeys cover, as globs relative to the repository root. */
 export const covers = [
   "src/routes/artifacts.ts",
+  "src/routes/artifact-confirm.ts",
   "src/pages/artifacts/**",
   "src/types/artifacts.ts",
   "sidecar/src/artifacts/**",

@@ -104,6 +104,7 @@ function loadControllers() {
     Get: decorator,
     Post: decorator,
     Put: decorator,
+    Delete: decorator,
     Context: decorator,
     Parameter: decorator,
     JSONBody: decorator,

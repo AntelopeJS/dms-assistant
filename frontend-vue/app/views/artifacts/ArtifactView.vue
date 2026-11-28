@@ -61,15 +61,18 @@ const eyebrow = computed(() => {
 					{{ spec.summary }}
 				</p>
 			</div>
-			<UButton
-				v-if="assistant.isAvailable"
-				icon="i-ph-chats-circle"
-				color="neutral"
-				variant="ghost"
-				size="sm"
-				:label="t('dms_assistant.views.artifacts.conversation')"
-				@click="assistant.openConversation(artifact.conversationId)"
-			/>
+			<div class="flex flex-wrap items-center gap-1.5">
+				<UButton
+					v-if="assistant.isAvailable"
+					icon="i-ph-chats-circle"
+					color="neutral"
+					variant="ghost"
+					size="sm"
+					:label="t('dms_assistant.views.artifacts.conversation')"
+					@click="assistant.openConversation(artifact.conversationId)"
+				/>
+				<slot name="actions" />
+			</div>
 		</header>
 		<DmsEmptyState
 			v-if="spec === null"

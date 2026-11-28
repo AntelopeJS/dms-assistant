@@ -108,6 +108,47 @@ describe("the artifact routes", () => {
     );
   });
 
+  it("filters the list on a kind it knows, and ignores one it does not", async () => {
+    harness = await startWsHarness({ provider: "claude" });
+    harness.artifacts.add({
+      ...record("a-5", OWNER, "A table", 5),
+      kind: "table",
+    });
+    seed(harness);
+    const tables = PAGE.parse(
+      await (
+        await callApi(harness.port, `/artifacts?viewer=${OWNER}&kind=table`)
+      ).json(),
+    );
+    expect(tables.results.map((row) => row.id)).toEqual(["a-5"]);
+    const unknownKind = PAGE.parse(
+      await (
+        await callApi(harness.port, `/artifacts?viewer=${OWNER}&kind=html`)
+      ).json(),
+    );
+    expect(unknownKind.total).toBe(3);
+  });
+
+  it("deletes the viewer's own artifact, and leaves another person's in place answering 404 (fails a route that deletes what it refuses to show)", async () => {
+    harness = await startWsHarness({ provider: "claude" });
+    seed(harness);
+    const deleteAs = (id: string, viewer: string) =>
+      callApi(harness?.port ?? 0, `/artifacts/${id}?viewer=${viewer}`, {
+        method: "DELETE",
+      });
+    const own = await deleteAs("a-1", OWNER);
+    expect(own.status).toBe(200);
+    expect(await own.json()).toEqual({ deleted: "a-1" });
+    expect(harness.artifacts.get("a-1")).toBeNull();
+    const foreign = await deleteAs("a-3", OWNER);
+    const unknown = await deleteAs("nope", OWNER);
+    expect([foreign.status, unknown.status]).toEqual([404, 404]);
+    expect(REFUSAL.parse(await foreign.json())).toEqual(
+      REFUSAL.parse(await unknown.json()),
+    );
+    expect(harness.artifacts.get("a-3")?.id).toBe("a-3");
+  });
+
   it("shows a request that names nobody the unowned artifacts alone", async () => {
     harness = await startWsHarness({ provider: "claude" });
     seed(harness);

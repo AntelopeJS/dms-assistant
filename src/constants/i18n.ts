@@ -9,5 +9,6 @@ export const I18N_SECTIONS = {
   SETTINGS: "settings",
   STATUS: "status",
   CHANGES_TABLE: "changes_table",
+  ARTIFACTS_TABLE: "artifacts_table",
   ERRORS: "errors",
 } as const;

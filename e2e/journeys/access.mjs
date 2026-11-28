@@ -10,7 +10,7 @@ const OWNER_ROUTES = [
   ["GET", "/metrics/usage"], ["GET", "/metrics/usage/summary"],
   ["GET", "/activity"], ["GET", "/activity/x"], ["GET", "/activity/export.csv"],
   ["GET", "/changes"], ["GET", "/changes/x"], ["GET", "/changes/x/undo-preview"], ["GET", "/changes/x/undo-confirm"], ["POST", "/changes/x/undo"], ["POST", "/changes/x/redo"],
-  ["GET", "/artifacts"], ["GET", "/artifacts/x"],
+  ["GET", "/artifacts"], ["GET", "/artifacts/x"], ["GET", "/artifacts/x/delete-confirm"], ["DELETE", "/artifacts/x"],
   ["GET", "/settings"], ["PUT", "/settings"],
   ["GET", "/codex/account/banner"], ["POST", "/codex/callback"], ["POST", "/codex/logout"],
   ["GET", "/onboarding"], ["POST", "/onboarding/claude-token"], ["POST", "/onboarding/provider"],

@@ -238,6 +238,13 @@
 				"include_later_hint": "Sans risque : annuler ce lot seul garde leurs lignes et peut ne plus compiler."
 			}
 		},
+		"artifacts_table": {
+			"delete_confirm": {
+				"title": "Supprimer cet artefact ?",
+				"description": "« {title} » disparaît de la page Artefacts pour de bon. La conversation dont il vient est conservée.",
+				"confirm": "Supprimer"
+			}
+		},
 		"settings": {
 			"hints": {
 				"next_turn": "S'applique aux nouveaux tours. Les conversations ouvertes perdent la mémoire de l'agent ; les transcriptions restent.",

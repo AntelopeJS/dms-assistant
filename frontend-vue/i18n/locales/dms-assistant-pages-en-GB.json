@@ -238,6 +238,13 @@
 				"include_later_hint": "Safe: undoing this one alone keeps their lines and may not compile."
 			}
 		},
+		"artifacts_table": {
+			"delete_confirm": {
+				"title": "Delete this artifact?",
+				"description": "“{title}” is removed from the Artifacts page for good. The conversation it came from is kept.",
+				"confirm": "Delete"
+			}
+		},
 		"settings": {
 			"hints": {
 				"next_turn": "Applies to new turns. Open chats lose the agent's memory; transcripts stay.",

@@ -105,6 +105,61 @@ void test("refuses an artifact answer of another shape rather than forwarding it
   assert.equal(result.getStatus(), 502);
 });
 
+void test("forwards the kind filter of the Artifacts page as the sidecar's kind parameter", async () => {
+  reset();
+  answer("GET", "/artifacts", 200, { results: [], total: 0 });
+  await new harness.routes.AIArtifactsController().list(
+    context("filter_kind=is:chart"),
+    OWNER,
+  );
+  assert.deepEqual(sidecar.requests[0].query, {
+    kind: "chart",
+    viewer: OWNER._id,
+  });
+});
+
+void test("asks Delete's confirmation named after the artifact, in the error colour, for the signed-in user", async () => {
+  reset();
+  answer("GET", "/artifacts/a-1", 200, DETAIL);
+  const dialog = await new harness.routes.AIArtifactsController().deleteConfirm(
+    "a-1",
+    OWNER,
+  );
+  assert.ok(!(dialog instanceof HTTPResult));
+  assert.equal(
+    dialog.title,
+    "$dms_assistant.artifacts_table.delete_confirm.title",
+  );
+  assert.equal(
+    dialog.description,
+    "$dms_assistant.artifacts_table.delete_confirm.description",
+  );
+  assert.equal(
+    dialog.confirmLabel,
+    "$dms_assistant.artifacts_table.delete_confirm.confirm",
+  );
+  assert.equal(dialog.color, "error");
+  assert.deepEqual(dialog.params, { title: HOSTILE_TITLE });
+  assert.deepEqual(sidecar.requests[0].query, { viewer: OWNER._id });
+});
+
+void test("deletes for the signed-in user and passes the sidecar's answer, or its refusal, on", async () => {
+  reset();
+  answer("DELETE", "/artifacts/a-1", 200, { deleted: "a-1" });
+  answer("DELETE", "/artifacts/nope", 404, { message: "Unknown artifact." });
+  const controller = new harness.routes.AIArtifactsController();
+  const deleted = await controller.remove("a-1", OWNER);
+  assert.deepEqual(deleted, { deleted: "a-1" });
+  assert.equal(sidecar.requests[0].method, "DELETE");
+  assert.deepEqual(sidecar.requests[0].query, { viewer: OWNER._id });
+  const refused = await controller.remove("nope", OWNER);
+  assert.ok(refused instanceof HTTPResult);
+  assert.equal(refused.getStatus(), 404);
+  assert.deepEqual(bodyOf(z.json(), refused), {
+    message: "Unknown artifact.",
+  });
+});
+
 void test("answers 503 with a message from the list and the detail while the sidecar is down", async () => {
   reset();
   sidecar.isDown = true;

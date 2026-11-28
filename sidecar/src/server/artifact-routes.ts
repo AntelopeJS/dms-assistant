@@ -4,7 +4,10 @@ import {
   isArtifactVisibleTo,
   summarizeArtifact,
 } from "../artifacts/types.js";
-import { UNKNOWN_ARTIFACT_MESSAGE } from "../constants/artifacts.js";
+import {
+  ARTIFACT_KINDS,
+  UNKNOWN_ARTIFACT_MESSAGE,
+} from "../constants/artifacts.js";
 import { HTTP_STATUS } from "../constants/http.js";
 import { sendJson } from "./http-io.js";
 import { optionalParam, parseCount, parseLimit } from "./http-params.js";
@@ -37,7 +40,13 @@ function matchesSearch(record: ArtifactRecord, search: string): boolean {
   );
 }
 
-/** The list the Artifacts page shows: summaries without their blocks, filtered on a conversation and a search. */
+/** The `kind` filter, when it names a kind; another value filters nothing out. */
+function kindFilter(match: RouteMatch): string | undefined {
+  const kind = optionalParam(match.query, "kind");
+  return ARTIFACT_KINDS.some((known) => known === kind) ? kind : undefined;
+}
+
+/** The list the Artifacts page shows: summaries without their blocks, filtered on a conversation, a kind and a search. */
 function listArtifactsRoute(
   res: ServerResponse,
   deps: ApiDeps,
@@ -45,12 +54,14 @@ function listArtifactsRoute(
 ): void {
   const search = optionalParam(match.query, "search");
   const conversationId = optionalParam(match.query, "conversationId");
+  const kind = kindFilter(match);
   const matching = visibleArtifacts(deps, match)
     .filter(
       (record) =>
         conversationId === undefined ||
         record.conversationId === conversationId,
     )
+    .filter((record) => kind === undefined || record.kind === kind)
     .filter((record) => search === undefined || matchesSearch(record, search));
   const offset = parseCount(match.query, "offset", 0);
   const limit = parseLimit(match.query);
@@ -82,6 +93,28 @@ function artifactDetailRoute(
   sendJson(res, HTTP_STATUS.OK, record);
 }
 
+/**
+ * Removes an artifact the viewer may see; one they may not answers as an
+ * unknown one, like the detail, and stays.
+ */
+function deleteArtifactRoute(
+  res: ServerResponse,
+  deps: ApiDeps,
+  match: RouteMatch,
+): void {
+  const id = match.params[0] ?? "";
+  const visible = visibleArtifacts(deps, match).some(
+    (candidate) => candidate.id === id,
+  );
+  if (!visible || deps.services()?.artifacts.remove(id) !== true) {
+    sendJson(res, HTTP_STATUS.NOT_FOUND, {
+      message: UNKNOWN_ARTIFACT_MESSAGE,
+    });
+    return;
+  }
+  sendJson(res, HTTP_STATUS.OK, { deleted: id });
+}
+
 /** The routes of the artifacts the conversations saved, read as the `viewer` the backend names. */
 export const ARTIFACT_ROUTES: readonly ApiRoute[] = [
   {
@@ -93,5 +126,10 @@ export const ARTIFACT_ROUTES: readonly ApiRoute[] = [
     method: "GET",
     pattern: /^\/artifacts\/([^/]+)$/,
     handle: (_q, res, deps, m) => artifactDetailRoute(res, deps, m),
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/artifacts\/([^/]+)$/,
+    handle: (_q, res, deps, m) => deleteArtifactRoute(res, deps, m),
   },
 ];

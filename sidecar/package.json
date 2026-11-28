@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@antelopejs/interface-dms-builder": ">=0.6.4 <0.7.0",
-    "@antelopejs/tooling-configs": "^0.10.14",
+    "@antelopejs/tooling-configs": "^0.10.15",
     "@openai/codex": "0.172.0",
     "@types/node": "^22.19.15",
     "@types/ws": "^8.5.12",

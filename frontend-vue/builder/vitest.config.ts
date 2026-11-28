@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { testTimeouts } from '@antelopejs/tooling-configs/vitest'
 import { defineConfig } from 'vitest/config'
 import { backendBoundary } from '../build/backend-boundary.ts'
 
@@ -13,6 +14,7 @@ export default defineConfig({
     },
   },
   test: {
+    ...testTimeouts,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
   },

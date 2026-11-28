@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { testTimeouts } from "@antelopejs/tooling-configs/vitest";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 import { backendBoundary } from "./build/backend-boundary.ts";
@@ -23,6 +24,7 @@ export default defineConfig({
 		},
 	},
 	test: {
+		...testTimeouts,
 		/**
 		 * Most suites need no DOM, and setting jsdom up per file is the bulk of
 		 * the run; the files that mount components opt in with a

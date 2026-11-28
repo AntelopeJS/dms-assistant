@@ -26,8 +26,8 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@antelopejs/interface-dms-builder": ">=0.6.3 <0.7.0",
-    "@antelopejs/tooling-configs": "^0.10.11",
+    "@antelopejs/interface-dms-builder": ">=0.6.4 <0.7.0",
+    "@antelopejs/tooling-configs": "^0.10.13",
     "@openai/codex": "0.172.0",
     "@types/node": "^22.19.15",
     "@types/ws": "^8.5.12",

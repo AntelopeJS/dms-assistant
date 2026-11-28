@@ -6,8 +6,8 @@ settings:
 
 overrides:
   '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
-  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.17.0 <0.18.0'
-  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.3 <0.7.0'
+  '@antelopejs/dms>@antelopejs/interface-dms': '>=0.17.3 <0.18.0'
+  '@antelopejs/dms>@antelopejs/interface-dms-builder': '>=0.6.4 <0.7.0'
 
 importers:
 
@@ -30,11 +30,11 @@ importers:
         version: 4.6.7
     devDependencies:
       '@antelopejs/interface-dms-builder':
-        specifier: '>=0.6.3 <0.7.0'
-        version: 0.6.3(@antelopejs/interface-core@0.5.4)
+        specifier: '>=0.6.4 <0.7.0'
+        version: 0.6.4(@antelopejs/interface-core@0.5.4)
       '@antelopejs/tooling-configs':
-        specifier: ^0.10.11
-        version: 0.10.12(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
+        specifier: ^0.10.13
+        version: 0.10.13(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)
       '@openai/codex':
         specifier: 0.172.0
         version: 0.172.0
@@ -65,13 +65,13 @@ packages:
   '@antelopejs/interface-core@0.5.4':
     resolution: {integrity: sha512-5IzF8eGvXugI5KNHj2q+ux3J5AE09Sagul4Sl1k2FFRlfm7WSRE1uzmjL8CT2cqJvWExqW6SGX17InOddI/t/g==}
 
-  '@antelopejs/interface-dms-builder@0.6.3':
-    resolution: {integrity: sha512-cBAYefCGv1wSbBLSaQzznesgREdgfbAm/nn01fPYMxXzIl6efnXVUgTjuPm/C0llSDZiVU3llCLoj76POSbMtQ==}
+  '@antelopejs/interface-dms-builder@0.6.4':
+    resolution: {integrity: sha512-0NltQd7+DSqegrOVjkBLfcOjCIG54T/PNVnLN+/sg6CLqSrBZ6cB1isl3LWpHSMNvvdAI0oXzRiUKtfkmTTCGQ==}
     peerDependencies:
       '@antelopejs/interface-core': '>=0.5.2 <0.6.0'
 
-  '@antelopejs/tooling-configs@0.10.12':
-    resolution: {integrity: sha512-2Yjx8JxWr4Opz1hA8363Zctf4SUmtG3DFmm/UaPe1447fWzmTX8FgTDRg1qoEIQ94g/U6rte6lj9cIdNEE3Kmg==}
+  '@antelopejs/tooling-configs@0.10.13':
+    resolution: {integrity: sha512-lQ4lYQA83Co4O+/6TBMGwmHL4E0QJoRhcWNYqTnolX9XQxaeAbdLnF4ajY7eh2t2piDWDyUZfi7JkFZGob545g==}
     engines: {node: '>=22.18.0'}
     hasBin: true
     peerDependencies:
@@ -2240,11 +2240,11 @@ snapshots:
     dependencies:
       reflect-metadata: 0.2.2
 
-  '@antelopejs/interface-dms-builder@0.6.3(@antelopejs/interface-core@0.5.4)':
+  '@antelopejs/interface-dms-builder@0.6.4(@antelopejs/interface-core@0.5.4)':
     dependencies:
       '@antelopejs/interface-core': 0.5.4
 
-  '@antelopejs/tooling-configs@0.10.12(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
+  '@antelopejs/tooling-configs@0.10.13(knip@6.41.0)(oxfmt@0.66.0)(oxlint@1.81.0(oxlint-tsgolint@7.0.2004))(playwright-core@1.65.1)':
     dependencies:
       '@oxlint/plugins': 1.95.0
       dts-bundle-generator: 9.5.1
@@ -2528,7 +2528,7 @@ snapshots:
     dependencies:
       '@hono/node-server': 1.19.17(hono@4.13.13)
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
       cors: 2.8.6
       cross-spawn: 7.0.6
@@ -3041,8 +3041,8 @@ snapshots:
       mime-types: 3.0.2
       negotiator: 1.1.0
 
-  ajv-formats@3.0.1:
-    dependencies:
+  ajv-formats@3.0.1(ajv@8.20.0):
+    optionalDependencies:
       ajv: 8.20.0
 
   ajv@8.20.0:

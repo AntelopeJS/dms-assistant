@@ -2,6 +2,35 @@
 
 `@antelopejs/dms-assistant` starts at 0.1.0. It continues `@antelopejs/dms-ai` 0.10.1, whose entries follow, and `@antelopejs/dms-builder` 0.10.1, whose entries are in [its changelog](https://github.com/AntelopeJS/dms-builder/blob/main/packages/dms-builder/CHANGELOG.md).
 
+## v0.4.0
+
+[compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.5...v0.4.0)
+
+### 📦 Build
+
+- **deps:** Require @antelopejs/dms-frontend 0.11.11 ([#187](https://github.com/AntelopeJS/dms-assistant/pull/187))
+
+### 🏡 Chore
+
+- **deps:** Update dependency jsdom to v31 ([#177](https://github.com/AntelopeJS/dms-assistant/pull/177))
+- **deps:** Update dependency release-it to v21 ([#178](https://github.com/AntelopeJS/dms-assistant/pull/178))
+- **deps:** Update dependency @antelopejs/tooling-configs to v0.10.12 ([#174](https://github.com/AntelopeJS/dms-assistant/pull/174))
+- **deps:** Move to @antelopejs/dms 0.25.0 ([#180](https://github.com/AntelopeJS/dms-assistant/pull/180))
+- **deps:** Update @antelopejs/tooling-configs to 0.10.14 ([#181](https://github.com/AntelopeJS/dms-assistant/pull/181))
+- **deps:** Move to @antelopejs/dms 0.25.2 ([#182](https://github.com/AntelopeJS/dms-assistant/pull/182))
+
+### 🤖 CI
+
+- Update tooling-configs to 0.10.11 and move every job onto Blacksmith ([#173](https://github.com/AntelopeJS/dms-assistant/pull/173))
+
+#### ⚠️ Breaking Changes
+
+- **deps:** Require @antelopejs/dms-frontend 0.11.11 ([#187](https://github.com/AntelopeJS/dms-assistant/pull/187))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli
+
 ## v0.3.5
 
 [compare changes](https://github.com/AntelopeJS/dms-assistant/compare/v0.3.4...v0.3.5)

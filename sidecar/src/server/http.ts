@@ -27,6 +27,7 @@ import type { ProviderAvailabilityMap } from "../providers/types.js";
 import { isClientAuthorized } from "./client-auth.js";
 import type { SkillSource } from "../skills/types.js";
 import type { ConversationStore } from "../state/conversations.js";
+import type { SavedPromptStore } from "../state/saved-prompts.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import { readSidecarVersion } from "../state/sidecar-version.js";
@@ -63,6 +64,7 @@ interface CreateHttpServerOptions {
   conversationStore?: ConversationStore;
   settingsStore?: SettingsStore;
   settingsApplier?: SettingsApplier;
+  savedPromptStore?: SavedPromptStore;
   /** Recomputed per request so the `allowLocalSkills` toggle takes effect live. */
   getSkillSources?: () => SkillSource[];
   mcpHttpRegistry?: McpHttpRegistry;
@@ -191,6 +193,7 @@ function buildDeps(ctx: RouteContext): ApiDeps | null {
     conversationStore,
     settingsStore,
     settingsApplier,
+    savedPromptStore: ctx.savedPromptStore,
     getSkillSources: ctx.getSkillSources ?? (() => []),
     services: () => ctx.bridge?.services,
     port: ctx.listeningPort,

@@ -50,10 +50,15 @@ function refused(response: SidecarResponse): HTTPResult {
   } satisfies ErrorBody);
 }
 
+/** A route's own answer to a refusal it recognises; `undefined` leaves it to `relay`. */
+export type RefusalToAnswer = (
+  response: SidecarResponse,
+) => HTTPResult | undefined;
+
 /**
  * Forwards a request to the sidecar and turns its answer into the route's,
  * after reading it with `schema`. A refusal keeps its status with
- * `{ message }`; a body that fails `schema` answers 502; an unreachable sidecar answers 503, so
+ * `{ message }`, unless `toRefusal` answers it; a body that fails `schema` answers 502; an unreachable sidecar answers 503, so
  * tables show their error state and an instant save says "Not saved".
  */
 export async function relay<T, Answer>(
@@ -61,6 +66,7 @@ export async function relay<T, Answer>(
   schema: z.ZodType<T>,
   toAnswer: BodyToAnswer<T, Answer>,
   request: SidecarRequest = {},
+  toRefusal?: RefusalToAnswer,
 ): Promise<Answer | HTTPResult> {
   let response: SidecarResponse;
   try {
@@ -68,7 +74,7 @@ export async function relay<T, Answer>(
   } catch {
     return assistantUnavailable();
   }
-  if (!response.isOk) return refused(response);
+  if (!response.isOk) return toRefusal?.(response) ?? refused(response);
   const parsed = schema.safeParse(response.body);
   return parsed.success ? toAnswer(parsed.data) : badGateway();
 }

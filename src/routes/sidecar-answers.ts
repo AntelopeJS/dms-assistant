@@ -3,6 +3,8 @@ import { isJsonBody, type JsonBody } from "../sidecar";
 import type {
   ActivityRow,
   ChangeSetSummary,
+  DeletedPrompt,
+  SavedPrompt,
   SidecarList,
   UndoPreview,
 } from "../types";
@@ -90,3 +92,18 @@ export const SETTINGS_ANSWER: z.ZodType<Record<string, JsonBody>> = z.record(
   z.string(),
   z.custom<JsonBody>(isJsonBody),
 );
+
+const SAVED_PROMPT: z.ZodType<SavedPrompt> = z.looseObject({
+  id: z.string(),
+  ownerId: z.string(),
+  name: z.string(),
+  text: z.string(),
+  createdAtMs: z.number(),
+  updatedAtMs: z.number(),
+});
+
+export const SAVED_PROMPT_ANSWER = SAVED_PROMPT;
+export const SAVED_PROMPT_PAGE_ANSWER = listOf(SAVED_PROMPT);
+export const DELETED_PROMPT_ANSWER: z.ZodType<DeletedPrompt> = z.looseObject({
+  deleted: z.string(),
+});

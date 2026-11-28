@@ -317,7 +317,19 @@
 				"usage_cached": "{count} tokens · {cached} read from cache · this chat",
 				"usage_new": "new chat",
 				"usage_offline": "offline",
-				"remove_block": "Remove the block"
+				"remove_block": "Remove the block",
+				"save_prompt": "Save as prompt"
+			},
+			"prompts": {
+				"title": "Saved prompts",
+				"manage": "Manage",
+				"save_title": "Save as prompt",
+				"save_hint": "Saved prompts are yours alone. Run one again from a new chat, or from Assistant › Prompts.",
+				"name": "Name",
+				"name_placeholder": "Weekly revenue summary",
+				"save": "Save",
+				"saved": "Saved “{name}”",
+				"save_failed": "Not saved. Try again in a moment."
 			},
 			"drawer": {
 				"title": "Conversations",

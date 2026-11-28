@@ -16,9 +16,19 @@
 			"settings": {
 				"title": "Settings",
 				"description": "Defaults for new conversations. Changes save as you go"
+			},
+			"prompts": {
+				"title": "Prompts",
+				"description": "The prompts you saved, to run again from here or from the chat"
 			}
 		},
 		"blocks": {
+			"prompts": {
+				"view": {
+					"name": "Saved prompts",
+					"description": "Your saved prompts, with Run, Edit and Delete"
+				}
+			},
 			"changes": {
 				"view": {
 					"name": "Change sets",
@@ -404,7 +414,13 @@
 			}
 		},
 		"errors": {
-			"outside_owner_ui": "This route answers the assistant's own UI only: send the {header} header."
+			"outside_owner_ui": "This route answers the assistant's own UI only: send the {header} header.",
+			"prompt_body": "Send a name and a prompt.",
+			"prompt_name_required": "Give the prompt a name.",
+			"prompt_name_too_long": "The name takes up to {max} characters.",
+			"prompt_text_required": "Write the prompt.",
+			"prompt_text_too_long": "The prompt takes up to {max} characters.",
+			"prompt_name_taken": "You already have a prompt named “{name}”."
 		}
 	}
 }

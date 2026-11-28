@@ -1,6 +1,8 @@
 import type { Tone } from "#dms-core/app/types/tone";
 import type { JsonValue } from "../../builder/app/runtime/types";
 
+export type { SavedPrompt } from "../chat/types/saved-prompt";
+
 type AgentId = "claude" | "codex";
 export type ScopeId = "safe" | "vibe";
 export type ApprovalMode = "normal" | "auto" | "acceptEdits" | "plan";

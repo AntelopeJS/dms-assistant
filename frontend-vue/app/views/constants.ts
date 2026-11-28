@@ -7,10 +7,12 @@ export const AI_ROUTES = {
 	changeUndoConfirm: "/ai/changes/{{row.id}}/undo-confirm",
 	activity: "/ai/activity",
 	settings: "/ai/settings",
+	prompts: "/ai/prompts",
 } as const;
 
 export const AI_PAGES = {
 	changes: "/modules/ai/changes",
+	prompts: "/modules/ai/prompts",
 } as const;
 
 export const CHANGE_SET_QUERY_KEY = "set";

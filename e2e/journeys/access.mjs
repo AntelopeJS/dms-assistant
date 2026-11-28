@@ -11,6 +11,7 @@ const OWNER_ROUTES = [
   ["GET", "/activity"], ["GET", "/activity/x"], ["GET", "/activity/export.csv"],
   ["GET", "/changes"], ["GET", "/changes/x"], ["GET", "/changes/x/undo-preview"], ["GET", "/changes/x/undo-confirm"], ["POST", "/changes/x/undo"], ["POST", "/changes/x/redo"],
   ["GET", "/settings"], ["PUT", "/settings"],
+  ["GET", "/prompts"], ["POST", "/prompts"], ["PUT", "/prompts/x"], ["DELETE", "/prompts/x"],
   ["GET", "/codex/account/banner"], ["POST", "/codex/callback"], ["POST", "/codex/logout"],
   ["GET", "/onboarding"], ["POST", "/onboarding/claude-token"], ["POST", "/onboarding/provider"],
   ["GET", "/channel/events"], ["POST", "/channel/x/messages"],

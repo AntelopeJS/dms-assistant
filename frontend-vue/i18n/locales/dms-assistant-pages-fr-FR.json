@@ -16,9 +16,19 @@
 			"settings": {
 				"title": "Réglages",
 				"description": "Valeurs par défaut des nouvelles conversations. Les changements s'enregistrent au fur et à mesure"
+			},
+			"prompts": {
+				"title": "Prompts",
+				"description": "Les prompts que vous avez enregistrés, à relancer d'ici ou depuis la discussion"
 			}
 		},
 		"blocks": {
+			"prompts": {
+				"view": {
+					"name": "Prompts enregistrés",
+					"description": "Vos prompts enregistrés, avec Lancer, Modifier et Supprimer"
+				}
+			},
 			"changes": {
 				"view": {
 					"name": "Lots de modifications",
@@ -404,7 +414,13 @@
 			}
 		},
 		"errors": {
-			"outside_owner_ui": "Cette route ne répond qu'à l'interface de l'assistant : envoyez l'en-tête {header}."
+			"outside_owner_ui": "Cette route ne répond qu'à l'interface de l'assistant : envoyez l'en-tête {header}.",
+			"prompt_body": "Envoyez un nom et un prompt.",
+			"prompt_name_required": "Donnez un nom au prompt.",
+			"prompt_name_too_long": "Le nom tient en {max} caractères au plus.",
+			"prompt_text_required": "Écrivez le prompt.",
+			"prompt_text_too_long": "Le prompt tient en {max} caractères au plus.",
+			"prompt_name_taken": "Vous avez déjà un prompt nommé « {name} »."
 		}
 	}
 }

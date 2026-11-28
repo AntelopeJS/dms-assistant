@@ -44,7 +44,7 @@ A mockup is `mockups/<name>/spec.json` in your repo, drawn by the real DMS rende
 - Runs a coding agent in a local sidecar. The agent is Claude Code by default, or OpenAI's Codex, and it reads the project, its loaded modules and their skills.
 - Edits pages through the builder tools of the DMS MCP server in Safe mode, or writes code in Code mode. It then typechecks and shows the result live.
 - Saves every turn that touches the project as a change set you can review, undo and redo.
-- Adds an **Assistant** module for owners, with the **Settings**, **Changes** and **Activity** pages.
+- Adds an **Assistant** module for owners, with the **Settings**, **Prompts**, **Changes** and **Activity** pages. A member saves a prompt under a name, from the composer or the **Prompts** page, and runs it again from either.
 
 ### From your own Claude Code or Codex
 

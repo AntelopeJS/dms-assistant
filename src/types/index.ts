@@ -3,4 +3,5 @@ export * from "./changes";
 export * from "./logs";
 export * from "./metrics";
 export * from "./pages-registry";
+export * from "./prompts";
 export * from "./status";

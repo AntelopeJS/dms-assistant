@@ -7,6 +7,7 @@ export * from "./logs";
 export * from "./metrics";
 export * from "./onboarding";
 export * from "./pages-registry";
+export * from "./prompts";
 export * from "./settings";
 export * from "./sidecar-info";
 export * from "./status";

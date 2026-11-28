@@ -5,12 +5,21 @@ import { ASSISTANT_SESSION_KEY } from "../../runtime/assistant-session";
 /** What the actions need of the dashboard's router. */
 type AssistantRouter = Pick<DmsRouter, "push">;
 
+/** How a view starts a conversation: with the prompt sent at once, or left in the composer. */
+export interface StartConversationOptions {
+	send?: boolean;
+}
+
 export interface AssistantActions {
 	/** The assistant runs in this tab: its buttons can be offered. Reactive. */
 	readonly isAvailable: boolean;
 	openPanel: () => void;
 	openConversation: (conversationId: string) => void;
-	startConversation: (prompt?: string) => void;
+	/** Opens the panel on a new conversation, `prompt` in the composer, or sent when `send` is set. */
+	startConversation: (
+		prompt?: string,
+		options?: StartConversationOptions,
+	) => void;
 	/** Opens a dashboard page, as its own links do. */
 	goTo: (path: string) => void;
 }
@@ -39,7 +48,8 @@ export function useAssistant(
 		openPanel: () => session?.value?.panel.open(),
 		openConversation: (conversationId) =>
 			session?.value?.openConversation(conversationId),
-		startConversation: (prompt) => session?.value?.startConversation(prompt),
+		startConversation: (prompt, options) =>
+			session?.value?.startConversation(prompt, undefined, options?.send),
 		goTo: (path) => void router.push(path),
 	};
 }

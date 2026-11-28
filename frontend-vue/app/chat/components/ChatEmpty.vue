@@ -3,15 +3,20 @@ import { computed } from "vue";
 import { useChatI18n } from "../composables/useChatI18n";
 import type { CurrentPage } from "../types/conversation";
 import type { Scope } from "../types/protocol";
+import type { SavedPrompt } from "../types/saved-prompt";
 import { pageName, pageSuggestions } from "../utils/suggestions";
 
 interface Props {
 	page: CurrentPage | null;
 	scope: Scope;
+	/** The member's saved prompts, offered after the page's starters. */
+	savedPrompts: SavedPrompt[];
 }
 
 interface Emits {
 	suggest: [text: string];
+	/** Opens the Prompts page, where saved prompts are edited. */
+	manage: [];
 }
 
 const props = defineProps<Props>();
@@ -57,6 +62,28 @@ const suggestions = computed(() =>
 					:label="t('dms_assistant.panel.empty.read_only')"
 				/>
 			</button>
+		</div>
+		<div v-if="savedPrompts.length > 0" class="cb-saved">
+			<div class="cb-saved__head">
+				<span class="cb-saved__title">
+					{{ t("dms_assistant.panel.prompts.title") }}
+				</span>
+				<button type="button" class="cb-saved__manage" @click="emit('manage')">
+					{{ t("dms_assistant.panel.prompts.manage") }}
+				</button>
+			</div>
+			<div class="cb-suggest">
+				<button
+					v-for="prompt in savedPrompts"
+					:key="prompt.id"
+					type="button"
+					:title="prompt.text"
+					@click="emit('suggest', prompt.text)"
+				>
+					<UIcon name="i-ph-bookmark-simple" class="cb-suggest__icon" />
+					<span class="cb-suggest__text">{{ prompt.name }}</span>
+				</button>
+			</div>
 		</div>
 	</div>
 </template>
@@ -138,5 +165,44 @@ const suggestions = computed(() =>
 
 .cb-suggest__text {
 	flex: 1;
+}
+
+.cb-saved {
+	width: 100%;
+	margin-top: 18px;
+	text-align: left;
+}
+
+.cb-saved__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 0 2px 6px;
+}
+
+.cb-saved__title {
+	font: 600 10px var(--ai-font-mono);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ui-text-muted);
+}
+
+.cb-saved__manage {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font-size: 11.5px;
+	font-weight: 550;
+	color: var(--ai);
+	cursor: pointer;
+}
+
+.cb-saved__manage:hover {
+	text-decoration: underline;
+}
+
+.cb-saved .cb-suggest {
+	margin-top: 0;
 }
 </style>

@@ -6,6 +6,7 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import {
+	answerGets,
 	buttonWithText,
 	CONVERSATION_ID,
 	createHarness,
@@ -200,15 +201,17 @@ describe("the change set a turn ends with", () => {
 
 	it("asks before undoing a set later ones build on", async () => {
 		const harness = createHarness();
-		vi.mocked(harness.api.get).mockResolvedValueOnce({
-			conflicts: [
-				{
-					changeSetId: "cs-15",
-					number: 15,
-					title: "Refund rate",
-					files: ["sales/overview.page.ts"],
-				},
-			],
+		answerGets(harness, {
+			[`/ai/changes/${CHANGE_SET.id}/undo-preview`]: {
+				conflicts: [
+					{
+						changeSetId: "cs-15",
+						number: 15,
+						title: "Refund rate",
+						files: ["sales/overview.page.ts"],
+					},
+				],
+			},
 		});
 		const panel = await openPanel(harness);
 		deliver(harness, { type: "change_set", changeSet: CHANGE_SET });

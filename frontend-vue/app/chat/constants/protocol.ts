@@ -26,6 +26,7 @@ export const CLIENT_MESSAGE_TYPES = {
 export const SETTINGS_PAGE_PATH = "/modules/ai/settings";
 export const CHANGES_PAGE_PATH = "/modules/ai/changes";
 export const ACTIVITY_PAGE_PATH = "/modules/ai/activity";
+export const PROMPTS_PAGE_PATH = "/modules/ai/prompts";
 export const CHANGE_SET_QUERY_KEY = "set";
 
 export const SERVER_EVENT_TYPES = {

@@ -34,6 +34,7 @@ import { usePermissionQueue } from "../composables/usePermissionQueue";
 import { useQuestionQueue } from "../composables/useQuestionQueue";
 import { useQueueActions } from "../composables/useQueueActions";
 import { useRunClock } from "../composables/useRunClock";
+import { useSavedPrompts } from "../composables/useSavedPrompts";
 import { useSettings } from "../composables/useSettings";
 import { EXIT_PLAN_MODE_TOOL_NAME } from "../constants/conversation";
 import {
@@ -41,6 +42,7 @@ import {
 	CHANGE_SET_QUERY_KEY,
 	CHANGES_PAGE_PATH,
 	CLIENT_MESSAGE_TYPES,
+	PROMPTS_PAGE_PATH,
 	SERVER_EVENT_TYPES,
 	SETTINGS_PAGE_PATH,
 } from "../constants/protocol";
@@ -72,6 +74,7 @@ import PanelHeader from "./PanelHeader.vue";
 import QuestionDock from "./QuestionDock.vue";
 import QueueDock from "./QueueDock.vue";
 import ProviderNotice from "./ProviderNotice.vue";
+import SavePromptModal from "./SavePromptModal.vue";
 import StepsDock from "./StepsDock.vue";
 import UndoConflictModal from "./UndoConflictModal.vue";
 
@@ -153,6 +156,7 @@ const changeSetActions = useChangeSetActions({
 	send: channel.send,
 	api: props.api,
 });
+const savedPrompts = useSavedPrompts({ api: props.api, t });
 
 const isDrawerOpen = ref(false);
 const nowMs = useRunClock(computed(() => true));
@@ -255,6 +259,11 @@ const isEmpty = computed(
 
 /** The server's reason the conversation this tab had open is closed, until the next switch. */
 const closedNotice = ref<string | null>(null);
+/** The draft being saved as a prompt; the naming dialog is open while there is one. */
+const savingPrompt = ref<string | null>(null);
+const savePromptError = ref<string | null>(null);
+/** The name of the prompt just saved, shown until dismissed or the next save. */
+const savedPromptName = ref<string | null>(null);
 
 function switchConversation(id: string): void {
 	closedNotice.value = null;
@@ -355,6 +364,24 @@ function runPlan(): void {
 
 function setDraft(text: string): void {
 	composerRef.value?.setDraft(text);
+}
+
+function openSavePrompt(text: string): void {
+	savePromptError.value = null;
+	savedPromptName.value = null;
+	savingPrompt.value = text;
+}
+
+async function confirmSavePrompt(name: string): Promise<void> {
+	const text = savingPrompt.value;
+	if (text === null) return;
+	const result = await savedPrompts.save(name, text);
+	if ("error" in result) {
+		savePromptError.value = result.error;
+		return;
+	}
+	savingPrompt.value = null;
+	savedPromptName.value = result.saved.name;
 }
 
 /** Runs `run` once the stream is up, if still here. */
@@ -487,9 +514,14 @@ function refreshListOnConnect(connected: boolean): void {
 
 watch(isConnected, refreshListOnConnect);
 
+watch(isEmpty, (empty) => {
+	if (empty) void savedPrompts.refresh();
+});
+
 onMounted(() => {
 	document.addEventListener("keydown", onDocumentKeydown);
 	list.refresh();
+	void savedPrompts.refresh();
 });
 
 onBeforeUnmount(() => {
@@ -526,7 +558,9 @@ onBeforeUnmount(() => {
 				v-if="isEmpty"
 				:page="page"
 				:scope="mode.current.value.generationMode"
+				:saved-prompts="savedPrompts.prompts.value"
 				@suggest="setDraft"
+				@manage="navigate(PROMPTS_PAGE_PATH)"
 			/>
 			<MessageList
 				v-else
@@ -610,6 +644,7 @@ onBeforeUnmount(() => {
 				@set-scope="mode.setScope"
 				@set-mode="mode.setMode"
 				@open-settings="navigate(SETTINGS_PAGE_PATH)"
+				@save-prompt="openSavePrompt"
 			/>
 		</div>
 
@@ -646,6 +681,28 @@ onBeforeUnmount(() => {
 				@click="list.undoRemove(list.pendingDelete.value.id)"
 			/>
 		</div>
+
+		<div v-if="savedPromptName" class="cb-toast" role="status">
+			<UIcon name="i-ph-bookmark-simple" class="cb-toast__icon" />
+			<span class="cb-toast__text">
+				{{ t("dms_assistant.panel.prompts.saved", { name: savedPromptName }) }}
+			</span>
+			<UButton
+				size="xs"
+				color="neutral"
+				variant="ghost"
+				:label="t('dms_assistant.common.dismiss')"
+				@click="savedPromptName = null"
+			/>
+		</div>
+
+		<SavePromptModal
+			:text="savingPrompt"
+			:error="savePromptError"
+			:is-saving="savedPrompts.isSaving.value"
+			@save="confirmSavePrompt"
+			@cancel="savingPrompt = null"
+		/>
 
 		<UndoConflictModal
 			:pending="changeSetActions.pendingUndo.value"

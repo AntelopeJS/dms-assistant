@@ -10,6 +10,7 @@ import {
 	shallowRef,
 } from "vue";
 import type { ChatApi } from "../../app/chat/composables/useChangeSetActions";
+import type { JsonValue } from "../../app/chat/types/json";
 import ChatPanel from "../../app/components/ChatPanel.vue";
 import {
 	ASSISTANT_SESSION_KEY,
@@ -31,7 +32,10 @@ import {
 	isTypedMessage,
 	type TypedMessage,
 } from "../../app/runtime/typed-message";
-import { CHAT_I18N_KEY } from "../../app/chat/composables/useChatI18n";
+import {
+	CHAT_I18N_KEY,
+	type ChatI18n,
+} from "../../app/chat/composables/useChatI18n";
 import { createTestI18n } from "./i18n";
 import { PANEL_STUBS } from "./stubs";
 import type { SidecarStatus } from "../../app/runtime/sidecar-status";
@@ -184,27 +188,33 @@ function sidePanelHost(panel: ChatPanelState) {
 	});
 }
 
-/** The providers the plugin installs, as a test mounts them. */
-export function providedSession(session: AssistantSession | null) {
+/** The providers the plugin installs, as a test mounts them; `i18n` is the panel's English strings unless given. */
+export function providedSession(
+	session: AssistantSession | null,
+	i18n: ChatI18n = createTestI18n(),
+) {
 	return {
 		[ASSISTANT_SESSION_KEY]: shallowRef(session),
-		[CHAT_I18N_KEY]: createTestI18n(),
+		[CHAT_I18N_KEY]: i18n,
 	};
 }
 
-function mountPanel(harness: Harness): VueWrapper {
+function mountPanel(harness: Harness, i18n?: ChatI18n): VueWrapper {
 	wrapper = mount(sidePanelHost(harness.session.panel), {
 		attachTo: document.body,
 		global: {
-			provide: providedSession(harness.session),
+			provide: providedSession(harness.session, i18n),
 			stubs: PANEL_STUBS,
 		},
 	});
 	return wrapper;
 }
 
-export async function openPanel(harness: Harness): Promise<VueWrapper> {
-	const mounted = mountPanel(harness);
+export async function openPanel(
+	harness: Harness,
+	i18n?: ChatI18n,
+): Promise<VueWrapper> {
+	const mounted = mountPanel(harness, i18n);
 	harness.session.panel.open();
 	await nextTick();
 	await flushPromises();
@@ -218,6 +228,27 @@ export function deliver(harness: Harness, event: SidecarEvent): void {
 
 export function sentOfType(harness: Harness, type: string) {
 	return harness.sent.filter((msg) => msg.type === type);
+}
+
+/** A GET the harness has no answer for: the undo preview's empty one. */
+const DEFAULT_GET_ANSWER: JsonValue = { conflicts: [] };
+
+/**
+ * Answers the panel's GETs by path, `answers[path]` or the default: the panel
+ * reads the saved prompts when it opens, so a test answers its own read by
+ * path rather than by order.
+ */
+export function answerGets(
+	harness: Harness,
+	answers: Record<string, JsonValue>,
+): void {
+	harness.api.get = vi
+		.fn()
+		.mockImplementation((path: string) =>
+			Promise.resolve(
+				Object.hasOwn(answers, path) ? answers[path] : DEFAULT_GET_ANSWER,
+			),
+		);
 }
 
 export async function sendMessage(

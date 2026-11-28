@@ -50,6 +50,8 @@ interface Emits {
 	setMode: [mode: ApprovalMode];
 	openSettings: [];
 	removeBlock: [];
+	/** Saves the draft as a named prompt; the draft stays in the composer. */
+	savePrompt: [text: string];
 }
 
 interface ModeLook {
@@ -109,6 +111,9 @@ const isSendDisabled = computed(
 	() =>
 		props.isDisabled ||
 		(draft.value.trim() === "" && files.attachments.value.length === 0),
+);
+const isSavePromptDisabled = computed(
+	() => props.isDisabled || draft.value.trim() === "",
 );
 const modeLook = computed(
 	() => MODE_LOOKS[props.mode.mode] ?? MODE_LOOKS.normal,
@@ -320,6 +325,18 @@ defineExpose({
 					:aria-label="t('dms_assistant.panel.composer.attach')"
 					:title="t('dms_assistant.panel.composer.attach')"
 					@click="fileInputRef?.click()"
+				/>
+				<UButton
+					size="sm"
+					color="neutral"
+					variant="ghost"
+					square
+					icon="i-ph-bookmark-simple"
+					class="composer-save-prompt"
+					:disabled="isSavePromptDisabled"
+					:aria-label="t('dms_assistant.panel.composer.save_prompt')"
+					:title="t('dms_assistant.panel.composer.save_prompt')"
+					@click="emit('savePrompt', draft.trim())"
 				/>
 				<UDropdownMenu
 					:items="scopeItems"

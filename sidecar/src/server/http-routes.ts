@@ -16,7 +16,7 @@ import {
   type ChangeSetErrorCode,
   toSummary,
 } from "../checkpoints/checkpoints.js";
-import { HTTP_STATUS } from "../constants/http.js";
+import { CONTENT_TYPE, HTTP_STATUS } from "../constants/http.js";
 import {
   buildAllowed,
   buildKpi,
@@ -31,13 +31,14 @@ import { buildSkillCatalog } from "../skills/build-catalog.js";
 import { enrichSkills, skillConflicts } from "../skills/skill-usage.js";
 import type { SkillSource } from "../skills/types.js";
 import type { ConversationStore } from "../state/conversations.js";
+import type { SavedPromptStore } from "../state/saved-prompts.js";
 import type { SettingsStore } from "../state/settings-store.js";
 import { readSidecarVersion } from "../state/sidecar-version.js";
 import type { ChangeSetRecord } from "../state/types.js";
 import { handleChangeSetAction } from "./change-set-actions.js";
 import { type ViewerActivity, viewerActivity } from "./chat-events.js";
 import type { SettingsApplier } from "./http.js";
-import { readBody, sendJson } from "./http-io.js";
+import { readBody, sendJson, sendResponse } from "./http-io.js";
 import {
   optionalParam,
   parseActivityExportQuery,
@@ -47,6 +48,7 @@ import {
   parseWindow,
 } from "./http-params.js";
 import { conversationRefusal } from "./message-gate.js";
+import { SAVED_PROMPT_ROUTES } from "./saved-prompt-routes.js";
 import type { SidecarServices } from "./services.js";
 
 const DEFAULT_TOP_LIMIT = 5;
@@ -58,6 +60,8 @@ export interface ApiDeps {
   conversationStore: ConversationStore;
   settingsStore: SettingsStore;
   settingsApplier: SettingsApplier;
+  /** Absent in a stack started without one: the saved-prompt routes then do not exist. */
+  savedPromptStore?: SavedPromptStore;
   getSkillSources: () => SkillSource[];
   services: () => SidecarServices | undefined;
   port: number;
@@ -384,7 +388,29 @@ async function conflictsRoute(res: ServerResponse, match: RouteMatch) {
   sendJson(res, HTTP_STATUS.OK, { conflicts: skillConflicts(catalog) });
 }
 
+/** The saved-prompt routes, served only by a stack that holds the store. */
+const SAVED_PROMPT_API_ROUTES: readonly StoreRoute[] = SAVED_PROMPT_ROUTES.map(
+  (route) => ({
+    method: route.method,
+    pattern: route.pattern,
+    handle: (req, res, deps, match) => {
+      const savedPromptStore = deps.savedPromptStore;
+      if (savedPromptStore === undefined) {
+        sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          CONTENT_TYPE.TEXT,
+          "Not Found",
+        );
+        return;
+      }
+      return route.handle(req, res, { savedPromptStore }, match);
+    },
+  }),
+);
+
 export const API_ROUTES: readonly ApiRoute[] = [
+  ...SAVED_PROMPT_API_ROUTES,
   {
     method: "GET",
     pattern: /^\/status$/,

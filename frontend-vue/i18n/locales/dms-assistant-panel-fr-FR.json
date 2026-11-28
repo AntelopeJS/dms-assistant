@@ -317,7 +317,19 @@
 				"usage_cached": "{count} jetons · {cached} lus depuis le cache · cette conversation",
 				"usage_new": "nouvelle conversation",
 				"usage_offline": "hors ligne",
-				"remove_block": "Retirer le bloc"
+				"remove_block": "Retirer le bloc",
+				"save_prompt": "Enregistrer comme prompt"
+			},
+			"prompts": {
+				"title": "Prompts enregistrés",
+				"manage": "Gérer",
+				"save_title": "Enregistrer comme prompt",
+				"save_hint": "Vos prompts enregistrés ne sont visibles que par vous. Relancez-en un depuis une nouvelle discussion, ou depuis Assistant › Prompts.",
+				"name": "Nom",
+				"name_placeholder": "Résumé du chiffre d'affaires hebdomadaire",
+				"save": "Enregistrer",
+				"saved": "« {name} » enregistré",
+				"save_failed": "Non enregistré. Réessayez dans un instant."
 			},
 			"drawer": {
 				"title": "Conversations",

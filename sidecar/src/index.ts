@@ -21,6 +21,7 @@ import {
 import { MCP_HTTP_PORT_TOKEN, MCP_HTTP_URL_TEMPLATE } from "./constants/mcp.js";
 import { STATE_DIR_SEGMENTS } from "./constants/paths.js";
 import { RANDOM_PORT } from "./constants/ports.js";
+import { SAVED_PROMPTS_FILE_NAME } from "./constants/saved-prompts.js";
 import { SETTINGS_FILE_NAME } from "./constants/settings.js";
 import { SKILL_NAME_COLLISION_WARNING } from "./constants/skills.js";
 import { STATE_FILE_NAME } from "./constants/state.js";
@@ -64,6 +65,10 @@ import {
 } from "./state/conversations.js";
 import { createHostState } from "./state/host-state.js";
 import { removeLock, writeLock } from "./state/lock.js";
+import {
+  createSavedPromptStore,
+  type SavedPromptStore,
+} from "./state/saved-prompts.js";
 import {
   createSettingsStore,
   type SettingsStore,
@@ -230,6 +235,7 @@ interface ShutdownDeps {
   ws: { close: () => Promise<void> };
   conversationStore: ConversationStore;
   settingsStore: SettingsStore;
+  savedPromptStore: SavedPromptStore;
   checkpoints: Checkpoints;
   root: string;
 }
@@ -251,6 +257,7 @@ async function gracefulShutdown(
   await deps.ws.close().catch(() => undefined);
   await deps.conversationStore.flush().catch(() => undefined);
   await deps.settingsStore.flush().catch(() => undefined);
+  await deps.savedPromptStore.flush().catch(() => undefined);
   await deps.checkpoints.flush().catch(() => undefined);
   await removeLock(deps.root);
   deps.server.close(() => process.exit(GRACEFUL_EXIT_CODE));
@@ -293,6 +300,14 @@ async function buildSettingsStore(root: string): Promise<SettingsStore> {
   });
   await settingsStore.load();
   return settingsStore;
+}
+
+async function buildSavedPromptStore(root: string): Promise<SavedPromptStore> {
+  const savedPromptStore = createSavedPromptStore(
+    path.join(stateDirFor(root), SAVED_PROMPTS_FILE_NAME),
+  );
+  await savedPromptStore.load();
+  return savedPromptStore;
 }
 
 function logStartup(args: ParsedArgs, port: number): void {
@@ -423,6 +438,7 @@ async function main(): Promise<void> {
   setBuilderAvailable(args.builderEnabled);
   const conversationStore = await buildConversationStore(args.root);
   const settingsStore = await buildSettingsStore(args.root);
+  const savedPromptStore = await buildSavedPromptStore(args.root);
   const settingsApplier: SettingsApplier = {
     apply: (next) => settingsStore.set(next),
   };
@@ -457,6 +473,7 @@ async function main(): Promise<void> {
     conversationStore,
     settingsStore,
     settingsApplier,
+    savedPromptStore,
     getSkillSources: () =>
       resolveSkillSources(
         args.skillDirs,
@@ -484,6 +501,7 @@ async function main(): Promise<void> {
     ws,
     conversationStore,
     settingsStore,
+    savedPromptStore,
     checkpoints,
     root: args.root,
   };

@@ -31,6 +31,7 @@ const MCP_TOOLS = {
   find_pages_using: { icon: "i-ph-magnifying-glass", source: "project" },
   list_pages: { icon: "i-ph-list", source: "project" },
   ask_user: { icon: "i-ph-question", source: "assistant" },
+  create_artifact: { icon: "i-ph-presentation-chart", source: "assistant" },
   typecheck: { icon: "i-ph-shield-check", source: "project" },
   query_logs: { icon: "i-ph-scroll", source: "project" },
   builder_catalog: { icon: "i-ph-books", source: "builder" },

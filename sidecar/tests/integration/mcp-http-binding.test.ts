@@ -58,6 +58,9 @@ function buildDeps(
       asked.push({ conversationId: req.conversationId });
       return { answers: [ANSWER], skipped: [] };
     },
+    saveArtifact: () => {
+      throw new Error("no artifact is expected in this test");
+    },
   };
 }
 

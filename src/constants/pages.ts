@@ -10,12 +10,14 @@ export const PAGE_IDS = {
   SETTINGS: "settings",
   CHANGES: "changes",
   ACTIVITY: "activity",
+  ARTIFACTS: "artifacts",
 } as const;
 
 export const PAGE_ORDER = {
   SETTINGS: 0,
   CHANGES: 1,
   ACTIVITY: 2,
+  ARTIFACTS: 3,
 } as const;
 
 /** The period selector of the Activity page, which its audit log follows. */
@@ -41,9 +43,11 @@ export const PAGE_ROUTES = {
   ACTIVITY: `${ROUTE_PREFIX}/activity`,
   ACTIVITY_EXPORT: `${ROUTE_PREFIX}/activity/export.csv`,
   SETTINGS: `${ROUTE_PREFIX}/settings`,
+  ARTIFACTS: `${ROUTE_PREFIX}/artifacts`,
 } as const;
 
 /** Dashboard links between the pages. */
 export const PAGE_LINKS = {
   ACTIVITY: `${MODULE_PAGES_PATH}/${PAGE_IDS.ACTIVITY}`,
+  ARTIFACTS: `${MODULE_PAGES_PATH}/${PAGE_IDS.ARTIFACTS}`,
 } as const;

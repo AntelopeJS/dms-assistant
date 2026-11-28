@@ -9,6 +9,7 @@ import type { AgentRunner } from "../agent/runner.js";
 import type { Checkpoints } from "../checkpoints/checkpoints.js";
 import type { LogsClient } from "../logs/logs-client.js";
 import type { AiMcpServer } from "../mcp/types.js";
+import type { ArtifactStore } from "../state/artifacts.js";
 import type { ConversationStore } from "../state/conversations.js";
 import type { HostState } from "../state/host-state.js";
 import type { SettingsStore } from "../state/settings-store.js";
@@ -50,6 +51,8 @@ export interface SidecarServices {
   settingsStore: SettingsStore;
   conversationModes: ConversationModes;
   checkpoints: Checkpoints;
+  /** The artifacts the conversations saved, read by the HTTP routes and written by `create_artifact`. */
+  artifacts: ArtifactStore;
   callAudit: CallAudit;
   callLedger: CallLedger;
   heldCalls: HeldCalls;

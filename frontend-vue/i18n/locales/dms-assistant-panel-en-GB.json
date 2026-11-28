@@ -403,6 +403,7 @@
 			"delegate": "Delegate a task",
 			"propose_plan": "Propose a plan",
 			"ask_you": "Ask you",
+			"create_artifact": "Create artifact",
 			"use_skill": "Use skill",
 			"run_slash_command": "Run slash command",
 			"read_current_page": "Read current page",

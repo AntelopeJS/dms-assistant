@@ -52,7 +52,8 @@ import type { SidecarServices } from "./services.js";
 const DEFAULT_TOP_LIMIT = 5;
 const DEFAULT_USAGE_DAYS = 14;
 const MS_PER_DAY = 86_400_000;
-const VIEWER_PARAM = "viewer";
+/** The query parameter naming whose conversations a route reads, as the backend sends the signed-in user. */
+export const VIEWER_PARAM = "viewer";
 
 export interface ApiDeps {
   conversationStore: ConversationStore;
@@ -63,7 +64,7 @@ export interface ApiDeps {
   port: number;
 }
 
-interface RouteMatch {
+export interface RouteMatch {
   params: string[];
   query: URLSearchParams;
   getSkillSources?: () => SkillSource[];

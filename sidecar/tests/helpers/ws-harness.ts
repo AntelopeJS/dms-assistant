@@ -21,6 +21,10 @@ import {
   createCheckpoints,
 } from "../../src/checkpoints/checkpoints.js";
 import { createShadowGit } from "../../src/checkpoints/shadow-git.js";
+import {
+  type ArtifactStore,
+  createArtifactStore,
+} from "../../src/state/artifacts.js";
 import { createChangeSetStore } from "../../src/state/change-sets.js";
 import {
   createHttpServer,
@@ -49,6 +53,7 @@ export const CLIENT_TOKEN = "ws-harness-test-credential";
 
 const TMP_PREFIX = "dms-assistant-harness-";
 export const STATE_FILE = "state.json";
+const ARTIFACTS_FILE = "artifacts.json";
 const ARBITRARY_PORT = 0;
 const WS_HOST = "127.0.0.1";
 const WS_PATH = "/ws";
@@ -79,6 +84,7 @@ export interface WsHarness {
   bridge: SidecarBridge;
   conversationStore: ConversationStore;
   settingsStore: SettingsStore;
+  artifacts: ArtifactStore;
   /** Stops the stack the way the sidecar's graceful shutdown does, files kept. */
   shutdown: () => Promise<void>;
   close: () => Promise<void>;
@@ -172,6 +178,8 @@ export async function startWsHarness(
     store: createStore({ filePath: join(tmpDir, STATE_FILE) }),
   });
   await conversationStore.loadFromDisk();
+  const artifacts = createArtifactStore(join(tmpDir, ARTIFACTS_FILE));
+  await artifacts.load();
   const mcpHttpRegistry = createMcpHttpRegistry();
   const settingsStore = buildSettingsStore({
     ...DEFAULT_SETTINGS,
@@ -199,6 +207,7 @@ export async function startWsHarness(
     clientToken: CLIENT_TOKEN,
     hostProjectRoot: projectRoot,
     checkpoints,
+    artifacts,
     bridge,
     settingsApplier,
     moduleRoots: options.moduleRoots,
@@ -226,15 +235,18 @@ export async function startWsHarness(
     bridge,
     conversationStore,
     settingsStore,
+    artifacts,
     shutdown: async () => {
       await ws.close();
       await conversationStore.flush();
+      await artifacts.flush();
     },
     close: async () => {
       await ws.close();
       await mcpHttpRegistry.dispose();
       await conversationStore.flush();
       await checkpoints?.flush();
+      await artifacts.flush();
       await new Promise<void>((done) => server.close(() => done()));
       await rm(tmpDir, { recursive: true, force: true });
     },

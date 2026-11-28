@@ -94,6 +94,7 @@ describe("the tool lexicon names a call by what it does", () => {
 		for (const name of [
 			...builder,
 			"ask_user",
+			"create_artifact",
 			"typecheck",
 			"navigate_to_page",
 		])

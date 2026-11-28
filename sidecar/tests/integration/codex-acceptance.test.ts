@@ -69,6 +69,9 @@ function buildMcpDeps(conversationId: string): AiMcpServerDeps {
     waitForLanding: async () => null,
     conversationId,
     requestQuestion: async () => null,
+    saveArtifact: () => {
+      throw new Error("no artifact is expected in this test");
+    },
   };
 }
 

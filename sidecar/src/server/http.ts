@@ -30,6 +30,7 @@ import type { ConversationStore } from "../state/conversations.js";
 import { mergeSettings, type SettingsStore } from "../state/settings-store.js";
 import type { AppSettings } from "../state/settings-types.js";
 import { readSidecarVersion } from "../state/sidecar-version.js";
+import { ARTIFACT_ROUTES } from "./artifact-routes.js";
 import { API_ROUTES, type ApiDeps, type ApiRoute } from "./http-routes.js";
 import { readBody, sendJson, sendResponse } from "./http-io.js";
 import { decodeRouteParam } from "./http-params.js";
@@ -213,6 +214,7 @@ function matchRoute(method: string, path: string): MatchedRoute | null {
     ...SETTINGS_ROUTES,
     ...ONBOARDING_ROUTES,
     ...API_ROUTES,
+    ...ARTIFACT_ROUTES,
   ]) {
     if (route.method !== method) continue;
     const match = route.pattern.exec(path);

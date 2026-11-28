@@ -1,4 +1,5 @@
 import type { BUILTIN_TOOL_NAMES } from "@anthropic-ai/claude-agent-sdk";
+import { CREATE_ARTIFACT_TOOL_NAME } from "./artifacts.js";
 import {
   type BUILDER_TOOL_NAMES,
   type MOCKUP_TOOL_NAMES,
@@ -241,8 +242,13 @@ export const LIVE_READ_TOOL_NAMES: readonly string[] = [
   NAVIGATE_TOOL_NAME,
 ];
 
+/**
+ * The chat's own tools, which change nothing outside the conversation:
+ * `create_artifact` writes the sidecar's own artifact store, never the project.
+ */
 export const ASSISTANT_TOOL_NAMES: readonly string[] = [
   ASK_USER_TOOL_NAME,
+  CREATE_ARTIFACT_TOOL_NAME,
   "TodoWrite",
   "Skill",
   "Task",

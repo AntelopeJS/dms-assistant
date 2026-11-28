@@ -16,6 +16,10 @@
 			"settings": {
 				"title": "Réglages",
 				"description": "Valeurs par défaut des nouvelles conversations. Les changements s'enregistrent au fur et à mesure"
+			},
+			"artifacts": {
+				"title": "Artefacts",
+				"description": "Les rapports, tableaux et graphiques que l'assistant a enregistrés à partir de ses résultats"
 			}
 		},
 		"blocks": {
@@ -23,6 +27,12 @@
 				"view": {
 					"name": "Lots de modifications",
 					"description": "Les lots de modifications, leurs diffs, et l'annulation avec son aperçu"
+				}
+			},
+			"artifacts": {
+				"view": {
+					"name": "Artefacts",
+					"description": "Les artefacts enregistrés, dessinés à partir de leurs données"
 				}
 			},
 			"activity": {
@@ -179,6 +189,7 @@
 				"find_pages_using": "Trouver les pages qui utilisent",
 				"list_pages": "Lister les pages",
 				"ask_user": "Vous poser une question",
+				"create_artifact": "Créer un artefact",
 				"typecheck": "Vérifier les types",
 				"query_logs": "Lire les logs",
 				"builder_catalog": "Lire le catalogue de blocs",

@@ -48,6 +48,8 @@ import {
   type SidecarBridge,
 } from "./server/http.js";
 import { createChangeSetStore } from "./state/change-sets.js";
+import { ARTIFACTS_FILE_NAME } from "./constants/artifacts.js";
+import { type ArtifactStore, createArtifactStore } from "./state/artifacts.js";
 import {
   createIdleShutdownController,
   type IdleShutdownController,
@@ -231,6 +233,7 @@ interface ShutdownDeps {
   conversationStore: ConversationStore;
   settingsStore: SettingsStore;
   checkpoints: Checkpoints;
+  artifacts: ArtifactStore;
   root: string;
 }
 
@@ -252,6 +255,7 @@ async function gracefulShutdown(
   await deps.conversationStore.flush().catch(() => undefined);
   await deps.settingsStore.flush().catch(() => undefined);
   await deps.checkpoints.flush().catch(() => undefined);
+  await deps.artifacts.flush().catch(() => undefined);
   await removeLock(deps.root);
   deps.server.close(() => process.exit(GRACEFUL_EXIT_CODE));
 }
@@ -314,7 +318,17 @@ interface WsStackDeps {
   mcpHttpRegistry: McpHttpRegistry;
   port: number;
   checkpoints: Checkpoints;
+  artifacts: ArtifactStore;
   bridge: SidecarBridge;
+}
+
+/** The artifacts the conversations saved, loaded from the state directory before the first turn can run. */
+async function loadArtifacts(root: string): Promise<ArtifactStore> {
+  const artifacts = createArtifactStore(
+    path.join(stateDirFor(root), ARTIFACTS_FILE_NAME),
+  );
+  await artifacts.load();
+  return artifacts;
 }
 
 /**
@@ -356,6 +370,7 @@ function buildWsStack({
   mcpHttpRegistry,
   port,
   checkpoints,
+  artifacts,
   bridge,
 }: WsStackDeps): { close: () => Promise<void> } {
   const registry = createRegistryClient({
@@ -391,6 +406,7 @@ function buildWsStack({
     idleController,
     settingsApplier,
     checkpoints,
+    artifacts,
     bridge,
     providerRuntime: {
       stateDir: stateDirFor(args.root),
@@ -446,6 +462,7 @@ async function main(): Promise<void> {
     args.root,
     settingsStore.get().checkpointRetentionDays,
   );
+  const artifacts = await loadArtifacts(args.root);
   const bridge: SidecarBridge = {};
   const { server, port } = await createHttpServer({
     bridge,
@@ -476,6 +493,7 @@ async function main(): Promise<void> {
     mcpHttpRegistry,
     port,
     checkpoints,
+    artifacts,
     bridge,
   });
   const guard: ShutdownGuard = { done: false };
@@ -485,6 +503,7 @@ async function main(): Promise<void> {
     conversationStore,
     settingsStore,
     checkpoints,
+    artifacts,
     root: args.root,
   };
   holder.run = () => void gracefulShutdown(deps, guard);

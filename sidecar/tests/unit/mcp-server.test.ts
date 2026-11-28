@@ -41,6 +41,9 @@ function buildDeps() {
     waitForLanding: async () => null,
     conversationId: "conv-test",
     requestQuestion: async () => null,
+    saveArtifact: () => {
+      throw new Error("no artifact is expected in this test");
+    },
   };
 }
 
@@ -80,6 +83,7 @@ describe("createAiMcpServer", () => {
     const listed = await listRegisteredTools(createAiMcpServer(buildDeps()));
     expect([...listed].sort()).toEqual([
       "ask_user",
+      "create_artifact",
       "find_pages_using",
       "get_current_page",
       "navigate_to_page",

@@ -26,6 +26,9 @@ export function buildDeps(): AiMcpServerDeps {
     waitForLanding: async () => null,
     conversationId: "conv-tools",
     requestQuestion: async () => null,
+    saveArtifact: () => {
+      throw new Error("no artifact is expected in this test");
+    },
   };
 }
 

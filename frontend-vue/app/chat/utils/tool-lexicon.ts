@@ -156,6 +156,7 @@ const ICONS = {
 	PLAN: "i-ph-list-checks",
 	REFRESH: "i-ph-arrows-clockwise",
 	CATEGORY: "i-ph-folders",
+	ARTIFACT: "i-ph-presentation-chart",
 } as const;
 
 /** A tool that only reads: it never changes the project. */
@@ -211,6 +212,11 @@ const ASSISTANT_TOOLS = {
 	),
 	list_pages: readOnly("list_pages", ICONS.PAGE, none),
 	ask_user: readOnly("ask_you", ICONS.ASK, countOf("questions")),
+	create_artifact: readOnly(
+		"create_artifact",
+		ICONS.ARTIFACT,
+		firstOf("title"),
+	),
 	typecheck: readOnly("typecheck", ICONS.CHECK, none),
 	query_logs: readOnly(
 		"read_logs",

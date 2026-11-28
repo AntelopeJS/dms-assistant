@@ -114,6 +114,24 @@
 				"undone_description": "La page se recharge avec les fichiers tels qu'ils étaient. | {count} lots ont été annulés ; la page se recharge avec les fichiers tels qu'ils étaient.",
 				"redone": "Lot #{number} appliqué à nouveau"
 			},
+			"artifacts": {
+				"kind": {
+					"report": "Rapport",
+					"table": "Tableau",
+					"chart": "Graphique"
+				},
+				"created_by": "par {name}",
+				"conversation": "Ouvrir la conversation",
+				"empty_title": "Aucun artefact à afficher",
+				"empty_description": "Demandez à l'assistant un rapport, un tableau ou un graphique de ses résultats. Il l'enregistre comme un artefact, que le lien de sa réponse ouvre ici.",
+				"unreadable_title": "Cet artefact ne peut pas être affiché",
+				"unreadable_description": "Ses données n'ont pas une forme que le tableau de bord dessine. Demandez à l'assistant de l'enregistrer à nouveau.",
+				"yes": "Oui",
+				"no": "Non",
+				"table_empty": "Aucune ligne.",
+				"chart_label": "{title} : {series}",
+				"chart_series": "Séries"
+			},
 			"activity": {
 				"allowed": "Autorisation",
 				"result": "Résultat",

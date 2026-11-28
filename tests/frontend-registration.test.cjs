@@ -19,7 +19,7 @@ const {
  */
 
 const I18N_KEY = /\$dms_assistant\.[A-Za-z0-9_.-]+/g;
-const MODULE_PAGES = ["settings", "changes", "activity"];
+const MODULE_PAGES = ["settings", "changes", "activity", "artifacts"];
 
 const TextSchema = z.string();
 
@@ -140,7 +140,7 @@ function collectKeys(value, keys) {
 
 const OrderSchema = z.number();
 
-void test("registers the three AI pages, in order, with translated menu entries", () => {
+void test("registers the four AI pages, in order, with translated menu entries", () => {
   const { modules, pages } = loadPages();
   assert.equal(modules.length, 1);
   assert.equal(modules[0].id, "ai");
@@ -209,9 +209,10 @@ const COMPONENTS_DIR = path.resolve(
   __dirname,
   "../frontend-vue/app/components",
 );
-/** What no DMS block draws: the Changes view, the Activity row drawer and the Guard rails card. */
+/** What no DMS block draws: the Changes view, the Activity row drawer, the Artifacts view and the Guard rails card. */
 const PAGE_CUSTOM_COMPONENTS = [
   "DmsAssistantActivityDetail",
+  "DmsAssistantArtifactsView",
   "DmsAssistantChangesView",
   "DmsAssistantGuardRails",
 ];

@@ -48,6 +48,7 @@ const PANEL_DYNAMIC_FAMILIES = {
 };
 
 const VIEWS_DYNAMIC_FAMILIES = {
+  "dms_assistant.views.artifacts.kind": ["report", "table", "chart"],
   "dms_assistant.views.allowed": [
     "read_auto",
     "builder_auto",

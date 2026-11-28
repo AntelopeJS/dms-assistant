@@ -114,6 +114,24 @@
 				"undone_description": "The page reloads with the files as they were. | {count} change sets were undone; the page reloads with the files as they were.",
 				"redone": "Change set #{number} applied again"
 			},
+			"artifacts": {
+				"kind": {
+					"report": "Report",
+					"table": "Table",
+					"chart": "Chart"
+				},
+				"created_by": "by {name}",
+				"conversation": "Open conversation",
+				"empty_title": "No artifact to show",
+				"empty_description": "Ask the assistant for a report, a table or a chart of its results. It saves it as an artifact, which the link in its reply opens here.",
+				"unreadable_title": "This artifact can't be shown",
+				"unreadable_description": "Its data is not in a shape the dashboard draws. Ask the assistant to save it again.",
+				"yes": "Yes",
+				"no": "No",
+				"table_empty": "No rows.",
+				"chart_label": "{title}: {series}",
+				"chart_series": "Series"
+			},
 			"activity": {
 				"allowed": "Allowed",
 				"result": "Result",

@@ -27,6 +27,7 @@ import {
   type ProviderRunnerFactory,
 } from "../agent/switching-runner.js";
 import { TURN_RESTARTED_REASON } from "../agent/turn-end-reasons.js";
+import { saveArtifact } from "../artifacts/save.js";
 import {
   type Checkpoints,
   createCheckpoints,
@@ -54,6 +55,11 @@ import type {
 } from "../providers/types.js";
 import type { LogsClient } from "../logs/logs-client.js";
 import type { SkillSource } from "../skills/types.js";
+import {
+  type ArtifactStore,
+  createArtifactStore,
+  MEMORY_ONLY_PATH,
+} from "../state/artifacts.js";
 import { createChangeSetStore } from "../state/change-sets.js";
 import type { ConversationStore } from "../state/conversations.js";
 import type { HostState } from "../state/host-state.js";
@@ -126,6 +132,8 @@ export interface AttachWsServerOptions {
   settingsApplier?: SettingsApplier;
   /** Started by the caller; absent, change sets are off. */
   checkpoints?: Checkpoints;
+  /** Loaded by the caller: the artifacts `create_artifact` saves and the routes list; absent, they live in memory alone. */
+  artifacts?: ArtifactStore;
   /** Filled with the live services, for the HTTP routes that read them. */
   bridge?: SidecarBridge;
 }
@@ -245,6 +253,8 @@ function buildMcpDepsFactory(
         timeoutMs,
       ),
     requestQuestion: (req) => askUser(services(holder), req),
+    saveArtifact: (spec) =>
+      saveArtifact(services(holder), conversationId, spec),
   });
 }
 
@@ -426,6 +436,7 @@ function buildServices(parts: ServiceParts): RoutingConfig {
       onChanged: (conversationId) => onModeChanged(holder, conversationId),
     }),
     checkpoints: options.checkpoints ?? createDisabledCheckpoints(),
+    artifacts: options.artifacts ?? createArtifactStore(MEMORY_ONLY_PATH),
     callAudit: createCallAudit(),
     callLedger: createCallLedger(),
     heldCalls: createHeldCalls(),

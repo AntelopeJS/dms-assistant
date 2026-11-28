@@ -1,3 +1,4 @@
+import { CREATE_ARTIFACT_TOOL_NAME } from "./artifacts.js";
 import { FIND_PAGES_TOOL_NAME, LIST_PAGES_TOOL_NAME } from "./pages.js";
 import { REQUEST_TIMEOUT_MINUTES } from "../state/settings-types.js";
 import { QUESTION_TIMEOUT_MS } from "./questions.js";
@@ -106,6 +107,7 @@ const CHAT_TOOL_NAMES: readonly string[] = [
   GET_CURRENT_PAGE_TOOL_NAME,
   FIND_PAGES_TOOL_NAME,
   NAVIGATE_TOOL_NAME,
+  CREATE_ARTIFACT_TOOL_NAME,
 ];
 
 /**

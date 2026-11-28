@@ -176,7 +176,7 @@ export function recordChangeSet(ctx, meta, apply) {
  * with the shadow repository ready, to write real change sets.
  *
  * @param {Ctx} ctx The journey
- * @param {{ conversations?: Record<string, Row>, settings?: Row, build?: () => Row[] }} spec The stored records
+ * @param {{ conversations?: Record<string, Row>, settings?: Row, artifacts?: Row[], build?: () => Row[] }} spec The stored records
  * @returns {Promise<void>}
  */
 export async function seedStore(ctx, spec) {
@@ -188,6 +188,7 @@ export async function seedStore(ctx, spec) {
   const changeSets = spec.build ? (initShadow(ctx), spec.build()) : [];
   writeFileSync(sidecarPath(ctx, "state.json"), JSON.stringify({ conversations: spec.conversations ?? {} }));
   writeFileSync(sidecarPath(ctx, "change-sets.json"), JSON.stringify({ nextNumber: changeSets.length + 1, changeSets }));
+  writeFileSync(sidecarPath(ctx, "artifacts.json"), JSON.stringify({ artifacts: spec.artifacts ?? [] }));
   if (spec.settings) writeFileSync(sidecarPath(ctx, "settings.json"), JSON.stringify(spec.settings));
   await ctx.restartBackend();
   await statusIs(ctx, (status) => text(status, "status") === "ready", 90_000);

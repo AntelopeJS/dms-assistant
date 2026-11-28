@@ -16,6 +16,10 @@
 			"settings": {
 				"title": "Settings",
 				"description": "Defaults for new conversations. Changes save as you go"
+			},
+			"artifacts": {
+				"title": "Artifacts",
+				"description": "The reports, tables and charts the assistant saved from its results"
 			}
 		},
 		"blocks": {
@@ -23,6 +27,12 @@
 				"view": {
 					"name": "Change sets",
 					"description": "The change sets, their diffs, and Undo with its preview"
+				}
+			},
+			"artifacts": {
+				"view": {
+					"name": "Artifacts",
+					"description": "The saved artifacts, drawn from their data"
 				}
 			},
 			"activity": {
@@ -179,6 +189,7 @@
 				"find_pages_using": "Find pages using",
 				"list_pages": "List pages",
 				"ask_user": "Ask you",
+				"create_artifact": "Create artifact",
 				"typecheck": "Typecheck",
 				"query_logs": "Read logs",
 				"builder_catalog": "Read block catalog",

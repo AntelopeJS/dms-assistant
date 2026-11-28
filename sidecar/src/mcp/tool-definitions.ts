@@ -1,5 +1,6 @@
 import type { AnyMcpToolDefinition } from "./define-tool.js";
 import { buildAskUserTool } from "./tools/ask-user.js";
+import { buildCreateArtifactTool } from "./tools/create-artifact.js";
 import { buildFindPagesUsingTool } from "./tools/find-pages-using.js";
 import { buildGetCurrentPageTool } from "./tools/get-current-page.js";
 import { buildNavigateToPageTool } from "./tools/navigate-to-page.js";
@@ -30,5 +31,6 @@ export function buildToolDefinitions(
       conversationId: deps.conversationId,
       requestQuestion: deps.requestQuestion,
     }),
+    buildCreateArtifactTool({ saveArtifact: deps.saveArtifact }),
   ];
 }

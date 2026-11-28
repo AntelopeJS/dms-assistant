@@ -7,6 +7,7 @@ export const MCP_TOOL_TITLES = {
   navigate_to_page: "Navigate to page",
   find_pages_using: "Find pages using a file",
   ask_user: "Ask the user",
+  create_artifact: "Create an artifact",
 } as const satisfies Readonly<Record<string, string>>;
 
 /** The snake_case name of an MCP tool dms-assistant serves. */

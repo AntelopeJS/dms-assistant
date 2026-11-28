@@ -135,6 +135,7 @@ function loadControllers() {
     }
     return {
       ...require("../../dist/routes/activity.js"),
+      ...require("../../dist/routes/artifacts.js"),
       ...require("../../dist/routes/changes.js"),
       ...require("../../dist/routes/codex-account.js"),
       ...require("../../dist/routes/metrics.js"),

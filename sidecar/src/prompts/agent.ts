@@ -4,6 +4,7 @@ import {
   SYSTEM_PROMPT_TOKEN_MODULES,
   SYSTEM_PROMPT_TOKEN_NAME,
 } from "../constants/agent.js";
+import { CREATE_ARTIFACT_TOOL_NAME } from "../constants/artifacts.js";
 import { SAFE_MODE_SKILL_NAME } from "../constants/codex.js";
 import { QUERY_LOGS_TOOL_NAME } from "../constants/logs.js";
 import {
@@ -39,6 +40,8 @@ Antelope modules present: ${SYSTEM_PROMPT_TOKEN_MODULES}
 Follow the conventions documented in the project's CLAUDE.md.
 
 When you need a decision or clarification from the user, call ${ASK_USER_TOOL_NAME} with multiple-choice options and wait for their answer instead of asking in prose — the user answers it with interactive buttons in the chat.
+
+When the user asks for a report, a table, a comparison or a chart of results they may want to keep, or when your answer is mostly figures, save it with ${CREATE_ARTIFACT_TOOL_NAME}: a title and structured blocks (heading, paragraph, list, kpis, table, chart). The dashboard draws the artifact itself and shows every text literally, so write plain text in it, never HTML or Markdown. The artifact is kept with this conversation and listed on the Artifacts page of the Assistant module; end your reply with a Markdown link to the path the tool answers, so the user opens it from the chat.
 
 When a ${DMS_MCP_TOOL_NAME_PREFIX}… tool answers that it was not run because no one has confirmed it yet, call it again right away with exactly the same arguments. Do not ask with ${ASK_USER_TOOL_NAME} first: the chat shows the person that call on an approval card before it runs. If they decline, the call is refused: say what was not done, and do not call it again unless they ask.
 

@@ -157,6 +157,34 @@ export interface AssistantStatus {
 	disabled?: boolean;
 }
 
+export type ArtifactKind = "report" | "table" | "chart";
+
+/** An artifact as `GET /ai/artifacts` lists it: its record without its blocks. */
+export interface ArtifactSummary {
+	_id?: string;
+	id: string;
+	conversationId: string;
+	ownerId?: string;
+	createdBy?: string;
+	agent: AgentId;
+	createdAtMs: number;
+	kind: ArtifactKind;
+	title: string;
+	summary?: string;
+	blocks: number;
+}
+
+/**
+ * `GET /ai/artifacts/:id`: the record with its data. `spec` arrives as JSON
+ * and is read by the spec schema before anything is drawn.
+ */
+export interface ArtifactPayload extends Omit<
+	ArtifactSummary,
+	"title" | "summary" | "blocks"
+> {
+	spec: JsonValue;
+}
+
 /** One fact of a change set, a row of a DmsKeyValueList. */
 export interface Fact {
 	id: string;

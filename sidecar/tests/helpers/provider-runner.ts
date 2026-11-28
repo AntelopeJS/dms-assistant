@@ -47,6 +47,9 @@ export function buildInertMcpDeps(conversationId: string): AiMcpServerDeps {
     waitForLanding: async () => null,
     requestQuestion: () =>
       Promise.reject(new Error("no question is expected in this test")),
+    saveArtifact: () => {
+      throw new Error("no artifact is expected in this test");
+    },
   };
 }
 

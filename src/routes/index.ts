@@ -1,4 +1,5 @@
 export * from "./activity";
+export * from "./artifacts";
 export * from "./changes";
 export * from "./channels";
 export * from "./codex-account";

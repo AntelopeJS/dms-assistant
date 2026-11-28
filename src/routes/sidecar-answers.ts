@@ -2,6 +2,8 @@ import { z } from "zod";
 import { isJsonBody, type JsonBody } from "../sidecar";
 import type {
   ActivityRow,
+  ArtifactPayload,
+  ArtifactSummary,
   ChangeSetSummary,
   SidecarList,
   UndoPreview,
@@ -90,3 +92,28 @@ export const SETTINGS_ANSWER: z.ZodType<Record<string, JsonBody>> = z.record(
   z.string(),
   z.custom<JsonBody>(isJsonBody),
 );
+
+const ARTIFACT_FIELDS = {
+  id: z.string(),
+  conversationId: z.string(),
+  ownerId: z.string().optional(),
+  createdBy: z.string().optional(),
+  agent: z.string(),
+  createdAtMs: z.number(),
+  kind: z.string(),
+};
+
+const ARTIFACT_SUMMARY: z.ZodType<ArtifactSummary> = z.looseObject({
+  ...ARTIFACT_FIELDS,
+  title: z.string(),
+  summary: z.string().optional(),
+  blocks: z.number(),
+});
+
+export const ARTIFACT_PAGE_ANSWER = listOf(ARTIFACT_SUMMARY);
+
+/** An artifact with its data, the data as JSON the dashboard's spec schema reads. */
+export const ARTIFACT_ANSWER: z.ZodType<ArtifactPayload> = z.looseObject({
+  ...ARTIFACT_FIELDS,
+  spec: z.custom<JsonBody>(isJsonBody),
+});

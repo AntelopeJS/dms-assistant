@@ -3,6 +3,8 @@ import type {
   QuestionAnswers,
   QuestionRequest,
 } from "../agent/question-bus.js";
+import type { ArtifactSpec } from "../artifacts/spec.js";
+import type { ArtifactRecord } from "../artifacts/types.js";
 import type { MCP_SERVER_TYPE_SDK } from "../constants/mcp.js";
 import type { ImportsScanner } from "../pages/imports-scanner.js";
 import type { RegistryClient } from "../pages/registry-client.js";
@@ -30,6 +32,8 @@ export interface AiMcpServerDeps extends AiMcpServerStaticDeps {
   /** Waits for the conversation owner's host to land on a page. */
   waitForLanding: LandingWait;
   requestQuestion: (req: QuestionRequest) => Promise<QuestionAnswers>;
+  /** Stores an artifact of the conversation and hands the record back. */
+  saveArtifact: (spec: ArtifactSpec) => ArtifactRecord;
 }
 
 /**

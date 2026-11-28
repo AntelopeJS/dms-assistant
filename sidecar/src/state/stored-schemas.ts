@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { ArtifactSpecSchema } from "../artifacts/spec.js";
+import type { ArtifactRecord } from "../artifacts/types.js";
+import { ARTIFACT_KINDS } from "../constants/artifacts.js";
 import {
   ALLOWED_BY_VALUES,
   CHANGE_FILE_STATUSES,
@@ -175,4 +178,20 @@ export const ChangeSetRecordSchema: z.ZodType<ChangeSetRecord> = z.looseObject({
       }),
     )
     .optional(),
+});
+
+/**
+ * An artifact as `artifacts.json` holds it. Its `spec` is read by the strict
+ * spec schema: a stored artifact the schema refuses is set aside, so the
+ * dashboard is never handed a shape it does not draw.
+ */
+export const ArtifactRecordSchema: z.ZodType<ArtifactRecord> = z.looseObject({
+  id: z.string(),
+  conversationId: z.string(),
+  ownerId: z.string().optional(),
+  createdBy: z.string().optional(),
+  agent: z.enum(PROVIDER_NAMES),
+  createdAtMs: z.number(),
+  kind: z.enum(ARTIFACT_KINDS),
+  spec: ArtifactSpecSchema,
 });
